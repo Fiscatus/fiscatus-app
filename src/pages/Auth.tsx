@@ -1,7 +1,7 @@
 import AuthForm from "@/components/AuthForm";
 
-const Index = () => {
+const Login = () => {
   return <AuthForm />;
 };
 
-export default Index;
+export default Login; 
