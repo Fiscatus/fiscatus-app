@@ -45,16 +45,23 @@ function OverviewCard({ title, icon, value, helper, border }: any) {
   );
 }
 
-function QuickActionButton({ icon, label, color, onClick }: any) {
+function QuickActionButton({ icon, label, variant = "default", onClick }: any) {
+  const variants = {
+    primary: "bg-emerald-50 border-emerald-200 text-emerald-700 hover:bg-emerald-100 hover:border-emerald-300",
+    secondary: "bg-slate-50 border-slate-200 text-slate-700 hover:bg-slate-100 hover:border-slate-300",
+    tertiary: "bg-blue-50 border-blue-200 text-blue-700 hover:bg-blue-100 hover:border-blue-300",
+    muted: "bg-gray-50 border-gray-200 text-gray-600 hover:bg-gray-100 hover:border-gray-300"
+  };
+
   return (
-    <Button
-      variant="outline"
-      className={`flex items-center gap-2 py-3 px-8 rounded-xl shadow-sm border-2 border-gray-200 text-base font-semibold hover:bg-gray-50 transition ${color}`}
+    <button
+      className={`flex items-center gap-2 px-4 py-2 rounded-xl border bg-white shadow-sm text-sm font-medium whitespace-nowrap transition-all duration-200 hover:shadow-md hover:scale-105 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 ${variants[variant]}`}
       onClick={onClick}
+      type="button"
     >
-      <span className="text-2xl">{icon}</span>
+      <span className="text-base">{icon}</span>
       {label}
-    </Button>
+    </button>
   );
 }
 
