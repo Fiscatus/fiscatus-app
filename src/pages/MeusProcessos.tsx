@@ -34,6 +34,7 @@ import {
 } from "lucide-react";
 import Topbar from "@/components/Topbar";
 import { useUser, mockUsers } from "@/contexts/UserContext";
+import { formatarNumeroProcesso } from "@/lib/processoUtils";
 
 // Tipos
 type ProcessStatus = "em_andamento" | "pendente" | "atrasado" | "concluido";
@@ -59,7 +60,7 @@ interface Process {
 const processosMock: Process[] = [
   {
     id: "1",
-    numeroProcesso: "DFD 012/2025",
+    numeroProcesso: "Processo administrativo 012/2025",
     tipo: "DFD",
     faseAtual: "Elaboração DFD",
     prazoFinal: "30/01/2025",
@@ -72,7 +73,7 @@ const processosMock: Process[] = [
   },
   {
     id: "2",
-    numeroProcesso: "ETP 045/2025",
+    numeroProcesso: "Processo administrativo 045/2025",
     tipo: "ETP",
     faseAtual: "Assinatura ETP",
     prazoFinal: "25/01/2025",
@@ -85,7 +86,7 @@ const processosMock: Process[] = [
   },
   {
     id: "3",
-    numeroProcesso: "TR 001/2025",
+    numeroProcesso: "Processo administrativo 001/2025",
     tipo: "TR",
     faseAtual: "TR",
     prazoFinal: "20/02/2025",
@@ -98,7 +99,7 @@ const processosMock: Process[] = [
   },
   {
     id: "4",
-    numeroProcesso: "ETP 052/2025",
+    numeroProcesso: "Processo administrativo 052/2025",
     tipo: "ETP",
     faseAtual: "Matriz de Risco",
     prazoFinal: "05/02/2025",
@@ -111,7 +112,7 @@ const processosMock: Process[] = [
   },
   {
     id: "5",
-    numeroProcesso: "DFD 015/2025",
+    numeroProcesso: "Processo administrativo 015/2025",
     tipo: "DFD",
     faseAtual: "Edital",
     prazoFinal: "20/02/2025",
@@ -124,7 +125,7 @@ const processosMock: Process[] = [
   },
   {
     id: "6",
-    numeroProcesso: "ETP 038/2025",
+    numeroProcesso: "Processo administrativo 038/2025",
     tipo: "ETP",
     faseAtual: "Publicação",
     prazoFinal: "10/01/2025",
@@ -137,7 +138,7 @@ const processosMock: Process[] = [
   },
   {
     id: "7",
-    numeroProcesso: "MR 023/2025",
+    numeroProcesso: "Processo administrativo 023/2025",
     tipo: "Matriz de Risco",
     faseAtual: "Matriz de Risco",
     prazoFinal: "28/01/2025",
@@ -150,7 +151,7 @@ const processosMock: Process[] = [
   },
   {
     id: "8",
-    numeroProcesso: "TR 019/2025",
+    numeroProcesso: "Processo administrativo 019/2025",
     tipo: "TR",
     faseAtual: "TR",
     prazoFinal: "08/02/2025",

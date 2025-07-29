@@ -15,12 +15,13 @@ import FilterBar from "@/components/FilterBar";
 import SignatureRow from "@/components/SignatureRow";
 import SignatureModalV2 from "@/components/SignatureModalV2";
 import EmptyState from "@/components/EmptyState";
+import { formatarNumeroProcesso } from "@/lib/processoUtils";
 
 // Dados mockados
 const documentosMock = [
   {
     id: "1",
-    numeroProcesso: "DFD 012/2025",
+    numeroProcesso: "Processo administrativo 012/2025",
     nome: "Termo de Referência - Aquisição de Equipamentos Médicos",
     tipo: "DFD",
     prazo: "30/01/2025",
@@ -28,7 +29,7 @@ const documentosMock = [
   },
   {
     id: "2",
-    numeroProcesso: "ETP 045/2025",
+    numeroProcesso: "Processo administrativo 045/2025",
     nome: "Estudo Técnico Preliminar - Serviços de Limpeza",
     tipo: "ETP",
     prazo: "25/01/2025",
@@ -36,7 +37,7 @@ const documentosMock = [
   },
   {
     id: "3",
-    numeroProcesso: "DFD 008/2025",
+    numeroProcesso: "Processo administrativo 008/2025",
     nome: "Termo de Referência - Contratação de Consultoria",
     tipo: "DFD",
     prazo: "15/02/2025",
@@ -44,7 +45,7 @@ const documentosMock = [
   },
   {
     id: "4",
-    numeroProcesso: "ETP 052/2025",
+    numeroProcesso: "Processo administrativo 052/2025",
     nome: "Estudo Técnico - Aquisição de Medicamentos",
     tipo: "ETP",
     prazo: "05/02/2025",
@@ -52,7 +53,7 @@ const documentosMock = [
   },
   {
     id: "5",
-    numeroProcesso: "DFD 015/2025",
+    numeroProcesso: "Processo administrativo 015/2025",
     nome: "Termo de Referência - Serviços de TI",
     tipo: "DFD",
     prazo: "20/02/2025",
@@ -60,7 +61,7 @@ const documentosMock = [
   },
   {
     id: "6",
-    numeroProcesso: "ETP 038/2025",
+    numeroProcesso: "Processo administrativo 038/2025",
     nome: "Estudo Técnico - Manutenção Predial",
     tipo: "ETP",
     prazo: "10/01/2025",

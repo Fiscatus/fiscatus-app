@@ -1,152 +1,160 @@
-# Minhas Assinaturas - Fiscatus
+# 📋 Estrutura Completa de Usuários e Gerências
 
-## 📋 Visão Geral
+## 🏢 **GERÊNCIAS-PAI (Com Permissão de Editar)**
+1. **Comissão de Implantação** - Dir. Carlos Superintendente
+2. **Secretaria Executiva** - Sec. Marina Executiva  
+3. **Ouvidoria** - Ouv. Roberto Geral
+4. **Gerência de Soluções e Projetos** - Ger. Ana Soluções
 
-A página "Minhas Assinaturas" foi criada para permitir que os usuários visualizem e gerenciem todos os documentos que precisam assinar, já assinaram ou que estão com prazo vencido.
+## 📊 **GERÊNCIAS DOS CARDS (17 Etapas)**
 
-## 🎯 Funcionalidades
+### ✅ **Etapa 1: Elaboração do DFD**
+- **Gerência:** Gerência de Soluções e Projetos
+- **Responsável:** Dr. João Silva
+- **Status:** Concluído
 
-### ✅ Implementadas
+### ✅ **Etapa 2: Análise da Demanda**
+- **Gerência:** Gerência de Suprimentos e Logística
+- **Responsável:** Eng. Maria Santos
+- **Status:** Concluído
 
-- **Visualização de documentos**: Lista todos os documentos atribuídos ao usuário
-- **Filtros avançados**: Por status, prazo, tipo de documento e busca textual
-- **Estatísticas rápidas**: Cards com contadores de pendentes, atrasados e assinados
-- **Status visual**: Badges coloridos para diferentes status (pendente, assinado, atrasado)
-- **Modal de visualização**: Preview do documento com lista de assinaturas
-- **Responsividade**: Layout adaptável para desktop e mobile
-- **Navegação integrada**: Botão na Topbar para acessar a página
+### ✅ **Etapa 3: Validação Técnica**
+- **Gerência:** Gerência de Recursos Humanos
+- **Responsável:** Arq. Carlos Oliveira
+- **Status:** Concluído
 
-### 🔧 Componentes Criados
+### ✅ **Etapa 4: Assinatura do DFD**
+- **Gerência:** Gerência de Urgência e Emergência
+- **Responsável:** Dir. Ana Costa
+- **Status:** Concluído
 
-1. **SignatureStatusBadge** (`src/components/SignatureStatusBadge.tsx`)
-   - Exibe o status das assinaturas com cores e ícones apropriados
-   - Status: Pendente (amarelo), Assinado (verde), Atrasado (vermelho)
+### ✅ **Etapa 5: Elaboração do ETP**
+- **Gerência:** Gerência de Licitações e Contratos
+- **Responsável:** Eng. Pedro Lima
+- **Status:** Em Andamento
 
-2. **SignatureRow** (`src/components/SignatureRow.tsx`)
-   - Linha da tabela com informações do documento
-   - Botões de ação baseados no status
+### ✅ **Etapa 6: Assinatura do ETP**
+- **Gerência:** Gerência Financeira e Contábil
+- **Responsável:** Dir. Roberto Silva
+- **Status:** Pendente
 
-3. **FilterBar** (`src/components/FilterBar.tsx`)
-   - Barra de filtros com busca e selects
-   - Filtros: Status, Prazo, Tipo de documento
+### ✅ **Etapa 7: Análise e Aprovação do ETP**
+- **Gerência:** Ouvidoria
+- **Responsável:** Esp. Fernanda Martins
+- **Status:** Pendente
 
-4. **SignatureModal** (`src/components/SignatureModal.tsx`)
-   - Modal para visualizar documento completo
-   - Preview do PDF (mock)
-   - Lista de assinaturas
-   - Botão de assinatura
+### ✅ **Etapa 8: Elaboração da Matriz de Risco**
+- **Gerência:** Secretário Executivo
+- **Responsável:** Esp. Ricardo Alves
+- **Status:** Pendente
 
-5. **EmptyState** (`src/components/EmptyState.tsx`)
-   - Estado vazio quando não há documentos
-   - Mensagens personalizadas por tipo de filtro
+### ✅ **Etapa 9: Assinatura da Matriz de Risco**
+- **Gerência:** Gerência de Soluções e Projetos
+- **Responsável:** Dir. Paulo Mendes
+- **Status:** Pendente
 
-6. **MinhasAssinaturas** (`src/pages/MinhasAssinaturas.tsx`)
-   - Página principal com todos os componentes integrados
+### ✅ **Etapa 10: Elaboração do TR**
+- **Gerência:** Gerência de Suprimentos e Logística
+- **Responsável:** Adv. Camila Rocha
+- **Status:** Pendente
 
-## 🎨 Design e UX
+### ✅ **Etapa 11: Assinatura do TR**
+- **Gerência:** Gerência de Recursos Humanos
+- **Responsável:** Dir. Juliana Costa
+- **Status:** Pendente
 
-### Layout
-- **Topbar institucional**: Mantida conforme padrão do sistema
-- **Cabeçalho**: Título, subtítulo e badge de pendências
-- **Estatísticas**: Cards com contadores visuais
-- **Filtros**: Barra responsiva com busca e selects
-- **Tabela**: Lista de documentos com scroll horizontal
+### ✅ **Etapa 12: Cotação/Mapeamento**
+- **Gerência:** Gerência de Urgência e Emergência
+- **Responsável:** Esp. Luiza Campos
+- **Status:** Pendente
 
-### Cores e Status
-- **Pendente**: Amarelo (`bg-yellow-100 text-yellow-700`)
-- **Assinado**: Verde (`bg-green-100 text-green-700`)
-- **Atrasado**: Vermelho (`bg-red-100 text-red-700`)
+### ✅ **Etapa 13: Análise da Cotação**
+- **Gerência:** Gerência de Licitações e Contratos
+- **Responsável:** Dir. Fernando Santos
+- **Status:** Pendente
 
-### Responsividade
-- **Desktop**: Layout completo com sidebar
-- **Tablet**: Filtros em grid 2x2
-- **Mobile**: Filtros empilhados, tabela com scroll
+### ✅ **Etapa 14: Validação Final**
+- **Gerência:** Gerência Financeira e Contábil
+- **Responsável:** Dir. Geral Eduardo Lima
+- **Status:** Pendente
 
-## 📊 Dados Mockados
+### ✅ **Etapa 15: Elaboração do Edital**
+- **Gerência:** Ouvidoria
+- **Responsável:** Adv. Roberto Lima
+- **Status:** Pendente
 
-A página utiliza dados mockados para demonstração:
+### ✅ **Etapa 16: Aprovação Jurídica**
+- **Gerência:** Secretário Executivo
+- **Responsável:** Adv. Patricia Silva
+- **Status:** Pendente
 
-```typescript
-const documentosMock = [
-  {
-    id: "1",
-    numeroProcesso: "DFD 012/2025",
-    nome: "Termo de Referência - Aquisição de Equipamentos Médicos",
-    tipo: "DFD",
-    prazo: "30/01/2025",
-    status: "pendente",
-  },
-  // ... mais documentos
-];
-```
+### ✅ **Etapa 17: Publicação**
+- **Gerência:** Gerência de Soluções e Projetos
+- **Responsável:** Esp. Ana Paula
+- **Status:** Pendente
 
-## 🚀 Como Usar
+## 👥 **LISTA COMPLETA DE USUÁRIOS (21 Total)**
 
-1. **Acesso**: Clique no botão "Minhas Assinaturas" na Topbar
-2. **Navegação**: Use os filtros para encontrar documentos específicos
-3. **Visualização**: Clique em "Visualizar e Assinar" para abrir o modal
-4. **Assinatura**: No modal, clique em "Assinar Documento" (funcionalidade mock)
+### 🔐 **GERÊNCIAS-PAI (4 usuários)**
+1. **Dir. Carlos Superintendente** - Comissão de Implantação
+2. **Sec. Marina Executiva** - Secretaria Executiva
+3. **Ouv. Roberto Geral** - Ouvidoria
+4. **Ger. Ana Soluções** - Gerência de Soluções e Projetos
 
-## 🔗 Rotas
+### 📋 **GERÊNCIAS DOS CARDS (17 usuários)**
+5. **Dr. João Silva** - Gerência de Soluções e Projetos
+6. **Eng. Maria Santos** - Gerência de Suprimentos e Logística
+7. **Arq. Carlos Oliveira** - Gerência de Recursos Humanos
+8. **Dir. Ana Costa** - Gerência de Urgência e Emergência
+9. **Eng. Pedro Lima** - Gerência de Licitações e Contratos
+10. **Dir. Roberto Silva** - Gerência Financeira e Contábil
+11. **Esp. Fernanda Martins** - Ouvidoria
+12. **Esp. Ricardo Alves** - Secretário Executivo
+13. **Dir. Paulo Mendes** - Gerência de Soluções e Projetos
+14. **Adv. Camila Rocha** - Gerência de Suprimentos e Logística
+15. **Dir. Juliana Costa** - Gerência de Recursos Humanos
+16. **Esp. Luiza Campos** - Gerência de Urgência e Emergência
+17. **Dir. Fernando Santos** - Gerência de Licitações e Contratos
+18. **Dir. Geral Eduardo Lima** - Gerência Financeira e Contábil
+19. **Adv. Roberto Lima** - Ouvidoria
+20. **Adv. Patricia Silva** - Secretário Executivo
+21. **Esp. Ana Paula** - Gerência de Soluções e Projetos
 
-- **URL**: `/assinaturas`
-- **Componente**: `MinhasAssinaturas`
-- **Navegação**: Integrada na Topbar
+## ✅ **GARANTIAS IMPLEMENTADAS**
 
-## 🛠️ Tecnologias Utilizadas
+### 🔒 **Permissões de Edição**
+- ✅ **Botão "Editar Processo"** - Só para gerências-pai
+- ✅ **Botão "Editar Fluxo"** - Só para gerências-pai
+- ✅ **Funcionalidades de edição** - Protegidas por permissões
 
-- **React + TypeScript**: Framework principal
-- **TailwindCSS**: Estilização
-- **shadcn/ui**: Componentes de UI
-- **Lucide React**: Ícones
-- **React Router**: Navegação
+### 📊 **Estrutura dos Cards**
+- ✅ **17 cards sempre presentes**
+- ✅ **Cada card tem gerência responsável**
+- ✅ **Usuário correspondente para cada gerência**
+- ✅ **Layout uniforme e responsivo**
+- ✅ **Status visual claro (Concluído/Em Andamento/Pendente)**
 
-## 📱 Responsividade
+### 🎯 **Funcionalidades de Edição**
+- ✅ **Reordenar cards** (drag & drop)
+- ✅ **Editar informações dos cards**
+- ✅ **Adicionar novos cards**
+- ✅ **Excluir cards** (mínimo 17 mantido)
+- ✅ **Salvar alterações** com validação
 
-### Breakpoints
-- **Mobile**: `< 768px` - Layout empilhado
-- **Tablet**: `768px - 1024px` - Grid 2x2 para filtros
-- **Desktop**: `> 1024px` - Layout completo
+### 🧪 **Teste de Permissões**
+- ✅ **Seletor de usuário** para testar permissões
+- ✅ **21 usuários disponíveis** para teste
+- ✅ **4 gerências-pai** com permissões especiais
+- ✅ **17 gerências de cards** com usuários correspondentes
 
-### Componentes Responsivos
-- **FilterBar**: Grid adaptativo
-- **Tabela**: Scroll horizontal em telas pequenas
-- **Modal**: Layout flexível para diferentes tamanhos
+## 🚀 **Como Testar**
 
-## 🎯 Próximos Passos
-
-### Funcionalidades Futuras
-- [ ] Integração com backend real
-- [ ] Assinatura digital funcional
-- [ ] Upload de documentos
-- [ ] Notificações de prazo
-- [ ] Histórico de assinaturas
-- [ ] Exportação de relatórios
-
-### Melhorias de UX
-- [ ] Loading states
-- [ ] Paginação
-- [ ] Ordenação por colunas
-- [ ] Filtros salvos
-- [ ] Modo escuro
-
-## 📝 Notas de Desenvolvimento
-
-- Todos os componentes seguem o padrão do projeto
-- Código TypeScript com tipagem completa
-- Componentes reutilizáveis e modulares
-- Estilo consistente com o design system existente
-- Performance otimizada com `useMemo` para filtros
-
-## 🔍 Testes
-
-Para testar a funcionalidade:
-
-1. Execute `npm run dev`
-2. Acesse `http://localhost:8081`
-3. Clique em "Minhas Assinaturas" na Topbar
-4. Teste os filtros e modal de visualização
+1. **Acesse:** `http://localhost:8107/processos/1`
+2. **Use o seletor:** "Simular Usuário (Para Teste de Permissões)"
+3. **Teste gerências-pai:** Posições 1-4 (vêem botões de edição)
+4. **Teste outras gerências:** Posições 5-21 (não vêem botões de edição)
+5. **Verifique cards:** Todos os 17 cards têm gerência responsável
+6. **Teste edição:** Apenas usuários autorizados podem editar
 
 ---
-
-**Desenvolvido para o sistema Fiscatus** 🏛️ 
+*Última atualização: Janeiro 2025* 

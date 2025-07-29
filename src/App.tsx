@@ -9,6 +9,9 @@ import NovoDFD from "./pages/NovoDFD";
 import MinhasAssinaturas from "./pages/MinhasAssinaturas";
 import MeusProcessos from "./pages/MeusProcessos";
 import ProcessoDetalhes from "./pages/ProcessoDetalhes";
+import ProcessosGerencia from "./pages/ProcessosGerencia";
+import NovoProcesso from "./pages/NovoProcesso";
+import PastaOrganizacional from "./pages/PastaOrganizacional";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import { Toaster } from "@/components/ui/toaster";
@@ -35,6 +38,10 @@ const App = () => (
             <Route path="/assinaturas/:id" element={<MinhasAssinaturas />} />
             <Route path="/processos" element={<MeusProcessos />} />
             <Route path="/processos/:id" element={<ProcessoDetalhes />} />
+            <Route path="/processo/:id" element={<ProcessoDetalhes />} />
+            <Route path="/novo-processo" element={<NovoProcesso />} />
+            <Route path="/processos-gerencia" element={<ProcessosGerencia />} />
+            <Route path="/processos-gerencia/pasta/:pastaId" element={<PastaOrganizacional />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>

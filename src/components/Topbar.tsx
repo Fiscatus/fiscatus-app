@@ -41,18 +41,12 @@ export default function Topbar() {
           <span className="text-2xl font-bold text-gray-800">Fiscatus</span>
         </div>
         {/* Centro: ações rápidas */}
-        <div className="flex flex-wrap gap-2 justify-center items-center flex-1 min-w-0">
+        <div className="flex flex-wrap gap-4 justify-center items-center flex-1 min-w-0">
           <QuickActionButton 
-            icon={<Plus className="text-emerald-600" />} 
-            label={<span className="text-emerald-700 font-semibold">Novo DFD</span>} 
-            variant="primary"
-            onClick={() => navigate("/dfd/novo")}
-          />
-          <QuickActionButton 
-            icon={<PenLine className="text-blue-600" />} 
-            label={<span className="text-blue-700 font-semibold">Minhas Assinaturas</span>} 
-            variant="tertiary" 
-            onClick={() => navigate("/assinaturas")}
+            icon={<Landmark className="text-gray-600" />} 
+            label={<span className="text-gray-700 font-semibold">Processos da Gerência</span>} 
+            variant="muted" 
+            onClick={() => navigate("/processos-gerencia")}
           />
           <QuickActionButton 
             icon={<FileText className="text-slate-600" />} 
@@ -61,9 +55,10 @@ export default function Topbar() {
             onClick={() => navigate("/processos")}
           />
           <QuickActionButton 
-            icon={<Landmark className="text-gray-600" />} 
-            label={<span className="text-gray-700 font-semibold">Processos da Gerência</span>} 
-            variant="muted" 
+            icon={<PenLine className="text-blue-600" />} 
+            label={<span className="text-blue-700 font-semibold">Minhas Assinaturas</span>} 
+            variant="tertiary" 
+            onClick={() => navigate("/assinaturas")}
           />
         </div>
         {/* Direita: busca, ícones, avatar */}
