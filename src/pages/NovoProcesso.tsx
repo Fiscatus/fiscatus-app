@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { 
   ArrowLeft, 
   Plus, 
@@ -17,12 +18,16 @@ import {
   Clock,
   Upload,
   CheckCircle,
-  AlertTriangle
+  AlertTriangle,
+  Workflow,
+  Star,
+  Eye
 } from "lucide-react";
 import Topbar from "@/components/Topbar";
 import ReturnButton from "@/components/ReturnButton";
 import MultiSelectField from "@/components/MultiSelectField";
 import FileUploadField from "@/components/FileUploadField";
+import { useUser } from "@/contexts/UserContext";
 
 // Dados mockados
 const gerencias = [
@@ -52,8 +57,47 @@ const gerarNumeroProcesso = () => {
   return `${novoNumero.toString().padStart(3, '0')}/${ano}`;
 };
 
+// Interface para modelo de fluxo (simplificada para a seleção)
+interface ModeloFluxoSumario {
+  id: string;
+  nome: string;
+  descricao: string;
+  ehPadrao: boolean;
+  quantidadeEtapas: number;
+  instituicao: string;
+}
+
+// Mock de modelos disponíveis (em produção viriam da API)
+const modelosDisponiveis: ModeloFluxoSumario[] = [
+  {
+    id: "modelo-sistema-fiscatus",
+    nome: "Fluxo Completo de Contratação - Fiscatus",
+    descricao: "Modelo padrão utilizado para planejamento e tramitação completa de processos de contratação pública, com base na estrutura original do sistema Fiscatus.",
+    ehPadrao: true,
+    quantidadeEtapas: 21,
+    instituicao: "Sistema"
+  },
+  {
+    id: "modelo-1",
+    nome: "Modelo Padrão de Contratação",
+    descricao: "Modelo padrão para processos de contratação de serviços e produtos",
+    ehPadrao: false,
+    quantidadeEtapas: 3,
+    instituicao: "Comissão de Implantação"
+  },
+  {
+    id: "modelo-2", 
+    nome: "Modelo Simplificado",
+    descricao: "Modelo com menos etapas para contratações simples",
+    ehPadrao: false,
+    quantidadeEtapas: 2,
+    instituicao: "Comissão de Implantação"
+  }
+];
+
 interface NovoProcessoForm {
   numeroProcesso: string;
+  modeloFluxoId: string;
   objetoProcesso: string;
   gerenciaCriadora: string;
   gerenciasEnvolvidas: string[];
@@ -65,12 +109,24 @@ interface NovoProcessoForm {
 
 export default function NovoProcesso() {
   const navigate = useNavigate();
+  const { user } = useUser();
+  
+  // Obter modelo padrão da instituição do usuário
+  const getModeloPadrao = () => {
+    // Primeiro procura por modelos padrão da instituição do usuário
+    const modeloPadrao = modelosDisponiveis.find(m => 
+      m.ehPadrao && m.instituicao === user?.gerencia
+    );
+    // Se não encontrar, usa o modelo padrão do sistema
+    return modeloPadrao || modelosDisponiveis.find(m => m.ehPadrao) || modelosDisponiveis[0];
+  };
   
   // Estado do formulário
   const [formData, setFormData] = useState<NovoProcessoForm>({
     numeroProcesso: "",
+    modeloFluxoId: getModeloPadrao()?.id || "",
     objetoProcesso: "",
-    gerenciaCriadora: "GTEC - Gerência de Tecnologia da Informação", // Mock baseado no perfil
+    gerenciaCriadora: user?.gerencia || "GTEC - Gerência de Tecnologia da Informação",
     gerenciasEnvolvidas: [],
     anoProcesso: new Date().getFullYear().toString(),
     tipoTramitacao: "",
@@ -80,6 +136,7 @@ export default function NovoProcesso() {
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
+  const [showSeletorModelo, setShowSeletorModelo] = useState(false);
 
   // Gerar número do processo ao montar o componente
   useEffect(() => {
@@ -126,7 +183,16 @@ export default function NovoProcesso() {
   const isFormValid = () => {
     return formData.objetoProcesso.trim() !== "" && 
            formData.tipoTramitacao !== "" &&
-           formData.gerenciasEnvolvidas.length > 0;
+           formData.gerenciasEnvolvidas.length > 0 &&
+           formData.modeloFluxoId !== "";
+  };
+
+  // Obter modelo selecionado
+  const modeloSelecionado = modelosDisponiveis.find(m => m.id === formData.modeloFluxoId);
+
+  const handleSelecionarModelo = (modeloId: string) => {
+    setFormData(prev => ({ ...prev, modeloFluxoId: modeloId }));
+    setShowSeletorModelo(false);
   };
 
   return (
@@ -170,6 +236,74 @@ export default function NovoProcesso() {
         )}
 
         <div className="w-full space-y-6">
+          {/* Seção 0: Seleção do Modelo de Fluxo */}
+          <Card className="bg-white rounded-xl shadow-md border border-gray-200">
+            <CardContent className="p-6">
+              <div className="flex items-center gap-3 mb-6">
+                <div className="p-2 bg-purple-100 rounded-lg">
+                  <Workflow className="w-5 h-5 text-purple-600" />
+                </div>
+                <h2 className="text-xl font-semibold text-gray-900">Modelo de Fluxo</h2>
+              </div>
+              
+              {modeloSelecionado ? (
+                <div className="space-y-4">
+                  <div className="p-4 border border-purple-200 rounded-lg bg-purple-50">
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-2">
+                          <h3 className="font-medium text-purple-900">
+                            {modeloSelecionado.nome}
+                          </h3>
+                          {modeloSelecionado.ehPadrao && (
+                            <Badge variant="secondary" className="bg-yellow-100 text-yellow-800">
+                              <Star className="w-3 h-3 mr-1 fill-current" />
+                              Padrão
+                            </Badge>
+                          )}
+                        </div>
+                        <p className="text-sm text-purple-700 mb-2">
+                          {modeloSelecionado.descricao}
+                        </p>
+                        <div className="flex items-center gap-4 text-xs text-purple-600">
+                          <span>{modeloSelecionado.quantidadeEtapas} etapas</span>
+                          <span>{modeloSelecionado.instituicao}</span>
+                        </div>
+                      </div>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setShowSeletorModelo(true)}
+                        className="ml-4"
+                      >
+                        <Workflow className="w-4 h-4 mr-2" />
+                        Alterar Modelo
+                      </Button>
+                    </div>
+                  </div>
+                  
+                  <p className="text-sm text-gray-600">
+                    Este modelo será aplicado ao seu processo, definindo as etapas e responsáveis padrão.
+                  </p>
+                </div>
+              ) : (
+                <div className="text-center py-8">
+                  <Workflow className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                  <h3 className="text-lg font-medium text-gray-900 mb-2">
+                    Selecione um Modelo de Fluxo
+                  </h3>
+                  <p className="text-gray-600 mb-4">
+                    Escolha um modelo para definir as etapas do seu processo
+                  </p>
+                  <Button onClick={() => setShowSeletorModelo(true)}>
+                    <Workflow className="w-4 h-4 mr-2" />
+                    Selecionar Modelo
+                  </Button>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
           {/* Seção 1: Informações Básicas */}
           <Card className="bg-white rounded-xl shadow-md border border-gray-200">
             <CardContent className="p-6">
@@ -372,6 +506,96 @@ export default function NovoProcesso() {
           </Card>
         </div>
       </main>
+
+      {/* Modal Seletor de Modelo */}
+      <Dialog open={showSeletorModelo} onOpenChange={setShowSeletorModelo}>
+        <DialogContent className="sm:max-w-4xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Selecionar Modelo de Fluxo</DialogTitle>
+          </DialogHeader>
+          
+          <div className="py-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {modelosDisponiveis.map((modelo) => (
+                <Card 
+                  key={modelo.id}
+                  className={`cursor-pointer transition-all hover:shadow-lg ${
+                    formData.modeloFluxoId === modelo.id
+                      ? 'ring-2 ring-purple-500 bg-purple-50'
+                      : 'hover:bg-gray-50'
+                  }`}
+                  onClick={() => handleSelecionarModelo(modelo.id)}
+                >
+                  <CardContent className="p-6">
+                    <div className="flex items-start justify-between mb-3">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-2">
+                          <h3 className="font-semibold text-gray-900">
+                            {modelo.nome}
+                          </h3>
+                          {modelo.ehPadrao && (
+                            <Badge variant="secondary" className="bg-yellow-100 text-yellow-800">
+                              <Star className="w-3 h-3 mr-1 fill-current" />
+                              Padrão
+                            </Badge>
+                          )}
+                        </div>
+                        <p className="text-sm text-gray-600 mb-3">
+                          {modelo.descricao}
+                        </p>
+                        <div className="flex items-center gap-4 text-xs text-gray-500">
+                          <span className="flex items-center gap-1">
+                            <Workflow className="w-3 h-3" />
+                            {modelo.quantidadeEtapas} etapas
+                          </span>
+                          <span className="flex items-center gap-1">
+                            <Building2 className="w-3 h-3" />
+                            {modelo.instituicao}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div className="flex justify-between items-center">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="text-xs"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          // Aqui poderia abrir um modal de preview das etapas
+                        }}
+                      >
+                        <Eye className="w-3 h-3 mr-1" />
+                        Visualizar Etapas
+                      </Button>
+                      
+                      {formData.modeloFluxoId === modelo.id && (
+                        <Badge className="bg-purple-600">
+                          <CheckCircle className="w-3 h-3 mr-1" />
+                          Selecionado
+                        </Badge>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+            
+            <div className="flex justify-end gap-2 mt-6 pt-4 border-t">
+              <Button variant="outline" onClick={() => setShowSeletorModelo(false)}>
+                Cancelar
+              </Button>
+              <Button 
+                onClick={() => setShowSeletorModelo(false)}
+                disabled={!formData.modeloFluxoId}
+              >
+                Confirmar Seleção
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 } 

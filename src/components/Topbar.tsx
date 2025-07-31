@@ -1,10 +1,12 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Menu, Bell, Settings, Plus, PenLine, FileText, Landmark, Home } from "lucide-react";
+import { Menu, Bell, Settings, Plus, PenLine, FileText, Landmark, Home, Workflow, ChevronDown } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import Sidebar from "./Sidebar";
 import NotificationDropdown, { NotificationBell } from "./NotificationDropdown";
+import { useUser } from "@/contexts/UserContext";
 import logo from "@/assets/logo_fiscatus.png";
 
 function QuickActionButton({ icon, label, variant = "default", onClick }: any) {
@@ -31,6 +33,21 @@ export default function Topbar() {
   const [sidebarOpen, setSidebarOpen] = React.useState(false);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const navigate = useNavigate();
+  const { user } = useUser();
+
+  // Verifica se o usuário tem permissão para acessar modelos de fluxo
+  const temPermissaoModelosFluxo = () => {
+    if (!user) return false;
+    const gerenciasAutorizadas = [
+      'Comissão de Implantação',
+      'CI',
+      'SE - Secretaria Executiva',
+      'Secretaria Executiva',
+      'OUV - Ouvidoria',
+      'Ouvidoria'
+    ];
+    return gerenciasAutorizadas.some(g => user.gerencia.includes(g));
+  };
   
   return (
     <>
@@ -69,6 +86,23 @@ export default function Topbar() {
             variant="tertiary" 
             onClick={() => navigate("/assinaturas")}
           />
+          {temPermissaoModelosFluxo() && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button className="flex items-center gap-2 px-4 py-2 rounded-xl border bg-white shadow-sm text-sm font-medium whitespace-nowrap transition-all duration-200 hover:shadow-md hover:scale-105 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 bg-purple-50 border-purple-200 text-purple-700 hover:bg-purple-100 hover:border-purple-300">
+                  <Workflow className="text-purple-600" />
+                  <span className="text-purple-700 font-semibold">Configurações do Fluxo</span>
+                  <ChevronDown className="w-4 h-4 text-purple-600" />
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="center" className="w-56">
+                <DropdownMenuItem onClick={() => navigate("/modelos-de-fluxo")} className="cursor-pointer">
+                  <Workflow className="mr-2 h-4 w-4" />
+                  <span>Modelos de Fluxo</span>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
         </div>
         {/* Direita: busca, ícones, avatar */}
         <div className="flex items-center gap-2 flex-shrink-0 mt-2 md:mt-0 relative">

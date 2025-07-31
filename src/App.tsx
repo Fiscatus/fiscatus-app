@@ -12,6 +12,7 @@ import ProcessoDetalhes from "./pages/ProcessoDetalhes";
 import ProcessosGerencia from "./pages/ProcessosGerencia";
 import NovoProcesso from "./pages/NovoProcesso";
 import PastaOrganizacional from "./pages/PastaOrganizacional";
+import ModelosFluxo from "./pages/ModelosFluxo";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import { Toaster } from "@/components/ui/toaster";
@@ -42,6 +43,7 @@ const App = () => (
             <Route path="/novo-processo" element={<NovoProcesso />} />
             <Route path="/processos-gerencia" element={<ProcessosGerencia />} />
             <Route path="/processos-gerencia/pasta/:pastaId" element={<PastaOrganizacional />} />
+            <Route path="/modelos-de-fluxo" element={<ModelosFluxo />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
