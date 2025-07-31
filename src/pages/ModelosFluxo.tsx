@@ -11,6 +11,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Separator } from "@/components/ui/separator";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { 
   Workflow, 
   Plus, 
@@ -42,7 +43,11 @@ import {
   Scale,
   DollarSign,
   Upload,
-  Users
+  Users,
+  MoreVertical,
+  ChevronDown,
+  Monitor,
+  Square
 } from "lucide-react";
 import Topbar from "@/components/Topbar";
 import { useUser } from "@/contexts/UserContext";
@@ -1056,90 +1061,89 @@ export default function ModelosFluxo() {
       
       <main className="pt-20 flex h-screen">
         {/* Sidebar - Lista de Modelos */}
-        <div className="w-80 bg-white border-r border-gray-200 flex flex-col">
-          <div className="p-6 border-b border-gray-200">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="p-2 bg-purple-100 rounded-lg">
-                <Workflow className="w-6 h-6 text-purple-600" />
+        <div className="w-80 lg:w-80 md:w-72 sm:w-64 bg-white border-r border-gray-200 flex flex-col flex-shrink-0">
+          {/* Header fixo do sidebar */}
+          <div className="p-4 lg:p-6 border-b border-gray-200 bg-gray-50">
+            <div className="flex items-center gap-3 mb-4 lg:mb-6">
+              <div className="p-2 bg-purple-100 rounded-lg flex-shrink-0">
+                <Workflow className="w-5 h-5 lg:w-6 lg:h-6 text-purple-600" />
               </div>
-              <div>
-                <h1 className="text-xl font-bold text-gray-900">Modelos de Fluxo</h1>
-                <p className="text-sm text-gray-600">
+              <div className="min-w-0 flex-1">
+                <h1 className="text-base lg:text-lg font-bold text-gray-900 truncate">Modelos de Fluxo</h1>
+                <p className="text-xs text-gray-500 truncate">
                   {user?.gerencia}
                 </p>
               </div>
             </div>
             
-            <div className="space-y-3">
-              <Button onClick={criarNovoModelo} className="w-full">
-                <Plus className="w-4 h-4 mr-2" />
-                Criar Novo Modelo
-              </Button>
-              
-              <Button 
-                onClick={duplicarFiscatus} 
-                variant="outline" 
-                className="w-full"
-              >
-                <Copy className="w-4 h-4 mr-2" />
-                Duplicar Fiscatus
-              </Button>
-            </div>
+            {/* Botão principal destacado */}
+            <Button onClick={criarNovoModelo} className="w-full h-12 text-base font-medium shadow-sm">
+              <Plus className="w-5 h-5 mr-2" />
+              Criar Novo Modelo
+            </Button>
+            
+            {/* Botão secundário */}
+            <Button 
+              onClick={duplicarFiscatus} 
+              variant="outline" 
+              className="w-full mt-3 h-10"
+            >
+              <Copy className="w-4 h-4 mr-2" />
+              Duplicar Fiscatus
+            </Button>
           </div>
           
           <div className="flex-1 overflow-y-auto">
-            <div className="p-4 space-y-3">
-              {/* Primeiro mostrar modelos do sistema, depois os outros ordenados por padrão */}
-              {modelos
-                .sort((a, b) => {
-                  // Modelos do sistema primeiro
-                  if (a.ehModeloSistema && !b.ehModeloSistema) return -1;
-                  if (!a.ehModeloSistema && b.ehModeloSistema) return 1;
-                  // Depois modelos padrão
-                  if (a.ehPadrao && !b.ehPadrao) return -1;
-                  if (!a.ehPadrao && b.ehPadrao) return 1;
-                  // Por fim ordenar por data de modificação
-                  return new Date(b.modificadoEm).getTime() - new Date(a.modificadoEm).getTime();
-                })
-                .map((modelo) => (
-                <Card 
-                  key={modelo.id}
-                  className={`cursor-pointer transition-all min-h-[180px] ${
-                    modeloSelecionado?.id === modelo.id 
-                      ? 'ring-2 ring-purple-500 bg-purple-50' 
-                      : 'hover:bg-gray-50'
-                  }`}
-                  onClick={() => setModeloSelecionado(modelo)}
-                >
-                  <CardContent className="p-4">
-                    <div className="space-y-3">
-                      {/* Cabeçalho do Card */}
-                      <div className="flex items-start justify-between">
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2 mb-2">
-                            <h3 className="font-medium text-gray-900 break-words">
-                              {modelo.nome}
-                            </h3>
-                            {modelo.ehPadrao && (
-                              <Star className="w-4 h-4 text-yellow-500 fill-current flex-shrink-0" />
-                            )}
-                            {modelo.ehModeloSistema && (
-                              <Badge variant="secondary" className="text-xs bg-blue-100 text-blue-800 flex-shrink-0">
-                                Sistema
-                              </Badge>
-                            )}
-                          </div>
-                          <p className="text-xs text-gray-600 mb-3 break-words">
-                            {modelo.descricao}
-                          </p>
-                        </div>
-                      </div>
+            <div className="p-4 space-y-4">
+              {/* Modelos do Sistema */}
+              {modelos.some(m => m.ehModeloSistema) && (
+                <div>
+                  <div className="flex items-center gap-2 mb-3 px-2">
+                    <Monitor className="w-4 h-4 text-blue-600" />
+                    <h3 className="text-sm font-semibold text-gray-700 uppercase tracking-wide">
+                      Modelos do Sistema
+                    </h3>
+                  </div>
+                  <div className="space-y-3">
+                    {modelos
+                      .filter(modelo => modelo.ehModeloSistema)
+                      .map((modelo) => (
+                        <Card 
+                          key={modelo.id}
+                          className={`cursor-pointer transition-all min-h-[160px] border-l-4 ${
+                            modeloSelecionado?.id === modelo.id 
+                              ? 'ring-2 ring-purple-500 bg-purple-50 border-l-blue-500' 
+                              : 'hover:bg-gray-50 border-l-blue-200 hover:border-l-blue-400'
+                          }`}
+                          onClick={() => setModeloSelecionado(modelo)}
+                        >
+                          <CardContent className="p-4">
+                            <div className="space-y-3">
+                              {/* Cabeçalho do Card */}
+                              <div className="flex items-start justify-between">
+                                <div className="flex-1 min-w-0">
+                                  <div className="flex items-center gap-2 mb-2">
+                                    <h3 className="font-medium text-gray-900 break-words text-sm">
+                                      {modelo.nome}
+                                    </h3>
+                                    {modelo.ehPadrao && (
+                                      <Star className="w-4 h-4 text-yellow-500 fill-current flex-shrink-0" />
+                                    )}
+                                    <Badge variant="secondary" className="text-xs bg-blue-100 text-blue-800 flex-shrink-0">
+                                      Sistema
+                                    </Badge>
+                                  </div>
+                                  <p className="text-xs text-gray-600 mb-3 break-words line-clamp-2">
+                                    {modelo.descricao}
+                                  </p>
+                                </div>
+                              </div>
                       
                       {/* Informações do Modelo */}
                       <div className="space-y-2">
                         <div className="flex items-center justify-between text-xs text-gray-500">
                           <span className="flex items-center gap-1">
-                            <Hash className="w-3 h-3 flex-shrink-0" />
+                            <Square className="w-3 h-3 flex-shrink-0" />
                             {modelo.etapas.length} etapas
                           </span>
                           <span className="flex items-center gap-1">
@@ -1244,35 +1248,201 @@ export default function ModelosFluxo() {
                       </div>
                     </div>
                   </CardContent>
-                </Card>
-              ))}
+                        </Card>
+                      ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Modelos Pessoais */}
+              {modelos.some(m => !m.ehModeloSistema) && (
+                <div>
+                  <div className="flex items-center gap-2 mb-3 px-2">
+                    <User className="w-4 h-4 text-purple-600" />
+                    <h3 className="text-sm font-semibold text-gray-700 uppercase tracking-wide">
+                      Seus Modelos
+                    </h3>
+                  </div>
+                  <div className="space-y-3">
+                    {modelos
+                      .filter(modelo => !modelo.ehModeloSistema)
+                      .sort((a, b) => {
+                        // Modelos padrão primeiro
+                        if (a.ehPadrao && !b.ehPadrao) return -1;
+                        if (!a.ehPadrao && b.ehPadrao) return 1;
+                        // Por fim ordenar por data de modificação
+                        return new Date(b.modificadoEm).getTime() - new Date(a.modificadoEm).getTime();
+                      })
+                      .map((modelo) => (
+                        <Card 
+                          key={modelo.id}
+                          className={`cursor-pointer transition-all min-h-[160px] border-l-4 ${
+                            modeloSelecionado?.id === modelo.id 
+                              ? 'ring-2 ring-purple-500 bg-purple-50 border-l-purple-500' 
+                              : 'hover:bg-gray-50 border-l-gray-200 hover:border-l-purple-300'
+                          }`}
+                          onClick={() => setModeloSelecionado(modelo)}
+                        >
+                          <CardContent className="p-4">
+                            <div className="space-y-3">
+                              {/* Cabeçalho do Card */}
+                              <div className="flex items-start justify-between">
+                                <div className="flex-1 min-w-0">
+                                  <div className="flex items-center gap-2 mb-2">
+                                    <h3 className="font-medium text-gray-900 break-words text-sm">
+                                      {modelo.nome}
+                                    </h3>
+                                    {modelo.ehPadrao && (
+                                      <Star className="w-4 h-4 text-yellow-500 fill-current flex-shrink-0" />
+                                    )}
+                                  </div>
+                                  <p className="text-xs text-gray-600 mb-3 break-words line-clamp-2">
+                                    {modelo.descricao}
+                                  </p>
+                                </div>
+                              </div>
+                              
+                              {/* Informações do Modelo */}
+                              <div className="space-y-2">
+                                <div className="flex items-center justify-between text-xs text-gray-500">
+                                  <span className="flex items-center gap-1">
+                                    <Hash className="w-3 h-3 flex-shrink-0" />
+                                    {modelo.etapas.length} etapas
+                                  </span>
+                                  <span className="flex items-center gap-1">
+                                    <Calendar className="w-3 h-3 flex-shrink-0" />
+                                    {modelo.modificadoEm}
+                                  </span>
+                                </div>
+                                <div className="text-xs text-gray-400 break-words">
+                                  por {modelo.criadoPor}
+                                </div>
+                              </div>
+                              
+                              {/* Botões de Ação */}
+                              <div className="flex items-center gap-1 pt-2 flex-wrap">
+                                {modelo.id !== "modelo-sistema-fiscatus" && (
+                                  <Button
+                                    size="sm"
+                                    variant="ghost"
+                                    className="h-8 w-8 p-0 flex-shrink-0"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      if (modelo.ehModeloSistema) {
+                                        toast({
+                                          title: "Modelo do Sistema",
+                                          description: "Modelos do sistema não podem ser editados diretamente. Duplique-o para criar uma versão editável.",
+                                          variant: "destructive"
+                                        });
+                                        return;
+                                      }
+                                      setModeloSelecionado(modelo);
+                                      setModoEdicao(true);
+                                      setNomeModelo(modelo.nome);
+                                      setDescricaoModelo(modelo.descricao);
+                                    }}
+                                  >
+                                    <Edit3 className="w-4 h-4" />
+                                  </Button>
+                                )}
+                                
+                                {modelo.id !== "modelo-sistema-fiscatus" && (
+                                  <Button
+                                    size="sm"
+                                    variant="ghost"
+                                    className="h-8 w-8 p-0 flex-shrink-0"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      duplicarModelo(modelo);
+                                    }}
+                                  >
+                                    <Copy className="w-4 h-4" />
+                                  </Button>
+                                )}
+                                
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  className="h-8 w-8 p-0 flex-shrink-0"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    definirComoPadrao(modelo.id);
+                                  }}
+                                >
+                                  {modelo.ehPadrao ? (
+                                    <StarOff className="w-4 h-4" />
+                                  ) : (
+                                    <Star className="w-4 h-4" />
+                                  )}
+                                </Button>
+                                
+                                {!modelo.ehModeloSistema && modelo.id !== "modelo-sistema-fiscatus" && (
+                                  <AlertDialog>
+                                    <AlertDialogTrigger asChild>
+                                      <Button
+                                        size="sm"
+                                        variant="ghost"
+                                        className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50 flex-shrink-0"
+                                        onClick={(e) => e.stopPropagation()}
+                                      >
+                                        <Trash2 className="w-4 h-4" />
+                                      </Button>
+                                    </AlertDialogTrigger>
+                                    <AlertDialogContent>
+                                      <AlertDialogHeader>
+                                        <AlertDialogTitle>Confirmar Exclusão</AlertDialogTitle>
+                                        <AlertDialogDescription>
+                                          Tem certeza de que deseja excluir o modelo "{modelo.nome}"? 
+                                          Esta ação não pode ser desfeita.
+                                        </AlertDialogDescription>
+                                      </AlertDialogHeader>
+                                      <AlertDialogFooter>
+                                        <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                        <AlertDialogAction
+                                          onClick={() => excluirModelo(modelo.id)}
+                                          className="bg-red-600 hover:bg-red-700"
+                                        >
+                                          Excluir
+                                        </AlertDialogAction>
+                                      </AlertDialogFooter>
+                                    </AlertDialogContent>
+                                  </AlertDialog>
+                                )}
+                              </div>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      ))}
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </div>
 
         {/* Área Principal - Editor do Modelo */}
-        <div className="flex-1 flex flex-col">
+        <div className="flex-1 flex flex-col min-w-0">
           {modeloSelecionado ? (
             <>
-              {/* Header do Editor */}
-              <div className="bg-white border-b border-gray-200 p-6">
-                <div className="flex items-center justify-between">
-                  <div className="flex-1">
+              {/* Header do Editor - Compacto */}
+              <div className="bg-white border-b border-gray-200 px-4 lg:px-6 py-3 lg:py-4">
+                <div className="flex items-center justify-between gap-4">
+                  <div className="flex-1 min-w-0">
                     {modoEdicao ? (
-                      <div className="space-y-4">
+                      <div className="space-y-3">
                         <div>
-                          <Label htmlFor="nomeModelo" className="text-sm font-medium">
+                          <Label htmlFor="nomeModelo" className="text-sm font-medium text-gray-700">
                             Nome do Modelo
                           </Label>
                           <Input
                             id="nomeModelo"
                             value={nomeModelo}
                             onChange={(e) => setNomeModelo(e.target.value)}
-                            className="text-xl font-bold"
+                            className="text-lg font-semibold mt-1"
                           />
                         </div>
                         <div>
-                          <Label htmlFor="descricaoModelo" className="text-sm font-medium">
+                          <Label htmlFor="descricaoModelo" className="text-sm font-medium text-gray-700">
                             Descrição
                           </Label>
                           <Textarea
@@ -1280,90 +1450,148 @@ export default function ModelosFluxo() {
                             value={descricaoModelo}
                             onChange={(e) => setDescricaoModelo(e.target.value)}
                             rows={2}
+                            className="mt-1"
                           />
                         </div>
                       </div>
                     ) : (
                       <div>
-                        <div className="flex items-center gap-3 mb-2">
-                          <h2 className="text-2xl font-bold text-gray-900">
+                        <div className="flex items-center gap-3 mb-1">
+                          <h2 className="text-lg font-bold text-gray-900 truncate">
                             {modeloSelecionado.nome}
                           </h2>
                           {modeloSelecionado.ehPadrao && (
-                            <Badge variant="secondary" className="bg-yellow-100 text-yellow-800">
+                            <Badge variant="secondary" className="bg-yellow-100 text-yellow-800 text-xs">
                               <Star className="w-3 h-3 mr-1 fill-current" />
                               Padrão
                             </Badge>
                           )}
+                          {modeloSelecionado.ehModeloSistema && (
+                            <Badge variant="secondary" className="bg-blue-100 text-blue-800 text-xs">
+                              Sistema
+                            </Badge>
+                          )}
                         </div>
-                        <p className="text-gray-600 mb-4">
+                        <p className="text-sm text-gray-600 mb-2 line-clamp-2">
                           {modeloSelecionado.descricao}
                         </p>
-                        <div className="flex items-center gap-6 text-sm text-gray-500">
-                          <span>{modeloSelecionado.etapas.length} etapas</span>
-                          <span>Criado em {modeloSelecionado.criadoEm}</span>
-                          <span>Modificado em {modeloSelecionado.modificadoEm}</span>
-                          <span>por {modeloSelecionado.criadoPor}</span>
+                        <div className="flex items-center gap-4 text-xs text-gray-500">
+                          <span className="flex items-center gap-1">
+                            <Hash className="w-3 h-3" />
+                            {modeloSelecionado.etapas.length} etapas
+                          </span>
+                          <span className="flex items-center gap-1">
+                            <Calendar className="w-3 h-3" />
+                            {modeloSelecionado.modificadoEm}
+                          </span>
+                          <span className="flex items-center gap-1">
+                            <User className="w-3 h-3" />
+                            {modeloSelecionado.criadoPor}
+                          </span>
                         </div>
                       </div>
                     )}
                   </div>
                   
-                  <div className="flex items-center gap-2 ml-6">
+                  <div className="flex items-center gap-2 flex-shrink-0">
                     {modoEdicao ? (
                       <>
                         <Button
                           variant="outline"
+                          size="sm"
                           onClick={() => {
                             setModoEdicao(false);
                             setNomeModelo(modeloSelecionado.nome);
                             setDescricaoModelo(modeloSelecionado.descricao);
                           }}
                         >
-                          <X className="w-4 h-4 mr-2" />
+                          <X className="w-4 h-4 mr-1" />
                           Cancelar
                         </Button>
-                        <Button onClick={salvarModelo}>
-                          <Save className="w-4 h-4 mr-2" />
-                          Salvar Modelo
+                        <Button size="sm" onClick={salvarModelo}>
+                          <Save className="w-4 h-4 mr-1" />
+                          Salvar
                         </Button>
                       </>
                     ) : (
-                      <>
-                        <Button
-                          variant="outline"
-                          onClick={() => {
-                            if (modeloSelecionado.ehModeloSistema) {
-                              toast({
-                                title: "Modelo do Sistema",
-                                description: "Modelos do sistema não podem ser editados diretamente. Duplique-o para criar uma versão editável.",
-                                variant: "destructive"
-                              });
-                              return;
-                            }
-                            setModoEdicao(true);
-                            setNomeModelo(modeloSelecionado.nome);
-                            setDescricaoModelo(modeloSelecionado.descricao);
-                          }}
-                        >
-                          <Edit3 className="w-4 h-4 mr-2" />
-                          {modeloSelecionado.ehModeloSistema ? "Duplicar" : "Editar"}
-                        </Button>
-                        <Button 
-                          variant="outline"
-                          onClick={() => setModoVisualizacao(true)}
-                        >
-                          <Eye className="w-4 h-4 mr-2" />
-                          Visualizar Fluxo
-                        </Button>
-                      </>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="outline" size="sm" className="h-9 px-3">
+                            <Settings className="w-4 h-4 mr-1" />
+                            Ações
+                            <ChevronDown className="w-3 h-3 ml-1" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="w-48">
+                          <DropdownMenuItem
+                            onClick={() => {
+                              if (modeloSelecionado.ehModeloSistema) {
+                                toast({
+                                  title: "Modelo do Sistema",
+                                  description: "Modelos do sistema não podem ser editados diretamente. Duplique-o para criar uma versão editável.",
+                                  variant: "destructive"
+                                });
+                                return;
+                              }
+                              setModoEdicao(true);
+                              setNomeModelo(modeloSelecionado.nome);
+                              setDescricaoModelo(modeloSelecionado.descricao);
+                            }}
+                          >
+                            <Edit3 className="w-4 h-4 mr-2" />
+                            {modeloSelecionado.ehModeloSistema ? "Duplicar Modelo" : "Editar Modelo"}
+                          </DropdownMenuItem>
+                          
+                          <DropdownMenuItem onClick={() => setModoVisualizacao(true)}>
+                            <Eye className="w-4 h-4 mr-2" />
+                            Visualizar Fluxo
+                          </DropdownMenuItem>
+                          
+                          {!modeloSelecionado.ehModeloSistema && (
+                            <>
+                              <DropdownMenuSeparator />
+                              <DropdownMenuItem
+                                onClick={() => duplicarModelo(modeloSelecionado)}
+                              >
+                                <Copy className="w-4 h-4 mr-2" />
+                                Duplicar Modelo
+                              </DropdownMenuItem>
+                              
+                              <DropdownMenuItem
+                                onClick={() => definirComoPadrao(modeloSelecionado.id)}
+                              >
+                                {modeloSelecionado.ehPadrao ? (
+                                  <>
+                                    <StarOff className="w-4 h-4 mr-2" />
+                                    Remover como Padrão
+                                  </>
+                                ) : (
+                                  <>
+                                    <Star className="w-4 h-4 mr-2" />
+                                    Definir como Padrão
+                                  </>
+                                )}
+                              </DropdownMenuItem>
+                              
+                              <DropdownMenuSeparator />
+                              <DropdownMenuItem
+                                onClick={() => excluirModelo(modeloSelecionado.id)}
+                                className="text-red-600 focus:text-red-600"
+                              >
+                                <Trash2 className="w-4 h-4 mr-2" />
+                                Excluir Modelo
+                              </DropdownMenuItem>
+                            </>
+                          )}
+                        </DropdownMenuContent>
+                      </DropdownMenu>
                     )}
                   </div>
                 </div>
               </div>
 
               {/* Editor de Etapas */}
-              <div className="flex-1 overflow-y-auto p-6">
+              <div className="flex-1 overflow-y-auto px-4 lg:px-6 py-4 lg:py-6">
                 {modoEdicao && !modeloSelecionado?.ehModeloSistema ? (
                   <div className="space-y-6">
                     {/* Botão Adicionar Etapa */}
