@@ -150,34 +150,15 @@ export default function MinhasAssinaturas() {
       <div className="flex-1 px-4 pt-24 pb-4 overflow-hidden">
         <div className="h-full w-full flex flex-col">
           {/* Cabeçalho */}
-                        <div className="mb-2">
-                <ReturnButton className="mb-1 text-gray-600 hover:text-gray-900" />
-                
-                {/* Título principal */}
-                <div className="text-center w-full mt-2 mb-2">
-                  <h1 className="text-3xl font-bold text-primary flex items-center justify-center">
-                    <FileText className="w-8 h-8 mr-3 text-blue-500" />
-                    Minhas Assinaturas
-                  </h1>
-                </div>
-                
-                {/* Subtítulo */}
-                <div className="text-center mb-1">
-                  <p className="text-sm text-muted-foreground">
-                    Visualize e assine os documentos atribuídos a você
-                  </p>
-                </div>
-                
-                {/* Alerta de pendências */}
-                {stats.pendentes > 0 && (
-                  <div className="text-center mb-2">
-                    <Badge variant="destructive" className="bg-red-100 text-red-800 px-3 py-1 rounded-full text-xs font-medium mx-auto">
-                      <AlertTriangle className="w-3 h-3 mr-1" />
-                      {stats.pendentes} documento{stats.pendentes > 1 ? 's' : ''} pendente{stats.pendentes > 1 ? 's' : ''}
-                    </Badge>
-                  </div>
-                )}
-              </div>
+          <div className="mb-6">
+            <ReturnButton className="mb-4 text-gray-600 hover:text-gray-900" />
+            
+            {/* Cabeçalho Principal */}
+            <div className="mb-6">
+              <h1 className="text-2xl font-semibold text-gray-900 mb-1">Minhas Assinaturas</h1>
+              <p className="text-gray-600 text-sm">Visualize e assine os documentos atribuídos a você</p>
+            </div>
+          </div>
 
                             {/* Estatísticas rápidas */}
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 w-full mt-3 mb-2 flex-shrink-0">

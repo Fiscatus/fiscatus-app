@@ -1,6 +1,6 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
-import { Menu, Bell, Settings, Plus, PenLine, FileText, Landmark } from "lucide-react";
+import { Menu, Bell, Settings, Plus, PenLine, FileText, Landmark, Home } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import Sidebar from "./Sidebar";
@@ -42,6 +42,12 @@ export default function Topbar() {
         </div>
         {/* Centro: ações rápidas */}
         <div className="flex flex-wrap gap-4 justify-center items-center flex-1 min-w-0">
+          <QuickActionButton 
+            icon={<Home className="text-emerald-600" />} 
+            label={<span className="text-emerald-700 font-semibold">Painel Inicial</span>} 
+            variant="primary" 
+            onClick={() => navigate("/dfd")}
+          />
           <QuickActionButton 
             icon={<Landmark className="text-gray-600" />} 
             label={<span className="text-gray-700 font-semibold">Processos da Gerência</span>} 

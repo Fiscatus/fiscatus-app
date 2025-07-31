@@ -1186,48 +1186,39 @@ export default function ProcessosGerencia() {
   );
 
   return (
-          <div className="min-h-screen w-full bg-gray-50/30 flex flex-col">
-        <Topbar />
-        
-        {/* Botão Voltar ao Dashboard */}
-        <div className="flex items-center px-6 md:px-8 py-4 bg-white shadow-sm">
-          <ReturnButton className="text-gray-600 hover:text-gray-800 hover:bg-gray-100" />
-        </div>
+    <div className="min-h-screen bg-gray-50">
+      <Topbar />
+      
+      {/* Botão de Retorno */}
+      <div className="pt-20 px-6 pb-4">
+        <ReturnButton className="mb-4" />
+      </div>
 
-                            <main className="flex-1 pt-8 px-6 md:px-8 pb-12 bg-gray-50/30 w-full">
-                                {/* Header */}
-                        <div className="mb-8">
-                          {/* Título principal */}
-                          <div className="text-center w-full mb-4">
-                            <h1 className="text-3xl font-bold text-primary flex items-center justify-center">
-                              <Building2 className="w-8 h-8 mr-3 text-blue-500" />
-                              Processos da Gerência
-                            </h1>
-                          </div>
-                          
-                          {/* Subtítulo */}
-                          <div className="text-center mb-6">
-                            <p className="text-sm text-muted-foreground">
-                              Organize, monitore e gerencie todos os processos da sua gerência
-                            </p>
-                          </div>
-                          
-                          {/* Botão de criar processo */}
-                          <div className="flex justify-center">
-                            <TooltipProvider>
-                              <Tooltip>
-                                <TooltipTrigger asChild>
-                                  <div>
-                                    <CreateProcessModal />
-                                  </div>
-                                </TooltipTrigger>
-                                <TooltipContent>
-                                  <p>Iniciar novo processo administrativo com fluxo completo</p>
-                                </TooltipContent>
-                              </Tooltip>
-                            </TooltipProvider>
-                          </div>
-                        </div>
+      <div className="px-6 pb-6">
+        {/* Header */}
+        <div className="mb-6">
+          {/* Cabeçalho Principal */}
+          <div className="flex items-start justify-between mb-6">
+            <div>
+              <h1 className="text-2xl font-semibold text-gray-900 mb-1">Processos da Gerência</h1>
+              <p className="text-gray-600 text-sm">Organize, monitore e gerencie todos os processos da sua gerência</p>
+            </div>
+            <div className="flex-shrink-0">
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <div>
+                      <CreateProcessModal />
+                    </div>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Iniciar novo processo administrativo com fluxo completo</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            </div>
+          </div>
+        </div>
 
                                                 {/* Layout em 4 Seções Reorganizadas */}
                         <div className="space-y-10">
@@ -1393,7 +1384,7 @@ export default function ProcessosGerencia() {
                           </section>
 
         </div>
-      </main>
+      </div>
     </div>
   );
 } 

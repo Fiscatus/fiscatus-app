@@ -1,127 +1,503 @@
 import React from "react";
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table";
-import { FolderOpen, Users, Files, Bell, PenLine, CalendarX, AlarmClock, Clipboard } from "lucide-react";
-import { useNavigate } from "react-router-dom";
-import logoFiscatus from "@/assets/logo_fiscatus.png";
+import { 
+  BarChart3, 
+  FileText, 
+  Clock, 
+  AlertCircle, 
+  CheckCircle, 
+  PenLine, 
+  Users, 
+  Bell, 
+  History, 
+  PieChart,
+  TrendingUp,
+  AlertTriangle,
+  Calendar,
+  ChevronRight
+} from "lucide-react";
 import Topbar from "@/components/Topbar";
+import { Card, CardContent } from "@/components/ui/card";
 
-const overviewData = [
-  { title: "DFDs da minha gerência", icon: <FolderOpen className="w-7 h-7 text-blue-900" />, value: 7, helper: "processos ativos", border: "border-blue-900/20" },
-  { title: "DFDs que estou participando", icon: <Users className="w-7 h-7 text-cyan-700" />, value: 3, helper: "em andamento", border: "border-cyan-700/20" },
-  { title: "ETPs pendentes na gestão", icon: <Files className="w-7 h-7 text-blue-400" />, value: 2, helper: "aguardando elaboração", border: "border-blue-400/20" },
-  { title: "Minhas pendências", icon: <Bell className="w-7 h-7 text-orange-500" />, value: 1, helper: "DFD aguardando análise", border: "border-orange-500/20" },
-  { title: "Assinaturas pendentes", icon: <PenLine className="w-7 h-7 text-purple-400" />, value: 2, helper: "aguardando assinatura", border: "border-purple-400/20" },
-  { title: "Processos com prazo vencido", icon: <CalendarX className="w-7 h-7 text-red-500" />, value: 1, helper: "etapa atrasada", border: "border-red-500/20" },
-];
+export default function DFDDashboard() {
+  // Dados dos indicadores principais
+  const kpis = [
+    { 
+      icon: <Users className="w-5 h-5" />, 
+      label: "Processos da Gerência", 
+      value: 7,
+      color: "bg-blue-50 text-blue-600",
+      trend: "+2 este mês"
+    },
+    { 
+      icon: <PenLine className="w-5 h-5" />, 
+      label: "DFDs Aguardando", 
+      value: 3,
+      color: "bg-emerald-50 text-emerald-600",
+      trend: "Pendentes"
+    },
+    { 
+      icon: <FileText className="w-5 h-5" />, 
+      label: "ETPs em Elaboração", 
+      value: 2,
+      color: "bg-amber-50 text-amber-600",
+      trend: "Em progresso"
+    },
+    { 
+      icon: <Clock className="w-5 h-5" />, 
+      label: "Assinaturas Pendentes", 
+      value: 2,
+      color: "bg-orange-50 text-orange-600",
+      trend: "Urgente"
+    },
+    { 
+      icon: <AlertTriangle className="w-5 h-5" />, 
+      label: "Prazos Vencidos", 
+      value: 1,
+      color: "bg-red-50 text-red-600",
+      trend: "Atenção"
+    },
+    { 
+      icon: <CheckCircle className="w-5 h-5" />, 
+      label: "Ressalvas Pendentes", 
+      value: 4,
+      color: "bg-purple-50 text-purple-600",
+      trend: "Para correção"
+    }
+  ];
 
-const processTableData = [
-  { numero: "DFD 010/2025", objeto: "Aquisição de equipamentos de informática", etapa: "Análise de ETP", prazo: "26/07/2025", status: "Em andamento", statusColor: "bg-yellow-100 text-yellow-800", atrasado: false },
-  { numero: "DFD 011/2025", objeto: "Contratação de serviços de limpeza", etapa: "Aguardando assinatura", prazo: "24/07/2025", status: "Atrasado", statusColor: "bg-red-100 text-red-700 font-medium", atrasado: true },
-];
+  const pendencias = [
+    { 
+      id: 1, 
+      tipo: "assinatura",
+      descricao: "Assinar DFD 010/2025", 
+      processo: "DFD 010/2025",
+      prazo: "Hoje",
+      prioridade: "alta",
+      link: "/processos/10"
+    },
+    { 
+      id: 2, 
+      tipo: "analise",
+      descricao: "Analisar ETP 011/2025", 
+      processo: "ETP 011/2025",
+      prazo: "2 dias",
+      prioridade: "media",
+      link: "/processos/11"
+    },
+    { 
+      id: 3, 
+      tipo: "ressalva",
+      descricao: "Corrigir documento devolvido", 
+      processo: "TR 012/2025",
+      prazo: "5 dias",
+      prioridade: "baixa",
+      link: "/processos/12"
+    }
+  ];
 
-function Header() {
-  return (
-    <header className="fixed top-0 left-0 w-full h-16 bg-white shadow-sm flex items-center justify-between px-8 z-20" style={{ minHeight: 64 }}>
-      <div className="flex items-center gap-3">
-        <img src={logoFiscatus} alt="Logo Fiscatus" className="h-10 w-auto" />
-      </div>
-      <span className="text-lg font-semibold text-gray-700 tracking-wide">Planejamento de Contratação</span>
-    </header>
-  );
-}
+  const notificacoes = [
+    { 
+      id: 1, 
+      tipo: "status",
+      titulo: "Processo atualizado",
+      texto: "DFD 010/2025 movido para 'Em andamento'", 
+      data: "há 2 horas",
+      lida: false
+    },
+    { 
+      id: 2, 
+      tipo: "assinatura",
+      titulo: "Assinatura solicitada",
+      texto: "ETP 011/2025 aguarda sua assinatura", 
+      data: "há 5 horas",
+      lida: false
+    },
+    { 
+      id: 3, 
+      tipo: "ressalva",
+      titulo: "Documento devolvido",
+      texto: "TR 012/2025 possui ressalvas a corrigir", 
+      data: "ontem",
+      lida: true
+    }
+  ];
 
-function OverviewCard({ title, icon, value, helper, border }: any) {
-  return (
-    <Card className={`flex flex-col justify-between min-h-[140px] shadow-sm border-2 ${border} bg-white rounded-2xl p-4 items-start transition-all`}> {/* ícone menor, padding menor */}
-      <div className="flex items-center gap-3 mb-2"> {/* gap menor */}
-        <div className="border-2 rounded-xl p-1 flex items-center justify-center bg-gray-50" style={{ borderColor: 'inherit' }}>{icon}</div>
-        <span className="text-sm font-medium text-gray-500">{title}</span>
-      </div>
-      <span className="text-3xl font-bold text-gray-900 mb-1">{value}</span>
-      <span className="text-xs text-gray-400 font-medium mt-auto">{helper}</span>
-    </Card>
-  );
-}
+  const historico = [
+    { 
+      id: 1, 
+      numero: "DFD 010/2025",
+      tipo: "DFD", 
+      status: "Em andamento",
+      ultimoAcesso: "30/07/2025 14:00",
+      link: "/processos/10"
+    },
+    { 
+      id: 2, 
+      numero: "ETP 011/2025",
+      tipo: "ETP", 
+      status: "Aguardando assinatura",
+      ultimoAcesso: "29/07/2025 17:30",
+      link: "/processos/11"
+    },
+    { 
+      id: 3, 
+      numero: "TR 012/2025",
+      tipo: "TR", 
+      status: "Com ressalvas",
+      ultimoAcesso: "28/07/2025 09:15",
+      link: "/processos/12"
+    }
+  ];
 
-function QuickActionButton({ icon, label, variant = "default", onClick }: any) {
-  const variants = {
-    primary: "bg-emerald-50 border-emerald-200 text-emerald-700 hover:bg-emerald-100 hover:border-emerald-300",
-    secondary: "bg-slate-50 border-slate-200 text-slate-700 hover:bg-slate-100 hover:border-slate-300",
-    tertiary: "bg-blue-50 border-blue-200 text-blue-700 hover:bg-blue-100 hover:border-blue-300",
-    muted: "bg-gray-50 border-gray-200 text-gray-600 hover:bg-gray-100 hover:border-gray-300"
+  // Dados para gráficos
+  const statusData = [
+    { 
+      label: "Em andamento", 
+      value: 5, 
+      color: "#3b82f6", 
+      bgColor: "bg-blue-500",
+      icon: "⏳",
+      percentage: 50
+    },
+    { 
+      label: "Concluído", 
+      value: 3, 
+      color: "#22c55e", 
+      bgColor: "bg-green-500",
+      icon: "✅",
+      percentage: 30
+    },
+    { 
+      label: "Atrasado", 
+      value: 2, 
+      color: "#ef4444", 
+      bgColor: "bg-red-500",
+      icon: "⚠️",
+      percentage: 20
+    }
+  ];
+
+  // Função para criar os caminhos do donut chart
+  const createDonutPath = (cx: number, cy: number, innerRadius: number, outerRadius: number, startAngle: number, endAngle: number) => {
+    const startAngleRad = (startAngle * Math.PI) / 180;
+    const endAngleRad = (endAngle * Math.PI) / 180;
+    
+    const x1 = cx + outerRadius * Math.cos(startAngleRad);
+    const y1 = cy + outerRadius * Math.sin(startAngleRad);
+    const x2 = cx + outerRadius * Math.cos(endAngleRad);
+    const y2 = cy + outerRadius * Math.sin(endAngleRad);
+    
+    const x3 = cx + innerRadius * Math.cos(endAngleRad);
+    const y3 = cy + innerRadius * Math.sin(endAngleRad);
+    const x4 = cx + innerRadius * Math.cos(startAngleRad);
+    const y4 = cy + innerRadius * Math.sin(startAngleRad);
+    
+    const largeArcFlag = endAngle - startAngle <= 180 ? "0" : "1";
+    
+    return [
+      "M", x1, y1,
+      "A", outerRadius, outerRadius, 0, largeArcFlag, 1, x2, y2,
+      "L", x3, y3,
+      "A", innerRadius, innerRadius, 0, largeArcFlag, 0, x4, y4,
+      "Z"
+    ].join(" ");
+  };
+  
+  const etapasData = [
+    { label: "DFD", value: 4, color: "bg-blue-500" },
+    { label: "ETP", value: 3, color: "bg-emerald-500" },
+    { label: "TR", value: 2, color: "bg-amber-500" },
+    { label: "Edital", value: 1, color: "bg-purple-500" }
+  ];
+
+  const getPrioridadeColor = (prioridade: string) => {
+    switch (prioridade) {
+      case 'alta': return 'text-red-600 bg-red-50';
+      case 'media': return 'text-amber-600 bg-amber-50';
+      case 'baixa': return 'text-green-600 bg-green-50';
+      default: return 'text-gray-600 bg-gray-50';
+    }
+  };
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'Em andamento': return 'text-blue-600 bg-blue-50';
+      case 'Aguardando assinatura': return 'text-amber-600 bg-amber-50';
+      case 'Com ressalvas': return 'text-red-600 bg-red-50';
+      case 'Concluído': return 'text-green-600 bg-green-50';
+      default: return 'text-gray-600 bg-gray-50';
+    }
   };
 
   return (
-    <button
-      className={`flex items-center gap-2 px-4 py-2 rounded-xl border bg-white shadow-sm text-sm font-medium whitespace-nowrap transition-all duration-200 hover:shadow-md hover:scale-105 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 ${variants[variant]}`}
-      onClick={onClick}
-      type="button"
-    >
-      <span className="text-base">{icon}</span>
-      {label}
-    </button>
-  );
-}
-
-function ProcessTable() {
-  return (
-    <Card className="mt-10 bg-white rounded-2xl shadow-sm border p-0 w-full max-h-[60vh] overflow-y-auto">
-      <CardHeader className="flex flex-row items-center gap-2 px-6 pt-6 pb-2">
-        <Clipboard className="w-6 h-6 text-blue-900" />
-        <CardTitle className="text-lg font-semibold text-gray-900">Meus Processos Ativos</CardTitle>
-      </CardHeader>
-      <CardContent className="px-6 pb-6 pt-0">
-        <Table className="w-full text-sm">
-          <TableHeader>
-            <TableRow>
-              <TableHead className="text-black uppercase text-xs py-3 min-w-[120px] align-middle text-left pl-6">Nº do Processo</TableHead>
-              <TableHead className="text-black uppercase text-xs py-3 w-[30%] min-w-[280px] align-middle text-left">Objeto do Processo</TableHead>
-              <TableHead className="text-black uppercase text-xs py-3 min-w-[160px] align-middle text-center">Etapa Atual</TableHead>
-              <TableHead className="text-black uppercase text-xs py-3 min-w-[120px] align-middle text-center">Prazo Final</TableHead>
-              <TableHead className="text-black uppercase text-xs py-3 min-w-[120px] align-middle text-center">Status</TableHead>
-              <TableHead className="text-black uppercase text-xs py-3 min-w-[100px] align-middle text-center">Ação</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {processTableData.map((proc, idx) => (
-              <TableRow key={idx} className="hover:bg-gray-50 text-sm">
-                <TableCell className="py-3 align-middle text-left pl-6">{proc.numero}</TableCell>
-                <TableCell className="py-3 align-middle w-[30%] min-w-[280px] text-left">{proc.objeto}</TableCell>
-                <TableCell className="py-3 align-middle text-center">{proc.etapa}</TableCell>
-                <TableCell className="py-3 align-middle text-center">{proc.prazo}</TableCell>
-                <TableCell className="py-3 align-middle text-center">
-                  <span className={`rounded-full px-2 py-1 text-xs font-semibold ${proc.statusColor}`}>{proc.status}</span>
-                </TableCell>
-                <TableCell className="py-3 align-middle text-center">
-                  <Button size="sm" variant="outline" className="border border-gray-300">Acessar</Button>
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </CardContent>
-    </Card>
-  );
-}
-
-export default function DFDDashboard() {
-  const navigate = useNavigate();
-  return (
-    <div className="min-h-screen w-full bg-[#F8FAFC] flex flex-col max-w-[100vw]">
+    <div className="min-h-screen bg-gray-50">
       <Topbar />
-      <main className="flex-1 flex flex-col pt-20 px-2 sm:px-4 md:px-8 w-full max-w-[100vw] mx-auto">
-        {/* Grid de cards de visão geral fullscreen e responsivo */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-6 w-full mb-4">
-          {overviewData.map((item, idx) => (
-            <OverviewCard key={idx} {...item} />
+      <main className="pt-20 px-4 pb-4 h-screen overflow-y-auto">
+        {/* 1. Cabeçalho Principal */}
+        <div className="mb-6">
+          <h1 className="text-2xl font-semibold text-gray-900 mb-1">Painel Inicial</h1>
+          <p className="text-gray-600 text-sm">Visão geral das atividades do sistema</p>
+        </div>
+
+        {/* 2. Cards de Indicadores Principais */}
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-6">
+          {kpis.map((kpi, idx) => (
+            <Card key={idx} className="bg-white border-0 shadow-sm hover:shadow-md transition-shadow duration-200">
+              <CardContent className="p-4">
+                <div className="flex items-center space-x-3">
+                  <div className={`p-2 rounded-lg ${kpi.color}`}>
+                    {kpi.icon}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-xs font-medium text-gray-600 mb-1 leading-tight">{kpi.label}</p>
+                    <p className="text-xl font-semibold text-gray-900">{kpi.value}</p>
+                    <p className="text-xs text-gray-500">{kpi.trend}</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
           ))}
         </div>
-        {/* Tabela fullwidth, área maior */}
-        <div className="w-full flex-1 flex flex-col">
-          <ProcessTable />
+
+        {/* 3. Gráficos e Análises */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
+          {/* Gráfico de Pizza - Status dos Processos */}
+          <Card className="bg-white border-0 shadow-sm">
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-base font-semibold text-gray-900">Processos por Status</h2>
+                <PieChart className="w-4 h-4 text-gray-400" />
+              </div>
+              
+              <div className="flex flex-col lg:flex-row items-center justify-center space-y-4 lg:space-y-0 lg:space-x-6">
+                {/* Donut Chart Moderno */}
+                <div className="relative">
+                  <svg width="160" height="160" className="transform -rotate-90">
+                    {(() => {
+                      let currentAngle = 0;
+                      const cx = 80;
+                      const cy = 80;
+                      const outerRadius = 70;
+                      const innerRadius = 45;
+                      
+                      return statusData.map((item, index) => {
+                        const startAngle = currentAngle;
+                        const endAngle = currentAngle + (item.percentage * 3.6); // 360 / 100 = 3.6
+                        currentAngle = endAngle;
+                        
+                        const path = createDonutPath(cx, cy, innerRadius, outerRadius, startAngle, endAngle);
+                        
+                        return (
+                          <g key={index}>
+                            <path
+                              d={path}
+                              fill={item.color}
+                              className="hover:opacity-80 transition-opacity duration-200"
+                              stroke="white"
+                              strokeWidth="2"
+                            />
+                            {/* Texto de porcentagem dentro da fatia */}
+                            {item.percentage >= 15 && ( // Só mostra texto se a fatia for grande o suficiente
+                              <text
+                                x={cx + (outerRadius - 12) * Math.cos(((startAngle + endAngle) / 2) * Math.PI / 180)}
+                                y={cy + (outerRadius - 12) * Math.sin(((startAngle + endAngle) / 2) * Math.PI / 180)}
+                                fill="white"
+                                fontSize="12"
+                                fontWeight="600"
+                                textAnchor="middle"
+                                dominantBaseline="middle"
+                                className="transform rotate-90"
+                              >
+                                {item.percentage}%
+                              </text>
+                            )}
+                          </g>
+                        );
+                      });
+                    })()}
+                  </svg>
+                  
+                  {/* Centro do donut com total */}
+                  <div className="absolute inset-0 flex flex-col items-center justify-center">
+                    <span className="text-2xl font-bold text-gray-900">
+                      {statusData.reduce((a, b) => a + b.value, 0)}
+                    </span>
+                    <span className="text-sm text-gray-500 font-medium">Processos</span>
+                  </div>
+                </div>
+
+                {/* Legenda Moderna */}
+                <div className="space-y-3">
+                  {statusData.map((item, index) => (
+                    <div key={index} className="flex items-center space-x-3">
+                      <div className="flex items-center space-x-2">
+                        <div 
+                          className="w-4 h-4 rounded-full flex items-center justify-center"
+                          style={{ backgroundColor: item.color }}
+                        ></div>
+                        <span className="text-lg">{item.icon}</span>
+                      </div>
+                      <div className="flex-1">
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm font-semibold text-gray-700">{item.label}</span>
+                          <span className="text-sm font-bold text-gray-900">{item.value}</span>
+                        </div>
+                        <div className="flex items-center space-x-2 mt-1">
+                          <div className="flex-1 h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                            <div 
+                              className="h-full rounded-full transition-all duration-300"
+                              style={{ 
+                                backgroundColor: item.color,
+                                width: `${item.percentage}%`
+                              }}
+                            ></div>
+                          </div>
+                          <span className="text-xs text-gray-500 font-medium">{item.percentage}%</span>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Gráfico de Barras - Processos por Etapa */}
+          <Card className="bg-white border-0 shadow-sm">
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-base font-semibold text-gray-900">Processos por Etapa</h2>
+                <BarChart3 className="w-4 h-4 text-gray-400" />
+              </div>
+              <div className="space-y-3">
+                {etapasData.map((etapa, i) => (
+                  <div key={i} className="flex items-center space-x-3">
+                    <span className="w-10 text-xs font-medium text-gray-700">{etapa.label}</span>
+                    <div className="flex-1 h-2 bg-gray-100 rounded-full overflow-hidden">
+                      <div
+                        className={`h-full rounded-full ${etapa.color} transition-all duration-300`}
+                        style={{ width: `${(etapa.value / Math.max(...etapasData.map(e => e.value))) * 100}%` }}
+                      ></div>
+                    </div>
+                    <span className="text-xs font-semibold text-gray-900 w-4">{etapa.value}</span>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
         </div>
+
+        {/* 4. Seções de Informações */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+          {/* Minhas Pendências */}
+          <Card className="bg-white border-0 shadow-sm">
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between mb-3">
+                <h2 className="text-base font-semibold text-gray-900">Minhas Pendências</h2>
+                <Clock className="w-4 h-4 text-orange-500" />
+              </div>
+              {pendencias.length === 0 ? (
+                <div className="text-center py-4">
+                  <CheckCircle className="w-8 h-8 text-green-500 mx-auto mb-2" />
+                  <p className="text-gray-500 text-sm">Nenhuma pendência no momento!</p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {pendencias.map((p) => (
+                    <div key={p.id} className="p-3 rounded-lg border border-gray-100 hover:border-gray-200 transition-colors">
+                      <div className="flex items-start justify-between mb-2">
+                        <div className="flex-1">
+                          <p className="text-sm font-medium text-gray-900 mb-1">{p.descricao}</p>
+                          <p className="text-xs text-gray-500">{p.processo}</p>
+                        </div>
+                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${getPrioridadeColor(p.prioridade)}`}>
+                          {p.prazo}
+                        </span>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs text-gray-400">Prazo: {p.prazo}</span>
+                        <a
+                          href={p.link}
+                          className="text-blue-600 hover:text-blue-700 text-xs font-medium flex items-center space-x-1"
+                        >
+                          <span>Acessar</span>
+                          <ChevronRight className="w-3 h-3" />
+                        </a>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Notificações Recentes */}
+          <Card className="bg-white border-0 shadow-sm">
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between mb-3">
+                <h2 className="text-base font-semibold text-gray-900">Notificações</h2>
+                <Bell className="w-4 h-4 text-blue-500" />
+              </div>
+              <div className="space-y-2 max-h-48 overflow-y-auto">
+                {notificacoes.map((n) => (
+                  <div key={n.id} className={`p-3 rounded-lg border transition-colors ${n.lida ? 'border-gray-100 bg-gray-50' : 'border-blue-100 bg-blue-50'}`}>
+                    <div className="flex items-start space-x-3">
+                      <div className={`w-2 h-2 rounded-full mt-2 ${n.lida ? 'bg-gray-300' : 'bg-blue-500'}`}></div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium text-gray-900 mb-1">{n.titulo}</p>
+                        <p className="text-xs text-gray-600 mb-2">{n.texto}</p>
+                        <p className="text-xs text-gray-400">{n.data}</p>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+      </CardContent>
+    </Card>
+
+          {/* Últimos Processos Acessados */}
+          <Card className="bg-white border-0 shadow-sm">
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between mb-3">
+                <h2 className="text-base font-semibold text-gray-900">Acessos Recentes</h2>
+                <History className="w-4 h-4 text-gray-500" />
+              </div>
+              <div className="space-y-2">
+                {historico.map((h) => (
+                  <div key={h.id} className="p-3 rounded-lg border border-gray-100 hover:border-gray-200 transition-colors">
+                    <div className="flex items-center justify-between mb-2">
+                      <a
+                        href={h.link}
+                        className="text-sm font-medium text-blue-600 hover:text-blue-700 flex items-center space-x-2"
+                      >
+                        <span>{h.numero}</span>
+                        <ChevronRight className="w-3 h-3" />
+                      </a>
+                      <span className="text-xs text-gray-400">{h.tipo}</span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(h.status)}`}>
+                        {h.status}
+                      </span>
+                      <span className="text-xs text-gray-400">{h.ultimoAcesso}</span>
+                    </div>
+                  </div>
+          ))}
+        </div>
+            </CardContent>
+          </Card>
+        </div>
+
+                {/* Rodapé */}
+        <footer className="mt-6 pt-4 border-t border-gray-200">
+          <div className="flex items-center justify-center space-x-4 text-xs text-gray-400">
+            <span>Último login: 30/07/2025 08:15</span>
+            <span>•</span>
+            <span>Versão 1.0.0</span>
+            <span>•</span>
+            <span>Suporte: suporte@fiscatus.com.br</span>
+          </div>
+        </footer>
       </main>
     </div>
   );

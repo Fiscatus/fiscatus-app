@@ -51,7 +51,7 @@ export default function ReturnButton({
     if (path === '/processos') {
       return {
         destination: '/dfd',
-        text: 'Voltar para o Dashboard'
+        text: 'Voltar para o Painel Inicial'
       };
     }
     
@@ -59,7 +59,7 @@ export default function ReturnButton({
     if (path === '/assinaturas') {
       return {
         destination: '/dfd',
-        text: 'Voltar para o Dashboard'
+        text: 'Voltar para o Painel Inicial'
       };
     }
     
@@ -83,7 +83,7 @@ export default function ReturnButton({
     if (path === '/dfd/novo') {
       return {
         destination: '/dfd',
-        text: 'Voltar para o Dashboard'
+        text: 'Voltar para o Painel Inicial'
       };
     }
     
@@ -99,7 +99,7 @@ export default function ReturnButton({
     if (path === '/processos-gerencia') {
       return {
         destination: '/dfd',
-        text: 'Voltar para o Dashboard'
+        text: 'Voltar para o Painel Inicial'
       };
     }
     

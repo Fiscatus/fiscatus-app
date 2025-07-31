@@ -6,7 +6,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { 
   Search, 
@@ -18,7 +18,6 @@ import {
   ClipboardList,
   Eye,
   PenLine,
-  ChevronRight,
   Calendar,
   Users,
   History,
@@ -165,43 +164,7 @@ const processosMock: Process[] = [
   }
 ];
 
-// Componente para Timeline
-function ProcessTimeline({ currentPhase }: { currentPhase: ProcessPhase }) {
-  const phases: ProcessPhase[] = [
-    "Elaboração DFD",
-    "Assinatura ETP", 
-    "Matriz de Risco",
-    "TR",
-    "Edital",
-    "Publicação"
-  ];
 
-  const currentIndex = phases.indexOf(currentPhase);
-
-  return (
-    <div className="flex items-center space-x-2 mb-6">
-      {phases.map((phase, index) => (
-        <div key={phase} className="flex items-center">
-          <div className={`flex items-center justify-center w-8 h-8 rounded-full text-xs font-medium ${
-            index <= currentIndex 
-              ? "bg-blue-500 text-white" 
-              : "bg-gray-200 text-gray-500"
-          }`}>
-            {index + 1}
-          </div>
-          <span className={`ml-2 text-sm ${
-            index <= currentIndex ? "text-blue-600 font-medium" : "text-gray-500"
-          }`}>
-            {phase}
-          </span>
-          {index < phases.length - 1 && (
-            <ChevronRight className="w-4 h-4 text-gray-300 mx-2" />
-          )}
-        </div>
-      ))}
-    </div>
-  );
-}
 
 // Componente para Status Badge
 function StatusBadge({ status }: { status: ProcessStatus }) {
@@ -314,24 +277,11 @@ function ActionButton({ process, onVerDetalhes }: {
 // Componente para Process List Header
 function ProcessListHeader({ estatisticas, navigate }: { estatisticas: any; navigate: any }) {
   return (
-    <div className="mb-8">
-      {/* Botão Voltar */}
-      <Button
-        variant="ghost"
-        onClick={() => navigate("/dfd")}
-        className="mb-4 flex items-center gap-2 text-gray-600 hover:text-gray-900"
-      >
-        <ArrowLeft className="w-4 h-4" />
-        Voltar ao Dashboard
-      </Button>
-      
-      {/* Título centralizado */}
-      <div className="text-center mt-4 mb-6">
-        <h1 className="text-3xl font-bold text-primary flex items-center justify-center mb-2">
-          <ClipboardList className="w-8 h-8 mr-3 text-blue-500" />
-          Meus Processos
-        </h1>
-        <p className="text-gray-600 text-lg">Acompanhe seus processos em todas as fases do planejamento</p>
+    <div className="mb-6">
+      {/* Cabeçalho Principal */}
+      <div className="mb-6">
+        <h1 className="text-2xl font-semibold text-gray-900 mb-1">Meus Processos</h1>
+        <p className="text-gray-600 text-sm">Acompanhe seus processos em todas as fases do planejamento</p>
       </div>
 
       {/* Indicadores */}
@@ -479,8 +429,7 @@ export default function MeusProcessos() {
   const [tipoFilter, setTipoFilter] = useState("todos");
   const [statusFilter, setStatusFilter] = useState("todos");
   const [pendenciaFilter, setPendenciaFilter] = useState("todos");
-  const [modalOpen, setModalOpen] = useState(false);
-  const [selectedProcess, setSelectedProcess] = useState<Process | null>(null);
+
 
   // Filtros aplicados
   const processosFiltrados = useMemo(() => {
@@ -524,13 +473,11 @@ export default function MeusProcessos() {
   }, []);
 
   const handleVerDetalhes = (process: Process) => {
+    // Redirecionar para a página de detalhes do processo
     navigate(`/processos/${process.id}`);
   };
 
-  const handleCloseModal = () => {
-    setModalOpen(false);
-    setSelectedProcess(null);
-  };
+
 
   const handleAction = (processId: string, action: string) => {
     console.log(`Executando ação ${action} no processo ${processId}`);
@@ -557,45 +504,7 @@ export default function MeusProcessos() {
       <div className="pt-20 px-6 pb-4">
         <ReturnButton className="mb-4" />
         
-        {/* Seletor de Usuário para Teste */}
-        <div className="mb-4">
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 mb-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <User className="w-5 h-5 text-blue-500" />
-              <div>
-                <h3 className="text-sm font-medium text-gray-900">Simular Usuário (Para Teste de Permissões)</h3>
-                <p className="text-xs text-gray-500">Altere o usuário para testar as diferentes permissões por gerência</p>
-              </div>
-            </div>
-            <Select value={user?.id || ''} onValueChange={(value) => {
-              const selectedUser = mockUsers.find(u => u.id === value);
-              if (selectedUser) setUser(selectedUser);
-            }}>
-              <SelectTrigger className="w-64">
-                <SelectValue placeholder="Selecione um usuário" />
-              </SelectTrigger>
-              <SelectContent>
-                {mockUsers.map((mockUser) => (
-                  <SelectItem key={mockUser.id} value={mockUser.id}>
-                    <div className="flex items-center gap-2">
-                      <div className="w-2 h-2 rounded-full bg-blue-500"></div>
-                      <span className="font-medium">{mockUser.nome}</span>
-                      <span className="text-xs text-gray-500">({mockUser.gerencia})</span>
-                    </div>
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          {user && (
-            <div className="mt-3 p-3 bg-blue-50 rounded-lg border border-blue-200">
-              <p className="text-sm text-blue-700">
-                <strong>Usuário Atual:</strong> {user.nome} - {user.cargo} ({user.gerencia})
-              </p>
-            </div>
-          )}
-        </div>
+
       </div>
       
       <div className="px-6 pb-6">
@@ -684,132 +593,7 @@ export default function MeusProcessos() {
         </Card>
       </div>
 
-      {/* Modal de Detalhes */}
-      <Dialog open={modalOpen} onOpenChange={setModalOpen}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-          {selectedProcess && (
-            <>
-              <DialogHeader>
-                <DialogTitle className="text-xl font-bold">
-                  {selectedProcess.numeroProcesso} - {selectedProcess.objeto}
-                </DialogTitle>
-              </DialogHeader>
-
-              <div className="space-y-6">
-                {/* Timeline */}
-                <div>
-                  <h3 className="text-lg font-semibold mb-3">Progresso do Processo</h3>
-                  <ProcessTimeline currentPhase={selectedProcess.faseAtual} />
-                </div>
-
-                {/* Informações do Processo */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <Card className="bg-white shadow-md rounded-xl border-0">
-                    <CardContent className="p-4">
-                      <h4 className="text-base font-semibold mb-3">Informações Gerais</h4>
-                                             <div className="space-y-3">
-                        <div className="flex justify-between">
-                          <span className="text-gray-600 text-sm">Número:</span>
-                          <span className="font-semibold text-sm text-blue-900">{selectedProcess.numeroProcesso}</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-gray-600 text-sm">Status:</span>
-                          <StatusBadge status={selectedProcess.status} />
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-gray-600 text-sm">Prazo Final:</span>
-                          <PrazoBadge prazo={selectedProcess.prazoFinal} />
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-gray-600 text-sm">Responsável:</span>
-                          <span className="font-medium text-sm">{selectedProcess.responsavel}</span>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-
-                  <Card className="bg-white shadow-md rounded-xl border-0">
-                    <CardContent className="p-4">
-                      <h4 className="text-base font-semibold mb-3">Pendências</h4>
-                      <div className="flex items-center justify-center">
-                        <PendenciaActionButton 
-                          pendencia={selectedProcess.pendenciaUsuario}
-                          onAction={handleAction}
-                          processId={selectedProcess.id}
-                        />
-                      </div>
-                    </CardContent>
-                  </Card>
-                </div>
-
-                {/* Documento Atual */}
-                <Card className="bg-white shadow-md rounded-xl border-0">
-                  <CardContent className="p-4">
-                    <h4 className="text-base font-semibold mb-3">Documento Atual</h4>
-                    <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center">
-                      <FileText className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                      <p className="text-gray-600 mb-4 text-sm">Preview do documento em PDF</p>
-                      <div className="flex gap-2 justify-center">
-                        <Button variant="outline" size="sm" className="text-xs">
-                          <Download className="w-4 h-4 mr-1" />
-                          Baixar PDF
-                        </Button>
-                        <Button variant="outline" size="sm" className="text-xs">
-                          <Share2 className="w-4 h-4 mr-1" />
-                          Compartilhar
-                        </Button>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-
-                {/* Histórico */}
-                <Card className="bg-white shadow-md rounded-xl border-0">
-                  <CardContent className="p-4">
-                    <h4 className="text-base font-semibold mb-3">Histórico de Ações</h4>
-                    <div className="space-y-3">
-                      <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
-                        <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
-                          <User className="w-4 h-4 text-blue-600" />
-                        </div>
-                        <div className="flex-1">
-                          <p className="font-medium text-sm">Processo criado</p>
-                          <p className="text-xs text-gray-600">Por {selectedProcess.responsavel} em {selectedProcess.dataCriacao}</p>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
-                        <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
-                          <CheckCircle className="w-4 h-4 text-green-600" />
-                        </div>
-                        <div className="flex-1">
-                          <p className="font-medium text-sm">Documento enviado para análise</p>
-                          <p className="text-xs text-gray-600">Por Dr. Silva em 20/01/2025</p>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
-                        <div className="w-8 h-8 bg-yellow-100 rounded-full flex items-center justify-center">
-                          <AlertTriangle className="w-4 h-4 text-yellow-600" />
-                        </div>
-                        <div className="flex-1">
-                          <p className="font-medium text-sm">Correções solicitadas</p>
-                          <p className="text-xs text-gray-600">Por Dra. Costa em 22/01/2025</p>
-                        </div>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-
-                {/* Ações */}
-                <div className="flex gap-3 justify-end">
-                  <Button variant="outline" onClick={handleCloseModal} className="text-sm">
-                    Fechar
-                  </Button>
-                </div>
-              </div>
-            </>
-          )}
-        </DialogContent>
-      </Dialog>
+      
     </div>
   );
-} 
+}
