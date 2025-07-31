@@ -637,7 +637,7 @@ export default function ModelosFluxo() {
   
   // Estados principais
   const [modelos, setModelos] = useState<ModeloFluxo[]>(modelosIniciais);
-  const [modeloSelecionado, setModeloSelecionado] = useState<ModeloFluxo | null>(modelos[0] || null);
+  const [modeloSelecionado, setModeloSelecionado] = useState<ModeloFluxo | null>(modelosIniciais[0] || null);
   const [modoEdicao, setModoEdicao] = useState(false);
   const [modoVisualizacao, setModoVisualizacao] = useState(false);
   
@@ -713,34 +713,91 @@ export default function ModelosFluxo() {
   };
 
   const duplicarModelo = (modelo: ModeloFluxo) => {
+    // Gerar ID único usando timestamp + random
+    const timestamp = Date.now();
+    const random = Math.random().toString(36).substr(2, 9);
+    const novoId = `modelo-${timestamp}-${random}`;
+    
     const modeloDuplicado: ModeloFluxo = {
       ...modelo,
-      id: `modelo-${Date.now()}`,
+      id: novoId,
       nome: `${modelo.nome} (Cópia)`,
+      descricao: `${modelo.descricao} - Cópia personalizável do modelo original`,
       ehPadrao: false,
+      ehModeloSistema: false, // Garantir que a cópia não seja do sistema
       criadoEm: new Date().toISOString().split('T')[0],
       modificadoEm: new Date().toISOString().split('T')[0],
-      criadoPor: user?.nome || "",
-      etapas: modelo.etapas.map(etapa => ({
-        ...etapa,
-        id: `e${Date.now()}-${etapa.numeroEtapa}`
-      }))
+      criadoPor: user?.nome || "Usuário",
+      etapas: modelo.etapas.map(etapa => {
+        const etapaTimestamp = Date.now() + Math.random();
+        return {
+          ...etapa,
+          id: `e${etapaTimestamp}-${etapa.numeroEtapa}`
+        };
+      })
     };
     
-    setModelos([...modelos, modeloDuplicado]);
-    setModeloSelecionado(modeloDuplicado);
+    // Verificar se já existe um modelo com o mesmo nome
+    const nomeBase = modeloDuplicado.nome;
+    let contador = 1;
+    let nomeFinal = nomeBase;
     
-    toast({
-      title: "Modelo Duplicado",
-      description: `Modelo "${modeloDuplicado.nome}" foi criado com sucesso.`
+    while (modelos.some(m => m.nome === nomeFinal)) {
+      nomeFinal = `${nomeBase} (${contador})`;
+      contador++;
+    }
+    
+    modeloDuplicado.nome = nomeFinal;
+    
+    // Atualizar o estado de forma mais robusta
+    setModelos(prevModelos => {
+      const novosModelos = [...prevModelos, modeloDuplicado];
+      // Forçar re-render garantindo que o array é novo
+      return [...novosModelos];
     });
+    
+    // Verificar se é o modelo Fiscatus para determinar o comportamento pós-duplicação
+    const ehModeloFiscatus = modelo.id === "modelo-sistema-fiscatus";
+    
+    if (!ehModeloFiscatus) {
+      // Para outros modelos, selecionar o modelo duplicado imediatamente
+      setModeloSelecionado(modeloDuplicado);
+      setModoEdicao(false);
+      setModoVisualizacao(false);
+      setNomeModelo(modeloDuplicado.nome);
+      setDescricaoModelo(modeloDuplicado.descricao);
+      
+      toast({
+        title: "Modelo Duplicado",
+        description: `Modelo "${modeloDuplicado.nome}" foi criado com sucesso e está pronto para edição.`
+      });
+    } else {
+      // Para o modelo Fiscatus, apenas adicionar à lista sem selecionar
+      toast({
+        title: "Modelo Fiscatus Duplicado",
+        description: `Modelo "${modeloDuplicado.nome}" foi criado com sucesso. Você pode encontrá-lo na lista de modelos.`
+      });
+    }
+  };
+
+  const duplicarFiscatus = () => {
+    const modeloFiscatus = modelos.find(m => m.id === "modelo-sistema-fiscatus");
+    if (modeloFiscatus) {
+      duplicarModelo(modeloFiscatus);
+    } else {
+      toast({
+        title: "Erro",
+        description: "Modelo Fiscatus não encontrado.",
+        variant: "destructive"
+      });
+    }
   };
 
   const excluirModelo = (modeloId: string) => {
     const modelo = modelos.find(m => m.id === modeloId);
     
-    // Impedir exclusão de modelos do sistema
-    if (modelo?.ehModeloSistema) {
+    // Impedir exclusão de modelos do sistema ou do modelo padrão fiscatus
+    if (modelo?.ehModeloSistema || modelo?.id === "modelo-sistema-fiscatus") {
       toast({
         title: "Não é possível excluir",
         description: "Modelos do sistema não podem ser excluídos, apenas duplicados.",
@@ -763,6 +820,17 @@ export default function ModelosFluxo() {
   };
 
   const definirComoPadrao = (modeloId: string) => {
+    const modelo = modelos.find(m => m.id === modeloId);
+    
+    if (!modelo) {
+      toast({
+        title: "Erro",
+        description: "Modelo não encontrado.",
+        variant: "destructive"
+      });
+      return;
+    }
+    
     const modelosAtualizados = modelos.map(modelo => ({
       ...modelo,
       ehPadrao: modelo.id === modeloId
@@ -779,7 +847,7 @@ export default function ModelosFluxo() {
     
     toast({
       title: "Modelo Padrão Definido",
-      description: "Este modelo será usado por padrão na criação de novos processos."
+      description: `O modelo "${modelo.nome}" será usado por padrão na criação de novos processos.`
     });
   };
 
@@ -1002,10 +1070,21 @@ export default function ModelosFluxo() {
               </div>
             </div>
             
-            <Button onClick={criarNovoModelo} className="w-full">
-              <Plus className="w-4 h-4 mr-2" />
-              Criar Novo Modelo
-            </Button>
+            <div className="space-y-3">
+              <Button onClick={criarNovoModelo} className="w-full">
+                <Plus className="w-4 h-4 mr-2" />
+                Criar Novo Modelo
+              </Button>
+              
+              <Button 
+                onClick={duplicarFiscatus} 
+                variant="outline" 
+                className="w-full"
+              >
+                <Copy className="w-4 h-4 mr-2" />
+                Duplicar Fiscatus
+              </Button>
+            </div>
           </div>
           
           <div className="flex-1 overflow-y-auto">
@@ -1075,40 +1154,44 @@ export default function ModelosFluxo() {
                       
                       {/* Botões de Ação */}
                       <div className="flex items-center gap-1 pt-2 flex-wrap">
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          className="h-8 w-8 p-0 flex-shrink-0"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            if (modelo.ehModeloSistema) {
-                              toast({
-                                title: "Modelo do Sistema",
-                                description: "Modelos do sistema não podem ser editados diretamente. Duplique-o para criar uma versão editável.",
-                                variant: "destructive"
-                              });
-                              return;
-                            }
-                            setModeloSelecionado(modelo);
-                            setModoEdicao(true);
-                            setNomeModelo(modelo.nome);
-                            setDescricaoModelo(modelo.descricao);
-                          }}
-                        >
-                          <Edit3 className="w-4 h-4" />
-                        </Button>
+                        {modelo.id !== "modelo-sistema-fiscatus" && (
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            className="h-8 w-8 p-0 flex-shrink-0"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              if (modelo.ehModeloSistema) {
+                                toast({
+                                  title: "Modelo do Sistema",
+                                  description: "Modelos do sistema não podem ser editados diretamente. Duplique-o para criar uma versão editável.",
+                                  variant: "destructive"
+                                });
+                                return;
+                              }
+                              setModeloSelecionado(modelo);
+                              setModoEdicao(true);
+                              setNomeModelo(modelo.nome);
+                              setDescricaoModelo(modelo.descricao);
+                            }}
+                          >
+                            <Edit3 className="w-4 h-4" />
+                          </Button>
+                        )}
                         
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          className="h-8 w-8 p-0 flex-shrink-0"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            duplicarModelo(modelo);
-                          }}
-                        >
-                          <Copy className="w-4 h-4" />
-                        </Button>
+                        {modelo.id !== "modelo-sistema-fiscatus" && (
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            className="h-8 w-8 p-0 flex-shrink-0"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              duplicarModelo(modelo);
+                            }}
+                          >
+                            <Copy className="w-4 h-4" />
+                          </Button>
+                        )}
                         
                         <Button
                           size="sm"
@@ -1126,7 +1209,7 @@ export default function ModelosFluxo() {
                           )}
                         </Button>
                         
-                        {!modelo.ehModeloSistema && (
+                        {!modelo.ehModeloSistema && modelo.id !== "modelo-sistema-fiscatus" && (
                           <AlertDialog>
                             <AlertDialogTrigger asChild>
                               <Button
@@ -1311,14 +1394,14 @@ export default function ModelosFluxo() {
                               const isLastInRow = indexInRow === 5 || globalIndex === modeloSelecionado.etapas.length - 1;
                               
                               return (
-                                <div key={etapa.id} className="relative flex-shrink-0 z-10">
+                                <div key={etapa.id} className="relative flex-shrink-0 z-20">
                                   {/* Conectores */}
                                   {!isLastInRow && (
                                     <>
-                                      <div className="absolute -top-3 -right-3 w-6 h-6 bg-gray-200 rounded-full flex items-center justify-center z-20">
+                                      <div className="absolute -top-3 -right-3 w-6 h-6 bg-gray-200 rounded-full flex items-center justify-center z-10">
                                         <div className="w-2 h-2 bg-white rounded-full" />
                                       </div>
-                                      <div className="absolute top-[97px] -right-6 w-12 h-0.5 bg-gray-200 z-10" />
+                                      <div className="absolute top-[97px] -right-6 w-12 h-0.5 bg-gray-200 z-0" />
                                     </>
                                   )}
                                   
@@ -1475,14 +1558,14 @@ export default function ModelosFluxo() {
                             const isLastInRow = indexInRow === 5 || globalIndex === modeloSelecionado.etapas.length - 1;
                             
                             return (
-                              <div key={etapa.id} className="relative flex-shrink-0 z-10">
+                              <div key={etapa.id} className="relative flex-shrink-0 z-20">
                                 {/* Conectores */}
                                 {!isLastInRow && (
                                   <>
-                                    <div className="absolute -top-3 -right-3 w-6 h-6 bg-gray-200 rounded-full flex items-center justify-center z-20">
+                                    <div className="absolute -top-3 -right-3 w-6 h-6 bg-gray-200 rounded-full flex items-center justify-center z-10">
                                       <div className="w-2 h-2 bg-white rounded-full" />
                                     </div>
-                                    <div className="absolute top-[97px] -right-6 w-12 h-0.5 bg-gray-200 z-10" />
+                                    <div className="absolute top-[97px] -right-6 w-12 h-0.5 bg-gray-200 z-0" />
                                   </>
                                 )}
                                 
@@ -1629,14 +1712,14 @@ export default function ModelosFluxo() {
                       const isLastInRow = indexInRow === 5 || globalIndex === (modeloSelecionado?.etapas.length || 0) - 1;
                       
                       return (
-                        <div key={etapa.id} className="relative flex-shrink-0 z-10">
+                        <div key={etapa.id} className="relative flex-shrink-0 z-20">
                           {/* Conectores */}
                           {!isLastInRow && (
                             <>
-                              <div className="absolute -top-3 -right-3 w-6 h-6 bg-gray-200 rounded-full flex items-center justify-center z-20">
+                              <div className="absolute -top-3 -right-3 w-6 h-6 bg-gray-200 rounded-full flex items-center justify-center z-10">
                                 <div className="w-2 h-2 bg-white rounded-full" />
                               </div>
-                              <div className="absolute top-[97px] -right-6 w-12 h-0.5 bg-gray-200 z-10" />
+                              <div className="absolute top-[97px] -right-6 w-12 h-0.5 bg-gray-200 z-0" />
                             </>
                           )}
                           
