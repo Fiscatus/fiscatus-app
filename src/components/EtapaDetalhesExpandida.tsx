@@ -70,6 +70,7 @@ interface EtapaDetalhesExpandidaProps {
   onAdicionarMembro?: (etapa: Etapa, membro: any) => void;
   onRemoverMembro?: (etapa: Etapa, membroId: string) => void;
   onSalvarObservacao?: (etapa: Etapa, observacao: string) => void;
+  gerenciaCriadora?: string; // Gerência que criou o processo
 }
 
 export default function EtapaDetalhesExpandida({
@@ -82,20 +83,17 @@ export default function EtapaDetalhesExpandida({
   onBaixarDocumento,
   onAdicionarMembro,
   onRemoverMembro,
-  onSalvarObservacao
+  onSalvarObservacao,
+  gerenciaCriadora
 }: EtapaDetalhesExpandidaProps) {
   const { user } = useUser();
-  const { podeEditarFluxo } = usePermissoes();
+  const { podeEditarCard } = usePermissoes();
   const [novaObservacao, setNovaObservacao] = useState('');
   const [editandoResponsavel, setEditandoResponsavel] = useState(false);
 
   const canManageEtapa = () => {
-    // Gerências pai podem gerenciar qualquer etapa
-    if (podeEditarFluxo()) {
-      return true;
-    }
-    // Outras gerências só podem gerenciar etapas da própria gerência em andamento
-    return etapa.status === 'andamento' && user?.gerencia === etapa.gerencia;
+    // Usar a nova lógica de permissões para cards, incluindo gerência criadora para o primeiro card
+    return podeEditarCard(etapa.gerencia, etapa.id, gerenciaCriadora);
   };
 
   const getStatusConfig = () => {
@@ -392,11 +390,14 @@ export default function EtapaDetalhesExpandida({
                       <p className="text-sm text-gray-600">Etapa finalizada</p>
                     </div>
                   ) : (
-                    <div>
-                      <XCircle className="w-8 h-8 text-gray-400 mx-auto mb-2" />
-                      <p className="text-sm text-gray-500">
-                        Somente membros da gerência responsável podem editar.
-                      </p>
+                    <div className="text-center">
+                      <Shield className="w-8 h-8 text-red-400 mx-auto mb-3" />
+                      <div className="bg-red-50 border border-red-200 rounded-lg p-3">
+                        <h4 className="text-xs font-semibold text-red-800 mb-1">Acesso Restrito</h4>
+                        <p className="text-xs text-red-700 leading-relaxed">
+                          Você não possui permissão para editar esta etapa. A edição está restrita à gerência responsável ou aos administradores do sistema.
+                        </p>
+                      </div>
                     </div>
                   )}
                 </div>
@@ -488,7 +489,7 @@ export default function EtapaDetalhesExpandida({
               </div>
             )}
             
-            {canManageEtapa() && (
+            {canManageEtapa() ? (
               <div className="space-y-3">
                 <Textarea
                   placeholder="Adicionar nova observação..."
@@ -504,6 +505,23 @@ export default function EtapaDetalhesExpandida({
                 >
                   <Save className="w-3 h-3 mr-1" />
                   Salvar Observação
+                </Button>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                <Textarea
+                  placeholder="Você não possui permissão para adicionar observações..."
+                  value=""
+                  disabled
+                  className="min-h-[80px] bg-gray-100 text-gray-500"
+                />
+                <Button
+                  size="sm"
+                  disabled
+                  className="bg-gray-300 text-gray-500 cursor-not-allowed"
+                >
+                  <Save className="w-3 h-3 mr-1" />
+                  Salvar Observação (Bloqueado)
                 </Button>
               </div>
             )}

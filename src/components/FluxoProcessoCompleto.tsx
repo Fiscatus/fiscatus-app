@@ -77,6 +77,7 @@ interface Etapa {
 interface FluxoProcessoCompletoProps {
   etapas?: Etapa[];
   onEtapaClick?: (etapa: Etapa) => void;
+  gerenciaCriadora?: string; // Gerência que criou o processo
 }
 
 // Substituir o array etapasPadrao para conter os 22 nomes fornecidos, mantendo a estrutura dos objetos e preenchendo os campos nome/nomeCompleto conforme a lista do usuário.
@@ -104,7 +105,7 @@ const etapasPadrao: Etapa[] = [
   { id: 21, nome: "Publicação", nomeCompleto: "Publicação", status: "pendente", prazoPrevisao: "1 dia útil", responsavel: "Yasmin Pissolati Mattos Bretz", cargo: "Gerente de Soluções e Projetos", gerencia: "GSP - Gerência de Soluções e Projetos" }
 ];
 
-export default function FluxoProcessoCompleto({ etapas = etapasPadrao, onEtapaClick }: FluxoProcessoCompletoProps) {
+export default function FluxoProcessoCompleto({ etapas = etapasPadrao, onEtapaClick, gerenciaCriadora }: FluxoProcessoCompletoProps) {
   const [modalEtapa, setModalEtapa] = useState<Etapa | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const { user } = useUser();
@@ -122,7 +123,7 @@ export default function FluxoProcessoCompleto({ etapas = etapasPadrao, onEtapaCl
   const [showConsolidacaoModal, setShowConsolidacaoModal] = useState(false);
   const [currentEtapa, setCurrentEtapa] = useState<Etapa | null>(null);
 
-  const { isGerenciaPai, podeEditarFluxo, podeExcluirEtapa } = usePermissoes();
+  const { isGerenciaPai, podeEditarFluxo, podeExcluirEtapa, podeEditarCard } = usePermissoes();
   const { toast } = useToast();
 
   // Sensores para drag and drop
@@ -437,12 +438,8 @@ export default function FluxoProcessoCompleto({ etapas = etapasPadrao, onEtapaCl
   };
 
   const canManageEtapa = (etapa: Etapa) => {
-    // Gerências pai podem gerenciar qualquer etapa
-    if (podeEditarFluxo()) {
-      return true;
-    }
-    // Outras gerências só podem gerenciar etapas da própria gerência
-    return etapa.status === 'andamento' && user?.gerencia === etapa.gerencia;
+    // Usar a nova lógica de permissões para cards, incluindo gerência criadora para o primeiro card
+    return podeEditarCard(etapa.gerencia, etapa.id, gerenciaCriadora);
   };
 
   const handleVisualizarDocumento = (etapa: Etapa) => {
@@ -728,6 +725,7 @@ export default function FluxoProcessoCompleto({ etapas = etapasPadrao, onEtapaCl
         etapa={modalEtapa}
         isOpen={isModalOpen}
         onClose={handleCloseModal}
+        gerenciaCriadora={gerenciaCriadora}
         onConcluirEtapa={(etapa) => {
           console.log('Concluir etapa:', etapa.id);
           // Implementar lógica de conclusão

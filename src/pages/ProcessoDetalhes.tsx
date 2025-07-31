@@ -583,7 +583,10 @@ export default function ProcessoDetalhes() {
               <UserSelector />
 
               {/* Fluxo Completo do Processo */}
-              <FluxoProcessoCompleto etapas={etapasAtuais} />
+              <FluxoProcessoCompleto 
+                etapas={etapasAtuais} 
+                gerenciaCriadora="GTEC - Gerência de Tecnologia da Informação" // Mock da gerência criadora
+              />
 
               {/* Histórico de Ações */}
               <HistoricoProcesso historico={[]} />

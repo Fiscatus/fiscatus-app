@@ -52,7 +52,7 @@ export default function DFDFormSection({
   canEdit = true
 }: DFDFormSectionProps) {
   const { user } = useUser();
-  const { podeEditarFluxo } = usePermissoes();
+  const { podeEditarCard } = usePermissoes();
   const { toast } = useToast();
   const { 
     dfdData, 
@@ -90,15 +90,11 @@ export default function DFDFormSection({
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Verificar se usuário pode editar - incluir permissões específicas da gerência
+  // Verificar se usuário pode editar - usar nova lógica de permissões
   const canUserEdit = () => {
-    // Gerências pai podem editar qualquer etapa
-    if (podeEditarFluxo()) {
-      return true;
-    }
-    // Outras gerências podem editar etapas da própria gerência
-    // Para o DFD, verificar se o usuário é da gerência responsável pela etapa
-    return user?.gerencia === 'Gerência de Recursos Humanos';
+    // Para o DFD (etapa 1), a gerência responsável é GSP
+    // Nota: gerenciaCriadora seria passada como parâmetro em implementação real
+    return podeEditarCard('GSP - Gerência de Soluções e Projetos', 1);
   };
 
   // Verificar se pode editar baseado no status
@@ -117,14 +113,14 @@ export default function DFDFormSection({
     return canSendToAnalysis() && canUserEdit();
   };
 
-  // Verificar se pode aprovar (apenas GSP)
+  // Verificar se pode aprovar (apenas usuários com permissão para DFD)
   const canApproveUser = () => {
-    return canApprove(user?.gerencia || '') && podeEditarFluxo();
+    return canApprove(user?.gerencia || '') && podeEditarCard('GSP - Gerência de Soluções e Projetos', 1);
   };
 
-  // Verificar se pode devolver (apenas GSP)
+  // Verificar se pode devolver (apenas usuários com permissão para DFD)
   const canDevolverUser = () => {
-    return canDevolver(user?.gerencia || '') && podeEditarFluxo();
+    return canDevolver(user?.gerencia || '') && podeEditarCard('GSP - Gerência de Soluções e Projetos', 1);
   };
 
   useEffect(() => {

@@ -55,7 +55,7 @@ export default function DFDAprovacaoSection({
   canEdit = true
 }: DFDAprovacaoSectionProps) {
   const { user } = useUser();
-  const { podeEditarFluxo } = usePermissoes();
+  const { podeEditarCard } = usePermissoes();
   const { toast } = useToast();
   const { 
     dfdData, 
@@ -81,22 +81,22 @@ export default function DFDAprovacaoSection({
 
   // Verificar se é usuário da GSP
   const isGSPUser = () => {
-    return user?.gerencia === 'Gerência de Soluções e Projetos';
+    return user?.gerencia === 'GSP - Gerência de Soluções e Projetos';
   };
 
-  // Verificar se pode aprovar (apenas GSP)
+  // Verificar se pode aprovar - usar nova lógica de permissões
   const canApproveUser = () => {
-    return user?.gerencia === 'Gerência de Soluções e Projetos' && dfdData.status === 'enviado_analise';
+    return podeEditarCard('GSL - Gerência de Suprimentos e Logística', 2) && dfdData.status === 'enviado_analise';
   };
 
-  // Verificar se pode devolver (apenas GSP)
+  // Verificar se pode devolver - usar nova lógica de permissões
   const canDevolverUser = () => {
-    return user?.gerencia === 'Gerência de Soluções e Projetos' && dfdData.status === 'enviado_analise';
+    return podeEditarCard('GSL - Gerência de Suprimentos e Logística', 2) && dfdData.status === 'enviado_analise';
   };
 
-  // Verificar se pode editar (apenas GSP)
+  // Verificar se pode editar - usar nova lógica de permissões
   const canEditCurrentVersion = () => {
-    return user?.gerencia === 'Gerência de Soluções e Projetos' && dfdData.status === 'enviado_analise';
+    return podeEditarCard('GSL - Gerência de Suprimentos e Logística', 2) && dfdData.status === 'enviado_analise';
   };
 
   const validateForm = (): boolean => {

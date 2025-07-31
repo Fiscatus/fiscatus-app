@@ -99,6 +99,7 @@ interface EtapaDetalhesModalProps {
   onAdicionarMembro?: (etapa: Etapa, membro: any) => void;
   onRemoverMembro?: (etapa: Etapa, membroId: string) => void;
   onSalvarObservacao?: (etapa: Etapa, observacao: string) => void;
+  gerenciaCriadora?: string; // Gerência que criou o processo
 }
 
 export default function EtapaDetalhesModal({
@@ -113,7 +114,8 @@ export default function EtapaDetalhesModal({
   onBaixarDocumento,
   onAdicionarMembro,
   onRemoverMembro,
-  onSalvarObservacao
+  onSalvarObservacao,
+  gerenciaCriadora
 }: EtapaDetalhesModalProps) {
   const { user } = useUser();
   const [novaObservacao, setNovaObservacao] = useState('');
@@ -141,7 +143,7 @@ export default function EtapaDetalhesModal({
     gerencia: ''
   });
 
-  const { podeEditarFluxo } = usePermissoes();
+  const { podeEditarCard } = usePermissoes();
 
   // Fechar menu quando clicar fora
   useEffect(() => {
@@ -163,7 +165,7 @@ export default function EtapaDetalhesModal({
   if (!etapa) return null;
 
   const canManageEtapa = () => {
-    return podeEditarFluxo() || user?.gerencia === etapa.gerencia;
+    return podeEditarCard(etapa.gerencia, etapa.id, gerenciaCriadora);
   };
 
   const isGerencia = () => {
@@ -724,9 +726,14 @@ export default function EtapaDetalhesModal({
                       </div>
                     </div>
                   ) : (
-                    <div className="flex items-center justify-center py-8 text-gray-400 text-sm italic">
-                      <Shield className="w-5 h-5 mr-2" />
-                      Somente membros da gerência responsável podem editar esta etapa.
+                    <div className="flex flex-col items-center justify-center py-8 text-center">
+                      <Shield className="w-8 h-8 text-red-400 mb-3" />
+                      <div className="bg-red-50 border border-red-200 rounded-lg p-4 max-w-md">
+                        <h4 className="text-sm font-semibold text-red-800 mb-2">Acesso Restrito</h4>
+                        <p className="text-sm text-red-700 leading-relaxed">
+                          Você não possui permissão para editar esta etapa. A edição está restrita à gerência responsável ou aos administradores do sistema.
+                        </p>
+                      </div>
                     </div>
                   )}
 
@@ -957,8 +964,8 @@ export default function EtapaDetalhesModal({
                         </p>
                       </div>
                       
-                      {/* Campo para Adicionar Comentário (apenas para gerência responsável) */}
-                      {canManageEtapa() && (
+                      {/* Campo para Adicionar Comentário */}
+                      {canManageEtapa() ? (
                         <div className="mt-4 p-4 bg-gray-50 rounded-lg border border-gray-200">
                           <div className="flex items-center gap-2 mb-3">
                             <PenTool className="w-4 h-4 text-blue-500" />
@@ -978,6 +985,27 @@ export default function EtapaDetalhesModal({
                           >
                             <Save className="w-3 h-3 mr-1" />
                             Salvar Comentário
+                          </Button>
+                        </div>
+                      ) : (
+                        <div className="mt-4 p-4 bg-gray-100 rounded-lg border border-gray-300">
+                          <div className="flex items-center gap-2 mb-3">
+                            <PenTool className="w-4 h-4 text-gray-400" />
+                            <p className="text-sm font-medium text-gray-500">Comentários (Somente Visualização)</p>
+                          </div>
+                          <Textarea
+                            placeholder="Você não possui permissão para adicionar comentários..."
+                            value=""
+                            disabled
+                            className="w-full border rounded-md p-2 text-sm min-h-[80px] resize-none bg-gray-100 text-gray-500"
+                          />
+                          <Button
+                            size="sm"
+                            disabled
+                            className="mt-2 bg-gray-300 text-gray-500 px-3 py-1 rounded text-sm cursor-not-allowed"
+                          >
+                            <Save className="w-3 h-3 mr-1" />
+                            Adicionar Comentário (Bloqueado)
                           </Button>
                         </div>
                       )}
