@@ -1,9 +1,10 @@
-import React from "react";
+import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Menu, Bell, Settings, Plus, PenLine, FileText, Landmark, Home } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import Sidebar from "./Sidebar";
+import NotificationDropdown, { NotificationBell } from "./NotificationDropdown";
 import logo from "@/assets/logo_fiscatus.png";
 
 function QuickActionButton({ icon, label, variant = "default", onClick }: any) {
@@ -28,7 +29,9 @@ function QuickActionButton({ icon, label, variant = "default", onClick }: any) {
 
 export default function Topbar() {
   const [sidebarOpen, setSidebarOpen] = React.useState(false);
+  const [notificationsOpen, setNotificationsOpen] = useState(false);
   const navigate = useNavigate();
+  
   return (
     <>
       <header className="fixed top-0 left-0 w-full h-auto min-h-16 bg-white/95 backdrop-blur-sm border-b border-gray-100 shadow-sm z-50 px-6 flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
@@ -68,11 +71,15 @@ export default function Topbar() {
           />
         </div>
         {/* Direita: busca, ícones, avatar */}
-        <div className="flex items-center gap-2 flex-shrink-0 mt-2 md:mt-0">
+        <div className="flex items-center gap-2 flex-shrink-0 mt-2 md:mt-0 relative">
           <Input type="text" placeholder="Buscar processo..." className="w-40 md:w-64 border-gray-200 focus:border-blue-300 focus:ring-blue-200" />
-          <button className="p-2 rounded-lg hover:bg-gray-100 transition-colors" aria-label="Notificações">
-            <Bell className="w-4 h-4 text-gray-600" />
-          </button>
+          <div className="relative">
+            <NotificationBell onClick={() => setNotificationsOpen(!notificationsOpen)} />
+            <NotificationDropdown 
+              isOpen={notificationsOpen} 
+              onClose={() => setNotificationsOpen(false)} 
+            />
+          </div>
           <button className="p-2 rounded-lg hover:bg-gray-100 transition-colors" aria-label="Configurações">
             <Settings className="w-4 h-4 text-gray-600" />
           </button>

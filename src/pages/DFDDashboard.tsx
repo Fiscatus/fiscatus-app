@@ -438,7 +438,7 @@ export default function DFDDashboard() {
                 <h2 className="text-base font-semibold text-gray-900">Notificações</h2>
                 <Bell className="w-4 h-4 text-blue-500" />
               </div>
-              <div className="space-y-2 max-h-48 overflow-y-auto">
+              <div className="space-y-2">
                 {notificacoes.map((n) => (
                   <div key={n.id} className={`p-3 rounded-lg border transition-colors ${n.lida ? 'border-gray-100 bg-gray-50' : 'border-blue-100 bg-blue-50'}`}>
                     <div className="flex items-start space-x-3">
