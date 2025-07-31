@@ -34,11 +34,16 @@ import { Badge } from './ui/badge';
 import { useUser } from '@/contexts/UserContext';
 import { usePermissoes } from '@/hooks/usePermissoes';
 import { useToast } from '@/hooks/use-toast';
+import { getBordaEtapa } from '@/lib/utils';
 import EtapaDetalhesModal from './EtapaDetalhesModal';
 import EtapaCardEditavel from './EtapaCardEditavel';
 import EditarEtapaFluxoModal from './EditarEtapaFluxoModal';
 import AdicionarEtapaButton from './AdicionarEtapaButton';
 import BarraAcoesEdicao from './BarraAcoesEdicao';
+import DFDFormSection from './DFDFormSection';
+import DFDAprovacaoSection from './DFDAprovacaoSection';
+import ConsolidacaoDemandaSection from './ConsolidacaoDemandaSection';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from './ui/dialog';
 
 interface Etapa {
   id: number;
@@ -74,229 +79,29 @@ interface FluxoProcessoCompletoProps {
   onEtapaClick?: (etapa: Etapa) => void;
 }
 
-// Dados das 17 etapas do processo
+// Substituir o array etapasPadrao para conter os 22 nomes fornecidos, mantendo a estrutura dos objetos e preenchendo os campos nome/nomeCompleto conforme a lista do usuário.
 const etapasPadrao: Etapa[] = [
-  {
-    id: 1,
-    nome: "Elaboração do DFD",
-    nomeCompleto: "Elaboração do Documento de Formalização da Demanda",
-    status: "concluido",
-    prazoPrevisao: "5 dias úteis",
-    dataConclusao: "05/01/2025",
-    prazoCumprido: true,
-    responsavel: "Dr. João Silva",
-    cargo: "Gerente de Planejamento",
-    gerencia: "Gerência de Soluções e Projetos",
-    dataInicio: "01/01/2025",
-    documento: "DFD_012_2025.pdf",
-    documentoUrl: "/docs/dfd.pdf"
-  },
-  {
-    id: 2,
-    nome: "Análise da Demanda",
-    nomeCompleto: "Análise Técnica da Demanda Apresentada",
-    status: "concluido",
-    prazoPrevisao: "3 dias úteis",
-    dataConclusao: "08/01/2025",
-    prazoCumprido: true,
-    responsavel: "Eng. Maria Santos",
-    cargo: "Engenheira Chefe",
-    gerencia: "Gerência de Suprimentos e Logística",
-    dataInicio: "06/01/2025"
-  },
-  {
-    id: 3,
-    nome: "Validação Técnica",
-    nomeCompleto: "Validação Técnica das Especificações",
-    status: "concluido",
-    prazoPrevisao: "3 dias úteis",
-    dataConclusao: "12/01/2025",
-    prazoCumprido: true,
-    responsavel: "Arq. Carlos Oliveira",
-    cargo: "Arquiteto Senior",
-    gerencia: "Gerência de Recursos Humanos",
-    dataInicio: "09/01/2025"
-  },
-  {
-    id: 4,
-    nome: "Assinatura do DFD",
-    nomeCompleto: "Assinatura e Aprovação do DFD",
-    status: "concluido",
-    prazoPrevisao: "2 dias úteis",
-    dataConclusao: "15/01/2025",
-    prazoCumprido: true,
-    responsavel: "Dir. Ana Costa",
-    cargo: "Diretora Executiva",
-    gerencia: "Gerência de Urgência e Emergência",
-    dataInicio: "13/01/2025"
-  },
-  {
-    id: 5,
-    nome: "Elaboração do ETP",
-    nomeCompleto: "Elaboração do Estudo Técnico Preliminar",
-    status: "andamento",
-    prazoPrevisao: "10 dias úteis",
-    responsavel: "Eng. Pedro Lima",
-    cargo: "Engenheiro de Projetos",
-    gerencia: "Gerência de Licitações e Contratos",
-    dataInicio: "16/01/2025",
-    documento: "ETP_012_2025_v1.pdf",
-    documentoUrl: "/docs/etp.pdf",
-    envolvidos: [
-      {
-        nome: "Téc. Ana Silva",
-        cargo: "Técnica de Apoio",
-        papel: "Apoio Técnico",
-        gerencia: "Gerência de Licitações e Contratos"
-      },
-      {
-        nome: "Est. Carlos Mendes",
-        cargo: "Estagiário",
-        papel: "Auxiliar de Campo",
-        gerencia: "Gerência de Licitações e Contratos"
-      }
-    ]
-  },
-  {
-    id: 6,
-    nome: "Assinatura do ETP",
-    nomeCompleto: "Assinatura do Estudo Técnico Preliminar",
-    status: "pendente",
-    prazoPrevisao: "2 dias úteis",
-    responsavel: "Dir. Roberto Silva",
-    cargo: "Diretor Técnico",
-    gerencia: "Gerência Financeira e Contábil"
-  },
-  {
-    id: 7,
-    nome: "Análise e Aprovação do ETP",
-    nomeCompleto: "Análise e Aprovação do Estudo Técnico Preliminar",
-    status: "pendente",
-    prazoPrevisao: "5 dias úteis",
-    responsavel: "Esp. Fernanda Martins",
-    cargo: "Especialista em Análise",
-    gerencia: "Ouvidoria"
-  },
-  {
-    id: 8,
-    nome: "Elaboração da Matriz de Risco",
-    nomeCompleto: "Elaboração da Matriz de Análise de Riscos",
-    status: "pendente",
-    prazoPrevisao: "7 dias úteis",
-    responsavel: "Esp. Ricardo Alves",
-    cargo: "Especialista em Riscos",
-    gerencia: "Secretário Executivo",
-    envolvidos: [
-      {
-        nome: "Esp. Mariana Costa",
-        cargo: "Especialista em Riscos",
-        papel: "Analista Senior",
-        gerencia: "Secretário Executivo"
-      },
-      {
-        nome: "Téc. Roberto Alves",
-        cargo: "Técnico de Campo",
-        papel: "Coleta de Dados",
-        gerencia: "Secretário Executivo"
-      },
-      {
-        nome: "Est. Juliana Pereira",
-        cargo: "Estagiária",
-        papel: "Apoio Administrativo",
-        gerencia: "Secretário Executivo"
-      }
-    ]
-  },
-  {
-    id: 9,
-    nome: "Assinatura da Matriz de Risco",
-    nomeCompleto: "Assinatura da Matriz de Análise de Riscos",
-    status: "pendente",
-    prazoPrevisao: "2 dias úteis",
-    responsavel: "Dir. Paulo Mendes",
-    cargo: "Diretor de Riscos",
-    gerencia: "Gerência de Soluções e Projetos"
-  },
-  {
-    id: 10,
-    nome: "Elaboração do TR",
-    nomeCompleto: "Elaboração do Termo de Referência",
-    status: "pendente",
-    prazoPrevisao: "15 dias úteis",
-    responsavel: "Adv. Camila Rocha",
-    cargo: "Advogada",
-    gerencia: "Gerência de Suprimentos e Logística"
-  },
-  {
-    id: 11,
-    nome: "Assinatura do TR",
-    nomeCompleto: "Assinatura do Termo de Referência",
-    status: "pendente",
-    prazoPrevisao: "2 dias úteis",
-    responsavel: "Dir. Juliana Costa",
-    cargo: "Diretora de Contratos",
-    gerencia: "Gerência de Recursos Humanos"
-  },
-  {
-    id: 12,
-    nome: "Cotação/Mapeamento",
-    nomeCompleto: "Cotação e Mapeamento de Preços",
-    status: "pendente",
-    prazoPrevisao: "10 dias úteis",
-    responsavel: "Esp. Luiza Campos",
-    cargo: "Especialista em Compras",
-    gerencia: "Gerência de Urgência e Emergência"
-  },
-  {
-    id: 13,
-    nome: "Análise da Cotação",
-    nomeCompleto: "Análise Técnica da Cotação de Preços",
-    status: "pendente",
-    prazoPrevisao: "5 dias úteis",
-    responsavel: "Dir. Fernando Santos",
-    cargo: "Diretor Financeiro",
-    gerencia: "Gerência de Licitações e Contratos"
-  },
-  {
-    id: 14,
-    nome: "Validação Final",
-    nomeCompleto: "Validação Final do Processo",
-    status: "pendente",
-    prazoPrevisao: "3 dias úteis",
-    responsavel: "Dir. Geral Eduardo Lima",
-    cargo: "Diretor Geral",
-    gerencia: "Gerência Financeira e Contábil"
-  },
-  {
-    id: 15,
-    nome: "Elaboração do Edital",
-    nomeCompleto: "Elaboração do Edital de Licitação",
-    status: "pendente",
-    prazoPrevisao: "20 dias úteis",
-    responsavel: "Adv. Roberto Lima",
-    cargo: "Advogado Senior",
-    gerencia: "Ouvidoria"
-  },
-  {
-    id: 16,
-    nome: "Aprovação Jurídica",
-    nomeCompleto: "Aprovação Jurídica do Edital",
-    status: "pendente",
-    prazoPrevisao: "10 dias úteis",
-    responsavel: "Adv. Patricia Silva",
-    cargo: "Assessora Jurídica",
-    gerencia: "Secretário Executivo"
-  },
-  {
-    id: 17,
-    nome: "Publicação",
-    nomeCompleto: "Publicação do Edital",
-    status: "pendente",
-    prazoPrevisao: "1 dia útil",
-    responsavel: "Esp. Ana Paula",
-    cargo: "Especialista em Comunicação",
-    gerencia: "Gerência de Soluções e Projetos"
-  }
+  { id: 1, nome: "Elaboração/Análise do DFD", nomeCompleto: "Elaboração/Análise do DFD", status: "concluido", prazoPrevisao: "5 dias úteis", dataConclusao: "05/01/2025", prazoCumprido: true, responsavel: "Yasmin Pissolati Mattos Bretz", cargo: "Gerente de Soluções e Projetos", gerencia: "GSP - Gerência de Soluções e Projetos", dataInicio: "01/01/2025", documento: "DFD_012_2025.pdf", documentoUrl: "/docs/dfd.pdf" },
+  { id: 2, nome: "Aprovação do DFD", nomeCompleto: "Aprovação do DFD", status: "concluido", prazoPrevisao: "3 dias úteis", dataConclusao: "08/01/2025", prazoCumprido: true, responsavel: "Guilherme de Carvalho Silva", cargo: "Gerente Suprimentos e Logistica", gerencia: "GSL - Gerência de Suprimentos e Logística", dataInicio: "06/01/2025" },
+  { id: 3, nome: "Assinatura do DFD", nomeCompleto: "Assinatura do DFD", status: "concluido", prazoPrevisao: "3 dias úteis", dataConclusao: "12/01/2025", prazoCumprido: true, responsavel: "Lucas Moreira Brito", cargo: "GERENTE DE RH", gerencia: "GRH - Gerência de Recursos Humanos", dataInicio: "09/01/2025" },
+  { id: 4, nome: "Despacho do DFD", nomeCompleto: "Despacho do DFD", status: "concluido", prazoPrevisao: "2 dias úteis", dataConclusao: "15/01/2025", prazoCumprido: true, responsavel: "Andressa Sterfany Santos da Silva", cargo: "Assessora Técnica de Saúde", gerencia: "GUE - Gerência de Urgência e Emergência", dataInicio: "13/01/2025" },
+  { id: 5, nome: "Elaboração do ETP", nomeCompleto: "Elaboração do ETP", status: "andamento", prazoPrevisao: "10 dias úteis", responsavel: "Leticia Bonfim Guilherme", cargo: "Gerente de Licitações e Contratos", gerencia: "GLC - Gerência de Licitações e Contratos", dataInicio: "16/01/2025", documento: "ETP_012_2025_v1.pdf", documentoUrl: "/docs/etp.pdf" },
+  { id: 6, nome: "Assinatura do ETP", nomeCompleto: "Assinatura do ETP", status: "pendente", prazoPrevisao: "2 dias úteis", responsavel: "Dallas Kelson Francisco de Souza", cargo: "Gerente Financeiro", gerencia: "GFC - Gerência Financeira e Contábil" },
+  { id: 7, nome: "Despacho do ETP", nomeCompleto: "Despacho do ETP", status: "pendente", prazoPrevisao: "5 dias úteis", responsavel: "Georgia Guimaraes Pereira", cargo: "Controladora Interna", gerencia: "OUV - Ouvidoria" },
+  { id: 8, nome: "Elaboração/Análise da Matriz de Risco", nomeCompleto: "Elaboração/Análise da Matriz de Risco", status: "pendente", prazoPrevisao: "7 dias úteis", responsavel: "Diran Rodrigues de Souza Filho", cargo: "Secretário Executivo", gerencia: "SE - Secretaria Executiva" },
+  { id: 9, nome: "Aprovação da Matriz de Risco", nomeCompleto: "Aprovação da Matriz de Risco", status: "pendente", prazoPrevisao: "2 dias úteis", responsavel: "Yasmin Pissolati Mattos Bretz", cargo: "Gerente de Soluções e Projetos", gerencia: "GSP - Gerência de Soluções e Projetos" },
+  { id: 10, nome: "Assinatura da Matriz de Risco", nomeCompleto: "Assinatura da Matriz de Risco", status: "pendente", prazoPrevisao: "15 dias úteis", responsavel: "Guilherme de Carvalho Silva", cargo: "Gerente Suprimentos e Logistica", gerencia: "GSL - Gerência de Suprimentos e Logística" },
+  { id: 11, nome: "Cotação", nomeCompleto: "Cotação", status: "pendente", prazoPrevisao: "2 dias úteis", responsavel: "Lucas Moreira Brito", cargo: "GERENTE DE RH", gerencia: "GRH - Gerência de Recursos Humanos" },
+  { id: 12, nome: "Elaboração do Termo de Referência (TR)", nomeCompleto: "Elaboração do Termo de Referência (TR)", status: "pendente", prazoPrevisao: "10 dias úteis", responsavel: "Andressa Sterfany Santos da Silva", cargo: "Assessora Técnica de Saúde", gerencia: "GUE - Gerência de Urgência e Emergência" },
+  { id: 13, nome: "Assinatura do TR", nomeCompleto: "Assinatura do TR", status: "pendente", prazoPrevisao: "5 dias úteis", responsavel: "Leticia Bonfim Guilherme", cargo: "Gerente de Licitações e Contratos", gerencia: "GLC - Gerência de Licitações e Contratos" },
+  { id: 14, nome: "Elaboração do Edital", nomeCompleto: "Elaboração do Edital", status: "pendente", prazoPrevisao: "3 dias úteis", responsavel: "Dallas Kelson Francisco de Souza", cargo: "Gerente Financeiro", gerencia: "GFC - Gerência Financeira e Contábil" },
+  { id: 15, nome: "Análise Jurídica Prévia", nomeCompleto: "Análise Jurídica Prévia", status: "pendente", prazoPrevisao: "20 dias úteis", responsavel: "Georgia Guimaraes Pereira", cargo: "Controladora Interna", gerencia: "OUV - Ouvidoria" },
+  { id: 16, nome: "Cumprimento de Ressalvas pós Análise Jurídica Prévia", nomeCompleto: "Cumprimento de Ressalvas pós Análise Jurídica Prévia", status: "pendente", prazoPrevisao: "10 dias úteis", responsavel: "Gabriel Radamesis Gomes Nascimento", cargo: "Assessor Jurídico", gerencia: "NAJ - Assessoria Jurídica" },
+  { id: 17, nome: "Elaboração do Parecer Jurídico", nomeCompleto: "Elaboração do Parecer Jurídico", status: "pendente", prazoPrevisao: "1 dia útil", responsavel: "Yasmin Pissolati Mattos Bretz", cargo: "Gerente de Soluções e Projetos", gerencia: "GSP - Gerência de Soluções e Projetos" },
+  { id: 18, nome: "Cumprimento de Ressalvas pós Parecer Jurídico", nomeCompleto: "Cumprimento de Ressalvas pós Parecer Jurídico", status: "pendente", prazoPrevisao: "1 dia útil", responsavel: "Yasmin Pissolati Mattos Bretz", cargo: "Gerente de Soluções e Projetos", gerencia: "GSP - Gerência de Soluções e Projetos" },
+  { id: 19, nome: "Aprovação Jurídica", nomeCompleto: "Aprovação Jurídica", status: "pendente", prazoPrevisao: "1 dia útil", responsavel: "Yasmin Pissolati Mattos Bretz", cargo: "Gerente de Soluções e Projetos", gerencia: "GSP - Gerência de Soluções e Projetos" },
+  { id: 20, nome: "Assinatura do Edital", nomeCompleto: "Assinatura do Edital", status: "pendente", prazoPrevisao: "1 dia útil", responsavel: "Yasmin Pissolati Mattos Bretz", cargo: "Gerente de Soluções e Projetos", gerencia: "GSP - Gerência de Soluções e Projetos" },
+  { id: 21, nome: "Publicação", nomeCompleto: "Publicação", status: "pendente", prazoPrevisao: "1 dia útil", responsavel: "Yasmin Pissolati Mattos Bretz", cargo: "Gerente de Soluções e Projetos", gerencia: "GSP - Gerência de Soluções e Projetos" }
 ];
 
 export default function FluxoProcessoCompleto({ etapas = etapasPadrao, onEtapaClick }: FluxoProcessoCompletoProps) {
@@ -312,6 +117,10 @@ export default function FluxoProcessoCompleto({ etapas = etapasPadrao, onEtapaCl
   const [isNovaEtapa, setIsNovaEtapa] = useState(false);
   const [temAlteracoes, setTemAlteracoes] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [dfdData, setDfdData] = useState<any>(null);
+  const [showDFDModal, setShowDFDModal] = useState(false);
+  const [showConsolidacaoModal, setShowConsolidacaoModal] = useState(false);
+  const [currentEtapa, setCurrentEtapa] = useState<Etapa | null>(null);
 
   const { isGerenciaPai, podeEditarFluxo, podeExcluirEtapa } = usePermissoes();
   const { toast } = useToast();
@@ -412,9 +221,23 @@ export default function FluxoProcessoCompleto({ etapas = etapasPadrao, onEtapaCl
   };
 
   const handleEtapaClick = (etapa: Etapa) => {
-    setModalEtapa(etapa);
-    setIsModalOpen(true);
-    onEtapaClick?.(etapa);
+    if (etapa.id === 1) {
+      // Card "Elaboração/Análise do DFD"
+      setCurrentEtapa(etapa);
+      setShowDFDModal(true);
+    } else if (etapa.id === 2) {
+      // Card "Aprovação do DFD"
+      setCurrentEtapa(etapa);
+      setShowDFDModal(true);
+    } else if (etapa.nome === 'Consolidação da Demanda') {
+      // Card "Consolidação da Demanda"
+      setCurrentEtapa(etapa);
+      setShowConsolidacaoModal(true);
+    } else {
+      // Outros cards
+      setModalEtapa(etapa);
+      setIsModalOpen(true);
+    }
   };
 
   const handleCloseModal = () => {
@@ -520,54 +343,75 @@ export default function FluxoProcessoCompleto({ etapas = etapasPadrao, onEtapaCl
     });
   };
 
-  const handleAdicionarEtapa = (posicao: number) => {
-    // Se já tem 17 ou mais etapas, apenas adicionar uma nova
-    if (etapasEditadas.length >= 17) {
+  const handleAdicionarEtapa = (posicao: number, cardOpcional?: any) => {
+    if (cardOpcional) {
+      // Adicionar card opcional pré-configurado
       const novaEtapa: Etapa = {
-        id: Date.now(), // ID temporário
-        nome: '',
-        nomeCompleto: '',
-        status: 'pendente',
-        prazoPrevisao: '',
-        gerencia: '',
-        responsavel: '',
-        cargo: ''
+        id: Date.now(),
+        ...cardOpcional.template
       };
 
-      setEtapaParaEditar(novaEtapa);
-      setIsNovaEtapa(true);
-      setIsEditModalOpen(true);
-      return;
+      // Inserir na posição especificada
+      setEtapasEditadas(prev => {
+        const novasEtapas = [...prev];
+        novasEtapas.splice(posicao - 1, 0, novaEtapa);
+        setTemAlteracoes(true);
+        return novasEtapas;
+      });
+
+      toast({
+        title: "Card adicionado",
+        description: `O card "${cardOpcional.nome}" foi adicionado ao fluxo.`,
+      });
+    } else {
+      // Se já tem 17 ou mais etapas, apenas adicionar uma nova
+      if (etapasEditadas.length >= 17) {
+        const novaEtapa: Etapa = {
+          id: Date.now(), // ID temporário
+          nome: '',
+          nomeCompleto: '',
+          status: 'pendente',
+          prazoPrevisao: '',
+          gerencia: '',
+          responsavel: '',
+          cargo: ''
+        };
+
+        setEtapaParaEditar(novaEtapa);
+        setIsNovaEtapa(true);
+        setIsEditModalOpen(true);
+        return;
+      }
+
+      // Se tem menos de 17 etapas, adicionar etapas vazias até completar 17
+      const etapasFaltantes = 17 - etapasEditadas.length;
+      const novasEtapas: Etapa[] = [];
+      
+      for (let i = 0; i < etapasFaltantes; i++) {
+        const novaEtapa: Etapa = {
+          id: Date.now() + i, // ID temporário único
+          nome: `Etapa ${etapasEditadas.length + i + 1}`,
+          nomeCompleto: `Etapa ${etapasEditadas.length + i + 1}`,
+          status: 'pendente',
+          prazoPrevisao: '1 dia útil',
+          gerencia: 'A definir',
+          responsavel: 'A definir',
+          cargo: 'A definir'
+        };
+        novasEtapas.push(novaEtapa);
+      }
+
+      setEtapasEditadas(prev => {
+        const todasEtapas = [...prev, ...novasEtapas];
+        setTemAlteracoes(true);
+        return todasEtapas;
+      });
+
+      toast({
+        title: "Etapas adicionadas",
+        description: `${etapasFaltantes} etapas foram adicionadas para completar o fluxo de 17 etapas.`,
+      });
     }
-
-    // Se tem menos de 17 etapas, adicionar etapas vazias até completar 17
-    const etapasFaltantes = 17 - etapasEditadas.length;
-    const novasEtapas: Etapa[] = [];
-    
-    for (let i = 0; i < etapasFaltantes; i++) {
-      const novaEtapa: Etapa = {
-        id: Date.now() + i, // ID temporário único
-        nome: `Etapa ${etapasEditadas.length + i + 1}`,
-        nomeCompleto: `Etapa ${etapasEditadas.length + i + 1}`,
-        status: 'pendente',
-        prazoPrevisao: '1 dia útil',
-        gerencia: 'A definir',
-        responsavel: 'A definir',
-        cargo: 'A definir'
-      };
-      novasEtapas.push(novaEtapa);
-    }
-
-    setEtapasEditadas(prev => {
-      const todasEtapas = [...prev, ...novasEtapas];
-      setTemAlteracoes(true);
-      return todasEtapas;
-    });
-
-    toast({
-      title: "Etapas adicionadas",
-      description: `${etapasFaltantes} etapas foram adicionadas para completar o fluxo de 17 etapas.`,
-    });
   };
 
   const handleSalvarEtapa = (etapa: Etapa) => {
@@ -593,7 +437,11 @@ export default function FluxoProcessoCompleto({ etapas = etapasPadrao, onEtapaCl
   };
 
   const canManageEtapa = (etapa: Etapa) => {
-    // Qualquer pessoa da gerência responsável pode gerenciar a etapa
+    // Gerências pai podem gerenciar qualquer etapa
+    if (podeEditarFluxo()) {
+      return true;
+    }
+    // Outras gerências só podem gerenciar etapas da própria gerência
     return etapa.status === 'andamento' && user?.gerencia === etapa.gerencia;
   };
 
@@ -610,6 +458,71 @@ export default function FluxoProcessoCompleto({ etapas = etapasPadrao, onEtapaCl
       link.download = etapa.documento || 'documento';
       link.click();
     }
+  };
+
+  const handleDFDComplete = (dfdData: any) => {
+    const etapasAtualizadas = etapasEditadas.map(etapa => {
+      if (etapa.id === 1) {
+        return { ...etapa, status: 'concluido' as const };
+      } else if (etapa.id === 2) {
+        return { ...etapa, status: 'andamento' as const };
+      }
+      return etapa;
+    });
+    setEtapasEditadas(etapasAtualizadas);
+  };
+
+  const handleDFDDevolver = () => {
+    const etapasAtualizadas = etapasEditadas.map(etapa => {
+      if (etapa.id === 1) {
+        return { ...etapa, status: 'andamento' as const };
+      } else if (etapa.id === 2) {
+        return { ...etapa, status: 'pendente' as const };
+      }
+      return etapa;
+    });
+    setEtapasEditadas(etapasAtualizadas);
+  };
+
+  const handleDFDAprovar = () => {
+    const etapasAtualizadas = etapasEditadas.map(etapa => {
+      if (etapa.id === 2) {
+        return { ...etapa, status: 'concluido' as const };
+      } else if (etapa.id === 3) {
+        return { ...etapa, status: 'andamento' as const };
+      }
+      return etapa;
+    });
+    setEtapasEditadas(etapasAtualizadas);
+  };
+
+  const handleDFDEnviarParaAnalise = () => {
+    const etapasAtualizadas = etapasEditadas.map(etapa => {
+      if (etapa.id === 1) {
+        return { ...etapa, status: 'concluido' as const };
+      } else if (etapa.id === 2) {
+        return { ...etapa, status: 'andamento' as const };
+      }
+      return etapa;
+    });
+    setEtapasEditadas(etapasAtualizadas);
+  };
+
+  const handleDFDSave = (data: any) => {
+    setDfdData(data);
+    // Salvar dados do DFD (implementar integração com backend)
+    console.log('DFD Data saved:', data);
+  };
+
+  const handleConsolidacaoComplete = () => {
+    console.log('Consolidação da Demanda concluída');
+    setShowConsolidacaoModal(false);
+    // Implementar lógica de conclusão
+  };
+
+  const handleConsolidacaoSave = (data: any) => {
+    console.log('Salvar Consolidação da Demanda:', data);
+    // Implementar lógica de salvamento
   };
 
   return (
@@ -699,7 +612,7 @@ export default function FluxoProcessoCompleto({ etapas = etapasPadrao, onEtapaCl
               <div key={etapa.id} className="w-full h-full">
                 {/* Card da Etapa */}
                 <motion.div
-                  className={`border-2 rounded-xl transition-all duration-300 ${statusConfig.bgColor} ${statusConfig.borderColor} hover:shadow-md bg-white relative w-full h-full min-h-[240px] ${
+                  className={`border-2 rounded-xl transition-all duration-300 ${statusConfig.bgColor} hover:shadow-md bg-white relative w-full h-full min-h-[240px] ${getBordaEtapa(etapa.status, etapa.dataInicio, etapa.prazoPrevisao)} ${
                     etapa.status === 'concluido' ? 'ring-2 ring-green-200 shadow-lg' : ''
                   }`}
                   initial={{ opacity: 0, y: 20 }}
@@ -868,6 +781,44 @@ export default function FluxoProcessoCompleto({ etapas = etapasPadrao, onEtapaCl
         temAlteracoes={temAlteracoes}
         isLoading={isLoading}
       />
+
+      {/* Dialog para DFD */}
+      <Dialog open={showDFDModal} onOpenChange={setShowDFDModal}>
+        <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
+          {currentEtapa?.id === 1 ? (
+            <DFDFormSection
+              processoId="1"
+              etapaId={currentEtapa.id}
+              onComplete={handleDFDComplete}
+              onSave={handleDFDSave}
+              canEdit={canManageEtapa(currentEtapa)}
+            />
+          ) : currentEtapa?.id === 2 ? (
+            <DFDAprovacaoSection
+              processoId="1"
+              etapaId={currentEtapa.id}
+              onComplete={handleDFDAprovar}
+              onSave={handleDFDSave}
+              canEdit={canManageEtapa(currentEtapa)}
+            />
+          ) : null}
+        </DialogContent>
+      </Dialog>
+
+      {/* Dialog para Consolidação da Demanda */}
+      <Dialog open={showConsolidacaoModal} onOpenChange={setShowConsolidacaoModal}>
+        <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
+          {currentEtapa?.nome === 'Consolidação da Demanda' && (
+            <ConsolidacaoDemandaSection
+              processoId="1"
+              etapaId={currentEtapa.id}
+              onComplete={handleConsolidacaoComplete}
+              onSave={handleConsolidacaoSave}
+              canEdit={canManageEtapa(currentEtapa)}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

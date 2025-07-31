@@ -44,9 +44,11 @@ import {
   AlertTriangle,
   User,
   PenLine,
-  FileSignature
+  FileSignature,
+  ArrowLeft
 } from "lucide-react";
 import Topbar from "@/components/Topbar";
+import ReturnButton from "@/components/ReturnButton";
 import GerenciarPastasModal from "@/components/GerenciarPastasModal";
 import { usePastasOrganizacionais } from "@/hooks/usePastasOrganizacionais";
 import { formatarNumeroProcesso } from "@/lib/processoUtils";
@@ -99,7 +101,7 @@ const processosMock: ProcessoGerencia[] = [
     etapaAtual: "Elaboração da FD",
     proximaEtapa: "Assinatura da FD",
     prazoEtapaAtual: "30/01/2024",
-    responsavelAtual: "João Silva - GSP",
+    responsavelAtual: "Yasmin Pissolati Mattos Bretz - GSP",
     regimeTramitacao: "Normal",
     situacao: "em_andamento",
     ano: "2024",
@@ -118,7 +120,7 @@ const processosMock: ProcessoGerencia[] = [
     etapaAtual: "Assinatura ETP",
     proximaEtapa: "Despacho do ETP",
     prazoEtapaAtual: "25/01/2024",
-    responsavelAtual: "Maria Santos - GECON",
+    responsavelAtual: "Guilherme de Carvalho Silva - GSL",
     regimeTramitacao: "Urgente",
     situacao: "atrasado",
     ano: "2024",
@@ -156,7 +158,7 @@ const processosMock: ProcessoGerencia[] = [
     etapaAtual: "Matriz de Risco",
     proximaEtapa: "Assinatura da FD",
     prazoEtapaAtual: "15/02/2024",
-    responsavelAtual: "Ana Costa - GECON",
+    responsavelAtual: "Andressa Sterfany Santos da Silva - GUE",
     regimeTramitacao: "Prioritário",
     situacao: "em_andamento",
     ano: "2024",
@@ -1184,10 +1186,15 @@ export default function ProcessosGerencia() {
   );
 
   return (
-    <div className="min-h-screen w-full bg-gray-50/30 flex flex-col">
-      <Topbar />
-      
-                            <main className="flex-1 pt-20 px-6 md:px-8 pb-12 bg-gray-50/30 w-full">
+          <div className="min-h-screen w-full bg-gray-50/30 flex flex-col">
+        <Topbar />
+        
+        {/* Botão Voltar ao Dashboard */}
+        <div className="flex items-center px-6 md:px-8 py-4 bg-white shadow-sm">
+          <ReturnButton className="text-gray-600 hover:text-gray-800 hover:bg-gray-100" />
+        </div>
+
+                            <main className="flex-1 pt-8 px-6 md:px-8 pb-12 bg-gray-50/30 w-full">
                                 {/* Header */}
                         <div className="mb-8">
                           {/* Título principal */}

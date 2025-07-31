@@ -26,6 +26,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { getBordaEtapa } from '@/lib/utils';
 
 interface Etapa {
   id: number;
@@ -36,6 +37,7 @@ interface Etapa {
   gerencia: string;
   responsavel: string;
   cargo: string;
+  dataInicio?: string;
   tipoIcone?: string;
 }
 
@@ -128,7 +130,7 @@ export default function EtapaCardEditavel({
       className={`flex-shrink-0 md:flex-shrink ${isDragging ? 'opacity-50' : ''}`}
     >
       <motion.div
-        className={`border-2 rounded-xl transition-all duration-300 ${statusConfig.bgColor} ${statusConfig.borderColor} hover:shadow-md bg-white relative w-full group`}
+        className={`border-2 rounded-xl transition-all duration-300 ${statusConfig.bgColor} hover:shadow-md bg-white relative w-full group ${getBordaEtapa(etapa.status, etapa.dataInicio, etapa.prazoPrevisao)}`}
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         whileHover={{ scale: 1.02, y: -2 }}

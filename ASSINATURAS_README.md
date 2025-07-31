@@ -2,20 +2,20 @@
 
 ## 🏢 **GERÊNCIAS-PAI (Com Permissão de Editar)**
 1. **Comissão de Implantação** - Dir. Carlos Superintendente
-2. **Secretaria Executiva** - Sec. Marina Executiva  
-3. **Ouvidoria** - Ouv. Roberto Geral
-4. **Gerência de Soluções e Projetos** - Ger. Ana Soluções
+2. **SE - Secretaria Executiva** - Diran Rodrigues de Souza Filho
+3. **OUV - Ouvidoria** - Georgia Guimaraes Pereira
+4. **GSP - Gerência de Soluções e Projetos** - Yasmin Pissolati Mattos Bretz
 
 ## 📊 **GERÊNCIAS DOS CARDS (17 Etapas)**
 
 ### ✅ **Etapa 1: Elaboração do DFD**
 - **Gerência:** Gerência de Soluções e Projetos
-- **Responsável:** Dr. João Silva
+- **Responsável:** Yasmin Pissolati Mattos Bretz
 - **Status:** Concluído
 
 ### ✅ **Etapa 2: Análise da Demanda**
 - **Gerência:** Gerência de Suprimentos e Logística
-- **Responsável:** Eng. Maria Santos
+- **Responsável:** Guilherme de Carvalho Silva
 - **Status:** Concluído
 
 ### ✅ **Etapa 3: Validação Técnica**
@@ -59,66 +59,66 @@
 - **Status:** Pendente
 
 ### ✅ **Etapa 11: Assinatura do TR**
-- **Gerência:** Gerência de Recursos Humanos
-- **Responsável:** Dir. Juliana Costa
+- **Gerência:** GRH - Gerência de Recursos Humanos
+- **Responsável:** Lucas Moreira Brito
 - **Status:** Pendente
 
 ### ✅ **Etapa 12: Cotação/Mapeamento**
-- **Gerência:** Gerência de Urgência e Emergência
-- **Responsável:** Esp. Luiza Campos
+- **Gerência:** GUE - Gerência de Urgência e Emergência
+- **Responsável:** Andressa Sterfany Santos da Silva
 - **Status:** Pendente
 
 ### ✅ **Etapa 13: Análise da Cotação**
-- **Gerência:** Gerência de Licitações e Contratos
-- **Responsável:** Dir. Fernando Santos
+- **Gerência:** GLC - Gerência de Licitações e Contratos
+- **Responsável:** Leticia Bonfim Guilherme
 - **Status:** Pendente
 
 ### ✅ **Etapa 14: Validação Final**
-- **Gerência:** Gerência Financeira e Contábil
-- **Responsável:** Dir. Geral Eduardo Lima
+- **Gerência:** GFC - Gerência Financeira e Contábil
+- **Responsável:** Dallas Kelson Francisco de Souza
 - **Status:** Pendente
 
 ### ✅ **Etapa 15: Elaboração do Edital**
-- **Gerência:** Ouvidoria
-- **Responsável:** Adv. Roberto Lima
+- **Gerência:** OUV - Ouvidoria
+- **Responsável:** Georgia Guimaraes Pereira
 - **Status:** Pendente
 
 ### ✅ **Etapa 16: Aprovação Jurídica**
-- **Gerência:** Secretário Executivo
-- **Responsável:** Adv. Patricia Silva
+- **Gerência:** NAJ - Assessoria Jurídica
+- **Responsável:** Gabriel Radamesis Gomes Nascimento
 - **Status:** Pendente
 
 ### ✅ **Etapa 17: Publicação**
-- **Gerência:** Gerência de Soluções e Projetos
-- **Responsável:** Esp. Ana Paula
+- **Gerência:** GSP - Gerência de Soluções e Projetos
+- **Responsável:** Yasmin Pissolati Mattos Bretz
 - **Status:** Pendente
 
 ## 👥 **LISTA COMPLETA DE USUÁRIOS (21 Total)**
 
 ### 🔐 **GERÊNCIAS-PAI (4 usuários)**
 1. **Dir. Carlos Superintendente** - Comissão de Implantação
-2. **Sec. Marina Executiva** - Secretaria Executiva
-3. **Ouv. Roberto Geral** - Ouvidoria
-4. **Ger. Ana Soluções** - Gerência de Soluções e Projetos
+2. **Diran Rodrigues de Souza Filho** - SE - Secretaria Executiva
+3. **Georgia Guimaraes Pereira** - OUV - Ouvidoria
+4. **Yasmin Pissolati Mattos Bretz** - GSP - Gerência de Soluções e Projetos
 
 ### 📋 **GERÊNCIAS DOS CARDS (17 usuários)**
-5. **Dr. João Silva** - Gerência de Soluções e Projetos
-6. **Eng. Maria Santos** - Gerência de Suprimentos e Logística
-7. **Arq. Carlos Oliveira** - Gerência de Recursos Humanos
-8. **Dir. Ana Costa** - Gerência de Urgência e Emergência
-9. **Eng. Pedro Lima** - Gerência de Licitações e Contratos
-10. **Dir. Roberto Silva** - Gerência Financeira e Contábil
-11. **Esp. Fernanda Martins** - Ouvidoria
-12. **Esp. Ricardo Alves** - Secretário Executivo
-13. **Dir. Paulo Mendes** - Gerência de Soluções e Projetos
-14. **Adv. Camila Rocha** - Gerência de Suprimentos e Logística
-15. **Dir. Juliana Costa** - Gerência de Recursos Humanos
-16. **Esp. Luiza Campos** - Gerência de Urgência e Emergência
-17. **Dir. Fernando Santos** - Gerência de Licitações e Contratos
-18. **Dir. Geral Eduardo Lima** - Gerência Financeira e Contábil
-19. **Adv. Roberto Lima** - Ouvidoria
-20. **Adv. Patricia Silva** - Secretário Executivo
-21. **Esp. Ana Paula** - Gerência de Soluções e Projetos
+5. **Yasmin Pissolati Mattos Bretz** - GSP - Gerência de Soluções e Projetos
+6. **Guilherme de Carvalho Silva** - GSL - Gerência de Suprimentos e Logística
+7. **Lucas Moreira Brito** - GRH - Gerência de Recursos Humanos
+8. **Andressa Sterfany Santos da Silva** - GUE - Gerência de Urgência e Emergência
+9. **Leticia Bonfim Guilherme** - GLC - Gerência de Licitações e Contratos
+10. **Dallas Kelson Francisco de Souza** - GFC - Gerência Financeira e Contábil
+11. **Georgia Guimaraes Pereira** - OUV - Ouvidoria
+12. **Diran Rodrigues de Souza Filho** - SE - Secretaria Executiva
+13. **Yasmin Pissolati Mattos Bretz** - GSP - Gerência de Soluções e Projetos
+14. **Guilherme de Carvalho Silva** - GSL - Gerência de Suprimentos e Logística
+15. **Lucas Moreira Brito** - GRH - Gerência de Recursos Humanos
+16. **Andressa Sterfany Santos da Silva** - GUE - Gerência de Urgência e Emergência
+17. **Leticia Bonfim Guilherme** - GLC - Gerência de Licitações e Contratos
+18. **Dallas Kelson Francisco de Souza** - GFC - Gerência Financeira e Contábil
+19. **Georgia Guimaraes Pereira** - OUV - Ouvidoria
+20. **Gabriel Radamesis Gomes Nascimento** - NAJ - Assessoria Jurídica
+21. **Yasmin Pissolati Mattos Bretz** - GSP - Gerência de Soluções e Projetos
 
 ## ✅ **GARANTIAS IMPLEMENTADAS**
 

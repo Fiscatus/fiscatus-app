@@ -27,14 +27,17 @@ import {
   Lock,
   Unlock,
   XCircle as XCircleIcon,
-  Clock
+  Clock,
+  Search,
+  Info,
+  Send
 } from 'lucide-react';
 import { useUser } from '@/contexts/UserContext';
 import { usePermissoes } from '@/hooks/usePermissoes';
 import { useToast } from '@/hooks/use-toast';
 import { useDFD, DFDData, DFDVersion, DFDVersionStatus, DFDAnnex } from '@/hooks/useDFD';
 
-interface DFDFormSectionProps {
+interface DFDAprovacaoSectionProps {
   processoId: string;
   etapaId: number;
   onComplete: (data: DFDData) => void;
@@ -43,194 +46,107 @@ interface DFDFormSectionProps {
   canEdit?: boolean;
 }
 
-export default function DFDFormSection({
+export default function DFDAprovacaoSection({
   processoId,
   etapaId,
   onComplete,
   onSave,
   initialData,
   canEdit = true
-}: DFDFormSectionProps) {
+}: DFDAprovacaoSectionProps) {
   const { user } = useUser();
   const { podeEditarFluxo } = usePermissoes();
   const { toast } = useToast();
   const { 
     dfdData, 
-    createInitialVersion, 
-    addVersion, 
-    enviarParaAnalise,
+    aprovarVersao, 
     devolverParaCorrecao,
-    aprovarVersao,
     addAnnex, 
     removeAnnex, 
     updateObservations, 
-    getLatestEditableVersion,
-    canCreateNewVersion,
-    canEdit: canEditDFD,
-    canSendToAnalysis,
     canApprove,
     canDevolver
   } = useDFD(processoId);
   
-  const [formData, setFormData] = useState({
-    objetivoContratacao: '',
-    justificativaDemanda: '',
-    gerenciaDemandante: '',
-    dataElaboracao: new Date().toISOString().split('T')[0],
-    responsavelElaboracao: user?.nome || ''
-  });
-
-  const [isEditing, setIsEditing] = useState(false);
-  const [showVersionHistory, setShowVersionHistory] = useState(false);
-  const [showUploadDialog, setShowUploadDialog] = useState(false);
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [analiseTecnica, setAnaliseTecnica] = useState('');
+  const [devolucaoJustificativa, setDevolucaoJustificativa] = useState('');
   const [validationErrors, setValidationErrors] = useState<string[]>([]);
+  const [showDevolucaoDialog, setShowDevolucaoDialog] = useState(false);
   const [showVersionModal, setShowVersionModal] = useState(false);
   const [selectedVersion, setSelectedVersion] = useState<DFDVersion | null>(null);
+  const [showUploadDialog, setShowUploadDialog] = useState(false);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
-
-  // Verificar se usuário pode editar - incluir permissões específicas da gerência
-  const canUserEdit = () => {
-    // Gerências pai podem editar qualquer etapa
-    if (podeEditarFluxo()) {
-      return true;
-    }
-    // Outras gerências podem editar etapas da própria gerência
-    // Para o DFD, verificar se o usuário é da gerência responsável pela etapa
-    return user?.gerencia === 'Gerência de Recursos Humanos';
-  };
-
-  // Verificar se pode editar baseado no status
-  const canEditCurrentVersion = () => {
-    if (!canUserEdit()) return false;
-    return canEditDFD();
-  };
 
   // Verificar se é usuário da GSP
   const isGSPUser = () => {
     return user?.gerencia === 'Gerência de Soluções e Projetos';
   };
 
-  // Verificar se pode enviar para análise
-  const canSendToAnalysisUser = () => {
-    return canSendToAnalysis() && canUserEdit();
-  };
-
   // Verificar se pode aprovar (apenas GSP)
   const canApproveUser = () => {
-    return canApprove(user?.gerencia || '') && podeEditarFluxo();
+    return user?.gerencia === 'Gerência de Soluções e Projetos' && dfdData.status === 'enviado_analise';
   };
 
   // Verificar se pode devolver (apenas GSP)
   const canDevolverUser = () => {
-    return canDevolver(user?.gerencia || '') && podeEditarFluxo();
+    return user?.gerencia === 'Gerência de Soluções e Projetos' && dfdData.status === 'enviado_analise';
   };
 
-  useEffect(() => {
-    const latestVersion = getLatestEditableVersion();
-    if (latestVersion && (dfdData.status === 'devolvido' || dfdData.versions.length === 0)) {
-      setFormData({
-        objetivoContratacao: latestVersion.objetivoContratacao,
-        justificativaDemanda: latestVersion.justificativaDemanda,
-        gerenciaDemandante: latestVersion.unidadeDemandante,
-        dataElaboracao: latestVersion.dataElaboracao,
-        responsavelElaboracao: latestVersion.responsavelElaboracao
-      });
-    }
-  }, [dfdData.currentVersion, dfdData.status]);
+  // Verificar se pode editar (apenas GSP)
+  const canEditCurrentVersion = () => {
+    return user?.gerencia === 'Gerência de Soluções e Projetos' && dfdData.status === 'enviado_analise';
+  };
 
   const validateForm = (): boolean => {
     const errors: string[] = [];
     
-    if (!formData.objetivoContratacao.trim()) {
-      errors.push('Objetivo da Contratação é obrigatório');
-    }
-    if (!formData.justificativaDemanda.trim()) {
-      errors.push('Justificativa da Demanda é obrigatória');
-    }
-    if (!formData.gerenciaDemandante.trim()) {
-      errors.push('Gerência Demandante é obrigatória');
-    }
-    if (!formData.dataElaboracao) {
-      errors.push('Data de Elaboração é obrigatória');
-    }
-    if (!formData.responsavelElaboracao.trim()) {
-      errors.push('Responsável pela Elaboração é obrigatório');
+    if (!analiseTecnica.trim()) {
+      errors.push('Análise Técnica da GSP é obrigatória');
     }
 
     setValidationErrors(errors);
     return errors.length === 0;
   };
 
-  const handleSaveVersion = () => {
-    if (!validateForm()) {
-      toast({
-        title: "Erro de Validação",
-        description: "Por favor, preencha todos os campos obrigatórios.",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    const versionData = {
-      content: formData.objetivoContratacao + '\n\n' + formData.justificativaDemanda,
-      objetivoContratacao: formData.objetivoContratacao,
-      justificativaDemanda: formData.justificativaDemanda,
-      unidadeDemandante: formData.gerenciaDemandante,
-      dataElaboracao: formData.dataElaboracao,
-      responsavelElaboracao: formData.responsavelElaboracao
-    };
-
-    const newVersion = addVersion(versionData);
-    onSave(dfdData);
-    
-    toast({
-      title: "Versão Salva",
-      description: `Versão ${newVersion.version} do DFD foi salva com sucesso.`
-    });
-  };
-
-  const handleEnviarParaAnalise = () => {
-    if (!validateForm()) {
-      toast({
-        title: "Erro de Validação",
-        description: "Por favor, preencha todos os campos obrigatórios.",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    if (dfdData.versions.length === 0) {
-      // Criar versão inicial (V1)
-      const versionData = {
-        content: formData.objetivoContratacao + '\n\n' + formData.justificativaDemanda,
-        objetivoContratacao: formData.objetivoContratacao,
-        justificativaDemanda: formData.justificativaDemanda,
-        unidadeDemandante: formData.gerenciaDemandante,
-        dataElaboracao: formData.dataElaboracao,
-        responsavelElaboracao: formData.responsavelElaboracao
-      };
-
-      createInitialVersion(versionData);
-    }
-
-    enviarParaAnalise(user?.nome || 'Usuário');
-    onSave(dfdData);
-    
-    toast({
-      title: "DFD Enviado para Análise",
-      description: "O DFD foi enviado para análise da Gerência de Soluções e Projetos."
-    });
-  };
-
   const handleAprovar = () => {
+    if (!validateForm()) {
+      toast({
+        title: "Erro de Validação",
+        description: "Por favor, preencha todos os campos obrigatórios.",
+        variant: "destructive"
+      });
+      return;
+    }
+
     aprovarVersao(user?.nome || 'Usuário');
     onComplete(dfdData);
     
     toast({
       title: "DFD Aprovado",
       description: "O DFD foi aprovado e o próximo card foi liberado."
+    });
+  };
+
+  const handleDevolver = () => {
+    if (!devolucaoJustificativa.trim()) {
+      toast({
+        title: "Erro",
+        description: "A justificativa da devolução é obrigatória.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    devolverParaCorrecao(devolucaoJustificativa, user?.nome || 'Usuário');
+    onSave(dfdData);
+    setShowDevolucaoDialog(false);
+    setDevolucaoJustificativa('');
+    
+    toast({
+      title: "DFD Devolvido",
+      description: "O DFD foi devolvido para correção."
     });
   };
 
@@ -349,18 +265,21 @@ export default function DFDFormSection({
     return new Date(dateString).toLocaleString('pt-BR');
   };
 
+  // Obter versão final para análise
+  const finalVersion = dfdData.versions.find(v => v.isFinal);
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50">
+    <div className="min-h-screen bg-gradient-to-br from-green-50 via-white to-emerald-50">
       {/* Header Moderno */}
       <div className="bg-white border-b border-gray-200 px-6 py-4 shadow-sm">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <div className="p-3 bg-blue-100 rounded-xl">
-              <FileText className="w-8 h-8 text-blue-600" />
+            <div className="p-3 bg-green-100 rounded-xl">
+              <Search className="w-8 h-8 text-green-600" />
             </div>
             <div>
-              <h1 className="text-2xl font-bold text-gray-900">Elaboração/Análise do DFD</h1>
-              <p className="text-gray-600">Documento de Formalização da Demanda</p>
+              <h1 className="text-2xl font-bold text-gray-900">Aprovação do DFD</h1>
+              <p className="text-gray-600">Análise e Aprovação do Documento de Formalização da Demanda</p>
             </div>
           </div>
           <div className="flex items-center gap-3">
@@ -378,10 +297,10 @@ export default function DFDFormSection({
                 </>
               );
             })()}
-            {!canUserEdit() && (
+            {!isGSPUser() && (
               <Badge variant="outline" className="px-3 py-1">
                 <Lock className="w-4 h-4 mr-2" />
-                Somente Visualização
+                Etapa Restrita à GSP
               </Badge>
             )}
           </div>
@@ -407,29 +326,13 @@ export default function DFDFormSection({
           </Alert>
         )}
 
-        {/* Justificativa de Devolução */}
-        {dfdData.status === 'devolvido' && dfdData.devolucaoJustificativa && (
-          <Alert className="mb-6 border-orange-200 bg-orange-50">
-            <AlertTriangle className="h-5 w-5 text-orange-600" />
-            <AlertDescription>
-              <div className="space-y-2">
-                <p className="font-semibold text-orange-800">Devolvido para Correção</p>
-                <p className="text-orange-700">{dfdData.devolucaoJustificativa}</p>
-                <p className="text-xs text-orange-600">
-                  Devolvido por {dfdData.devolucaoPor} em {formatDate(dfdData.devolucaoData || '')}
-                </p>
-              </div>
-            </AlertDescription>
-          </Alert>
-        )}
-
         {/* Layout Principal - Grid Responsivo */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           
-          {/* Coluna Principal - Formulário */}
+          {/* Coluna Principal - Dados e Análise */}
           <div className="lg:col-span-2 space-y-6">
             
-            {/* Card do Formulário */}
+            {/* Card dos Dados do DFD (Modo Leitura) */}
             <Card className="shadow-lg border-0 bg-white/80 backdrop-blur-sm">
               <CardHeader className="bg-gradient-to-r from-blue-50 to-indigo-50 border-b border-blue-100">
                 <CardTitle className="flex items-center gap-3 text-xl font-bold text-gray-800">
@@ -437,116 +340,138 @@ export default function DFDFormSection({
                     <FileText className="w-5 h-5 text-blue-600" />
                   </div>
                   Dados do DFD
-                  {dfdData.status === 'devolvido' && (
-                    <Badge className="bg-orange-100 text-orange-800 text-xs">
-                      Nova Versão
+                  {finalVersion && (
+                    <Badge className="bg-blue-100 text-blue-800 text-xs">
+                      V{finalVersion.version}
                     </Badge>
                   )}
                 </CardTitle>
               </CardHeader>
               <CardContent className="p-6 space-y-6">
-                
-                {/* Campos Principais */}
-                <div className="space-y-6">
-                  <div>
-                    <Label htmlFor="objetivo" className="text-sm font-semibold text-gray-700 flex items-center gap-2">
-                      <Building2 className="w-4 h-4" />
-                      Objetivo da Contratação *
-                    </Label>
-                    <Textarea
-                      id="objetivo"
-                      value={formData.objetivoContratacao}
-                      onChange={(e) => setFormData({...formData, objetivoContratacao: e.target.value})}
-                      placeholder="Descreva o objetivo da contratação..."
-                      disabled={!canEditCurrentVersion()}
-                      className="min-h-[100px] mt-2 resize-none border-gray-200 focus:border-blue-300 focus:ring-blue-300"
-                    />
-                  </div>
-                  
-                  <div>
-                    <Label htmlFor="justificativa" className="text-sm font-semibold text-gray-700 flex items-center gap-2">
-                      <MessageCircle className="w-4 h-4" />
-                      Justificativa da Demanda *
-                    </Label>
-                    <Textarea
-                      id="justificativa"
-                      value={formData.justificativaDemanda}
-                      onChange={(e) => setFormData({...formData, justificativaDemanda: e.target.value})}
-                      placeholder="Justifique a necessidade da demanda..."
-                      disabled={!canEditCurrentVersion()}
-                      className="min-h-[100px] mt-2 resize-none border-gray-200 focus:border-blue-300 focus:ring-blue-300"
-                    />
-                  </div>
-                </div>
+                {finalVersion ? (
+                  <>
+                    {/* Campos Principais */}
+                    <div className="space-y-6">
+                      <div>
+                        <Label className="text-sm font-semibold text-gray-700 flex items-center gap-2">
+                          <Building2 className="w-4 h-4" />
+                          Objetivo da Contratação
+                        </Label>
+                        <div className="mt-2 p-4 bg-gray-50 rounded-lg border border-gray-200">
+                          <p className="text-gray-800">{finalVersion.objetivoContratacao}</p>
+                        </div>
+                      </div>
+                      
+                      <div>
+                        <Label className="text-sm font-semibold text-gray-700 flex items-center gap-2">
+                          <MessageCircle className="w-4 h-4" />
+                          Justificativa da Demanda
+                        </Label>
+                        <div className="mt-2 p-4 bg-gray-50 rounded-lg border border-gray-200">
+                          <p className="text-gray-800">{finalVersion.justificativaDemanda}</p>
+                        </div>
+                      </div>
+                    </div>
 
-                {/* Campos Secundários */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                  <div>
-                    <Label htmlFor="gerencia" className="text-sm font-semibold text-gray-700 flex items-center gap-2">
-                      <Building2 className="w-4 h-4" />
-                      Gerência Demandante *
-                    </Label>
-                    <Input
-                      id="gerencia"
-                      value={formData.gerenciaDemandante}
-                      onChange={(e) => setFormData({...formData, gerenciaDemandante: e.target.value})}
-                      placeholder="Nome da gerência"
-                      disabled={!canEditCurrentVersion()}
-                      className="mt-2 border-gray-200 focus:border-blue-300 focus:ring-blue-300"
-                    />
+                    {/* Campos Secundários */}
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                      <div>
+                        <Label className="text-sm font-semibold text-gray-700 flex items-center gap-2">
+                          <Building2 className="w-4 h-4" />
+                          Gerência Demandante
+                        </Label>
+                        <div className="mt-2 p-4 bg-gray-50 rounded-lg border border-gray-200">
+                          <p className="text-gray-800">{finalVersion.unidadeDemandante}</p>
+                        </div>
+                      </div>
+                      
+                      <div>
+                        <Label className="text-sm font-semibold text-gray-700 flex items-center gap-2">
+                          <Calendar className="w-4 h-4" />
+                          Data de Elaboração
+                        </Label>
+                        <div className="mt-2 p-4 bg-gray-50 rounded-lg border border-gray-200">
+                          <p className="text-gray-800">{formatDate(finalVersion.dataElaboracao)}</p>
+                        </div>
+                      </div>
+                      
+                      <div>
+                        <Label className="text-sm font-semibold text-gray-700 flex items-center gap-2">
+                          <User className="w-4 h-4" />
+                          Responsável pela Elaboração
+                        </Label>
+                        <div className="mt-2 p-4 bg-gray-50 rounded-lg border border-gray-200">
+                          <p className="text-gray-800">{finalVersion.responsavelElaboracao}</p>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Informações da Versão */}
+                    <div className="border-t border-gray-200 pt-4">
+                      <div className="flex items-center justify-between text-sm text-gray-600">
+                        <span>Criado por {finalVersion.createdBy}</span>
+                        <span>{formatDate(finalVersion.createdAt)}</span>
+                      </div>
+                    </div>
+                  </>
+                ) : (
+                  <div className="text-center py-8">
+                    <div className="p-4 bg-gray-100 rounded-full w-16 h-16 mx-auto mb-4 flex items-center justify-center">
+                      <FileText className="w-8 h-8 text-gray-400" />
+                    </div>
+                    <p className="text-gray-500 font-medium">Nenhuma versão final encontrada</p>
+                    <p className="text-sm text-gray-400 mt-1">Aguarde o envio de uma versão para análise</p>
                   </div>
-                  
-                  <div>
-                    <Label htmlFor="data" className="text-sm font-semibold text-gray-700 flex items-center gap-2">
-                      <Calendar className="w-4 h-4" />
-                      Data de Elaboração *
-                    </Label>
-                    <Input
-                      id="data"
-                      type="date"
-                      value={formData.dataElaboracao}
-                      onChange={(e) => setFormData({...formData, dataElaboracao: e.target.value})}
-                      disabled={!canEditCurrentVersion()}
-                      className="mt-2 border-gray-200 focus:border-blue-300 focus:ring-blue-300"
-                    />
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Card da Análise Técnica da GSP */}
+            <Card className="shadow-lg border-0 bg-white/80 backdrop-blur-sm">
+              <CardHeader className="bg-gradient-to-r from-green-50 to-emerald-50 border-b border-green-100">
+                <CardTitle className="flex items-center gap-3 text-xl font-bold text-gray-800">
+                  <div className="p-2 bg-green-100 rounded-lg">
+                    <Search className="w-5 h-5 text-green-600" />
                   </div>
-                  
-                  <div>
-                    <Label htmlFor="responsavel" className="text-sm font-semibold text-gray-700 flex items-center gap-2">
-                      <User className="w-4 h-4" />
-                      Responsável pela Elaboração *
-                    </Label>
-                    <Input
-                      id="responsavel"
-                      value={formData.responsavelElaboracao}
-                      onChange={(e) => setFormData({...formData, responsavelElaboracao: e.target.value})}
-                      placeholder="Nome do responsável"
-                      disabled={!canEditCurrentVersion()}
-                      className="mt-2 border-gray-200 focus:border-blue-300 focus:ring-blue-300"
-                    />
-                  </div>
+                  Análise Técnica da GSP
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="p-6">
+                <div>
+                  <Label htmlFor="analise" className="text-sm font-semibold text-gray-700 flex items-center gap-2">
+                    <MessageCircle className="w-4 h-4" />
+                    Análise Técnica da GSP *
+                  </Label>
+                  <Textarea
+                    id="analise"
+                    value={analiseTecnica}
+                    onChange={(e) => setAnaliseTecnica(e.target.value)}
+                    placeholder="Descreva a análise técnica do DFD..."
+                    disabled={!canEditCurrentVersion()}
+                    className="min-h-[120px] mt-2 resize-none border-gray-200 focus:border-green-300 focus:ring-green-300"
+                  />
                 </div>
               </CardContent>
             </Card>
 
-            {/* Card do Histórico de Versões */}
+            {/* Card do Histórico de Ações da GSP */}
             <Card className="shadow-lg border-0 bg-white/80 backdrop-blur-sm">
               <CardHeader className="bg-gradient-to-r from-purple-50 to-pink-50 border-b border-purple-100">
                 <CardTitle className="flex items-center gap-3 text-xl font-bold text-gray-800">
                   <div className="p-2 bg-purple-100 rounded-lg">
                     <History className="w-5 h-5 text-purple-600" />
                   </div>
-                  Histórico de Versões
+                  Histórico de Ações da GSP
                 </CardTitle>
               </CardHeader>
               <CardContent className="p-6">
                 {dfdData.versions.length === 0 ? (
                   <div className="text-center py-8">
                     <div className="p-4 bg-gray-100 rounded-full w-16 h-16 mx-auto mb-4 flex items-center justify-center">
-                      <FileText className="w-8 h-8 text-gray-400" />
+                      <History className="w-8 h-8 text-gray-400" />
                     </div>
-                    <p className="text-gray-500 font-medium">Nenhuma versão salva ainda</p>
-                    <p className="text-sm text-gray-400 mt-1">As versões aparecerão aqui após serem salvas</p>
+                    <p className="text-gray-500 font-medium">Nenhuma ação registrada</p>
+                    <p className="text-sm text-gray-400 mt-1">As ações da GSP aparecerão aqui</p>
                   </div>
                 ) : (
                   <div className="space-y-3 max-h-80 overflow-y-auto">
@@ -610,39 +535,47 @@ export default function DFDFormSection({
               <CardContent className="p-6">
                 <div className="flex flex-col sm:flex-row gap-4">
                   <div className="flex flex-col sm:flex-row gap-3 flex-1">
-                    {/* Botão Salvar Versão - Apenas para elaboradores */}
-                    {canEditCurrentVersion() && (
-                      <Button onClick={handleSaveVersion} variant="outline" className="border-gray-200 text-gray-700 hover:bg-gray-50">
-                        <Save className="w-4 h-4 mr-2" />
-                        Salvar Versão
-                      </Button>
-                    )}
-                    
-                    {/* Botão Enviar para Análise - Apenas para elaboradores */}
-                    {canSendToAnalysisUser() && (
-                      <Button onClick={handleEnviarParaAnalise} variant="outline" className="border-blue-200 text-blue-700 hover:bg-blue-50">
-                        <Upload className="w-4 h-4 mr-2" />
-                        Enviar para Análise
+                    {/* Botão Devolver para Correção - Apenas para GSP */}
+                    {canDevolverUser() && (
+                      <Button 
+                        onClick={() => setShowDevolucaoDialog(true)}
+                        variant="outline" 
+                        className="border-red-200 text-red-700 hover:bg-red-50"
+                      >
+                        <XCircle className="w-4 h-4 mr-2" />
+                        Devolver para Correção
                       </Button>
                     )}
                   </div>
                   
-                  {/* Botão Concluir - Apenas para GSP */}
+                  {/* Botão Aprovar DFD - Apenas para GSP */}
                   {canApproveUser() && (
-                    <Button onClick={handleAprovar} className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white px-8 py-3 shadow-lg">
+                    <Button 
+                      onClick={handleAprovar}
+                      className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white px-8 py-3 shadow-lg"
+                    >
                       <CheckCircle className="w-5 h-5 mr-2" />
-                      Concluir Elaboração do DFD
+                      Aprovar DFD
                     </Button>
                   )}
                 </div>
                 
                 {/* Informações sobre permissões */}
                 <div className="mt-4 text-xs text-gray-500">
-                  {!isGSPUser() && dfdData.status === 'enviado_analise' && (
-                    <p>⏳ Aguardando análise da Gerência de Soluções e Projetos</p>
+                  {!isGSPUser() && (
+                    <p>🔒 Esta etapa é restrita à Gerência de Soluções e Projetos</p>
                   )}
                   {isGSPUser() && dfdData.status === 'enviado_analise' && (
                     <p>✅ Você pode aprovar ou devolver este DFD</p>
+                  )}
+                  {dfdData.status === 'aprovado' && (
+                    <p>✅ DFD já foi aprovado</p>
+                  )}
+                  {dfdData.status === 'devolvido' && (
+                    <p>🔄 DFD foi devolvido para correção</p>
+                  )}
+                  {isGSPUser() && dfdData.status !== 'enviado_analise' && (
+                    <p>⏳ Aguardando envio para análise</p>
                   )}
                 </div>
               </CardContent>
@@ -746,7 +679,7 @@ export default function DFDFormSection({
                 <Textarea
                   value={dfdData.observations}
                   onChange={(e) => handleObservationChange(e.target.value)}
-                  placeholder="Adicione observações internas sobre o DFD..."
+                  placeholder="Adicione observações internas sobre a análise..."
                   disabled={!canEditCurrentVersion()}
                   className="min-h-[120px] resize-none border-gray-200 focus:border-orange-300 focus:ring-orange-300"
                 />
@@ -774,6 +707,44 @@ export default function DFDFormSection({
             </Button>
             <Button variant="outline" onClick={() => setShowUploadDialog(false)}>
               Cancelar
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Dialog de Devolução */}
+      <Dialog open={showDevolucaoDialog} onOpenChange={setShowDevolucaoDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <XCircle className="w-5 h-5 text-red-600" />
+              Devolver para Correção
+            </DialogTitle>
+            <DialogDescription>
+              Informe o motivo da devolução. Esta justificativa será exibida para o elaborador.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="justificativa" className="text-sm font-medium">
+                Justificativa da Devolução *
+              </Label>
+              <Textarea
+                id="justificativa"
+                value={devolucaoJustificativa}
+                onChange={(e) => setDevolucaoJustificativa(e.target.value)}
+                placeholder="Descreva os motivos da devolução..."
+                className="min-h-[120px] mt-2 resize-none"
+              />
+            </div>
+          </div>
+          <div className="flex gap-3">
+            <Button variant="outline" onClick={() => setShowDevolucaoDialog(false)}>
+              Cancelar
+            </Button>
+            <Button onClick={handleDevolver} className="bg-red-600 hover:bg-red-700">
+              <XCircle className="w-4 h-4 mr-2" />
+              Devolver
             </Button>
           </div>
         </DialogContent>

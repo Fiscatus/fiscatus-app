@@ -39,8 +39,8 @@ export default function SignatureModal({ isOpen, onClose, documento }: Signature
   if (!documento) return null;
 
   const assinaturas = documento.assinaturas || [
-    { nome: "João Silva", cargo: "Gerente de Suprimentos", data: "15/01/2025", status: "assinado" as const },
-    { nome: "Maria Santos", cargo: "Diretora Financeira", data: "16/01/2025", status: "assinado" as const },
+    { nome: "Guilherme de Carvalho Silva", cargo: "Gerente Suprimentos e Logistica", data: "15/01/2025", status: "assinado" as const },
+    { nome: "Dallas Kelson Francisco de Souza", cargo: "Gerente Financeiro", data: "16/01/2025", status: "assinado" as const },
     { nome: "Gabriel Miranda", cargo: "Analista de Contratos", data: "", status: "pendente" as const },
   ];
 

@@ -68,7 +68,7 @@ const iconesDisponiveis = [
 const gerenciasDisponiveis = [
   'Gerência de Planejamento',
   'Gerência Técnica',
-  'Gerência de Engenharia',
+  'Gerência de Soluções e Projetos',
   'Diretoria Executiva',
   'Gerência de Projetos',
   'Diretoria Técnica',
@@ -87,6 +87,8 @@ const gerenciasDisponiveis = [
   'Secretaria Executiva',
   'Ouvidoria'
 ];
+
+
 
 export default function EditarEtapaFluxoModal({
   etapa,
@@ -169,6 +171,8 @@ export default function EditarEtapaFluxoModal({
             {getIconeAtual()}
             {isNovaEtapa ? 'Adicionar Nova Etapa' : 'Editar Etapa do Fluxo'}
           </DialogTitle>
+          
+
         </DialogHeader>
 
         <div className="space-y-6">

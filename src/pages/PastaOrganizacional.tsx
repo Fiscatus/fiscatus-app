@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { usePastasOrganizacionais } from "@/hooks/usePastasOrganizacionais";
+import ReturnButton from "@/components/ReturnButton";
 import { 
   ArrowLeft, 
   Search, 
@@ -119,7 +120,7 @@ const processosMock: ProcessoGerencia[] = [
     etapaAtual: "Elaboração da FD",
     proximaEtapa: "Assinatura da FD",
     prazoEtapaAtual: "30/01/2024",
-    responsavelAtual: "João Silva - GSP",
+    responsavelAtual: "Yasmin Pissolati Mattos Bretz - GSP",
     regimeTramitacao: "Normal",
     situacao: "em_andamento",
     ano: "2024",
@@ -138,7 +139,7 @@ const processosMock: ProcessoGerencia[] = [
     etapaAtual: "Assinatura ETP",
     proximaEtapa: "Despacho do ETP",
     prazoEtapaAtual: "25/01/2024",
-    responsavelAtual: "Maria Santos - GECON",
+    responsavelAtual: "Guilherme de Carvalho Silva - GSL",
     regimeTramitacao: "Urgente",
     situacao: "atrasado",
     ano: "2024",
@@ -176,7 +177,7 @@ const processosMock: ProcessoGerencia[] = [
     etapaAtual: "Matriz de Risco",
     proximaEtapa: "Assinatura da FD",
     prazoEtapaAtual: "15/02/2024",
-    responsavelAtual: "Ana Costa - GECON",
+    responsavelAtual: "Andressa Sterfany Santos da Silva - GUE",
     regimeTramitacao: "Prioritário",
     situacao: "em_andamento",
     ano: "2024",
@@ -540,14 +541,7 @@ export default function PastaOrganizacional() {
         {/* Header */}
         <div className="flex items-center justify-between mb-8">
           <div className="flex items-center gap-4">
-            <Button 
-              variant="outline" 
-              onClick={() => navigate("/processos-gerencia")}
-              className="gap-2"
-            >
-              <ArrowLeft className="w-4 h-4" />
-              Voltar
-            </Button>
+            <ReturnButton variant="outline" className="gap-2" />
             <div>
               <h1 className="text-3xl font-bold text-gray-900">{pastaAtual.nome}</h1>
               <p className="text-gray-600">{pastaAtual.descricao}</p>

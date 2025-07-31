@@ -20,6 +20,7 @@ import {
   AlertTriangle
 } from "lucide-react";
 import Topbar from "@/components/Topbar";
+import ReturnButton from "@/components/ReturnButton";
 import MultiSelectField from "@/components/MultiSelectField";
 import FileUploadField from "@/components/FileUploadField";
 
@@ -120,9 +121,7 @@ export default function NovoProcesso() {
     }
   };
 
-  const handleCancelar = () => {
-    navigate("/processos-gerencia");
-  };
+
 
   const isFormValid = () => {
     return formData.objetoProcesso.trim() !== "" && 
@@ -137,14 +136,7 @@ export default function NovoProcesso() {
       <main className="pt-20 px-4 sm:px-6 lg:px-8 py-6 min-h-screen max-w-full">
         {/* Header da página */}
         <div className="mb-8">
-          <Button
-            variant="ghost"
-            onClick={handleCancelar}
-            className="mb-4 flex items-center gap-2 text-gray-600 hover:text-gray-900"
-          >
-            <ArrowLeft className="w-4 h-4" />
-            Voltar aos Processos
-          </Button>
+          <ReturnButton className="mb-4 text-gray-600 hover:text-gray-900" />
           
           {/* Título principal */}
           <div className="text-center mt-4">
@@ -352,14 +344,11 @@ export default function NovoProcesso() {
           <Card className="bg-white rounded-xl shadow-md border border-gray-200">
             <CardContent className="p-6">
               <div className="flex flex-col sm:flex-row gap-4 justify-end">
-                <Button
+                <ReturnButton
                   variant="outline"
-                  onClick={handleCancelar}
                   className="flex items-center gap-2 px-6 py-3 text-base"
                   size="lg"
-                >
-                  Cancelar
-                </Button>
+                />
                 <Button
                   onClick={handleCriarProcesso}
                   disabled={!isFormValid() || isSubmitting}

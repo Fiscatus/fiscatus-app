@@ -33,6 +33,7 @@ import {
   ArrowLeft
 } from "lucide-react";
 import Topbar from "@/components/Topbar";
+import ReturnButton from "@/components/ReturnButton";
 import { useUser, mockUsers } from "@/contexts/UserContext";
 import { formatarNumeroProcesso } from "@/lib/processoUtils";
 
@@ -93,7 +94,7 @@ const processosMock: Process[] = [
     status: "concluido",
     pendenciaUsuario: "Nenhuma",
     objeto: "Contratação de Consultoria Especializada",
-    responsavel: "Dra. Ana Costa",
+    responsavel: "Andressa Sterfany Santos da Silva",
     dataCriacao: "05/01/2025",
     ultimaAtualizacao: "20/01/2025"
   },
@@ -106,7 +107,7 @@ const processosMock: Process[] = [
     status: "em_andamento",
     pendenciaUsuario: "Analisar",
     objeto: "Estudo Técnico - Aquisição de Medicamentos Especializados",
-    responsavel: "Dr. Carlos Oliveira",
+    responsavel: "Lucas Moreira Brito",
     dataCriacao: "12/01/2025",
     ultimaAtualizacao: "22/01/2025"
   },
@@ -119,7 +120,7 @@ const processosMock: Process[] = [
     status: "concluido",
     pendenciaUsuario: "Nenhuma",
     objeto: "Serviços de TI e Infraestrutura",
-    responsavel: "Eng. Pedro Lima",
+    responsavel: "Leticia Bonfim Guilherme",
     dataCriacao: "08/01/2025",
     ultimaAtualizacao: "18/01/2025"
   },
@@ -132,7 +133,7 @@ const processosMock: Process[] = [
     status: "atrasado",
     pendenciaUsuario: "Assinar",
     objeto: "Manutenção Predial e Serviços Gerais",
-    responsavel: "Arq. Fernanda Martins",
+    responsavel: "Lucas Moreira Brito",
     dataCriacao: "03/01/2025",
     ultimaAtualizacao: "12/01/2025"
   },
@@ -552,8 +553,12 @@ export default function MeusProcessos() {
     <div className="min-h-screen bg-gray-50">
       <Topbar />
       
-      {/* Seletor de Usuário para Teste */}
+      {/* Botão de Retorno */}
       <div className="pt-20 px-6 pb-4">
+        <ReturnButton className="mb-4" />
+        
+        {/* Seletor de Usuário para Teste */}
+        <div className="mb-4">
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 mb-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
@@ -723,7 +728,7 @@ export default function MeusProcessos() {
                     </CardContent>
                   </Card>
 
-                                       <Card className="bg-white shadow-md rounded-xl border-0">
+                  <Card className="bg-white shadow-md rounded-xl border-0">
                     <CardContent className="p-4">
                       <h4 className="text-base font-semibold mb-3">Pendências</h4>
                       <div className="flex items-center justify-center">

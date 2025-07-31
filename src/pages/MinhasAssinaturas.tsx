@@ -11,6 +11,7 @@ import {
   ArrowLeft,
 } from "lucide-react";
 import Topbar from "@/components/Topbar";
+import ReturnButton from "@/components/ReturnButton";
 import FilterBar from "@/components/FilterBar";
 import SignatureRow from "@/components/SignatureRow";
 import SignatureModalV2 from "@/components/SignatureModalV2";
@@ -150,14 +151,7 @@ export default function MinhasAssinaturas() {
         <div className="h-full w-full flex flex-col">
           {/* Cabeçalho */}
                         <div className="mb-2">
-                <Button
-                  variant="ghost"
-                  onClick={() => navigate("/dfd")}
-                  className="mb-1 flex items-center gap-2 text-gray-600 hover:text-gray-900"
-                >
-                  <ArrowLeft className="w-4 h-4" />
-                  Voltar ao Dashboard
-                </Button>
+                <ReturnButton className="mb-1 text-gray-600 hover:text-gray-900" />
                 
                 {/* Título principal */}
                 <div className="text-center w-full mt-2 mb-2">

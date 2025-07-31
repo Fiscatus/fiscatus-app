@@ -40,14 +40,14 @@ export default function SignatureModalV2({ isOpen, onClose, documento }: Signatu
   // Dados mockados das assinaturas - baseados no status do documento
   const assinaturas = [
     { 
-      nome: "João Silva", 
-      cargo: "Gerente de Suprimentos", 
+      nome: "Guilherme de Carvalho Silva", 
+      cargo: "Gerente Suprimentos e Logistica", 
       data: "15/01/2025", 
       status: "assinado" as const 
     },
     { 
-      nome: "Maria Santos", 
-      cargo: "Diretora Financeira", 
+      nome: "Dallas Kelson Francisco de Souza", 
+      cargo: "Gerente Financeiro", 
       data: "16/01/2025", 
       status: "assinado" as const 
     },

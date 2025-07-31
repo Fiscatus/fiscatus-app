@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { ArrowLeft, Save, Send, FileText } from "lucide-react";
 import Topbar from "@/components/Topbar";
+import ReturnButton from "@/components/ReturnButton";
 import DFDFormSection from "@/components/DFDFormSection";
 import InputField from "@/components/InputField";
 import SelectField from "@/components/SelectField";
@@ -115,14 +116,7 @@ export default function NovoDFD() {
       <main className="pt-20 px-4 sm:px-6 lg:px-8 py-6 min-h-screen">
         {/* Header da página */}
         <div className="mb-8">
-          <Button
-            variant="ghost"
-            onClick={() => navigate("/dfd")}
-            className="mb-4 flex items-center gap-2 text-gray-600 hover:text-gray-900"
-          >
-            <ArrowLeft className="w-4 h-4" />
-            Voltar ao Dashboard
-          </Button>
+          <ReturnButton className="mb-4 text-gray-600 hover:text-gray-900" />
           
           {/* Título principal */}
           <div className="text-center mt-4">

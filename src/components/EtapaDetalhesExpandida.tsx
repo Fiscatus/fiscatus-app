@@ -30,6 +30,7 @@ import {
   PenTool
 } from 'lucide-react';
 import { useUser } from '@/contexts/UserContext';
+import { usePermissoes } from '@/hooks/usePermissoes';
 
 interface Etapa {
   id: number;
@@ -84,10 +85,16 @@ export default function EtapaDetalhesExpandida({
   onSalvarObservacao
 }: EtapaDetalhesExpandidaProps) {
   const { user } = useUser();
+  const { podeEditarFluxo } = usePermissoes();
   const [novaObservacao, setNovaObservacao] = useState('');
   const [editandoResponsavel, setEditandoResponsavel] = useState(false);
 
   const canManageEtapa = () => {
+    // Gerências pai podem gerenciar qualquer etapa
+    if (podeEditarFluxo()) {
+      return true;
+    }
+    // Outras gerências só podem gerenciar etapas da própria gerência em andamento
     return etapa.status === 'andamento' && user?.gerencia === etapa.gerencia;
   };
 

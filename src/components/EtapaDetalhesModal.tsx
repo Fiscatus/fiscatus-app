@@ -46,6 +46,7 @@ import {
   Send
 } from 'lucide-react';
 import { useUser } from '@/contexts/UserContext';
+import { usePermissoes } from '@/hooks/usePermissoes';
 
 interface Etapa {
   id: number;
@@ -75,6 +76,7 @@ interface Etapa {
   }>;
   diasUteis?: number;
   diasConsumidos?: number;
+  documentos?: Array<{ nome: string; url: string; enviadoPor?: string; dataEnvio?: string; }>;
 }
 
 interface MembroEquipe {
@@ -139,6 +141,8 @@ export default function EtapaDetalhesModal({
     gerencia: ''
   });
 
+  const { podeEditarFluxo } = usePermissoes();
+
   // Fechar menu quando clicar fora
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -159,7 +163,7 @@ export default function EtapaDetalhesModal({
   if (!etapa) return null;
 
   const canManageEtapa = () => {
-    return user?.gerencia === etapa.gerencia;
+    return podeEditarFluxo() || user?.gerencia === etapa.gerencia;
   };
 
   const isGerencia = () => {
@@ -845,22 +849,45 @@ export default function EtapaDetalhesModal({
                 </CardContent>
               </Card>
 
-              {/* Documento Principal */}
-              {(etapa.documento || etapa.status === 'concluido') && (
+              {/* Todos Documentos */}
+              {(etapa.documentos && etapa.documentos.length > 0) || etapa.documento || etapa.status === 'concluido' ? (
                 <Card className="bg-white shadow-sm border-gray-200 w-full mb-8">
                   <CardHeader className="pb-3">
                     <CardTitle className="text-lg font-semibold text-gray-900 flex items-center gap-2">
                       <FileText className="w-5 h-5 text-indigo-500" />
-                      Documento Principal
+                      Todos Documentos
                     </CardTitle>
                   </CardHeader>
-                  <CardContent className="p-4">
-                    {etapa.documento ? (
+                  <CardContent className="p-4 space-y-3">
+                    {/* Lista de documentos (novo formato) */}
+                    {etapa.documentos && etapa.documentos.length > 0 && (
+                      etapa.documentos.map((doc, idx) => (
+                        <div key={doc.url || doc.nome || idx} className="relative">
+                          <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg border border-gray-200 cursor-pointer hover:bg-gray-100 transition-colors">
+                            <div className="flex items-center gap-3">
+                              <FileText className="w-8 h-8 text-indigo-500" />
+                              <div>
+                                <p className="text-sm font-medium text-gray-900">{doc.nome}</p>
+                                {doc.enviadoPor && (
+                                  <p className="text-xs text-gray-500">Enviado por: {doc.enviadoPor}</p>
+                                )}
+                                {doc.dataEnvio && (
+                                  <p className="text-xs text-gray-500">Data: {doc.dataEnvio}</p>
+                                )}
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <button onClick={() => onVisualizarDocumento?.({ ...etapa, documento: doc.nome, documentoUrl: doc.url })} className="text-gray-500 hover:text-indigo-600"><Eye className="w-4 h-4" /></button>
+                              <button onClick={() => onBaixarDocumento?.({ ...etapa, documento: doc.nome, documentoUrl: doc.url })} className="text-gray-500 hover:text-indigo-600"><Download className="w-4 h-4" /></button>
+                            </div>
+                          </div>
+                        </div>
+                      ))
+                    )}
+                    {/* Compatibilidade com documento único antigo */}
+                    {(!etapa.documentos || etapa.documentos.length === 0) && etapa.documento && (
                       <div className="relative">
-                        <div 
-                          className="flex items-center justify-between p-4 bg-gray-50 rounded-lg border border-gray-200 cursor-pointer hover:bg-gray-100 transition-colors"
-                          onClick={() => setDocumentMenuOpen(!documentMenuOpen)}
-                        >
+                        <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg border border-gray-200 cursor-pointer hover:bg-gray-100 transition-colors">
                           <div className="flex items-center gap-3">
                             <FileText className="w-8 h-8 text-indigo-500" />
                             <div>
@@ -874,69 +901,16 @@ export default function EtapaDetalhesModal({
                             </div>
                           </div>
                           <div className="flex items-center gap-2">
-                            <MoreVertical className="w-4 h-4 text-gray-500" />
+                            <button onClick={() => onVisualizarDocumento?.(etapa)} className="text-gray-500 hover:text-indigo-600"><Eye className="w-4 h-4" /></button>
+                            <button onClick={() => onBaixarDocumento?.(etapa)} className="text-gray-500 hover:text-indigo-600"><Download className="w-4 h-4" /></button>
                           </div>
                         </div>
-                        
-                        {/* Menu Dropdown */}
-                        {documentMenuOpen && (
-                          <div ref={documentMenuRef} className="absolute right-0 top-full mt-1 w-48 bg-white rounded-lg shadow-lg border border-gray-200 z-10">
-                            <div className="py-1">
-                              <button
-                                onClick={() => {
-                                  onVisualizarDocumento?.(etapa);
-                                  setDocumentMenuOpen(false);
-                                }}
-                                className="w-full flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
-                              >
-                                <Eye className="w-4 h-4" />
-                                Visualizar
-                              </button>
-                              <button
-                                onClick={() => {
-                                  onBaixarDocumento?.(etapa);
-                                  setDocumentMenuOpen(false);
-                                }}
-                                className="w-full flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
-                              >
-                                <Download className="w-4 h-4" />
-                                Baixar
-                              </button>
-                              {canManageEtapa() && (
-                                <>
-                                  <div className="border-t border-gray-200 my-1"></div>
-                                  <button
-                                    onClick={() => {
-                                      setShowUploadInput(true);
-                                      setDocumentMenuOpen(false);
-                                    }}
-                                    className="w-full flex items-center gap-2 px-4 py-2 text-sm text-blue-600 hover:bg-blue-50 transition-colors"
-                                  >
-                                    <Upload className="w-4 h-4" />
-                                    Adicionar arquivo
-                                  </button>
-                                  <button
-                                    onClick={() => {
-                                      handleDeleteDocument();
-                                      setDocumentMenuOpen(false);
-                                    }}
-                                    className="w-full flex items-center gap-2 px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors"
-                                  >
-                                    <Trash2 className="w-4 h-4" />
-                                    Excluir
-                                  </button>
-                                </>
-                              )}
-                            </div>
-                          </div>
-                        )}
                       </div>
-                    ) : etapa.status === 'concluido' ? (
+                    )}
+                    {/* Estado vazio */}
+                    {(!etapa.documentos || etapa.documentos.length === 0) && !etapa.documento && etapa.status === 'concluido' && (
                       <div className="relative">
-                        <div 
-                          className="flex items-center justify-between p-4 bg-green-50 rounded-lg border border-green-200 cursor-pointer hover:bg-green-100 transition-colors"
-                          onClick={() => setDocumentMenuOpen(!documentMenuOpen)}
-                        >
+                        <div className="flex items-center justify-between p-4 bg-green-50 rounded-lg border border-green-200">
                           <div className="flex items-center gap-3">
                             <FileCheck className="w-8 h-8 text-green-500" />
                             <div>
@@ -944,45 +918,12 @@ export default function EtapaDetalhesModal({
                               <p className="text-xs text-green-600">Documento anexado à etapa finalizada</p>
                             </div>
                           </div>
-                          <div className="flex items-center gap-2">
-                            <MoreVertical className="w-4 h-4 text-green-500" />
-                          </div>
                         </div>
-                        
-                        {/* Menu Dropdown */}
-                        {documentMenuOpen && (
-                          <div ref={documentMenuRef} className="absolute right-0 top-full mt-1 w-48 bg-white rounded-lg shadow-lg border border-gray-200 z-10">
-                            <div className="py-1">
-                              <button
-                                onClick={() => {
-                                  onVisualizarDocumento?.(etapa);
-                                  setDocumentMenuOpen(false);
-                                }}
-                                className="w-full flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
-                              >
-                                <Eye className="w-4 h-4" />
-                                Visualizar
-                              </button>
-                              <button
-                                onClick={() => {
-                                  onBaixarDocumento?.(etapa);
-                                  setDocumentMenuOpen(false);
-                                }}
-                                className="w-full flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
-                              >
-                                <Download className="w-4 h-4" />
-                                Baixar
-                              </button>
-                            </div>
-                          </div>
-                        )}
                       </div>
-                    ) : null}
-                    
-
+                    )}
                   </CardContent>
                 </Card>
-              )}
+              ) : null}
 
               {/* Comentários e Observações */}
               <Card className="bg-white shadow-sm border-gray-200 w-full mb-8">
@@ -1009,7 +950,7 @@ export default function EtapaDetalhesModal({
                       {/* Comentário de Exemplo */}
                       <div className="border-l-4 border-green-400 bg-green-50 px-3 py-2 rounded-md">
                         <p className="text-sm">
-                          <strong>João Silva</strong> - {new Date(Date.now() - 2 * 60 * 60 * 1000).toLocaleDateString('pt-BR')}
+                          <strong>Yasmin Pissolati Mattos Bretz</strong> - {new Date(Date.now() - 2 * 60 * 60 * 1000).toLocaleDateString('pt-BR')}
                         </p>
                         <p className="text-sm text-gray-700 mt-1">
                           Documento enviado para análise técnica. Aguardando aprovação.

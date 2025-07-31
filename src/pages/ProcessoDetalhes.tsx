@@ -9,7 +9,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { 
-  ArrowLeft, 
   Calendar, 
   User, 
   Building2, 
@@ -23,6 +22,7 @@ import {
   XCircle
 } from "lucide-react";
 import Topbar from "@/components/Topbar";
+import ReturnButton from "@/components/ReturnButton";
 import FluxoProcessoCompleto from "@/components/FluxoProcessoCompleto";
 import CardInfoProcesso from "@/components/CardInfoProcesso";
 import UserSelector from "@/components/UserSelector";
@@ -71,7 +71,7 @@ const proximasEtapas = [
   {
     id: "1",
     nome: "Análise do ETP",
-    responsavel: "Arq. Fernanda Martins",
+    responsavel: "Lucas Moreira Brito",
     previsao: "29/01/2025"
   },
   {
@@ -90,178 +90,29 @@ const proximasEtapas = [
 
 // Etapas do fluxo completo do processo - sempre 17 etapas
 const gerarEtapasCompletas = (isNovoProcesso: boolean) => {
-  // Template base com todas as 17 etapas
+  // Substituir o array etapasTemplate dentro da função gerarEtapasCompletas para conter os 22 nomes fornecidos, mantendo a estrutura dos objetos e preenchendo os campos nome/nomeCompleto conforme a lista do usuário.
   const etapasTemplate = [
-    {
-      id: 1,
-      nome: "Elaboração do DFD",
-      nomeCompleto: "Elaboração do Documento de Formalização da Demanda",
-      status: "pendente" as const,
-      prazoPrevisao: "5 dias úteis",
-      responsavel: "",
-      cargo: "",
-      gerencia: ""
-    },
-    {
-      id: 2,
-      nome: "Análise da Demanda",
-      nomeCompleto: "Análise Técnica da Demanda Apresentada",
-      status: "pendente" as const,
-      prazoPrevisao: "3 dias úteis",
-      responsavel: "",
-      cargo: "",
-      gerencia: ""
-    },
-    {
-      id: 3,
-      nome: "Validação Técnica",
-      nomeCompleto: "Validação Técnica das Especificações",
-      status: "pendente" as const,
-      prazoPrevisao: "3 dias úteis",
-      responsavel: "",
-      cargo: "",
-      gerencia: ""
-    },
-    {
-      id: 4,
-      nome: "Assinatura do DFD",
-      nomeCompleto: "Assinatura e Aprovação do DFD",
-      status: "pendente" as const,
-      prazoPrevisao: "2 dias úteis",
-      responsavel: "",
-      cargo: "",
-      gerencia: ""
-    },
-    {
-      id: 5,
-      nome: "Elaboração do ETP",
-      nomeCompleto: "Elaboração do Estudo Técnico Preliminar",
-      status: "pendente" as const,
-      prazoPrevisao: "10 dias úteis",
-      responsavel: "",
-      cargo: "",
-      gerencia: ""
-    },
-    {
-      id: 6,
-      nome: "Assinatura do ETP",
-      nomeCompleto: "Assinatura do Estudo Técnico Preliminar",
-      status: "pendente" as const,
-      prazoPrevisao: "2 dias úteis",
-      responsavel: "",
-      cargo: "",
-      gerencia: ""
-    },
-    {
-      id: 7,
-      nome: "Análise e Aprovação do ETP",
-      nomeCompleto: "Análise e Aprovação do Estudo Técnico Preliminar",
-      status: "pendente" as const,
-      prazoPrevisao: "5 dias úteis",
-      responsavel: "",
-      cargo: "",
-      gerencia: ""
-    },
-    {
-      id: 8,
-      nome: "Elaboração da Matriz de Risco",
-      nomeCompleto: "Elaboração da Matriz de Análise de Riscos",
-      status: "pendente" as const,
-      prazoPrevisao: "7 dias úteis",
-      responsavel: "",
-      cargo: "",
-      gerencia: ""
-    },
-    {
-      id: 9,
-      nome: "Assinatura da Matriz de Risco",
-      nomeCompleto: "Assinatura da Matriz de Análise de Riscos",
-      status: "pendente" as const,
-      prazoPrevisao: "2 dias úteis",
-      responsavel: "",
-      cargo: "",
-      gerencia: ""
-    },
-    {
-      id: 10,
-      nome: "Elaboração do TR",
-      nomeCompleto: "Elaboração do Termo de Referência",
-      status: "pendente" as const,
-      prazoPrevisao: "15 dias úteis",
-      responsavel: "",
-      cargo: "",
-      gerencia: ""
-    },
-    {
-      id: 11,
-      nome: "Assinatura do TR",
-      nomeCompleto: "Assinatura do Termo de Referência",
-      status: "pendente" as const,
-      prazoPrevisao: "2 dias úteis",
-      responsavel: "",
-      cargo: "",
-      gerencia: ""
-    },
-    {
-      id: 12,
-      nome: "Cotação/Mapeamento",
-      nomeCompleto: "Cotação e Mapeamento de Preços",
-      status: "pendente" as const,
-      prazoPrevisao: "10 dias úteis",
-      responsavel: "",
-      cargo: "",
-      gerencia: ""
-    },
-    {
-      id: 13,
-      nome: "Análise da Cotação",
-      nomeCompleto: "Análise Técnica da Cotação de Preços",
-      status: "pendente" as const,
-      prazoPrevisao: "5 dias úteis",
-      responsavel: "",
-      cargo: "",
-      gerencia: ""
-    },
-    {
-      id: 14,
-      nome: "Validação Final",
-      nomeCompleto: "Validação Final do Processo",
-      status: "pendente" as const,
-      prazoPrevisao: "3 dias úteis",
-      responsavel: "",
-      cargo: "",
-      gerencia: ""
-    },
-    {
-      id: 15,
-      nome: "Elaboração do Edital",
-      nomeCompleto: "Elaboração do Edital de Licitação",
-      status: "pendente" as const,
-      prazoPrevisao: "20 dias úteis",
-      responsavel: "",
-      cargo: "",
-      gerencia: ""
-    },
-    {
-      id: 16,
-      nome: "Aprovação Jurídica",
-      nomeCompleto: "Aprovação Jurídica do Edital",
-      status: "pendente" as const,
-      prazoPrevisao: "10 dias úteis",
-      responsavel: "",
-      cargo: "",
-      gerencia: ""
-    },
-    {
-      id: 17,
-      nome: "Publicação",
-      nomeCompleto: "Publicação do Edital",
-      status: "pendente" as const,
-      prazoPrevisao: "1 dia útil",
-      responsavel: "",
-      cargo: "",
-      gerencia: ""
-    }
+    { id: 1, nome: "Elaboração/Análise do DFD", nomeCompleto: "Elaboração/Análise do DFD", status: "pendente" as const, prazoPrevisao: "5 dias úteis", responsavel: "", cargo: "", gerencia: "" },
+    { id: 2, nome: "Aprovação do DFD", nomeCompleto: "Aprovação do DFD", status: "pendente" as const, prazoPrevisao: "3 dias úteis", responsavel: "", cargo: "", gerencia: "" },
+    { id: 3, nome: "Assinatura do DFD", nomeCompleto: "Assinatura do DFD", status: "pendente" as const, prazoPrevisao: "3 dias úteis", responsavel: "", cargo: "", gerencia: "" },
+    { id: 4, nome: "Despacho do DFD", nomeCompleto: "Despacho do DFD", status: "pendente" as const, prazoPrevisao: "2 dias úteis", responsavel: "", cargo: "", gerencia: "" },
+    { id: 5, nome: "Elaboração do ETP", nomeCompleto: "Elaboração do ETP", status: "pendente" as const, prazoPrevisao: "10 dias úteis", responsavel: "", cargo: "", gerencia: "" },
+    { id: 6, nome: "Assinatura do ETP", nomeCompleto: "Assinatura do ETP", status: "pendente" as const, prazoPrevisao: "2 dias úteis", responsavel: "", cargo: "", gerencia: "" },
+    { id: 7, nome: "Despacho do ETP", nomeCompleto: "Despacho do ETP", status: "pendente" as const, prazoPrevisao: "5 dias úteis", responsavel: "", cargo: "", gerencia: "" },
+    { id: 8, nome: "Elaboração/Análise da Matriz de Risco", nomeCompleto: "Elaboração/Análise da Matriz de Risco", status: "pendente" as const, prazoPrevisao: "7 dias úteis", responsavel: "", cargo: "", gerencia: "" },
+    { id: 9, nome: "Aprovação da Matriz de Risco", nomeCompleto: "Aprovação da Matriz de Risco", status: "pendente" as const, prazoPrevisao: "2 dias úteis", responsavel: "", cargo: "", gerencia: "" },
+    { id: 10, nome: "Assinatura da Matriz de Risco", nomeCompleto: "Assinatura da Matriz de Risco", status: "pendente" as const, prazoPrevisao: "15 dias úteis", responsavel: "", cargo: "", gerencia: "" },
+    { id: 11, nome: "Cotação", nomeCompleto: "Cotação", status: "pendente" as const, prazoPrevisao: "2 dias úteis", responsavel: "", cargo: "", gerencia: "" },
+    { id: 12, nome: "Elaboração do Termo de Referência (TR)", nomeCompleto: "Elaboração do Termo de Referência (TR)", status: "pendente" as const, prazoPrevisao: "10 dias úteis", responsavel: "", cargo: "", gerencia: "" },
+    { id: 13, nome: "Assinatura do TR", nomeCompleto: "Assinatura do TR", status: "pendente" as const, prazoPrevisao: "5 dias úteis", responsavel: "", cargo: "", gerencia: "" },
+    { id: 14, nome: "Elaboração do Edital", nomeCompleto: "Elaboração do Edital", status: "pendente" as const, prazoPrevisao: "3 dias úteis", responsavel: "", cargo: "", gerencia: "" },
+    { id: 15, nome: "Análise Jurídica Prévia", nomeCompleto: "Análise Jurídica Prévia", status: "pendente" as const, prazoPrevisao: "20 dias úteis", responsavel: "", cargo: "", gerencia: "" },
+    { id: 16, nome: "Cumprimento de Ressalvas pós Análise Jurídica Prévia", nomeCompleto: "Cumprimento de Ressalvas pós Análise Jurídica Prévia", status: "pendente" as const, prazoPrevisao: "10 dias úteis", responsavel: "", cargo: "", gerencia: "" },
+    { id: 17, nome: "Elaboração do Parecer Jurídico", nomeCompleto: "Elaboração do Parecer Jurídico", status: "pendente" as const, prazoPrevisao: "1 dia útil", responsavel: "", cargo: "", gerencia: "" },
+    { id: 18, nome: "Cumprimento de Ressalvas pós Parecer Jurídico", nomeCompleto: "Cumprimento de Ressalvas pós Parecer Jurídico", status: "pendente" as const, prazoPrevisao: "1 dia útil", responsavel: "", cargo: "", gerencia: "" },
+    { id: 19, nome: "Aprovação Jurídica", nomeCompleto: "Aprovação Jurídica", status: "pendente" as const, prazoPrevisao: "1 dia útil", responsavel: "", cargo: "", gerencia: "" },
+    { id: 20, nome: "Assinatura do Edital", nomeCompleto: "Assinatura do Edital", status: "pendente" as const, prazoPrevisao: "1 dia útil", responsavel: "", cargo: "", gerencia: "" },
+    { id: 21, nome: "Publicação", nomeCompleto: "Publicação", status: "pendente" as const, prazoPrevisao: "1 dia útil", responsavel: "", cargo: "", gerencia: "" }
   ];
 
   if (isNovoProcesso) {
@@ -277,17 +128,17 @@ const gerarEtapasCompletas = (isNovoProcesso: boolean) => {
           ...etapa,
           status: "concluido" as const,
           responsavel: "Dr. Maria Silva",
-          cargo: "Gerente Médico",
-          gerencia: "Gerência Médica"
+          cargo: "Gerente de Recursos Humanos",
+          gerencia: "Gerência de Recursos Humanos"
         };
       } else if (index === 1) {
         // Segunda etapa em andamento
         return {
           ...etapa,
           status: "andamento" as const,
-          responsavel: "Eng. Carlos Santos",
-          cargo: "Engenheiro Chefe",
-          gerencia: "Gerência de Engenharia"
+          responsavel: "Yasmin Pissolati Mattos Bretz",
+          cargo: "Gerente de Soluções e Projetos",
+          gerencia: "Gerência de Soluções e Projetos"
         };
       } else {
         // Demais etapas pendentes
@@ -423,9 +274,7 @@ export default function ProcessoDetalhes() {
   // Usar etapas completas para todos os processos
   const etapasAtuais = gerarEtapasCompletas(isNovoProcesso);
   
-  const handleVoltarProcessos = () => {
-    navigate("/processos-gerencia");
-  };
+
 
   // Funções para o modal de edição
   const handleOpenEditModal = () => {
@@ -597,14 +446,7 @@ export default function ProcessoDetalhes() {
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: 0.2 }}
             >
-              <Button
-                variant="ghost"
-                onClick={handleVoltarProcessos}
-                className="mb-6 flex items-center gap-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 transition-colors"
-              >
-                <ArrowLeft className="w-4 h-4" />
-                Voltar para Meus Processos
-              </Button>
+              <ReturnButton className="mb-6 text-gray-600 hover:text-gray-900 hover:bg-gray-100 transition-colors" />
             </motion.div>
 
             {/* Título Principal */}
