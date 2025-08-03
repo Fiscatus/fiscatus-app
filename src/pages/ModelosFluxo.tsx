@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -679,7 +680,7 @@ export default function ModelosFluxo() {
         description: "Você não tem permissão para acessar esta funcionalidade.",
         variant: "destructive"
       });
-      navigate("/dfd");
+      navigate("/planejamento-da-contratacao");
     }
   }, [user, navigate]);
 

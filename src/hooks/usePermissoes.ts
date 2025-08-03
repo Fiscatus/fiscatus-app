@@ -83,6 +83,20 @@ export function usePermissoes() {
     return GERENCIAS_PAI_SISTEMA.includes(user.gerencia);
   };
 
+  // Verificar permissão para modelos de fluxo
+  const temPermissaoModelosFluxo = () => {
+    if (!user) return false;
+    const gerenciasAutorizadas = [
+      'Comissão de Implantação',
+      'CI',
+      'SE - Secretaria Executiva',
+      'Secretaria Executiva',
+      'OUV - Ouvidoria',
+      'Ouvidoria'
+    ];
+    return gerenciasAutorizadas.some(g => user.gerencia.includes(g));
+  };
+
   return {
     podeEditarFluxo,
     podeEditarProcesso,
@@ -92,6 +106,7 @@ export function usePermissoes() {
     podeEditarCard,
     isGerenciaPai: podeEditarFluxo(),
     isGSP,
-    isGerenciaPaiSistema
+    isGerenciaPaiSistema,
+    temPermissaoModelosFluxo
   };
 } 

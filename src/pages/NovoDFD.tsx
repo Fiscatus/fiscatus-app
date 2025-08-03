@@ -90,7 +90,7 @@ export default function NovoDFD() {
   const handleEnviarAssinatura = () => {
     console.log("Enviando para assinatura:", formData);
     // Aqui seria feita a chamada para enviar para assinatura
-    navigate("/dfd");
+    navigate("/planejamento-da-contratacao");
   };
 
   const formatCurrency = (value: string) => {
