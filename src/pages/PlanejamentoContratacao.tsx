@@ -1,7 +1,6 @@
 import React from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import Topbar from "@/components/Topbar";
-import { toast } from "@/components/ui/use-toast";
 import { 
   BarChart3, 
   PieChart, 
@@ -15,12 +14,7 @@ import {
   FileText,
   AlertTriangle,
   CheckCircle2,
-  BookOpen,
-  FilePlus,
-  Briefcase,
-  ClipboardList,
-  Landmark,
-  Settings
+  FolderOpen
 } from "lucide-react";
 
 // Função para criar path do donut chart
@@ -62,14 +56,6 @@ function getStatusColor(status: string) {
 }
 
 export default function PlanejamentoContratacao() {
-  const handleSubmoduloClick = (modulo: string) => {
-    toast({
-      title: "Módulo em Desenvolvimento",
-      description: `O módulo "${modulo}" estará disponível em breve.`,
-      variant: "default"
-    });
-  };
-
   // Dados dos KPIs
   const kpis = [
     {
@@ -211,7 +197,12 @@ export default function PlanejamentoContratacao() {
       <main className="pt-20 px-6 py-8">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Planejamento da Contratação</h1>
+          <div className="flex items-center gap-3 mb-2">
+            <div className="p-2 bg-blue-100 rounded-lg">
+              <FolderOpen className="w-6 h-6 text-blue-600" />
+            </div>
+            <h1 className="text-3xl font-bold text-gray-900">Planejamento da Contratação</h1>
+          </div>
           <p className="text-gray-600">Acompanhe todos os processos de contratação em andamento</p>
         </div>
 
@@ -393,227 +384,7 @@ export default function PlanejamentoContratacao() {
           </Card>
         </div>
 
-        {/* Submódulos do Sistema */}
-        <div className="mt-8">
-          <h2 className="text-xl font-bold text-gray-900 mb-6">Módulos do Sistema</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-            {/* Contratos */}
-            <Card 
-              className="bg-white border-0 shadow-sm hover:shadow-md transition-shadow cursor-pointer"
-              onClick={() => handleSubmoduloClick("Contratos")}
-            >
-              <CardContent className="p-4">
-                <div className="flex items-center space-x-3 mb-3">
-                  <div className="p-2 bg-blue-100 rounded-lg">
-                    <FileText className="w-5 h-5 text-blue-600" />
-                  </div>
-                  <div>
-                    <h3 className="font-semibold text-gray-900">Contratos</h3>
-                    <p className="text-xs text-gray-500">Gestão de contratos</p>
-                  </div>
-                </div>
-                <div className="text-xs text-gray-400 mb-3">
-                  <p>• Criação e edição de contratos</p>
-                  <p>• Acompanhamento de vigência</p>
-                  <p>• Gestão de fornecedores</p>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-xs text-orange-600 font-medium">Em breve</span>
-                  <ChevronRight className="w-4 h-4 text-gray-400" />
-                </div>
-              </CardContent>
-            </Card>
 
-            {/* Atas de Registro de Preço */}
-            <Card 
-              className="bg-white border-0 shadow-sm hover:shadow-md transition-shadow cursor-pointer"
-              onClick={() => handleSubmoduloClick("Atas de Registro de Preço")}
-            >
-              <CardContent className="p-4">
-                <div className="flex items-center space-x-3 mb-3">
-                  <div className="p-2 bg-green-100 rounded-lg">
-                    <BookOpen className="w-5 h-5 text-green-600" />
-                  </div>
-                  <div>
-                    <h3 className="font-semibold text-gray-900">Atas de Registro de Preço</h3>
-                    <p className="text-xs text-gray-500">Atas de registro de preço</p>
-                  </div>
-                </div>
-                <div className="text-xs text-gray-400 mb-3">
-                  <p>• Consulta de atas vigentes</p>
-                  <p>• Acompanhamento de preços</p>
-                  <p>• Gestão de fornecedores</p>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-xs text-orange-600 font-medium">Em breve</span>
-                  <ChevronRight className="w-4 h-4 text-gray-400" />
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Aditivos */}
-            <Card 
-              className="bg-white border-0 shadow-sm hover:shadow-md transition-shadow cursor-pointer"
-              onClick={() => handleSubmoduloClick("Aditivos")}
-            >
-              <CardContent className="p-4">
-                <div className="flex items-center space-x-3 mb-3">
-                  <div className="p-2 bg-purple-100 rounded-lg">
-                    <FilePlus className="w-5 h-5 text-purple-600" />
-                  </div>
-                  <div>
-                    <h3 className="font-semibold text-gray-900">Aditivos</h3>
-                    <p className="text-xs text-gray-500">Gestão de aditivos</p>
-                  </div>
-                </div>
-                <div className="text-xs text-gray-400 mb-3">
-                  <p>• Criação de aditivos</p>
-                  <p>• Aprovação de alterações</p>
-                  <p>• Controle de prazos</p>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-xs text-orange-600 font-medium">Em breve</span>
-                  <ChevronRight className="w-4 h-4 text-gray-400" />
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Gestão Contratual */}
-            <Card 
-              className="bg-white border-0 shadow-sm hover:shadow-md transition-shadow cursor-pointer"
-              onClick={() => handleSubmoduloClick("Gestão Contratual")}
-            >
-              <CardContent className="p-4">
-                <div className="flex items-center space-x-3 mb-3">
-                  <div className="p-2 bg-indigo-100 rounded-lg">
-                    <Briefcase className="w-5 h-5 text-indigo-600" />
-                  </div>
-                  <div>
-                    <h3 className="font-semibold text-gray-900">Gestão Contratual</h3>
-                    <p className="text-xs text-gray-500">Gestão contratual</p>
-                  </div>
-                </div>
-                <div className="text-xs text-gray-400 mb-3">
-                  <p>• Dashboard contratual</p>
-                  <p>• Relatórios gerenciais</p>
-                  <p>• Indicadores de performance</p>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-xs text-orange-600 font-medium">Em breve</span>
-                  <ChevronRight className="w-4 h-4 text-gray-400" />
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Execução dos Contratos */}
-            <Card 
-              className="bg-white border-0 shadow-sm hover:shadow-md transition-shadow cursor-pointer"
-              onClick={() => handleSubmoduloClick("Execução dos Contratos")}
-            >
-              <CardContent className="p-4">
-                <div className="flex items-center space-x-3 mb-3">
-                  <div className="p-2 bg-teal-100 rounded-lg">
-                    <ClipboardList className="w-5 h-5 text-teal-600" />
-                  </div>
-                  <div>
-                    <h3 className="font-semibold text-gray-900">Execução dos Contratos</h3>
-                    <p className="text-xs text-gray-500">Execução dos contratos</p>
-                  </div>
-                </div>
-                <div className="text-xs text-gray-400 mb-3">
-                  <p>• Acompanhamento de execução</p>
-                  <p>• Controle de entregas</p>
-                  <p>• Gestão de qualidade</p>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-xs text-orange-600 font-medium">Em breve</span>
-                  <ChevronRight className="w-4 h-4 text-gray-400" />
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Execução das Atas */}
-            <Card 
-              className="bg-white border-0 shadow-sm hover:shadow-md transition-shadow cursor-pointer"
-              onClick={() => handleSubmoduloClick("Execução das Atas")}
-            >
-              <CardContent className="p-4">
-                <div className="flex items-center space-x-3 mb-3">
-                  <div className="p-2 bg-amber-100 rounded-lg">
-                    <Landmark className="w-5 h-5 text-amber-600" />
-                  </div>
-                  <div>
-                    <h3 className="font-semibold text-gray-900">Execução das Atas</h3>
-                    <p className="text-xs text-gray-500">Execução das atas</p>
-                  </div>
-                </div>
-                <div className="text-xs text-gray-400 mb-3">
-                  <p>• Acompanhamento de execução</p>
-                  <p>• Controle de preços</p>
-                  <p>• Gestão de fornecedores</p>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-xs text-orange-600 font-medium">Em breve</span>
-                  <ChevronRight className="w-4 h-4 text-gray-400" />
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Ocorrências */}
-            <Card 
-              className="bg-white border-0 shadow-sm hover:shadow-md transition-shadow cursor-pointer"
-              onClick={() => handleSubmoduloClick("Ocorrências")}
-            >
-              <CardContent className="p-4">
-                <div className="flex items-center space-x-3 mb-3">
-                  <div className="p-2 bg-red-100 rounded-lg">
-                    <AlertTriangle className="w-5 h-5 text-red-600" />
-                  </div>
-                  <div>
-                    <h3 className="font-semibold text-gray-900">Ocorrências</h3>
-                    <p className="text-xs text-gray-500">Gestão de ocorrências</p>
-                  </div>
-                </div>
-                <div className="text-xs text-gray-400 mb-3">
-                  <p>• Registro de ocorrências</p>
-                  <p>• Acompanhamento de resolução</p>
-                  <p>• Relatórios de incidentes</p>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-xs text-orange-600 font-medium">Em breve</span>
-                  <ChevronRight className="w-4 h-4 text-gray-400" />
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Configurações */}
-            <Card 
-              className="bg-white border-0 shadow-sm hover:shadow-md transition-shadow cursor-pointer"
-              onClick={() => handleSubmoduloClick("Configurações")}
-            >
-              <CardContent className="p-4">
-                <div className="flex items-center space-x-3 mb-3">
-                  <div className="p-2 bg-gray-100 rounded-lg">
-                    <Settings className="w-5 h-5 text-gray-600" />
-                  </div>
-                  <div>
-                    <h3 className="font-semibold text-gray-900">Configurações</h3>
-                    <p className="text-xs text-gray-500">Configurações do sistema</p>
-                  </div>
-                </div>
-                <div className="text-xs text-gray-400 mb-3">
-                  <p>• Configurações gerais</p>
-                  <p>• Gestão de usuários</p>
-                  <p>• Permissões e acessos</p>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-xs text-orange-600 font-medium">Em breve</span>
-                  <ChevronRight className="w-4 h-4 text-gray-400" />
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        </div>
 
         {/* Rodapé */}
         <footer className="mt-6 pt-4 border-t border-gray-200">

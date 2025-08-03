@@ -3,13 +3,20 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { toast } from "@/components/ui/use-toast";
 import { 
   X, 
-  Home
+  FolderOpen
 } from "lucide-react";
+
+const dashboard = {
+  label: "Dashboard Principal", 
+  icon: <FolderOpen className="w-5 h-5" />,
+  path: "/",
+  description: "Visão geral do sistema"
+};
 
 const modules = [
   { 
     label: "Planejamento da Contratação", 
-    icon: <Home className="w-5 h-5" />,
+    icon: <FolderOpen className="w-5 h-5" />,
     path: "/planejamento-da-contratacao",
     description: "Dashboard principal do sistema"
   }
@@ -48,7 +55,12 @@ export default function Sidebar({ open, onClose }: { open: boolean; onClose: () 
 
   const isActiveModule = (modulePath: string) => {
     return location.pathname === modulePath || 
-           (modulePath === "/planejamento-da-contratacao" && location.pathname === "/");
+           (modulePath === "/" && location.pathname === "/") ||
+           (modulePath === "/planejamento-da-contratacao" && location.pathname === "/planejamento-da-contratacao");
+  };
+
+  const isActiveDashboard = (dashboardPath: string) => {
+    return location.pathname === dashboardPath;
   };
 
   return (
@@ -78,9 +90,35 @@ export default function Sidebar({ open, onClose }: { open: boolean; onClose: () 
         </div>
         
         <nav className="flex-1 overflow-y-auto py-4">
+          {/* Dashboard Principal */}
+          <div className="px-4 mb-6">
+            <button
+              onClick={() => handleModuleClick(dashboard)}
+              className={`w-full flex items-center gap-3 px-6 py-3 text-left transition-all duration-200 group ${
+                isActiveDashboard(dashboard.path)
+                  ? "bg-blue-50 border-l-4 border-blue-600 text-blue-700"
+                  : "text-gray-700 hover:bg-gray-50 border-l-4 border-transparent hover:border-gray-300"
+              } cursor-pointer`}
+              tabIndex={0}
+            >
+              <div className={`${isActiveDashboard(dashboard.path) ? "text-blue-600" : "text-gray-500 group-hover:text-gray-700"}`}>
+                {dashboard.icon}
+              </div>
+              <div className="flex-1 min-w-0">
+                <span className="block font-medium">
+                  {dashboard.label}
+                </span>
+                <span className="block text-xs text-gray-500 truncate">
+                  {dashboard.description}
+                </span>
+              </div>
+            </button>
+          </div>
+
+          {/* Módulos do Sistema */}
           <div className="px-4 mb-4">
             <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">
-              Módulo Principal
+              Módulos do Sistema
             </h3>
           </div>
           
