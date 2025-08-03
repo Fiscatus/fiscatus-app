@@ -1,6 +1,6 @@
 import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { Menu, Bell, Settings, Plus, PenLine, FileText, Landmark, Home, Workflow, ChevronDown } from "lucide-react";
+import { useNavigate, useLocation } from "react-router-dom";
+import { Menu, Bell, Settings, Home, FileText, Users, PenLine, Workflow } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
@@ -34,6 +34,20 @@ export default function Topbar() {
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const navigate = useNavigate();
   const { user } = useUser();
+  const location = useLocation();
+
+  // Verifica se está em qualquer página do módulo Planejamento da Contratação
+  const isPlanejamentoContratacao = 
+    location.pathname === "/planejamento-da-contratacao" || 
+    location.pathname === "/" ||
+    location.pathname === "/processos" ||
+    location.pathname === "/processos-gerencia" ||
+    location.pathname === "/assinaturas" ||
+    location.pathname === "/modelos-de-fluxo" ||
+    location.pathname.startsWith("/processos/") ||
+    location.pathname.startsWith("/processo/") ||
+    location.pathname.startsWith("/assinaturas/") ||
+    location.pathname.startsWith("/processos-gerencia/");
 
   // Verifica se o usuário tem permissão para acessar modelos de fluxo
   const temPermissaoModelosFluxo = () => {
@@ -64,44 +78,47 @@ export default function Topbar() {
         <div className="flex flex-wrap gap-4 justify-center items-center flex-1 min-w-0">
           <QuickActionButton 
             icon={<Home className="text-emerald-600" />} 
-            label={<span className="text-emerald-700 font-semibold">Painel Inicial</span>} 
+            label={<span className="text-emerald-700 font-semibold">Planejamento da Contratação</span>} 
             variant="primary" 
-            onClick={() => navigate("/dfd")}
+            onClick={() => navigate("/planejamento-da-contratacao")}
           />
-          <QuickActionButton 
-            icon={<Landmark className="text-gray-600" />} 
-            label={<span className="text-gray-700 font-semibold">Processos da Gerência</span>} 
-            variant="muted" 
-            onClick={() => navigate("/processos-gerencia")}
-          />
-          <QuickActionButton 
-            icon={<FileText className="text-slate-600" />} 
-            label={<span className="text-slate-700 font-semibold">Meus Processos</span>} 
-            variant="secondary" 
-            onClick={() => navigate("/processos")}
-          />
-          <QuickActionButton 
-            icon={<PenLine className="text-blue-600" />} 
-            label={<span className="text-blue-700 font-semibold">Minhas Assinaturas</span>} 
-            variant="tertiary" 
-            onClick={() => navigate("/assinaturas")}
-          />
-          {temPermissaoModelosFluxo() && (
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <button className="flex items-center gap-2 px-4 py-2 rounded-xl border bg-white shadow-sm text-sm font-medium whitespace-nowrap transition-all duration-200 hover:shadow-md hover:scale-105 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 bg-purple-50 border-purple-200 text-purple-700 hover:bg-purple-100 hover:border-purple-300">
-                  <Workflow className="text-purple-600" />
-                  <span className="text-purple-700 font-semibold">Configurações do Fluxo</span>
-                  <ChevronDown className="w-4 h-4 text-purple-600" />
-                </button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="center" className="w-56">
-                <DropdownMenuItem onClick={() => navigate("/modelos-de-fluxo")} className="cursor-pointer">
-                  <Workflow className="mr-2 h-4 w-4" />
-                  <span>Modelos de Fluxo</span>
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+          {isPlanejamentoContratacao && (
+            <>
+              <QuickActionButton 
+                icon={<FileText className="text-slate-600" />} 
+                label={<span className="text-slate-700 font-semibold">Meus Processos</span>} 
+                variant="secondary" 
+                onClick={() => navigate("/processos")}
+              />
+              <QuickActionButton 
+                icon={<Users className="text-gray-600" />} 
+                label={<span className="text-gray-700 font-semibold">Processos da Gerência</span>} 
+                variant="muted" 
+                onClick={() => navigate("/processos-gerencia")}
+              />
+              <QuickActionButton 
+                icon={<PenLine className="text-blue-600" />} 
+                label={<span className="text-blue-700 font-semibold">Minhas Assinaturas</span>} 
+                variant="tertiary" 
+                onClick={() => navigate("/assinaturas")}
+              />
+              {temPermissaoModelosFluxo() && (
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <button className="flex items-center gap-2 px-4 py-2 rounded-xl border bg-white shadow-sm text-sm font-medium whitespace-nowrap transition-all duration-200 hover:shadow-md hover:scale-105 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 bg-purple-50 border-purple-200 text-purple-700 hover:bg-purple-100 hover:border-purple-300">
+                      <Workflow className="text-purple-600" />
+                      <span className="text-purple-700 font-semibold">Modelos de Fluxo</span>
+                    </button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="center" className="w-56">
+                    <DropdownMenuItem onClick={() => navigate("/modelos-de-fluxo")} className="cursor-pointer">
+                      <Workflow className="mr-2 h-4 w-4" />
+                      <span>Modelos de Fluxo</span>
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              )}
+            </>
           )}
         </div>
         {/* Direita: busca, ícones, avatar */}

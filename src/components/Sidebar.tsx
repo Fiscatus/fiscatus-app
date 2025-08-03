@@ -1,20 +1,24 @@
 import React from "react";
-import { X, LayoutDashboard, FileText, BookOpen, FilePlus, Briefcase, ClipboardList, AlertCircle, Bell, Settings, Landmark } from "lucide-react";
+import { useNavigate, useLocation } from "react-router-dom";
+import { toast } from "@/components/ui/use-toast";
+import { 
+  X, 
+  Home
+} from "lucide-react";
 
 const modules = [
-  { label: "Dashboard", icon: <LayoutDashboard className="w-5 h-5" /> },
-  { label: "Contratos", icon: <FileText className="w-5 h-5" /> },
-  { label: "Atas de Registro de Preço", icon: <BookOpen className="w-5 h-5" /> },
-  { label: "Aditivos", icon: <FilePlus className="w-5 h-5" /> },
-  { label: "Gestão Contratual", icon: <Briefcase className="w-5 h-5" /> },
-  { label: "Execução dos Contratos", icon: <ClipboardList className="w-5 h-5" /> },
-  { label: "Execução das Atas", icon: <Landmark className="w-5 h-5" /> },
-  { label: "Ocorrências", icon: <AlertCircle className="w-5 h-5" /> },
-  { label: "Notificações", icon: <Bell className="w-5 h-5" /> },
-  { label: "Configurações", icon: <Settings className="w-5 h-5" /> },
+  { 
+    label: "Planejamento da Contratação", 
+    icon: <Home className="w-5 h-5" />,
+    path: "/planejamento-da-contratacao",
+    description: "Dashboard principal do sistema"
+  }
 ];
 
-export default function Sidebar({ open, onClose, active = 0 }: { open: boolean; onClose: () => void; active?: number }) {
+export default function Sidebar({ open, onClose }: { open: boolean; onClose: () => void }) {
+  const navigate = useNavigate();
+  const location = useLocation();
+
   React.useEffect(() => {
     function handleEsc(e: KeyboardEvent) {
       if (e.key === "Escape") onClose();
@@ -22,6 +26,30 @@ export default function Sidebar({ open, onClose, active = 0 }: { open: boolean; 
     if (open) window.addEventListener("keydown", handleEsc);
     return () => window.removeEventListener("keydown", handleEsc);
   }, [open, onClose]);
+
+  const handleModuleClick = (module: any) => {
+    if (module.disabled) {
+      toast({
+        title: "Módulo em Desenvolvimento",
+        description: `O módulo "${module.label}" estará disponível em breve.`,
+        variant: "default"
+      });
+      return;
+    }
+    
+    if (module.restricted) {
+      // Verificar permissões antes de navegar
+      // Por enquanto, vamos permitir a navegação
+    }
+    
+    navigate(module.path);
+    onClose();
+  };
+
+  const isActiveModule = (modulePath: string) => {
+    return location.pathname === modulePath || 
+           (modulePath === "/planejamento-da-contratacao" && location.pathname === "/");
+  };
 
   return (
     <>
@@ -32,27 +60,67 @@ export default function Sidebar({ open, onClose, active = 0 }: { open: boolean; 
       />
       {/* Sidebar */}
       <aside
-        className={`fixed top-0 left-0 h-screen w-64 bg-white shadow z-50 flex flex-col transition-transform duration-300 ${open ? "translate-x-0" : "-translate-x-full"}`}
+        className={`fixed top-0 left-0 h-screen w-80 bg-white shadow-lg z-50 flex flex-col transition-transform duration-300 ${open ? "translate-x-0" : "-translate-x-full"}`}
         tabIndex={-1}
       >
-        <div className="flex items-center justify-between h-16 px-4 border-b border-gray-200">
-          <span className="text-lg font-semibold text-gray-900">Módulos</span>
-          <button onClick={onClose} className="p-2 rounded hover:bg-gray-100" aria-label="Fechar sidebar">
+        <div className="flex items-center justify-between h-16 px-6 border-b border-gray-200 bg-gray-50">
+          <div>
+            <span className="text-lg font-semibold text-gray-900">Módulos</span>
+            <p className="text-xs text-gray-500">Navegação do sistema</p>
+          </div>
+          <button 
+            onClick={onClose} 
+            className="p-2 rounded-lg hover:bg-gray-200 transition-colors" 
+            aria-label="Fechar sidebar"
+          >
             <X className="w-5 h-5" />
           </button>
         </div>
+        
         <nav className="flex-1 overflow-y-auto py-4">
-          {modules.map((mod, idx) => (
+          <div className="px-4 mb-4">
+            <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">
+              Módulo Principal
+            </h3>
+          </div>
+          
+          {modules.map((module, idx) => (
             <button
-              key={mod.label}
-              className={`w-full flex items-center gap-3 px-6 py-3 text-left text-gray-700 hover:bg-gray-100 transition font-medium ${active === idx ? "bg-gray-100 border-l-4 border-blue-600 text-blue-700" : "border-l-4 border-transparent"}`}
+              key={module.label}
+              onClick={() => handleModuleClick(module)}
+              className={`w-full flex items-center gap-3 px-6 py-3 text-left transition-all duration-200 group ${
+                isActiveModule(module.path)
+                  ? "bg-blue-50 border-l-4 border-blue-600 text-blue-700"
+                  : "text-gray-700 hover:bg-gray-50 border-l-4 border-transparent hover:border-gray-300"
+              } ${module.disabled ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}`}
+              disabled={module.disabled}
               tabIndex={0}
             >
-              {mod.icon}
-              <span className="truncate">{mod.label}</span>
+              <div className={`${isActiveModule(module.path) ? "text-blue-600" : "text-gray-500 group-hover:text-gray-700"}`}>
+                {module.icon}
+              </div>
+              <div className="flex-1 min-w-0">
+                <span className={`block font-medium ${module.disabled ? "text-gray-400" : ""}`}>
+                  {module.label}
+                </span>
+                <span className="block text-xs text-gray-500 truncate">
+                  {module.description}
+                </span>
+              </div>
+              {module.disabled && (
+                <span className="text-xs text-gray-400">Em breve</span>
+              )}
             </button>
           ))}
         </nav>
+        
+        {/* Footer */}
+        <div className="border-t border-gray-200 p-4">
+          <div className="text-xs text-gray-500 text-center">
+            <p>Fiscatus v1.0.0</p>
+            <p className="mt-1">Sistema de Gestão Contratual</p>
+          </div>
+        </div>
       </aside>
     </>
   );

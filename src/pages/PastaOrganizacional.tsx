@@ -2,6 +2,7 @@ import React, { useState, useMemo } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { usePastasOrganizacionais } from "@/hooks/usePastasOrganizacionais";
 import ReturnButton from "@/components/ReturnButton";
+import Topbar from "@/components/Topbar";
 import { 
   ArrowLeft, 
   Search, 
@@ -537,7 +538,8 @@ export default function PastaOrganizacional() {
 
   return (
     <div className="min-h-screen bg-gray-50/30">
-      <div className="w-full px-6 py-8">
+      <Topbar />
+      <div className="pt-20 w-full px-6 py-8">
         {/* Header */}
         <div className="flex items-center justify-between mb-8">
           <div className="flex items-center gap-4">

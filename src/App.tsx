@@ -4,8 +4,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import Auth from "./pages/Auth";
 import Home from "./pages/Home";
 import NotFound from "./pages/NotFound";
-import DFDDashboard from "./pages/DFDDashboard";
-import NovoDFD from "./pages/NovoDFD";
+import PlanejamentoContratacao from "./pages/PlanejamentoContratacao";
 import MinhasAssinaturas from "./pages/MinhasAssinaturas";
 import MeusProcessos from "./pages/MeusProcessos";
 import ProcessoDetalhes from "./pages/ProcessoDetalhes";
@@ -30,11 +29,12 @@ const App = () => (
           <Sonner />
           <BrowserRouter>
           <Routes>
-            <Route path="/" element={<Navigate to="/dfd" replace />} />
+            <Route path="/" element={<Navigate to="/planejamento-da-contratacao" replace />} />
             <Route path="/login" element={<Auth />} />
             <Route path="/home" element={<Home />} />
-            <Route path="/dfd" element={<DFDDashboard />} />
-            <Route path="/dfd/novo" element={<NovoDFD />} />
+            <Route path="/dfd" element={<Navigate to="/planejamento-da-contratacao" replace />} />
+            <Route path="/dfd/novo" element={<Navigate to="/planejamento-da-contratacao" replace />} />
+            <Route path="/planejamento-da-contratacao" element={<PlanejamentoContratacao />} />
             <Route path="/assinaturas" element={<MinhasAssinaturas />} />
             <Route path="/assinaturas/:id" element={<MinhasAssinaturas />} />
             <Route path="/processos" element={<MeusProcessos />} />
@@ -44,6 +44,7 @@ const App = () => (
             <Route path="/processos-gerencia" element={<ProcessosGerencia />} />
             <Route path="/processos-gerencia/pasta/:pastaId" element={<PastaOrganizacional />} />
             <Route path="/modelos-de-fluxo" element={<ModelosFluxo />} />
+            
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>

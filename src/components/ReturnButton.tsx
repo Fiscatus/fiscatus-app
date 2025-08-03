@@ -50,16 +50,16 @@ export default function ReturnButton({
     // Página: Página Principal de "Meus Processos"
     if (path === '/processos') {
       return {
-        destination: '/dfd',
-        text: 'Voltar para o Painel Inicial'
+        destination: '/planejamento-da-contratacao',
+        text: 'Voltar para o Planejamento da Contratação'
       };
     }
     
     // Página: Página Principal de "Minhas Assinaturas"
     if (path === '/assinaturas') {
       return {
-        destination: '/dfd',
-        text: 'Voltar para o Painel Inicial'
+        destination: '/planejamento-da-contratacao',
+        text: 'Voltar para o Planejamento da Contratação'
       };
     }
     
@@ -82,8 +82,8 @@ export default function ReturnButton({
     // Página: Novo DFD
     if (path === '/dfd/novo') {
       return {
-        destination: '/dfd',
-        text: 'Voltar para o Painel Inicial'
+        destination: '/planejamento-da-contratacao',
+        text: 'Voltar para o Planejamento da Contratação'
       };
     }
     
@@ -98,8 +98,8 @@ export default function ReturnButton({
     // Página: Processos da Gerência
     if (path === '/processos-gerencia') {
       return {
-        destination: '/dfd',
-        text: 'Voltar para o Painel Inicial'
+        destination: '/planejamento-da-contratacao',
+        text: 'Voltar para o Planejamento da Contratação'
       };
     }
     
