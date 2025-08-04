@@ -1,5 +1,6 @@
 import React from "react";
 import { Card, CardContent } from "@/components/ui/card";
+import { motion } from "framer-motion";
 import { 
   FileText, 
   TrendingUp, 
@@ -11,88 +12,97 @@ import {
   BarChart3,
   Settings,
   Users,
-  ArrowRight
+  ArrowRight,
+  ChevronRight,
+  Activity,
+  Database
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import logoFiscatus from "@/assets/logo_fiscatus.png";
+import { GradientCard } from "@/components/ui/gradient-card";
 
 export default function Dashboard() {
   const navigate = useNavigate();
 
-  // Dados globais do sistema
+  // Dados globais do sistema - reformulados com design dark
   const dadosGlobais = [
     {
       label: "Total de Processos Criados",
       value: "2.847",
       descricao: "Processos no sistema",
-      icon: <FileText className="w-8 h-8" />,
-      color: "bg-blue-100 text-blue-600"
+      icon: <FileText className="w-6 h-6" />,
+      gradient: "from-slate-900 to-blue-900",
+      shadow: "shadow-blue-900/30",
     },
     {
       label: "Processos Ativos",
       value: "1.234",
       descricao: "Em andamento",
-      icon: <TrendingUp className="w-8 h-8" />,
-      color: "bg-green-100 text-green-600"
+      icon: <Activity className="w-6 h-6" />,
+      gradient: "from-slate-900 to-green-900",
+      shadow: "shadow-green-900/30",
     },
     {
       label: "Processos Concluídos",
       value: "1.456",
       descricao: "Finalizados",
-      icon: <CheckCircle2 className="w-8 h-8" />,
-      color: "bg-emerald-100 text-emerald-600"
+      icon: <CheckCircle2 className="w-6 h-6" />,
+      gradient: "from-slate-900 to-cyan-900",
+      shadow: "shadow-cyan-900/30",
     },
     {
       label: "Entidades Públicas",
       value: "156",
       descricao: "Atendidas",
-      icon: <Building2 className="w-8 h-8" />,
-      color: "bg-purple-100 text-purple-600"
+      icon: <Building2 className="w-6 h-6" />,
+      gradient: "from-slate-900 to-purple-900",
+      shadow: "shadow-purple-900/30",
     }
   ];
 
-  // Módulos do sistema
+  // Módulos do sistema - reformulados com descrições melhoradas
   const modulos = [
     {
       nome: "Planejamento da Contratação",
-      descricao: "Gerencie DFD, ETP, TR, Edital e todo o fluxo",
-      icon: <FolderOpen className="w-8 h-8" />,
+      descricao: "Gerencie toda a etapa preparatória da contratação pública, incluindo DFD, ETP, TR, Edital e controle do fluxo.",
+      icon: <FolderOpen className="w-6 h-6" />,
       path: "/planejamento-da-contratacao",
-      color: "bg-blue-50 border-blue-200 hover:bg-blue-100"
+      color: "#3b82f6"
     },
     {
       nome: "Execução Contratual",
-      descricao: "Acompanhe entregas, aditivos, fiscalizações e recebimentos",
-      icon: <ClipboardList className="w-8 h-8" />,
+      descricao: "Acompanhe entregas, fiscalizações, aditivos, prazos e recebimentos com rastreabilidade total.",
+      icon: <ClipboardList className="w-6 h-6" />,
       path: "/execucao-contratual",
-      color: "bg-green-50 border-green-200 hover:bg-green-100"
+      color: "#10b981"
     },
     {
       nome: "Pregão e Jurídico",
-      descricao: "Para pregoeiros e pareceres jurídicos após a publicação",
-      icon: <Gavel className="w-8 h-8" />,
+      descricao: "Centralize os pareceres jurídicos, análises de edital e rotinas pós-publicação voltadas aos pregoeiros.",
+      icon: <Gavel className="w-6 h-6" />,
       path: "/pregao-juridico",
-      color: "bg-orange-50 border-orange-200 hover:bg-orange-100"
+      color: "#f97316"
     },
     {
       nome: "Relatórios",
-      descricao: "Gere relatórios e dashboards customizados",
-      icon: <BarChart3 className="w-8 h-8" />,
+      descricao: "Crie relatórios customizados, indicadores de desempenho e dashboards gerenciais em tempo real.",
+      icon: <BarChart3 className="w-6 h-6" />,
       path: "/relatorios",
-      color: "bg-purple-50 border-purple-200 hover:bg-purple-100"
+      color: "#8b5cf6"
     },
     {
       nome: "Configurações do Fluxo",
-      descricao: "Edite modelos e cards padrão por instituição",
-      icon: <Settings className="w-8 h-8" />,
+      descricao: "Edite os modelos, cards e etapas padrão aplicados aos fluxos de contratação da sua instituição.",
+      icon: <Settings className="w-6 h-6" />,
       path: "/configuracoes-fluxo",
-      color: "bg-indigo-50 border-indigo-200 hover:bg-indigo-100"
+      color: "#6366f1"
     },
     {
       nome: "Administração do Sistema",
-      descricao: "Controle usuários, permissões e entidades",
-      icon: <Users className="w-8 h-8" />,
+      descricao: "Controle permissões, gerencie usuários, vincule entidades e defina os perfis de acesso ao sistema.",
+      icon: <Users className="w-6 h-6" />,
       path: "/administracao",
-      color: "bg-gray-50 border-gray-200 hover:bg-gray-100"
+      color: "#6b7280"
     }
   ];
 
@@ -100,126 +110,100 @@ export default function Dashboard() {
     navigate(path);
   };
 
-    return (
-    <div className="h-screen w-full bg-gray-50 flex flex-col">
-      {/* Header Institucional */}
-      <header className="bg-white shadow-sm border-b border-gray-200 flex-shrink-0">
-        <div className="w-full px-6 py-6">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-4">
-              <div className="flex items-center space-x-3">
-                <div className="w-12 h-12 bg-blue-600 rounded-lg flex items-center justify-center">
-                  <FileText className="w-8 h-8 text-white" />
-                </div>
-                <div>
-                  <h1 className="text-2xl font-bold text-gray-900">
-                    Fiscatus
-                  </h1>
-                  <p className="text-sm text-gray-600">
-                    Sistema de Gestão Contratual
-                  </p>
-                </div>
-              </div>
-              <div className="hidden md:block ml-8">
-                <p className="text-sm text-gray-600 italic">
-                  Gestão inteligente e integrada para contratações públicas.
-                </p>
-              </div>
-            </div>
-            <div className="text-right">
-              <span className="text-sm font-medium text-gray-500">v1.0.0</span>
+  return (
+        <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 animate-fade-in">
+                    {/* Topo Institucional - Proporções Ajustadas */}
+                          <header className="bg-gradient-to-br from-[#0f172a] via-[#1e1e2f] to-[#10131f] py-3 shadow-md border-b border-slate-800">
+           <div className="max-w-screen-xl mx-auto px-6 flex flex-col items-center text-center">
+             {/* Logo Proporcional */}
+             <div className="w-20 h-20 lg:w-24 lg:h-24 rounded-xl flex items-center justify-center shadow-md mb-0.5">
+               <img
+                 src={logoFiscatus}
+                 alt="Logo Fiscatus"
+                 className="w-18 h-18 lg:w-22 lg:h-22 object-contain"
+               />
+             </div>
+             
+             {/* Identidade Institucional Balanceada */}
+             <div className="flex flex-col items-center gap-0">
+              <h1 className="text-3xl lg:text-4xl font-extrabold text-white tracking-tight drop-shadow-[0_1px_2px_rgba(255,255,255,0.2)]" style={{ fontFamily: 'Raleway, sans-serif' }}>
+                Fiscatus
+              </h1>
+                             <p className="text-base lg:text-lg font-medium text-slate-300">
+                 Sistema de Gestão do Processo Licitatório
+               </p>
             </div>
           </div>
-        </div>
-      </header>
+        </header>
 
-      {/* Conteúdo Principal */}
-      <main className="flex-1 w-full px-6 py-8 overflow-y-auto">
-        {/* Cards de Dados Globais */}
-        <section className="mb-12">
-          <h2 className="text-xl font-semibold text-gray-900 mb-6">
-            Visão Geral do Sistema
-          </h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+             {/* Transição Suave entre Header e Conteúdo */}
+       <div className="bg-gradient-to-t from-[#f8fafc] to-transparent h-8 w-full mt-6"></div>
+       
+       {/* Conteúdo Principal */}
+       <main className="max-w-screen-xl mx-auto px-6 py-8 mt-6">
+        {/* Cards de Indicadores - Grid 2x2 Reformulado */}
+        <section className="mb-16">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             {dadosGlobais.map((dado, index) => (
-              <Card key={index} className="bg-white border-0 shadow-sm hover:shadow-md transition-shadow">
-                <CardContent className="p-6">
-                  <div className="flex items-center justify-between mb-4">
-                    <div className={`p-3 rounded-lg ${dado.color}`}>
-                      {dado.icon}
-                    </div>
+              <Card 
+                key={index} 
+                className={`rounded-2xl bg-gradient-to-br ${dado.gradient} text-white shadow-xl ${dado.shadow} p-6 hover:scale-[1.02] hover:shadow-2xl transition-all duration-300 cursor-default animate-fade-in-up`}
+                style={{ animationDelay: `${index * 0.1}s` }}
+              >
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-full bg-slate-800">
+                    {dado.icon}
                   </div>
-                  <div>
-                    <p className="text-3xl font-bold text-gray-900 mb-1">
-                      {dado.value}
-                    </p>
-                    <p className="text-sm font-medium text-gray-600 mb-1">
-                      {dado.label}
-                    </p>
-                    <p className="text-xs text-gray-500">
-                      {dado.descricao}
-                    </p>
+                  <div className="flex flex-col">
+                    <span className="text-3xl font-bold">{dado.value}</span>
+                    <span className="text-sm opacity-90">{dado.label}</span>
+                    <span className="text-xs text-slate-400">{dado.descricao}</span>
                   </div>
-                </CardContent>
+                </div>
               </Card>
             ))}
           </div>
         </section>
 
-        {/* Módulos do Sistema */}
+        {/* Módulos do Sistema - Grid 3x2 Reformulado */}
         <section>
-          <h2 className="text-xl font-semibold text-gray-900 mb-6">
+          <h2 className="text-3xl font-bold text-gray-900 mb-10 text-center">
             Módulos do Sistema
           </h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {modulos.map((modulo, index) => (
-              <Card 
-                key={index} 
-                className={`bg-white border-2 cursor-pointer transition-all duration-200 hover:shadow-lg hover:scale-105 ${modulo.color}`}
-                onClick={() => handleModuloClick(modulo.path)}
+              <motion.div
+                key={index}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: index * 0.1 }}
               >
-                <CardContent className="p-6">
-                  <div className="flex items-start justify-between mb-4">
-                    <div className="p-3 rounded-lg bg-gray-100">
-                      {modulo.icon}
-                    </div>
-                    <ArrowRight className="w-5 h-5 text-gray-400" />
-                  </div>
-                  <div>
-                    <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                      {modulo.nome}
-                    </h3>
-                    <p className="text-sm text-gray-600">
-                      {modulo.descricao}
-                    </p>
-                  </div>
-                </CardContent>
-              </Card>
+                <GradientCard
+                  title={modulo.nome}
+                  description={modulo.descricao}
+                  icon={modulo.icon}
+                  color={modulo.color}
+                  onClick={() => handleModuloClick(modulo.path)}
+                />
+              </motion.div>
             ))}
           </div>
         </section>
       </main>
 
-      {/* Footer Institucional */}
-      <footer className="bg-white border-t border-gray-200 flex-shrink-0">
-        <div className="w-full px-6 py-6">
-          <div className="flex flex-col md:flex-row items-center justify-between">
-            <div className="text-center md:text-left mb-4 md:mb-0">
-              <p className="text-sm font-medium text-gray-900">
-                Fiscatus
-              </p>
-              <p className="text-xs text-gray-500">
-                Desenvolvido para transformar a gestão pública.
-              </p>
+             {/* Rodapé Institucional - Design Moderno e Elegante */}
+       <footer className="bg-gradient-to-t from-white via-slate-50 to-slate-100 border-t border-slate-200 mt-12">
+         <div className="max-w-screen-xl mx-auto px-6 py-4">
+           <hr className="border-t border-slate-200 mb-4" />
+                       <div className="flex justify-between items-center flex-wrap text-sm">
+              <div className="text-slate-600">
+                <strong className="text-slate-800">Fiscatus</strong><br />
+                <span className="text-slate-500 italic">Fiscatus — Gestão inteligente e integrada de todo o processo licitatório.</span>
+              </div>
+              <div className="text-slate-400">v1.0.0 – 2025</div>
             </div>
-            <div className="text-center md:text-right">
-              <p className="text-xs text-gray-500">
-                Fiscatus v1.0.0 – 2025
-              </p>
-            </div>
-          </div>
-        </div>
-      </footer>
+         </div>
+       </footer>
     </div>
   );
 } 
