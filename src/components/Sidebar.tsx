@@ -3,13 +3,12 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { toast } from "@/components/ui/use-toast";
 import { 
   X, 
-  FolderOpen,
-  LayoutDashboard
+  FolderOpen
 } from "lucide-react";
 
 const dashboard = {
   label: "Dashboard Principal", 
-  icon: <LayoutDashboard className="w-5 h-5" />,
+  icon: <FolderOpen className="w-5 h-5" />,
   path: "/",
   description: "Visão geral do sistema"
 };
@@ -72,15 +71,15 @@ export default function Sidebar({ open, onClose }: { open: boolean; onClose: () 
         onClick={onClose}
       />
       {/* Sidebar */}
-             <aside
-         className={`fixed top-0 left-0 h-screen w-72 bg-white shadow-lg z-50 flex flex-col transition-transform duration-300 ${open ? "translate-x-0" : "-translate-x-full"}`}
-         tabIndex={-1}
-       >
-                 <div className="flex items-center justify-between h-14 px-4 border-b border-gray-200 bg-gray-50">
-           <div>
-             <span className="text-base font-semibold text-gray-900">Módulos</span>
-             <p className="text-xs text-gray-500">Navegação do sistema</p>
-           </div>
+      <aside
+        className={`fixed top-0 left-0 h-screen w-80 bg-white shadow-lg z-50 flex flex-col transition-transform duration-300 ${open ? "translate-x-0" : "-translate-x-full"}`}
+        tabIndex={-1}
+      >
+        <div className="flex items-center justify-between h-16 px-6 border-b border-gray-200 bg-gray-50">
+          <div>
+            <span className="text-lg font-semibold text-gray-900">Módulos</span>
+            <p className="text-xs text-gray-500">Navegação do sistema</p>
+          </div>
           <button 
             onClick={onClose} 
             className="p-2 rounded-lg hover:bg-gray-200 transition-colors" 
@@ -90,16 +89,16 @@ export default function Sidebar({ open, onClose }: { open: boolean; onClose: () 
           </button>
         </div>
         
-                 <nav className="flex-1 overflow-y-auto py-3">
-           {/* Dashboard Principal */}
-           <div className="px-3 mb-4">
+        <nav className="flex-1 overflow-y-auto py-4">
+          {/* Dashboard Principal */}
+          <div className="px-4 mb-6">
             <button
               onClick={() => handleModuleClick(dashboard)}
-                             className={`w-full flex items-center gap-3 px-4 py-2.5 text-left transition-all duration-200 group ${
-                 isActiveDashboard(dashboard.path)
-                   ? "bg-blue-50 border-l-4 border-blue-600 text-blue-700"
-                   : "text-gray-700 hover:bg-gray-50 border-l-4 border-transparent hover:border-gray-300"
-               } cursor-pointer`}
+              className={`w-full flex items-center gap-3 px-6 py-3 text-left transition-all duration-200 group ${
+                isActiveDashboard(dashboard.path)
+                  ? "bg-blue-50 border-l-4 border-blue-600 text-blue-700"
+                  : "text-gray-700 hover:bg-gray-50 border-l-4 border-transparent hover:border-gray-300"
+              } cursor-pointer`}
               tabIndex={0}
             >
               <div className={`${isActiveDashboard(dashboard.path) ? "text-blue-600" : "text-gray-500 group-hover:text-gray-700"}`}>
@@ -116,22 +115,22 @@ export default function Sidebar({ open, onClose }: { open: boolean; onClose: () 
             </button>
           </div>
 
-                     {/* Módulos do Sistema */}
-           <div className="px-3 mb-3">
-             <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">
-               Módulos do Sistema
-             </h3>
-           </div>
+          {/* Módulos do Sistema */}
+          <div className="px-4 mb-4">
+            <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">
+              Módulos do Sistema
+            </h3>
+          </div>
           
           {modules.map((module, idx) => (
-                         <button
-               key={module.label}
-               onClick={() => handleModuleClick(module)}
-               className={`w-full flex items-center gap-3 px-4 py-2.5 text-left transition-all duration-200 group ${
-                 isActiveModule(module.path)
-                   ? "bg-blue-50 border-l-4 border-blue-600 text-blue-700"
-                   : "text-gray-700 hover:bg-gray-50 border-l-4 border-transparent hover:border-gray-300"
-               } ${module.disabled ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}`}
+            <button
+              key={module.label}
+              onClick={() => handleModuleClick(module)}
+              className={`w-full flex items-center gap-3 px-6 py-3 text-left transition-all duration-200 group ${
+                isActiveModule(module.path)
+                  ? "bg-blue-50 border-l-4 border-blue-600 text-blue-700"
+                  : "text-gray-700 hover:bg-gray-50 border-l-4 border-transparent hover:border-gray-300"
+              } ${module.disabled ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}`}
               disabled={module.disabled}
               tabIndex={0}
             >
@@ -153,13 +152,13 @@ export default function Sidebar({ open, onClose }: { open: boolean; onClose: () 
           ))}
         </nav>
         
-                 {/* Footer */}
-         <div className="border-t border-gray-200 p-3">
-           <div className="text-xs text-gray-500 text-center">
-             <p>Fiscatus v1.0.0</p>
-             <p className="mt-0.5">Sistema de Gestão do Processo Licitatório</p>
-           </div>
-         </div>
+        {/* Footer */}
+        <div className="border-t border-gray-200 p-4">
+          <div className="text-xs text-gray-500 text-center">
+            <p>Fiscatus v1.0.0</p>
+            <p className="mt-1">Sistema de Gestão Contratual</p>
+          </div>
+        </div>
       </aside>
     </>
   );
