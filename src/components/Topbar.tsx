@@ -1,12 +1,13 @@
 import React, { useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { Menu, Bell, Settings, Home, FileText, Users, PenLine, Workflow } from "lucide-react";
+import { Menu, Bell, Settings, Home, FileText, Users, PenLine, Workflow, LogOut } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
 import Sidebar from "./Sidebar";
 import NotificationDropdown, { NotificationBell } from "./NotificationDropdown";
 import { useUser } from "@/contexts/UserContext";
+import { useToast } from "@/components/ui/use-toast";
 import logo from "@/assets/logo_fiscatus.png";
 
 function QuickActionButton({ icon, label, variant = "default", onClick }: any) {
@@ -33,8 +34,39 @@ export default function Topbar() {
   const [sidebarOpen, setSidebarOpen] = React.useState(false);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const navigate = useNavigate();
-  const { user } = useUser();
+  const { user, setUser } = useUser();
+  const { toast } = useToast();
   const location = useLocation();
+
+  // Função para obter as iniciais do usuário
+  const getUserInitials = (name: string) => {
+    return name
+      .split(' ')
+      .map(word => word.charAt(0))
+      .join('')
+      .toUpperCase()
+      .slice(0, 2);
+  };
+
+  // Função de logout
+  const handleLogout = () => {
+    // Limpar token JWT (simulado)
+    localStorage.removeItem('authToken');
+    sessionStorage.removeItem('authToken');
+    
+    // Limpar dados do usuário
+    setUser(null);
+    
+    // Mostrar toast de sucesso
+    toast({
+      title: "Logout realizado",
+      description: "Você foi desconectado do sistema com sucesso.",
+      variant: "default"
+    });
+    
+    // Redirecionar para login
+    navigate("/login");
+  };
 
   // Verifica se está em qualquer página do módulo Planejamento da Contratação
   const isPlanejamentoContratacao = 
@@ -131,13 +163,49 @@ export default function Topbar() {
               onClose={() => setNotificationsOpen(false)} 
             />
           </div>
-          <button className="p-2 rounded-lg hover:bg-gray-100 transition-colors" aria-label="Configurações">
+          <button 
+            className="p-2 rounded-lg hover:bg-gray-100 transition-colors" 
+            aria-label="Configurações"
+            onClick={() => navigate("/configuracoes")}
+          >
             <Settings className="w-4 h-4 text-gray-600" />
           </button>
-          <Avatar className="w-8 h-8 border border-gray-200">
-            <AvatarImage src="/usuario.png" />
-            <AvatarFallback className="bg-gray-100 text-gray-700 font-medium">GM</AvatarFallback>
-          </Avatar>
+          
+          {/* Menu do Usuário */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button className="flex items-center justify-center w-8 h-8 rounded-full border border-gray-200 bg-gray-100 hover:bg-gray-200 transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                <Avatar className="w-8 h-8 border-0">
+                  <AvatarImage src="/usuario.png" />
+                  <AvatarFallback className="bg-gray-100 text-gray-700 font-medium text-sm">
+                    {user ? getUserInitials(user.nome) : "GM"}
+                  </AvatarFallback>
+                </Avatar>
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-64 p-2">
+              {/* Informações do usuário */}
+              <div className="px-3 py-2">
+                <div className="font-semibold text-gray-900 text-sm">
+                  {user?.nome || "Usuário"}
+                </div>
+                <div className="text-gray-500 text-xs">
+                  {user?.email || "usuario@exemplo.com"}
+                </div>
+              </div>
+              
+              <DropdownMenuSeparator />
+              
+              {/* Opção de logout */}
+              <DropdownMenuItem 
+                onClick={handleLogout}
+                className="cursor-pointer text-red-600 hover:text-red-700 hover:bg-red-50 focus:text-red-700 focus:bg-red-50"
+              >
+                <LogOut className="mr-2 h-4 w-4" />
+                <span>Sair do sistema</span>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </header>
       <Sidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
