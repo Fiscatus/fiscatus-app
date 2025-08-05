@@ -14,6 +14,7 @@ import NovoProcesso from "./pages/NovoProcesso";
 import PastaOrganizacional from "./pages/PastaOrganizacional";
 import ModelosFluxo from "./pages/ModelosFluxo";
 import ConfiguracoesSistema from "./pages/ConfiguracoesSistema";
+import TubelightDemo from "./pages/TubelightDemo";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import { Toaster } from "@/components/ui/toaster";
@@ -48,6 +49,7 @@ const App = () => (
             <Route path="/processos-gerencia/pasta/:pastaId" element={<PastaOrganizacional />} />
             <Route path="/modelos-de-fluxo" element={<ModelosFluxo />} />
             <Route path="/configuracoes" element={<ConfiguracoesSistema />} />
+            <Route path="/tubelight-demo" element={<TubelightDemo />} />
             
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />

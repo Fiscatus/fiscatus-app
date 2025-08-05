@@ -37,8 +37,13 @@ import {
   Mail,
   MapPin,
   UserCheck,
-  AlertTriangle
+  AlertTriangle,
+  LogOut
 } from "lucide-react";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
+import NotificationDropdown, { NotificationBell } from "@/components/NotificationDropdown";
+import { useUser } from "@/contexts/UserContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
@@ -62,6 +67,38 @@ import {
 export default function ConfiguracoesSistema() {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { user, setUser } = useUser();
+  const [notificationsOpen, setNotificationsOpen] = useState(false);
+
+  // Função para obter as iniciais do usuário
+  const getUserInitials = (name: string) => {
+    return name
+      .split(' ')
+      .map(word => word.charAt(0))
+      .join('')
+      .toUpperCase()
+      .slice(0, 2);
+  };
+
+  // Função de logout
+  const handleLogout = () => {
+    // Limpar token JWT (simulado)
+    localStorage.removeItem('authToken');
+    sessionStorage.removeItem('authToken');
+    
+    // Limpar dados do usuário
+    setUser(null);
+    
+    // Mostrar toast de sucesso
+    toast({
+      title: "Logout realizado",
+      description: "Você foi desconectado do sistema com sucesso.",
+      variant: "default"
+    });
+    
+    // Redirecionar para login
+    navigate("/login");
+  };
 
   // Estados para Perfil do Usuário
   const [perfilUsuario, setPerfilUsuario] = useState({
@@ -1350,17 +1387,58 @@ export default function ConfiguracoesSistema() {
             </div>
           </div>
           
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2 md:gap-3 flex-shrink-0">
+            <Input type="text" placeholder="Buscar processo..." className="w-32 md:w-40 lg:w-64 border-gray-200 focus:border-blue-300 focus:ring-blue-200" />
             <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
-              <Input
-                placeholder="Digite para pesquisar"
-                className="pl-10 w-64"
+              <NotificationBell onClick={() => setNotificationsOpen(!notificationsOpen)} />
+              <NotificationDropdown 
+                isOpen={notificationsOpen} 
+                onClose={() => setNotificationsOpen(false)} 
               />
             </div>
-            <Button variant="ghost" size="sm">
-              <User className="w-5 h-5" />
-            </Button>
+            <button 
+              className="p-2 rounded-lg hover:bg-gray-100 transition-colors" 
+              aria-label="Configurações"
+              onClick={() => navigate("/configuracoes")}
+            >
+              <Settings className="w-4 h-4 text-gray-600" />
+            </button>
+            
+            {/* Menu do Usuário */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button className="flex items-center justify-center w-8 h-8 rounded-full border border-gray-200 bg-gray-100 hover:bg-gray-200 transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                  <Avatar className="w-8 h-8 border-0">
+                    <AvatarImage src="/usuario.png" />
+                    <AvatarFallback className="bg-gray-100 text-gray-700 font-medium text-sm">
+                      {user ? getUserInitials(user.nome) : "GM"}
+                    </AvatarFallback>
+                  </Avatar>
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-64 p-2">
+                {/* Informações do usuário */}
+                <div className="px-3 py-2">
+                  <div className="font-semibold text-gray-900 text-sm">
+                    {user?.nome || "Usuário"}
+                  </div>
+                  <div className="text-gray-500 text-xs">
+                    {user?.email || "usuario@exemplo.com"}
+                  </div>
+                </div>
+                
+                <DropdownMenuSeparator />
+                
+                {/* Opção de logout */}
+                <DropdownMenuItem 
+                  onClick={handleLogout}
+                  className="cursor-pointer text-red-600 hover:text-red-700 hover:bg-red-50 focus:text-red-700 focus:bg-red-50"
+                >
+                  <LogOut className="mr-2 h-4 w-4" />
+                  <span>Sair do sistema</span>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </div>
       </div>
