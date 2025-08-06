@@ -195,16 +195,6 @@ export default function PlanejamentoContratacao() {
       <Topbar />
       
       <main className="pt-20 px-6 py-8">
-        {/* Header */}
-        <div className="mb-8">
-          <div className="flex items-center gap-3 mb-2">
-            <div className="p-2 bg-blue-100 rounded-lg">
-              <FolderOpen className="w-6 h-6 text-blue-600" />
-            </div>
-            <h1 className="text-3xl font-bold text-gray-900">Planejamento da Contratação</h1>
-          </div>
-          <p className="text-gray-600">Acompanhe todos os processos de contratação em andamento</p>
-        </div>
 
         {/* KPIs */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-6 mb-8">

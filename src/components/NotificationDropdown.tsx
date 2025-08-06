@@ -206,13 +206,26 @@ export default function NotificationDropdown({ isOpen, onClose }: NotificationDr
                 </div>
               ))}
             </div>
-          ) : notifications.length === 0 ? (
-            // Empty state
-            <div className="p-6 text-center">
-              <Bell className="w-8 h-8 text-gray-400 mx-auto mb-2" />
-              <p className="text-sm text-gray-500">Você não possui novas notificações.</p>
-            </div>
-          ) : (
+                     ) : notifications.length === 0 ? (
+             // Empty state
+             <div className="p-6 text-center">
+               <Bell className="w-8 h-8 text-gray-400 mx-auto mb-2" />
+               <p className="text-sm text-gray-500 mb-2">Você não possui novas notificações.</p>
+               <p className="text-xs text-gray-400 mb-4">Acesse a página de notificações para ver o histórico completo.</p>
+               <Button
+                 variant="outline"
+                 size="sm"
+                 onClick={() => {
+                   navigate("/notificacoes");
+                   onClose();
+                 }}
+                 className="text-xs text-blue-600 hover:text-blue-700 hover:bg-blue-50 border-blue-200"
+               >
+                 Acessar notificações
+                 <ChevronRight className="w-3 h-3 ml-1" />
+               </Button>
+             </div>
+           ) : (
             // Notifications list
             <div className="p-0">
               {notifications.slice(0, 5).map((notification, index) => (
@@ -251,30 +264,34 @@ export default function NotificationDropdown({ isOpen, onClose }: NotificationDr
           )}
         </div>
 
-        {/* Footer */}
-        {notifications.length > 0 && (
-          <div className="p-3 border-t border-gray-100">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => {
-                navigate("/notificacoes");
-                onClose();
-              }}
-              className="w-full text-xs text-blue-600 hover:text-blue-700 hover:bg-blue-50"
-            >
-              Ver todas as notificações
-              <ChevronRight className="w-3 h-3 ml-1" />
-            </Button>
-          </div>
-        )}
+                 {/* Footer */}
+         <div className="p-3 border-t border-gray-100">
+           <Button
+             variant="ghost"
+             size="sm"
+             onClick={() => {
+               navigate("/notificacoes");
+               onClose();
+             }}
+             className="w-full text-xs text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+           >
+             {notifications.length > 0 ? "Ver todas as notificações" : "Acessar página de notificações"}
+             <ChevronRight className="w-3 h-3 ml-1" />
+           </Button>
+         </div>
       </div>
     </div>
   );
 }
 
 // Componente para o ícone de sino com contador
-export function NotificationBell({ onClick }: { onClick: () => void }) {
+export function NotificationBell({ 
+  onClick, 
+  onDoubleClick 
+}: { 
+  onClick: () => void;
+  onDoubleClick?: () => void;
+}) {
   const unreadCount = mockNotifications.filter(n => !n.isRead).length;
 
   return (
@@ -283,7 +300,12 @@ export function NotificationBell({ onClick }: { onClick: () => void }) {
         variant="ghost"
         size="sm"
         onClick={onClick}
+        onDoubleClick={onDoubleClick}
         className="relative p-2 hover:bg-gray-100 rounded-full"
+        title={unreadCount > 0 
+          ? `${unreadCount} notificação${unreadCount !== 1 ? 's' : ''} não lida${unreadCount !== 1 ? 's' : ''} (clique duplo para ir à página)` 
+          : "Ver notificações (clique duplo para ir à página)"
+        }
       >
         <Bell className="w-5 h-5 text-gray-600" />
         {unreadCount > 0 && (

@@ -4,7 +4,12 @@ import { toast } from "@/components/ui/use-toast";
 import { 
   X, 
   FolderOpen,
-  LayoutDashboard
+  LayoutDashboard,
+  ClipboardList,
+  Gavel,
+  BarChart3,
+  Settings,
+  Users
 } from "lucide-react";
 
 const dashboard = {
@@ -19,7 +24,42 @@ const modules = [
     label: "Planejamento da Contratação", 
     icon: <FolderOpen className="w-5 h-5" />,
     path: "/planejamento-da-contratacao",
-    description: "Dashboard principal do sistema"
+    description: "Organize todas as fases da contratação"
+  },
+  {
+    label: "Gestão Contratual",
+    icon: <Users className="w-5 h-5" />,
+    path: "/gestao-contratual",
+    description: "Gerencie contratos e documentos",
+    disabled: true
+  },
+  {
+    label: "Execução Contratual",
+    icon: <ClipboardList className="w-5 h-5" />,
+    path: "/execucao-contratual",
+    description: "Monitore a execução do contrato",
+    disabled: true
+  },
+  {
+    label: "Processo Licitatório",
+    icon: <Gavel className="w-5 h-5" />,
+    path: "/processo-licitatorio",
+    description: "Acompanhe o processo licitatório",
+    disabled: true
+  },
+  {
+    label: "Relatórios",
+    icon: <BarChart3 className="w-5 h-5" />,
+    path: "/relatorios",
+    description: "Visualize dados estratégicos",
+    disabled: true
+  },
+  {
+    label: "Configurações do Fluxo",
+    icon: <Settings className="w-5 h-5" />,
+    path: "/configuracoes-fluxo",
+    description: "Personalize o fluxo de trabalho",
+    disabled: true
   }
 ];
 
@@ -157,7 +197,7 @@ export default function Sidebar({ open, onClose }: { open: boolean; onClose: () 
         <div className="border-t border-gray-200 p-4">
           <div className="text-xs text-gray-500 text-center">
             <p>Fiscatus v1.0.0</p>
-            <p className="mt-1">Sistema de Gestão Contratual</p>
+            <p className="mt-1">Gestão inteligente e integrada para contratações públicas.</p>
           </div>
         </div>
       </aside>

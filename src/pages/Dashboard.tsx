@@ -27,6 +27,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { useUser } from "@/contexts/UserContext";
 import { useToast } from "@/components/ui/use-toast";
 import Sidebar from "@/components/Sidebar";
+import NotificationDropdown, { NotificationBell } from "@/components/NotificationDropdown";
 import logo from "@/assets/logo_fiscatus.png";
 
 // Componente Topbar simplificado para o Dashboard
@@ -83,17 +84,14 @@ function DashboardTopbar() {
         <div className="flex items-center gap-2 md:gap-3 flex-shrink-0 mt-2 md:mt-0 relative">
           <Input type="text" placeholder="Buscar processo..." className="w-32 md:w-40 lg:w-64 border-gray-200 focus:border-blue-300 focus:ring-blue-200" />
           <div className="relative">
-            <button 
-              className="p-2 rounded-lg hover:bg-gray-100 transition-colors relative"
+            <NotificationBell 
               onClick={() => setNotificationsOpen(!notificationsOpen)}
-            >
-              <Bell className="w-4 h-4 text-gray-600" />
-              {notificationsOpen && (
-                <div className="absolute top-full right-0 mt-2 w-80 bg-white border border-gray-200 rounded-lg shadow-lg z-50 p-4">
-                  <p className="text-sm text-gray-600">Nenhuma notificação</p>
-                </div>
-              )}
-            </button>
+              onDoubleClick={() => navigate("/notificacoes")}
+            />
+            <NotificationDropdown 
+              isOpen={notificationsOpen} 
+              onClose={() => setNotificationsOpen(false)} 
+            />
           </div>
           <button 
             className="p-2 rounded-lg hover:bg-gray-100 transition-colors" 
@@ -206,16 +204,22 @@ export default function Dashboard() {
       path: "/planejamento-da-contratacao"
     },
     {
+      nome: "Gestão Contratual",
+      descricao: "Gerencie contratos e documentos de forma centralizada.",
+      icon: <Users className="w-6 h-6" />,
+      path: "/gestao-contratual"
+    },
+    {
       nome: "Execução Contratual",
       descricao: "Monitore a execução do contrato com controle de entregas, fiscalizações e aditivos.",
       icon: <ClipboardList className="w-6 h-6" />,
       path: "/execucao-contratual"
     },
     {
-      nome: "Pregão e Jurídico",
-      descricao: "Acompanhe o pregão e os pareceres jurídicos desde a abertura até a homologação.",
+      nome: "Processo Licitatório",
+      descricao: "Acompanhe o processo licitatório desde a abertura até a homologação.",
       icon: <Gavel className="w-6 h-6" />,
-      path: "/pregao-juridico"
+      path: "/processo-licitatorio"
     },
     {
       nome: "Relatórios",
@@ -228,12 +232,6 @@ export default function Dashboard() {
       descricao: "Personalize o fluxo de trabalho e os modelos padrão conforme a instituição.",
       icon: <Settings className="w-6 h-6" />,
       path: "/configuracoes-fluxo"
-    },
-    {
-      nome: "Administração do Sistema",
-      descricao: "Gerencie usuários, entidades públicas e níveis de acesso de forma centralizada.",
-      icon: <Users className="w-6 h-6" />,
-      path: "/administracao"
     }
   ];
 
@@ -246,16 +244,6 @@ export default function Dashboard() {
       <DashboardTopbar />
       
       <main className="pt-20 px-6 py-8 flex-1">
-        {/* Header */}
-        <div className="mb-8">
-          <div className="flex items-center gap-3 mb-2">
-            <div className="p-2 bg-blue-100 rounded-lg">
-              <LayoutDashboard className="w-6 h-6 text-blue-600" />
-            </div>
-            <h1 className="text-3xl font-bold text-gray-900">Dashboard Principal</h1>
-          </div>
-          <p className="text-gray-600">Visão geral e acesso aos módulos do sistema Fiscatus</p>
-        </div>
 
         {/* Cards de Indicadores (Top Cards) - Grid 2x2 */}
         <section className="mb-12">

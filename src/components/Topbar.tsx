@@ -128,7 +128,10 @@ export default function Topbar() {
         <div className="flex items-center gap-2 md:gap-3 flex-shrink-0 mt-2 md:mt-0 relative">
           <Input type="text" placeholder="Buscar processo..." className="w-32 md:w-40 lg:w-64 border-gray-200 focus:border-blue-300 focus:ring-blue-200" />
           <div className="relative">
-            <NotificationBell onClick={() => setNotificationsOpen(!notificationsOpen)} />
+            <NotificationBell 
+              onClick={() => setNotificationsOpen(!notificationsOpen)}
+              onDoubleClick={() => navigate("/notificacoes")}
+            />
             <NotificationDropdown 
               isOpen={notificationsOpen} 
               onClose={() => setNotificationsOpen(false)} 
