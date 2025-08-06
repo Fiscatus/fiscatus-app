@@ -303,7 +303,7 @@ const pastasOrganizacionais: PastaOrganizacional[] = [
     nome: "Processos de 2022",
     descricao: "Processos iniciados em 2022",
     icone: <Calendar className="w-6 h-6" />,
-    cor: "bg-green-50 border-green-200 text-green-700",
+    cor: "bg-gray-50 border-gray-200 text-gray-700",
     quantidadeProcessos: processosMock.filter(p => p.ano === "2022").length,
     ultimaModificacao: "20/01/2024",
     filtro: (p) => p.ano === "2022"
@@ -377,7 +377,7 @@ function RegimeBadge({ regime }: { regime: RegimeTramitacao }) {
 
 function ParticipationIcon({ type }: { type: ParticipationType }) {
   const config = {
-    criador: { icon: <Target className="w-4 h-4" />, color: "text-green-600", tooltip: "Criador do processo" },
+    criador: { icon: <Target className="w-4 h-4" />, color: "text-gray-600", tooltip: "Criador do processo" },
     responsavel: { icon: <UserCheck className="w-4 h-4" />, color: "text-blue-600", tooltip: "Responsável por etapa" },
     participante: { icon: <BookUser className="w-4 h-4" />, color: "text-gray-600", tooltip: "Participante histórico" }
   };
@@ -404,7 +404,7 @@ function TipoProcessoBadge({ tipo }: { tipo: string }) {
       case "DFD":
         return "bg-blue-100 text-blue-700 border-blue-200";
       case "ETP":
-        return "bg-green-100 text-green-700 border-green-200";
+        return "bg-gray-100 text-gray-700 border-gray-200";
       case "TR":
         return "bg-purple-100 text-purple-700 border-purple-200";
       case "PJUR":
@@ -948,8 +948,8 @@ function CreateProcessModal() {
         {/* Header com botão de fechar */}
         <div className="flex items-center justify-between px-8 py-6 border-b border-gray-100">
           <div className="flex items-center gap-3">
-            <div className="p-2 bg-green-100 rounded-lg">
-              <Plus className="w-6 h-6 text-green-600" />
+            <div className="p-2 bg-gray-100 rounded-lg">
+              <Plus className="w-6 h-6 text-gray-600" />
             </div>
             <div>
               <h2 className="text-2xl font-bold text-gray-900">Criar Novo Processo</h2>

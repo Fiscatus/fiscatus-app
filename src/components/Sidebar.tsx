@@ -3,12 +3,13 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { toast } from "@/components/ui/use-toast";
 import { 
   X, 
-  FolderOpen
+  FolderOpen,
+  LayoutDashboard
 } from "lucide-react";
 
 const dashboard = {
   label: "Dashboard Principal", 
-  icon: <FolderOpen className="w-5 h-5" />,
+  icon: <LayoutDashboard className="w-5 h-5" />,
   path: "/",
   description: "Visão geral do sistema"
 };

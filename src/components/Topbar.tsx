@@ -86,7 +86,7 @@ export default function Topbar() {
           <button className="p-2 rounded-lg hover:bg-gray-100 transition-colors" onClick={() => setSidebarOpen(true)} aria-label="Abrir menu">
             <Menu className="w-4 h-4 text-gray-600" />
           </button>
-          <img src={logo} className="w-6 h-6 md:w-8 md:h-8" alt="Logo Fiscatus" />
+          <img src={logo} className="w-8 h-8 md:w-10 md:h-10" alt="Logo Fiscatus" />
           <span className="text-lg md:text-2xl font-bold text-gray-800">Fiscatus</span>
         </div>
         {/* Centro: navegação limpa e consistente */}

@@ -11,88 +11,229 @@ import {
   BarChart3,
   Settings,
   Users,
-  ArrowRight
+  ArrowRight,
+  Activity,
+  CheckCircle,
+  ChevronRight,
+  Menu,
+  Bell,
+  LogOut,
+  LayoutDashboard
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { Input } from "@/components/ui/input";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
+import { useUser } from "@/contexts/UserContext";
+import { useToast } from "@/components/ui/use-toast";
+import Sidebar from "@/components/Sidebar";
+import logo from "@/assets/logo_fiscatus.png";
+
+// Componente Topbar simplificado para o Dashboard
+function DashboardTopbar() {
+  const [sidebarOpen, setSidebarOpen] = React.useState(false);
+  const [notificationsOpen, setNotificationsOpen] = React.useState(false);
+  const navigate = useNavigate();
+  const { user, setUser } = useUser();
+  const { toast } = useToast();
+
+  // Função para obter as iniciais do usuário
+  const getUserInitials = (name: string) => {
+    return name
+      .split(' ')
+      .map(word => word.charAt(0))
+      .join('')
+      .toUpperCase()
+      .slice(0, 2);
+  };
+
+  // Função de logout
+  const handleLogout = () => {
+    localStorage.removeItem('authToken');
+    sessionStorage.removeItem('authToken');
+    setUser(null);
+    
+    toast({
+      title: "Logout realizado",
+      description: "Você foi desconectado do sistema com sucesso.",
+      variant: "default"
+    });
+    
+    navigate("/login");
+  };
+
+  return (
+    <>
+      <header className="fixed top-0 left-0 w-full h-16 bg-white/95 backdrop-blur-sm border-b border-gray-100 shadow-sm z-50 px-4 md:px-6 flex flex-col md:flex-row items-center justify-between gap-3 md:gap-4">
+        {/* Esquerda: menu, logo, nome do sistema */}
+        <div className="flex items-center gap-3 md:gap-4 flex-shrink-0">
+          <button className="p-2 rounded-lg hover:bg-gray-100 transition-colors" onClick={() => setSidebarOpen(true)} aria-label="Abrir menu">
+            <Menu className="w-4 h-4 text-gray-600" />
+          </button>
+          <img src={logo} className="w-8 h-8 md:w-10 md:h-10" alt="Logo Fiscatus" />
+          <span className="text-lg md:text-2xl font-bold text-gray-800">Fiscatus</span>
+        </div>
+        
+        {/* Centro: espaço vazio para manter layout */}
+        <div className="flex justify-center items-center flex-1 min-w-0 px-2 md:px-4 h-full">
+          {/* Navegação removida - apenas espaço para manter layout */}
+        </div>
+        
+        {/* Direita: busca, ícones, avatar */}
+        <div className="flex items-center gap-2 md:gap-3 flex-shrink-0 mt-2 md:mt-0 relative">
+          <Input type="text" placeholder="Buscar processo..." className="w-32 md:w-40 lg:w-64 border-gray-200 focus:border-blue-300 focus:ring-blue-200" />
+          <div className="relative">
+            <button 
+              className="p-2 rounded-lg hover:bg-gray-100 transition-colors relative"
+              onClick={() => setNotificationsOpen(!notificationsOpen)}
+            >
+              <Bell className="w-4 h-4 text-gray-600" />
+              {notificationsOpen && (
+                <div className="absolute top-full right-0 mt-2 w-80 bg-white border border-gray-200 rounded-lg shadow-lg z-50 p-4">
+                  <p className="text-sm text-gray-600">Nenhuma notificação</p>
+                </div>
+              )}
+            </button>
+          </div>
+          <button 
+            className="p-2 rounded-lg hover:bg-gray-100 transition-colors" 
+            aria-label="Configurações"
+            onClick={() => navigate("/configuracoes")}
+          >
+            <Settings className="w-4 h-4 text-gray-600" />
+          </button>
+          
+          {/* Menu do Usuário */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button className="flex items-center justify-center w-8 h-8 rounded-full border border-gray-200 bg-gray-100 hover:bg-gray-200 transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                <Avatar className="w-8 h-8 border-0">
+                  <AvatarImage src="/usuario.png" />
+                  <AvatarFallback className="bg-gray-100 text-gray-700 font-medium text-sm">
+                    {user ? getUserInitials(user.nome) : "GM"}
+                  </AvatarFallback>
+                </Avatar>
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-64 p-2">
+              {/* Informações do usuário */}
+              <div className="px-3 py-2">
+                <div className="font-semibold text-gray-900 text-sm">
+                  {user?.nome || "Usuário"}
+                </div>
+                <div className="text-gray-500 text-xs">
+                  {user?.email || "usuario@exemplo.com"}
+                </div>
+              </div>
+              
+              <DropdownMenuSeparator />
+              
+              {/* Opção de logout */}
+              <DropdownMenuItem 
+                onClick={handleLogout}
+                className="cursor-pointer text-red-600 hover:text-red-700 hover:bg-red-50 focus:text-red-700 focus:bg-red-50"
+              >
+                <LogOut className="mr-2 h-4 w-4" />
+                <span>Sair do sistema</span>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+      </header>
+      
+      {/* Sidebar */}
+      <Sidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+    </>
+  );
+}
 
 export default function Dashboard() {
   const navigate = useNavigate();
 
-  // Dados globais do sistema
+  // Dados globais do sistema com foco institucional
   const dadosGlobais = [
     {
       label: "Total de Processos Criados",
       value: "2.847",
       descricao: "Processos no sistema",
-      icon: <FileText className="w-8 h-8" />,
-      color: "bg-blue-100 text-blue-600"
+      icon: <FileText className="w-10 h-10" />,
+      color: "bg-blue-50 border-blue-200 text-blue-700",
+      bgColor: "bg-blue-50",
+      borderColor: "border-blue-200",
+      iconColor: "text-blue-600",
+      crescimento: "+12% este mês"
     },
     {
       label: "Processos Ativos",
       value: "1.234",
       descricao: "Em andamento",
-      icon: <TrendingUp className="w-8 h-8" />,
-      color: "bg-green-100 text-green-600"
+      icon: <Activity className="w-10 h-10" />,
+      color: "bg-green-50 border-green-200 text-green-700",
+      bgColor: "bg-green-50",
+      borderColor: "border-green-200",
+      iconColor: "text-green-600",
+      link: "Ver todos os processos ativos"
     },
     {
       label: "Processos Concluídos",
       value: "1.456",
       descricao: "Finalizados",
-      icon: <CheckCircle2 className="w-8 h-8" />,
-      color: "bg-emerald-100 text-emerald-600"
+      icon: <CheckCircle className="w-10 h-10" />,
+      color: "bg-emerald-50 border-emerald-200 text-emerald-700",
+      bgColor: "bg-emerald-50",
+      borderColor: "border-emerald-200",
+      iconColor: "text-emerald-600"
     },
     {
-      label: "Entidades Públicas",
-      value: "156",
-      descricao: "Atendidas",
-      icon: <Building2 className="w-8 h-8" />,
-      color: "bg-purple-100 text-purple-600"
+      label: "Pendências e Ações Necessárias",
+      value: "89",
+      descricao: "Demandas em aberto",
+      icon: <Bell className="w-10 h-10" />,
+      color: "bg-orange-50 border-orange-200 text-orange-700",
+      bgColor: "bg-orange-50",
+      borderColor: "border-orange-200",
+      iconColor: "text-orange-600",
+      link: "Ir para minhas pendências"
     }
   ];
 
-  // Módulos do sistema
+  // Módulos do sistema com design limpo e moderno
   const modulos = [
     {
       nome: "Planejamento da Contratação",
-      descricao: "Gerencie DFD, ETP, TR, Edital e todo o fluxo",
-      icon: <FolderOpen className="w-8 h-8" />,
-      path: "/planejamento-da-contratacao",
-      color: "bg-blue-50 border-blue-200 hover:bg-blue-100"
+      descricao: "Organize todas as fases da contratação: da demanda inicial à publicação do edital.",
+      icon: <FolderOpen className="w-6 h-6" />,
+      path: "/planejamento-da-contratacao"
     },
     {
       nome: "Execução Contratual",
-      descricao: "Acompanhe entregas, aditivos, fiscalizações e recebimentos",
-      icon: <ClipboardList className="w-8 h-8" />,
-      path: "/execucao-contratual",
-      color: "bg-green-50 border-green-200 hover:bg-green-100"
+      descricao: "Monitore a execução do contrato com controle de entregas, fiscalizações e aditivos.",
+      icon: <ClipboardList className="w-6 h-6" />,
+      path: "/execucao-contratual"
     },
     {
       nome: "Pregão e Jurídico",
-      descricao: "Para pregoeiros e pareceres jurídicos após a publicação",
-      icon: <Gavel className="w-8 h-8" />,
-      path: "/pregao-juridico",
-      color: "bg-orange-50 border-orange-200 hover:bg-orange-100"
+      descricao: "Acompanhe o pregão e os pareceres jurídicos desde a abertura até a homologação.",
+      icon: <Gavel className="w-6 h-6" />,
+      path: "/pregao-juridico"
     },
     {
       nome: "Relatórios",
-      descricao: "Gere relatórios e dashboards customizados",
-      icon: <BarChart3 className="w-8 h-8" />,
-      path: "/relatorios",
-      color: "bg-purple-50 border-purple-200 hover:bg-purple-100"
+      descricao: "Visualize dados estratégicos em relatórios automáticos e dashboards personalizáveis.",
+      icon: <BarChart3 className="w-6 h-6" />,
+      path: "/relatorios"
     },
     {
       nome: "Configurações do Fluxo",
-      descricao: "Edite modelos e cards padrão por instituição",
-      icon: <Settings className="w-8 h-8" />,
-      path: "/configuracoes-fluxo",
-      color: "bg-indigo-50 border-indigo-200 hover:bg-indigo-100"
+      descricao: "Personalize o fluxo de trabalho e os modelos padrão conforme a instituição.",
+      icon: <Settings className="w-6 h-6" />,
+      path: "/configuracoes-fluxo"
     },
     {
       nome: "Administração do Sistema",
-      descricao: "Controle usuários, permissões e entidades",
-      icon: <Users className="w-8 h-8" />,
-      path: "/administracao",
-      color: "bg-gray-50 border-gray-200 hover:bg-gray-100"
+      descricao: "Gerencie usuários, entidades públicas e níveis de acesso de forma centralizada.",
+      icon: <Users className="w-6 h-6" />,
+      path: "/administracao"
     }
   ];
 
@@ -100,65 +241,70 @@ export default function Dashboard() {
     navigate(path);
   };
 
-    return (
-    <div className="h-screen w-full bg-gray-50 flex flex-col">
-      {/* Header Institucional */}
-      <header className="bg-white shadow-sm border-b border-gray-200 flex-shrink-0">
-        <div className="w-full px-6 py-6">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-4">
-              <div className="flex items-center space-x-3">
-                <div className="w-12 h-12 bg-blue-600 rounded-lg flex items-center justify-center">
-                  <FileText className="w-8 h-8 text-white" />
-                </div>
-                <div>
-                  <h1 className="text-2xl font-bold text-gray-900">
-                    Fiscatus
-                  </h1>
-                  <p className="text-sm text-gray-600">
-                    Sistema de Gestão Contratual
-                  </p>
-                </div>
-              </div>
-              <div className="hidden md:block ml-8">
-                <p className="text-sm text-gray-600 italic">
-                  Gestão inteligente e integrada para contratações públicas.
-                </p>
-              </div>
+  return (
+    <div className="min-h-screen bg-gray-50 flex flex-col">
+      <DashboardTopbar />
+      
+      <main className="pt-20 px-6 py-8 flex-1">
+        {/* Header */}
+        <div className="mb-8">
+          <div className="flex items-center gap-3 mb-2">
+            <div className="p-2 bg-blue-100 rounded-lg">
+              <LayoutDashboard className="w-6 h-6 text-blue-600" />
             </div>
-            <div className="text-right">
-              <span className="text-sm font-medium text-gray-500">v1.0.0</span>
-            </div>
+            <h1 className="text-3xl font-bold text-gray-900">Dashboard Principal</h1>
           </div>
+          <p className="text-gray-600">Visão geral e acesso aos módulos do sistema Fiscatus</p>
         </div>
-      </header>
 
-      {/* Conteúdo Principal */}
-      <main className="flex-1 w-full px-6 py-8 overflow-y-auto">
-        {/* Cards de Dados Globais */}
+        {/* Cards de Indicadores (Top Cards) - Grid 2x2 */}
         <section className="mb-12">
           <h2 className="text-xl font-semibold text-gray-900 mb-6">
-            Visão Geral do Sistema
+            Visão Geral da Administração Pública
           </h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {dadosGlobais.map((dado, index) => (
-              <Card key={index} className="bg-white border-0 shadow-sm hover:shadow-md transition-shadow">
+              <Card 
+                key={index} 
+                className={`bg-white border-2 shadow-md hover:shadow-lg transition-all duration-300 hover:scale-105 ${dado.borderColor}`}
+              >
                 <CardContent className="p-6">
-                  <div className="flex items-center justify-between mb-4">
-                    <div className={`p-3 rounded-lg ${dado.color}`}>
-                      {dado.icon}
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-4">
+                      <div className={`p-3 rounded-xl ${dado.bgColor}`}>
+                        <div className={dado.iconColor}>
+                          {dado.icon}
+                        </div>
+                      </div>
+                      <div className="flex-1">
+                        <p className="text-3xl font-bold text-gray-900 mb-1">
+                          {dado.value}
+                        </p>
+                        <p className="text-sm font-medium text-gray-600 mb-1">
+                          {dado.label}
+                        </p>
+                        <p className="text-xs text-gray-500 mb-2">
+                          {dado.descricao}
+                        </p>
+                        
+                        {/* Crescimento (opcional) */}
+                        {dado.crescimento && (
+                          <p className="text-xs text-green-600 font-medium">
+                            {dado.crescimento}
+                          </p>
+                        )}
+                        
+                        {/* Link (opcional) */}
+                        {dado.link && (
+                          <button 
+                            className="text-xs text-blue-600 hover:text-blue-700 font-medium mt-1"
+                            onClick={() => navigate(dado.link === "Ver todos os processos ativos" ? "/processos-ativos" : "/minhas-pendencias")}
+                          >
+                            {dado.link}
+                          </button>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                  <div>
-                    <p className="text-3xl font-bold text-gray-900 mb-1">
-                      {dado.value}
-                    </p>
-                    <p className="text-sm font-medium text-gray-600 mb-1">
-                      {dado.label}
-                    </p>
-                    <p className="text-xs text-gray-500">
-                      {dado.descricao}
-                    </p>
                   </div>
                 </CardContent>
               </Card>
@@ -167,7 +313,7 @@ export default function Dashboard() {
         </section>
 
         {/* Módulos do Sistema */}
-        <section>
+        <section className="mb-8">
           <h2 className="text-xl font-semibold text-gray-900 mb-6">
             Módulos do Sistema
           </h2>
@@ -175,23 +321,32 @@ export default function Dashboard() {
             {modulos.map((modulo, index) => (
               <Card 
                 key={index} 
-                className={`bg-white border-2 cursor-pointer transition-all duration-200 hover:shadow-lg hover:scale-105 ${modulo.color}`}
+                className="bg-white border border-gray-200 rounded-2xl cursor-pointer shadow-md hover:shadow-lg transition-all duration-300 hover:scale-[1.02] hover:border-gray-300"
                 onClick={() => handleModuloClick(modulo.path)}
               >
-                <CardContent className="p-6">
-                  <div className="flex items-start justify-between mb-4">
-                    <div className="p-3 rounded-lg bg-gray-100">
+                <CardContent className="p-6 relative flex flex-col h-full">
+                  {/* Ícone no topo */}
+                  <div className="flex items-center justify-center w-12 h-12 rounded-full bg-neutral-100 mb-4">
+                    <div className="text-gray-600">
                       {modulo.icon}
                     </div>
-                    <ArrowRight className="w-5 h-5 text-gray-400" />
                   </div>
-                  <div>
-                    <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                  
+                  {/* Conteúdo do card */}
+                  <div className="flex-1">
+                    <h3 className="text-lg font-medium text-gray-900 mb-2">
                       {modulo.nome}
                     </h3>
-                    <p className="text-sm text-gray-600">
+                    <p className="text-sm text-gray-600 mb-4">
                       {modulo.descricao}
                     </p>
+                  </div>
+                  
+                  {/* Ícone de ação no canto inferior direito */}
+                  <div className="flex justify-end mt-auto">
+                    <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center">
+                      <ChevronRight className="w-4 h-4 text-gray-400" />
+                    </div>
                   </div>
                 </CardContent>
               </Card>
@@ -200,26 +355,32 @@ export default function Dashboard() {
         </section>
       </main>
 
-      {/* Footer Institucional */}
-      <footer className="bg-white border-t border-gray-200 flex-shrink-0">
-        <div className="w-full px-6 py-6">
-          <div className="flex flex-col md:flex-row items-center justify-between">
-            <div className="text-center md:text-left mb-4 md:mb-0">
-              <p className="text-sm font-medium text-gray-900">
-                Fiscatus
+      {/* Downbar Institucional */}
+      <div className="bg-white border-t border-gray-200 shadow-sm">
+        <div className="px-6 py-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <img src={logo} alt="Logo Fiscatus" className="w-8 h-8" />
+              <div>
+                <h1 className="text-lg font-bold text-gray-900">
+                  Fiscatus
+                </h1>
+                <p className="text-xs text-gray-600 italic">
+                  Gestão inteligente e integrada para contratações públicas.
+                </p>
+              </div>
+            </div>
+            <div className="text-right">
+              <p className="text-xs text-gray-500">
+                v1.0.0 – 2025
               </p>
               <p className="text-xs text-gray-500">
                 Desenvolvido para transformar a gestão pública.
               </p>
             </div>
-            <div className="text-center md:text-right">
-              <p className="text-xs text-gray-500">
-                Fiscatus v1.0.0 – 2025
-              </p>
-            </div>
           </div>
         </div>
-      </footer>
+      </div>
     </div>
   );
 } 
