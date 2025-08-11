@@ -41,7 +41,7 @@ const processoMock = {
   objeto: "Aquisição de Equipamentos Médicos para UTI",
   status: "em_andamento" as const,
   prazoFinal: "30/01/2025",
-  gerenciaResponsavel: "Gerência de Suprimentos",
+  gerenciaResponsavel: "GSL - Gerência de Suprimentos e Logística",
   dataCriacao: "05/01/2025",
   criador: "Dr. Maria Silva",
   situacaoAtual: "Aguardando elaboração do ETP",
@@ -149,13 +149,21 @@ const gerarEtapasCompletas = (isNovoProcesso: boolean) => {
   }
 };
 
-// Dados para o modal de edição
+// Dados para o modal de edição - usando apenas gerências reais cadastradas
 const gerencias = [
+  "CI - Comissão de Implantação",
+  "SE - Secretaria Executiva",
+  "OUV - Ouvidoria",
+  "GSP - Gerência de Soluções e Projetos",
+  "GSL - Gerência de Suprimentos e Logística",
+  "GRH - Gerência de Recursos Humanos",
+  "GUE - Gerência de Urgência e Emergência",
+  "GLC - Gerência de Licitações e Contratos",
+  "GFC - Gerência Financeira e Contábil",
   "GTEC - Gerência de Tecnologia da Informação",
-  "GECON - Gerência de Contratação",
-  "GSP - Gerência de Suprimentos",
-  "GESP - Gerência de Serviços",
-  "GAP - Gerência de Administração e Patrimônio"
+  "GAP - Gerência de Administração e Patrimônio",
+  "GESP - Gerência de Especialidades",
+  "NAJ - Assessoria Jurídica"
 ];
 
 const etapasPossiveis = [

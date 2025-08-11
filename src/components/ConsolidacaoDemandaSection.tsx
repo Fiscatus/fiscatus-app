@@ -85,20 +85,19 @@ interface ConsolidacaoDemandaSectionProps {
 
 // Setores disponíveis para notificação
 const SETORES_DISPONIVEIS = [
-  { id: '1', nome: 'Gerência de Planejamento', gerencia: 'Gerência de Planejamento' },
-  { id: '2', nome: 'Gerência Técnica', gerencia: 'Gerência Técnica' },
-  { id: '3', nome: 'Gerência de Soluções e Projetos', gerencia: 'Gerência de Soluções e Projetos' },
-  { id: '4', nome: 'Diretoria Executiva', gerencia: 'Diretoria Executiva' },
-  { id: '5', nome: 'Gerência de Projetos', gerencia: 'Gerência de Projetos' },
-  { id: '6', nome: 'Diretoria Técnica', gerencia: 'Diretoria Técnica' },
-  { id: '7', nome: 'Gerência de Suprimentos e Logística', gerencia: 'Gerência de Suprimentos e Logística' },
-  { id: '8', nome: 'Gerência de Recursos Humanos', gerencia: 'Gerência de Recursos Humanos' },
-  { id: '9', nome: 'Gerência de Urgência e Emergência', gerencia: 'Gerência de Urgência e Emergência' },
-  { id: '10', nome: 'Gerência de Licitações e Contratos', gerencia: 'Gerência de Licitações e Contratos' },
-  { id: '11', nome: 'Gerência Financeira e Contábil', gerencia: 'Gerência Financeira e Contábil' },
-  { id: '12', nome: 'Secretaria Executiva', gerencia: 'Secretaria Executiva' },
-  { id: '13', nome: 'Ouvidoria', gerencia: 'Ouvidoria' },
-  { id: '14', nome: 'Comissão de Implantação', gerencia: 'Comissão de Implantação' }
+  { id: '1', nome: 'CI - Comissão de Implantação', gerencia: 'CI - Comissão de Implantação' },
+  { id: '2', nome: 'SE - Secretaria Executiva', gerencia: 'SE - Secretaria Executiva' },
+  { id: '3', nome: 'OUV - Ouvidoria', gerencia: 'OUV - Ouvidoria' },
+  { id: '4', nome: 'GSP - Gerência de Soluções e Projetos', gerencia: 'GSP - Gerência de Soluções e Projetos' },
+  { id: '5', nome: 'GSL - Gerência de Suprimentos e Logística', gerencia: 'GSL - Gerência de Suprimentos e Logística' },
+  { id: '6', nome: 'GRH - Gerência de Recursos Humanos', gerencia: 'GRH - Gerência de Recursos Humanos' },
+  { id: '7', nome: 'GUE - Gerência de Urgência e Emergência', gerencia: 'GUE - Gerência de Urgência e Emergência' },
+  { id: '8', nome: 'GLC - Gerência de Licitações e Contratos', gerencia: 'GLC - Gerência de Licitações e Contratos' },
+  { id: '9', nome: 'GFC - Gerência Financeira e Contábil', gerencia: 'GFC - Gerência Financeira e Contábil' },
+  { id: '10', nome: 'GTEC - Gerência de Tecnologia da Informação', gerencia: 'GTEC - Gerência de Tecnologia da Informação' },
+  { id: '11', nome: 'GAP - Gerência de Administração e Patrimônio', gerencia: 'GAP - Gerência de Administração e Patrimônio' },
+  { id: '12', nome: 'GESP - Gerência de Especialidades', gerencia: 'GESP - Gerência de Especialidades' },
+  { id: '13', nome: 'NAJ - Assessoria Jurídica', gerencia: 'NAJ - Assessoria Jurídica' }
 ];
 
 export default function ConsolidacaoDemandaSection({
@@ -124,7 +123,7 @@ export default function ConsolidacaoDemandaSection({
   // Verificar se pode gerenciar a consolidação
   const podeGerenciarConsolidacao = () => {
     if (!user) return false;
-    return podeEditarFluxo() || user.gerencia === 'Gerência de Soluções e Projetos';
+    return podeEditarFluxo() || user.gerencia === 'GSP - Gerência de Soluções e Projetos';
   };
 
   // Verificar se é setor notificado

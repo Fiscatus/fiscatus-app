@@ -29,19 +29,9 @@ import ReturnButton from "@/components/ReturnButton";
 import MultiSelectField from "@/components/MultiSelectField";
 import FileUploadField from "@/components/FileUploadField";
 import { useUser } from "@/contexts/UserContext";
+import { GerenciaSelect } from "@/components/GerenciaSelect";
 
-// Dados mockados
-const gerencias = [
-  { value: "GSP", label: "GSP - Gerência de Soluções e Projetos" },
-  { value: "GSL", label: "GSL - Gerência de Suprimentos e Logística" },
-  { value: "GRH", label: "GRH - Gerência de Recursos Humanos" },
-  { value: "GUE", label: "GUE - Gerência de Urgência e Emergência" },
-  { value: "GLC", label: "GLC - Gerência de Licitações e Contratos" },
-  { value: "GFC", label: "GFC - Gerência Financeira e Contábil" },
-  { value: "GTEC", label: "GTEC - Gerência de Tecnologia da Informação" },
-  { value: "GAP", label: "GAP - Gerência de Administração e Patrimônio" },
-  { value: "GESP", label: "GESP - Gerência de Especialidades" },
-];
+// Removido array de gerências mockadas - agora usa GerenciaSelect
 
 const tiposTramitacao = [
   { value: "ordinaria", label: "Ordinária" },
@@ -448,13 +438,12 @@ export default function NovoProcesso() {
                    <Label className="text-sm font-medium text-gray-700">
                      Outras gerências que podem participar do processo *
                    </Label>
-                   <MultiSelectField
-                     label="Outras gerências que podem participar do processo"
-                     name="gerenciasEnvolvidas"
-                     value={formData.gerenciasEnvolvidas}
-                     onChange={(value) => handleInputChange("gerenciasEnvolvidas", value)}
-                     options={gerencias.filter(g => g.value !== "GTEC")} // Excluir gerência criadora
+                   <GerenciaSelect
+                     value={formData.gerenciasEnvolvidas[0] || ""}
+                     onValueChange={(value) => handleInputChange("gerenciasEnvolvidas", [value])}
                      placeholder="Selecione as gerências participantes"
+                     required={true}
+                     showResponsavel={true}
                    />
                  </div>
               </div>

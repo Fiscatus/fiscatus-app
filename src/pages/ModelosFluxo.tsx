@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { GerenciaSelect } from "@/components/GerenciaSelect";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Separator } from "@/components/ui/separator";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -87,19 +88,7 @@ interface ModeloFluxo {
   etapas: EtapaModelo[];
 }
 
-// Mock de dados das gerências disponíveis
-const gerenciasDisponiveis = [
-  "GSP - Gerência de Soluções e Projetos",
-  "GSL - Gerência de Suprimentos e Logística", 
-  "GRH - Gerência de Recursos Humanos",
-  "GUE - Gerência de Urgência e Emergência",
-  "GLC - Gerência de Licitações e Contratos",
-  "GFC - Gerência Financeira e Contábil",
-  "GTEC - Gerência de Tecnologia da Informação",
-  "GAP - Gerência de Administração e Patrimônio",
-  "GESP - Gerência de Especialidades",
-  "NAJ - Assessoria Jurídica"
-];
+
 
 // Ícones disponíveis para as etapas
 const iconesDisponiveis = [
@@ -1884,7 +1873,7 @@ export default function ModelosFluxo() {
             adicionarEtapa(etapa);
           }
         }}
-        gerenciasDisponiveis={gerenciasDisponiveis}
+
         iconesDisponiveis={iconesDisponiveis}
         coresDisponiveis={coresDisponiveis}
       />
@@ -2023,12 +2012,11 @@ interface EtapaModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSave: (etapa: EtapaModelo) => void;
-  gerenciasDisponiveis: string[];
   iconesDisponiveis: Array<{value: string, label: string, icon: any}>;
   coresDisponiveis: Array<{value: string, label: string, color: string}>;
 }
 
-function EtapaModal({ etapa, isOpen, onClose, onSave, gerenciasDisponiveis, iconesDisponiveis, coresDisponiveis }: EtapaModalProps) {
+function EtapaModal({ etapa, isOpen, onClose, onSave, iconesDisponiveis, coresDisponiveis }: EtapaModalProps) {
   const [formData, setFormData] = useState<Partial<EtapaModelo>>({
     nomeEtapa: "",
     descricao: "",
@@ -2182,21 +2170,13 @@ function EtapaModal({ etapa, isOpen, onClose, onSave, gerenciasDisponiveis, icon
           {/* Gerência Responsável */}
           <div className="space-y-2">
             <Label>Gerência Responsável *</Label>
-            <Select
+            <GerenciaSelect
               value={formData.gerenciaResponsavel}
               onValueChange={(value) => setFormData({...formData, gerenciaResponsavel: value})}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Selecione a gerência responsável" />
-              </SelectTrigger>
-              <SelectContent>
-                {gerenciasDisponiveis.map((gerencia) => (
-                  <SelectItem key={gerencia} value={gerencia}>
-                    {gerencia}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+              placeholder="Selecione a gerência responsável"
+              required={true}
+              showResponsavel={true}
+            />
           </div>
           
           <Separator />

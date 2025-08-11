@@ -5,7 +5,6 @@ import { z } from 'zod';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { toast } from '@/components/ui/use-toast';
@@ -13,6 +12,8 @@ import { getTodayISO } from '@/lib/dates/today';
 import { ORG_TZ } from '@/config/timezone';
 import { DatePicker } from '@/components/date/DatePicker';
 import { CurrentDateField, useCurrentDateDefaults } from '@/components/date/CurrentDateField';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { GerenciaSelect } from '@/components/GerenciaSelect';
 
 // Schema de validação com Zod
 const novoProcessoSchema = z.object({
@@ -38,15 +39,6 @@ const tiposProcesso = [
   { value: "compra", label: "Compra de Materiais" },
   { value: "licitacao", label: "Licitação" },
   { value: "dispensa", label: "Dispensa de Licitação" },
-];
-
-const gerencias = [
-  "GSP - Gerência de Soluções e Projetos",
-  "GSL - Gerência de Suprimentos e Logística", 
-  "GRH - Gerência de Recursos Humanos",
-  "GUE - Gerência de Urgência e Emergência",
-  "GLC - Gerência de Licitações e Contratos",
-  "GFC - Gerência Financeira e Contábil",
 ];
 
 export function NovoProcessoForm() {
@@ -139,18 +131,13 @@ export function NovoProcessoForm() {
 
             <div className="space-y-2">
               <label className="text-sm font-medium">Gerência Responsável *</label>
-              <Select onValueChange={(value) => form.setValue("gerenciaResponsavel", value)}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Selecione a gerência" />
-                </SelectTrigger>
-                <SelectContent>
-                  {gerencias.map((gerencia) => (
-                    <SelectItem key={gerencia} value={gerencia}>
-                      {gerencia}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <GerenciaSelect
+                value={form.watch("gerenciaResponsavel")}
+                onValueChange={(value) => form.setValue("gerenciaResponsavel", value)}
+                placeholder="Selecione a gerência"
+                required={true}
+                showResponsavel={true}
+              />
               {form.formState.errors.gerenciaResponsavel && (
                 <p className="text-sm text-red-600">{form.formState.errors.gerenciaResponsavel.message}</p>
               )}

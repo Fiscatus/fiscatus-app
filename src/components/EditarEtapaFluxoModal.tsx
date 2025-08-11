@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { GerenciaSelect } from '@/components/GerenciaSelect';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
 import { 
@@ -65,28 +66,7 @@ const iconesDisponiveis = [
   { value: 'Settings', label: 'Configuração', icon: <Settings className="w-4 h-4" /> }
 ];
 
-const gerenciasDisponiveis = [
-  'Gerência de Planejamento',
-  'Gerência Técnica',
-  'Gerência de Soluções e Projetos',
-  'Diretoria Executiva',
-  'Gerência de Projetos',
-  'Diretoria Técnica',
-  'Gerência de Análise',
-  'Gerência de Riscos',
-  'Diretoria de Riscos',
-  'Gerência de Contratos',
-  'Diretoria de Contratos',
-  'Gerência de Compras',
-  'Gerência Financeira',
-  'Diretoria Geral',
-  'Gerência Jurídica',
-  'Assessoria Jurídica',
-  'Gerência de Comunicação',
-  'Comissão de Implantação',
-  'Secretaria Executiva',
-  'Ouvidoria'
-];
+
 
 
 
@@ -221,18 +201,13 @@ export default function EditarEtapaFluxoModal({
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <Label htmlFor="gerencia">Gerência Responsável *</Label>
-                <Select value={formData.gerencia} onValueChange={(value) => handleInputChange('gerencia', value)}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecione a gerência" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {gerenciasDisponiveis.map((gerencia) => (
-                      <SelectItem key={gerencia} value={gerencia}>
-                        {gerencia}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <GerenciaSelect
+                  value={formData.gerencia}
+                  onValueChange={(value) => handleInputChange('gerencia', value)}
+                  placeholder="Selecione a gerência"
+                  required={true}
+                  showResponsavel={true}
+                />
               </div>
 
               <div>

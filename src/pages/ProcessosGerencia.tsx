@@ -51,6 +51,7 @@ import Topbar from "@/components/Topbar";
 import GerenciarPastasModal from "@/components/GerenciarPastasModal";
 import { usePastasOrganizacionais } from "@/hooks/usePastasOrganizacionais";
 import { formatarNumeroProcesso } from "@/lib/processoUtils";
+import { GerenciaSelect } from "@/components/GerenciaSelect";
 
 // Tipos
 type ProcessStatus = "em_andamento" | "pendente" | "atrasado" | "concluido" | "cancelado";
@@ -797,18 +798,7 @@ function AdvancedFiltersSection({ filters, onFilterChange }: any) {
 }
 
 function CreateProcessModal() {
-  // Dados mockados para gerências
-  const gerencias = [
-    { value: "GSP", label: "GSP - Gerência de Soluções e Projetos" },
-    { value: "GSL", label: "GSL - Gerência de Suprimentos e Logística" },
-    { value: "GRH", label: "GRH - Gerência de Recursos Humanos" },
-    { value: "GUE", label: "GUE - Gerência de Urgência e Emergência" },
-    { value: "GLC", label: "GLC - Gerência de Licitações e Contratos" },
-    { value: "GFC", label: "GFC - Gerência Financeira e Contábil" },
-    { value: "GTEC", label: "GTEC - Gerência de Tecnologia da Informação" },
-    { value: "GAP", label: "GAP - Gerência de Administração e Patrimônio" },
-    { value: "GESP", label: "GESP - Gerência de Especialidades" },
-  ];
+  // Removido array de gerências mockadas - agora usa GerenciaSelect
 
   const [open, setOpen] = useState(false);
   const [formData, setFormData] = useState({
@@ -1073,13 +1063,12 @@ function CreateProcessModal() {
                 <label className="text-lg font-semibold text-gray-900">
                   Outras Gerências que podem participar *
                 </label>
-                <MultiSelectField
-                  label="Outras gerências participantes"
-                  name="gerenciasEnvolvidas"
-                  value={formData.gerenciasEnvolvidas}
-                  onChange={(value) => handleInputChange("gerenciasEnvolvidas", value)}
-                  options={gerencias.filter(g => g.value !== "GTEC")}
+                <GerenciaSelect
+                  value={formData.gerenciasEnvolvidas[0] || ""}
+                  onValueChange={(value) => handleInputChange("gerenciasEnvolvidas", [value])}
                   placeholder="Selecione as gerências participantes"
+                  required={true}
+                  showResponsavel={true}
                 />
               </div>
             </div>

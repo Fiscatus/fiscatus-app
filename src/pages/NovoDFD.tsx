@@ -13,25 +13,9 @@ import MultiSelectField from "@/components/MultiSelectField";
 import RadioGroupField from "@/components/RadioGroupField";
 import FileUploadField from "@/components/FileUploadField";
 import EquipeMemberField from "@/components/EquipeMemberField";
+import { GerenciaSelect } from "@/components/GerenciaSelect";
 
-// Dados mockados
-const gerencias = [
-  { value: "GSP", label: "GSP - Gerência de Soluções e Projetos" },
-  { value: "GSL", label: "GSL - Gerência de Suprimentos e Logística" },
-  { value: "GRH", label: "GRH - Gerência de Recursos Humanos" },
-  { value: "GUE", label: "GUE - Gerência de Urgência e Emergência" },
-  { value: "GLC", label: "GLC - Gerência de Licitações e Contratos" },
-  { value: "GFC", label: "GFC - Gerência Financeira e Contábil" },
-];
-
-const gerenciasParticipantes = [
-  { value: "GSP", label: "GSP" },
-  { value: "GSL", label: "GSL" },
-  { value: "GRH", label: "GRH" },
-  { value: "GUE", label: "GUE" },
-  { value: "GLC", label: "GLC" },
-  { value: "GFC", label: "GFC" },
-];
+// Removido arrays de gerências mockadas - agora usa GerenciaSelect
 
 const prioridades = [
   { value: "alta", label: "Alta" },
@@ -148,14 +132,18 @@ export default function NovoDFD() {
                 onChange={(value) => handleInputChange("orgaoRequisitante", value)}
                 disabled={true}
               />
-              <SelectField
-                label="Gerência Requisitante"
-                name="gerenciaRequisitante"
-                value={formData.gerenciaRequisitante}
-                onChange={(value) => handleInputChange("gerenciaRequisitante", value)}
-                options={gerencias}
-                required={true}
-              />
+              <div className="space-y-2">
+                <Label className="text-sm font-medium text-gray-700">
+                  Gerência Requisitante *
+                </Label>
+                <GerenciaSelect
+                  value={formData.gerenciaRequisitante}
+                  onValueChange={(value) => handleInputChange("gerenciaRequisitante", value)}
+                  placeholder="Selecione a gerência requisitante"
+                  required={true}
+                  showResponsavel={true}
+                />
+              </div>
             </div>
           </DFDFormSection>
 
@@ -191,14 +179,18 @@ export default function NovoDFD() {
 
           {/* Seção 3: Gerências Participantes */}
           <DFDFormSection title="Gerências Participantes">
-            <MultiSelectField
-              label="Selecione as gerências participantes"
-              name="gerenciasParticipantes"
-              value={formData.gerenciasParticipantes}
-              onChange={(value) => handleInputChange("gerenciasParticipantes", value)}
-              options={gerenciasParticipantes}
-              required={true}
-            />
+            <div className="space-y-2">
+              <Label className="text-sm font-medium text-gray-700">
+                Selecione as gerências participantes *
+              </Label>
+              <GerenciaSelect
+                value={formData.gerenciasParticipantes[0] || ""}
+                onValueChange={(value) => handleInputChange("gerenciasParticipantes", [value])}
+                placeholder="Selecione as gerências participantes"
+                required={true}
+                showResponsavel={true}
+              />
+            </div>
           </DFDFormSection>
 
           {/* Seção 4: Objeto e Justificativa */}
