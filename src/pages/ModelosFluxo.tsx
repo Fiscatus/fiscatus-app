@@ -1,5 +1,4 @@
-
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -658,6 +657,11 @@ export default function ModelosFluxo() {
   // Estados para drag and drop
   const [draggedEtapa, setDraggedEtapa] = useState<string | null>(null);
   
+  // Estados para busca e filtros
+  const [busca, setBusca] = useState("");
+  const [filtroTipo, setFiltroTipo] = useState<"todos" | "sistema" | "pessoais">("todos");
+  const [ordenacao, setOrdenacao] = useState<"nome" | "data" | "etapas">("nome");
+  
   // Verificar permissões
   const temPermissao = () => {
     if (!user) return false;
@@ -1052,6 +1056,44 @@ export default function ModelosFluxo() {
     }
   };
 
+  // Funções de filtro e busca
+  const modelosFiltrados = useMemo(() => {
+    let filtrados = modelos;
+
+    // Aplicar filtro por tipo
+    if (filtroTipo === "sistema") {
+      filtrados = filtrados.filter(m => m.ehModeloSistema);
+    } else if (filtroTipo === "pessoais") {
+      filtrados = filtrados.filter(m => !m.ehModeloSistema);
+    }
+
+    // Aplicar busca
+    if (busca.trim()) {
+      const termoBusca = busca.toLowerCase();
+      filtrados = filtrados.filter(m => 
+        m.nome.toLowerCase().includes(termoBusca) ||
+        m.descricao.toLowerCase().includes(termoBusca) ||
+        m.criadoPor.toLowerCase().includes(termoBusca)
+      );
+    }
+
+    // Aplicar ordenação
+    filtrados.sort((a, b) => {
+      switch (ordenacao) {
+        case "nome":
+          return a.nome.localeCompare(b.nome);
+        case "data":
+          return new Date(b.modificadoEm).getTime() - new Date(a.modificadoEm).getTime();
+        case "etapas":
+          return b.etapas.length - a.etapas.length;
+        default:
+          return 0;
+      }
+    });
+
+    return filtrados;
+  }, [modelos, busca, filtroTipo, ordenacao]);
+
   if (!temPermissao()) {
     return null;
   }
@@ -1060,17 +1102,17 @@ export default function ModelosFluxo() {
     <div className="min-h-screen bg-gray-50">
       <Topbar />
       
-      <main className="pt-20 flex h-screen">
+      <main className="pt-16 flex h-screen">
         {/* Sidebar - Lista de Modelos */}
         <div className="w-80 lg:w-80 md:w-72 sm:w-64 bg-white border-r border-gray-200 flex flex-col flex-shrink-0">
           {/* Header fixo do sidebar */}
-          <div className="p-4 lg:p-6 border-b border-gray-200 bg-gray-50">
-            <div className="flex items-center gap-3 mb-4 lg:mb-6">
-              <div className="p-2 bg-purple-100 rounded-lg flex-shrink-0">
-                <Workflow className="w-5 h-5 lg:w-6 lg:h-6 text-purple-600" />
+          <div className="p-2 lg:p-3 border-b border-gray-200 bg-gray-50">
+            <div className="flex items-center gap-2 mb-2 lg:mb-3">
+              <div className="p-1.5 bg-purple-100 rounded-lg flex-shrink-0">
+                <Workflow className="w-4 h-4 lg:w-5 lg:h-5 text-purple-600" />
               </div>
               <div className="min-w-0 flex-1">
-                <h1 className="text-base lg:text-lg font-bold text-gray-900 truncate">Modelos de Fluxo</h1>
+                <h1 className="text-sm lg:text-base font-bold text-gray-900 truncate">Modelos de Fluxo</h1>
                 <p className="text-xs text-gray-500 truncate">
                   {user?.gerencia}
                 </p>
@@ -1078,8 +1120,8 @@ export default function ModelosFluxo() {
             </div>
             
             {/* Botão principal destacado */}
-            <Button onClick={criarNovoModelo} className="w-full h-12 text-base font-medium shadow-sm">
-              <Plus className="w-5 h-5 mr-2" />
+            <Button onClick={criarNovoModelo} className="w-full h-10 text-sm font-medium shadow-sm">
+              <Plus className="w-4 h-4 mr-2" />
               Criar Novo Modelo
             </Button>
             
@@ -1087,168 +1129,154 @@ export default function ModelosFluxo() {
             <Button 
               onClick={duplicarFiscatus} 
               variant="outline" 
-              className="w-full mt-3 h-10"
+              className="w-full mt-1.5 h-8 text-sm"
             >
-              <Copy className="w-4 h-4 mr-2" />
+              <Copy className="w-3 h-3 mr-1.5" />
               Duplicar Fiscatus
             </Button>
           </div>
           
           <div className="flex-1 overflow-y-auto">
-            <div className="p-4 space-y-4">
+            <div className="p-3 space-y-4">
+              {/* Barra de Busca */}
+              <div className="space-y-2">
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+                  <Input
+                    placeholder="Buscar modelos..."
+                    value={busca}
+                    onChange={(e) => setBusca(e.target.value)}
+                    className="pl-10 h-8 text-sm"
+                  />
+                </div>
+                
+                {/* Filtros */}
+                <div className="flex gap-2">
+                  <Select value={filtroTipo} onValueChange={(value: any) => setFiltroTipo(value)}>
+                    <SelectTrigger className="h-7 text-xs">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="todos">Todos</SelectItem>
+                      <SelectItem value="sistema">Sistema</SelectItem>
+                      <SelectItem value="pessoais">Pessoais</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  
+                  <Select value={ordenacao} onValueChange={(value: any) => setOrdenacao(value)}>
+                    <SelectTrigger className="h-7 text-xs">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="nome">Nome</SelectItem>
+                      <SelectItem value="data">Data</SelectItem>
+                      <SelectItem value="etapas">Etapas</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              {/* Resultados da busca */}
+              {busca.trim() && (
+                <div className="text-xs text-gray-500 px-2">
+                  {modelosFiltrados.length} modelo{modelosFiltrados.length !== 1 ? 's' : ''} encontrado{modelosFiltrados.length !== 1 ? 's' : ''}
+                </div>
+              )}
+
               {/* Modelos do Sistema */}
-              {modelos.some(m => m.ehModeloSistema) && (
+              {modelosFiltrados.some(m => m.ehModeloSistema) && (
                 <div>
-                  <div className="flex items-center gap-2 mb-3 px-2">
-                    <Monitor className="w-4 h-4 text-blue-600" />
-                    <h3 className="text-sm font-semibold text-gray-700 uppercase tracking-wide">
+                  <div className="flex items-center gap-2 mb-2 px-2">
+                    <Monitor className="w-3 h-3 text-blue-600" />
+                    <h3 className="text-xs font-semibold text-gray-700 uppercase tracking-wide">
                       Modelos do Sistema
                     </h3>
+                    <Badge variant="secondary" className="text-xs bg-blue-100 text-blue-800">
+                      {modelosFiltrados.filter(m => m.ehModeloSistema).length}
+                    </Badge>
                   </div>
-                  <div className="space-y-3">
-                    {modelos
+                  <div className="space-y-1.5">
+                    {modelosFiltrados
                       .filter(modelo => modelo.ehModeloSistema)
                       .map((modelo) => (
                         <Card 
                           key={modelo.id}
-                          className={`cursor-pointer transition-all min-h-[160px] border-l-4 ${
+                          className={`cursor-pointer transition-all border-l-4 ${
                             modeloSelecionado?.id === modelo.id 
                               ? 'ring-2 ring-purple-500 bg-purple-50 border-l-blue-500' 
                               : 'hover:bg-gray-50 border-l-blue-200 hover:border-l-blue-400'
                           }`}
                           onClick={() => setModeloSelecionado(modelo)}
                         >
-                          <CardContent className="p-4">
-                            <div className="space-y-3">
+                          <CardContent className="p-2.5">
+                            <div className="space-y-1.5">
                               {/* Cabeçalho do Card */}
                               <div className="flex items-start justify-between">
                                 <div className="flex-1 min-w-0">
-                                  <div className="flex items-center gap-2 mb-2">
-                                    <h3 className="font-medium text-gray-900 break-words text-sm">
+                                  <div className="flex items-center gap-2 mb-1">
+                                    <h3 className="font-medium text-gray-900 text-sm truncate">
                                       {modelo.nome}
                                     </h3>
                                     {modelo.ehPadrao && (
-                                      <Star className="w-4 h-4 text-yellow-500 fill-current flex-shrink-0" />
+                                      <Star className="w-3 h-3 text-yellow-500 fill-current flex-shrink-0" />
                                     )}
                                     <Badge variant="secondary" className="text-xs bg-blue-100 text-blue-800 flex-shrink-0">
                                       Sistema
                                     </Badge>
                                   </div>
-                                  <p className="text-xs text-gray-600 mb-3 break-words line-clamp-2">
+                                  <p className="text-xs text-gray-600 mb-2 line-clamp-2">
                                     {modelo.descricao}
                                   </p>
                                 </div>
                               </div>
                       
-                      {/* Informações do Modelo */}
-                      <div className="space-y-2">
-                        <div className="flex items-center justify-between text-xs text-gray-500">
-                          <span className="flex items-center gap-1">
-                            <Square className="w-3 h-3 flex-shrink-0" />
-                            {modelo.etapas.length} etapas
-                          </span>
-                          <span className="flex items-center gap-1">
-                            <Calendar className="w-3 h-3 flex-shrink-0" />
-                            {modelo.modificadoEm}
-                          </span>
-                        </div>
-                        <div className="text-xs text-gray-400 break-words">
-                          por {modelo.criadoPor}
-                        </div>
-                      </div>
-                      
-                      {/* Botões de Ação */}
-                      <div className="flex items-center gap-1 pt-2 flex-wrap">
-                        {modelo.id !== "modelo-sistema-fiscatus" && (
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            className="h-8 w-8 p-0 flex-shrink-0"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              if (modelo.ehModeloSistema) {
-                                toast({
-                                  title: "Modelo do Sistema",
-                                  description: "Modelos do sistema não podem ser editados diretamente. Duplique-o para criar uma versão editável.",
-                                  variant: "destructive"
-                                });
-                                return;
-                              }
-                              setModeloSelecionado(modelo);
-                              setModoEdicao(true);
-                              setNomeModelo(modelo.nome);
-                              setDescricaoModelo(modelo.descricao);
-                            }}
-                          >
-                            <Edit3 className="w-4 h-4" />
-                          </Button>
-                        )}
-                        
-                        {modelo.id !== "modelo-sistema-fiscatus" && (
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            className="h-8 w-8 p-0 flex-shrink-0"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              duplicarModelo(modelo);
-                            }}
-                          >
-                            <Copy className="w-4 h-4" />
-                          </Button>
-                        )}
-                        
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          className="h-8 w-8 p-0 flex-shrink-0"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            definirComoPadrao(modelo.id);
-                          }}
-                        >
-                          {modelo.ehPadrao ? (
-                            <StarOff className="w-4 h-4" />
-                          ) : (
-                            <Star className="w-4 h-4" />
-                          )}
-                        </Button>
-                        
-                        {!modelo.ehModeloSistema && modelo.id !== "modelo-sistema-fiscatus" && (
-                          <AlertDialog>
-                            <AlertDialogTrigger asChild>
-                              <Button
-                                size="sm"
-                                variant="ghost"
-                                className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50 flex-shrink-0"
-                                onClick={(e) => e.stopPropagation()}
-                              >
-                                <Trash2 className="w-4 h-4" />
-                              </Button>
-                            </AlertDialogTrigger>
-                            <AlertDialogContent>
-                              <AlertDialogHeader>
-                                <AlertDialogTitle>Confirmar Exclusão</AlertDialogTitle>
-                                <AlertDialogDescription>
-                                  Tem certeza de que deseja excluir o modelo "{modelo.nome}"? 
-                                  Esta ação não pode ser desfeita.
-                                </AlertDialogDescription>
-                              </AlertDialogHeader>
-                              <AlertDialogFooter>
-                                <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                                <AlertDialogAction
-                                  onClick={() => excluirModelo(modelo.id)}
-                                  className="bg-red-600 hover:bg-red-700"
+                              {/* Informações do Modelo */}
+                              <div className="flex items-center justify-between text-xs text-gray-500">
+                                <span className="flex items-center gap-1">
+                                  <Square className="w-3 h-3 flex-shrink-0" />
+                                  {modelo.etapas.length} etapas
+                                </span>
+                                <span className="flex items-center gap-1">
+                                  <Calendar className="w-3 h-3 flex-shrink-0" />
+                                  {modelo.modificadoEm}
+                                </span>
+                              </div>
+                              <div className="text-xs text-gray-400 truncate">
+                                por {modelo.criadoPor}
+                              </div>
+                              
+                              {/* Botões de Ação */}
+                              <div className="flex items-center gap-1 pt-1">
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  className="h-6 w-6 p-0 flex-shrink-0"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    duplicarModelo(modelo);
+                                  }}
                                 >
-                                  Excluir
-                                </AlertDialogAction>
-                              </AlertDialogFooter>
-                            </AlertDialogContent>
-                          </AlertDialog>
-                        )}
-                      </div>
-                    </div>
-                  </CardContent>
+                                  <Copy className="w-3 h-3" />
+                                </Button>
+                                
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  className="h-6 w-6 p-0 flex-shrink-0"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    definirComoPadrao(modelo.id);
+                                  }}
+                                >
+                                  {modelo.ehPadrao ? (
+                                    <StarOff className="w-3 h-3" />
+                                  ) : (
+                                    <Star className="w-3 h-3" />
+                                  )}
+                                </Button>
+                              </div>
+                            </div>
+                          </CardContent>
                         </Card>
                       ))}
                   </div>
@@ -1256,165 +1284,155 @@ export default function ModelosFluxo() {
               )}
 
               {/* Modelos Pessoais */}
-              {modelos.some(m => !m.ehModeloSistema) && (
+              {modelosFiltrados.some(m => !m.ehModeloSistema) && (
                 <div>
-                  <div className="flex items-center gap-2 mb-3 px-2">
-                    <User className="w-4 h-4 text-purple-600" />
-                    <h3 className="text-sm font-semibold text-gray-700 uppercase tracking-wide">
+                  <div className="flex items-center gap-2 mb-2 px-2">
+                    <User className="w-3 h-3 text-purple-600" />
+                    <h3 className="text-xs font-semibold text-gray-700 uppercase tracking-wide">
                       Seus Modelos
                     </h3>
+                    <Badge variant="secondary" className="text-xs bg-purple-100 text-purple-800">
+                      {modelosFiltrados.filter(m => !m.ehModeloSistema).length}
+                    </Badge>
                   </div>
-                  <div className="space-y-3">
-                    {modelos
+                  <div className="space-y-1.5">
+                    {modelosFiltrados
                       .filter(modelo => !modelo.ehModeloSistema)
-                      .sort((a, b) => {
-                        // Modelos padrão primeiro
-                        if (a.ehPadrao && !b.ehPadrao) return -1;
-                        if (!a.ehPadrao && b.ehPadrao) return 1;
-                        // Por fim ordenar por data de modificação
-                        return new Date(b.modificadoEm).getTime() - new Date(a.modificadoEm).getTime();
-                      })
                       .map((modelo) => (
                         <Card 
                           key={modelo.id}
-                          className={`cursor-pointer transition-all min-h-[160px] border-l-4 ${
+                          className={`cursor-pointer transition-all border-l-4 ${
                             modeloSelecionado?.id === modelo.id 
                               ? 'ring-2 ring-purple-500 bg-purple-50 border-l-purple-500' 
                               : 'hover:bg-gray-50 border-l-gray-200 hover:border-l-purple-300'
                           }`}
                           onClick={() => setModeloSelecionado(modelo)}
                         >
-                          <CardContent className="p-4">
-                            <div className="space-y-3">
+                          <CardContent className="p-2.5">
+                            <div className="space-y-1.5">
                               {/* Cabeçalho do Card */}
                               <div className="flex items-start justify-between">
                                 <div className="flex-1 min-w-0">
-                                  <div className="flex items-center gap-2 mb-2">
-                                    <h3 className="font-medium text-gray-900 break-words text-sm">
+                                  <div className="flex items-center gap-2 mb-1">
+                                    <h3 className="font-medium text-gray-900 text-sm truncate">
                                       {modelo.nome}
                                     </h3>
                                     {modelo.ehPadrao && (
-                                      <Star className="w-4 h-4 text-yellow-500 fill-current flex-shrink-0" />
+                                      <Star className="w-3 h-3 text-yellow-500 fill-current flex-shrink-0" />
                                     )}
                                   </div>
-                                  <p className="text-xs text-gray-600 mb-3 break-words line-clamp-2">
+                                  <p className="text-xs text-gray-600 mb-2 line-clamp-2">
                                     {modelo.descricao}
                                   </p>
                                 </div>
                               </div>
                               
                               {/* Informações do Modelo */}
-                              <div className="space-y-2">
-                                <div className="flex items-center justify-between text-xs text-gray-500">
-                                  <span className="flex items-center gap-1">
-                                    <Hash className="w-3 h-3 flex-shrink-0" />
-                                    {modelo.etapas.length} etapas
-                                  </span>
-                                  <span className="flex items-center gap-1">
-                                    <Calendar className="w-3 h-3 flex-shrink-0" />
-                                    {modelo.modificadoEm}
-                                  </span>
-                                </div>
-                                <div className="text-xs text-gray-400 break-words">
-                                  por {modelo.criadoPor}
-                                </div>
+                              <div className="flex items-center justify-between text-xs text-gray-500">
+                                <span className="flex items-center gap-1">
+                                  <Hash className="w-3 h-3 flex-shrink-0" />
+                                  {modelo.etapas.length} etapas
+                                </span>
+                                <span className="flex items-center gap-1">
+                                  <Calendar className="w-3 h-3 flex-shrink-0" />
+                                  {modelo.modificadoEm}
+                                </span>
+                              </div>
+                              <div className="text-xs text-gray-400 truncate">
+                                por {modelo.criadoPor}
                               </div>
                               
                               {/* Botões de Ação */}
-                              <div className="flex items-center gap-1 pt-2 flex-wrap">
-                                {modelo.id !== "modelo-sistema-fiscatus" && (
-                                  <Button
-                                    size="sm"
-                                    variant="ghost"
-                                    className="h-8 w-8 p-0 flex-shrink-0"
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      if (modelo.ehModeloSistema) {
-                                        toast({
-                                          title: "Modelo do Sistema",
-                                          description: "Modelos do sistema não podem ser editados diretamente. Duplique-o para criar uma versão editável.",
-                                          variant: "destructive"
-                                        });
-                                        return;
-                                      }
-                                      setModeloSelecionado(modelo);
-                                      setModoEdicao(true);
-                                      setNomeModelo(modelo.nome);
-                                      setDescricaoModelo(modelo.descricao);
-                                    }}
-                                  >
-                                    <Edit3 className="w-4 h-4" />
-                                  </Button>
-                                )}
-                                
-                                {modelo.id !== "modelo-sistema-fiscatus" && (
-                                  <Button
-                                    size="sm"
-                                    variant="ghost"
-                                    className="h-8 w-8 p-0 flex-shrink-0"
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      duplicarModelo(modelo);
-                                    }}
-                                  >
-                                    <Copy className="w-4 h-4" />
-                                  </Button>
-                                )}
+                              <div className="flex items-center gap-1 pt-1">
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  className="h-6 w-6 p-0 flex-shrink-0"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setModeloSelecionado(modelo);
+                                    setModoEdicao(true);
+                                    setNomeModelo(modelo.nome);
+                                    setDescricaoModelo(modelo.descricao);
+                                  }}
+                                >
+                                  <Edit3 className="w-3 h-3" />
+                                </Button>
                                 
                                 <Button
                                   size="sm"
                                   variant="ghost"
-                                  className="h-8 w-8 p-0 flex-shrink-0"
+                                  className="h-6 w-6 p-0 flex-shrink-0"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    duplicarModelo(modelo);
+                                  }}
+                                >
+                                  <Copy className="w-3 h-3" />
+                                </Button>
+                                
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  className="h-6 w-6 p-0 flex-shrink-0"
                                   onClick={(e) => {
                                     e.stopPropagation();
                                     definirComoPadrao(modelo.id);
                                   }}
                                 >
                                   {modelo.ehPadrao ? (
-                                    <StarOff className="w-4 h-4" />
+                                    <StarOff className="w-3 h-3" />
                                   ) : (
-                                    <Star className="w-4 h-4" />
+                                    <Star className="w-3 h-3" />
                                   )}
                                 </Button>
                                 
-                                {!modelo.ehModeloSistema && modelo.id !== "modelo-sistema-fiscatus" && (
-                                  <AlertDialog>
-                                    <AlertDialogTrigger asChild>
-                                      <Button
-                                        size="sm"
-                                        variant="ghost"
-                                        className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50 flex-shrink-0"
-                                        onClick={(e) => e.stopPropagation()}
+                                <AlertDialog>
+                                  <AlertDialogTrigger asChild>
+                                    <Button
+                                      size="sm"
+                                      variant="ghost"
+                                      className="h-6 w-6 p-0 text-red-600 hover:text-red-700 hover:bg-red-50 flex-shrink-0"
+                                      onClick={(e) => e.stopPropagation()}
+                                    >
+                                      <Trash2 className="w-3 h-3" />
+                                    </Button>
+                                  </AlertDialogTrigger>
+                                  <AlertDialogContent>
+                                    <AlertDialogHeader>
+                                      <AlertDialogTitle>Confirmar Exclusão</AlertDialogTitle>
+                                      <AlertDialogDescription>
+                                        Tem certeza de que deseja excluir o modelo "{modelo.nome}"? 
+                                        Esta ação não pode ser desfeita.
+                                      </AlertDialogDescription>
+                                    </AlertDialogHeader>
+                                    <AlertDialogFooter>
+                                      <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                      <AlertDialogAction
+                                        onClick={() => excluirModelo(modelo.id)}
+                                        className="bg-red-600 hover:bg-red-700"
                                       >
-                                        <Trash2 className="w-4 h-4" />
-                                      </Button>
-                                    </AlertDialogTrigger>
-                                    <AlertDialogContent>
-                                      <AlertDialogHeader>
-                                        <AlertDialogTitle>Confirmar Exclusão</AlertDialogTitle>
-                                        <AlertDialogDescription>
-                                          Tem certeza de que deseja excluir o modelo "{modelo.nome}"? 
-                                          Esta ação não pode ser desfeita.
-                                        </AlertDialogDescription>
-                                      </AlertDialogHeader>
-                                      <AlertDialogFooter>
-                                        <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                                        <AlertDialogAction
-                                          onClick={() => excluirModelo(modelo.id)}
-                                          className="bg-red-600 hover:bg-red-700"
-                                        >
-                                          Excluir
-                                        </AlertDialogAction>
-                                      </AlertDialogFooter>
-                                    </AlertDialogContent>
-                                  </AlertDialog>
-                                )}
+                                        Excluir
+                                      </AlertDialogAction>
+                                    </AlertDialogFooter>
+                                  </AlertDialogContent>
+                                </AlertDialog>
                               </div>
                             </div>
                           </CardContent>
                         </Card>
                       ))}
                   </div>
+                </div>
+              )}
+
+              {/* Estado vazio */}
+              {modelosFiltrados.length === 0 && (
+                <div className="text-center py-6">
+                  <Workflow className="w-10 h-10 text-gray-300 mx-auto mb-2" />
+                  <p className="text-sm text-gray-500">
+                    {busca.trim() ? 'Nenhum modelo encontrado' : 'Nenhum modelo disponível'}
+                  </p>
                 </div>
               )}
             </div>
@@ -1426,11 +1444,11 @@ export default function ModelosFluxo() {
           {modeloSelecionado ? (
             <>
               {/* Header do Editor - Compacto */}
-              <div className="bg-white border-b border-gray-200 px-4 lg:px-6 py-3 lg:py-4">
+              <div className="bg-white border-b border-gray-200 px-4 lg:px-6 py-2.5">
                 <div className="flex items-center justify-between gap-4">
                   <div className="flex-1 min-w-0">
                     {modoEdicao ? (
-                      <div className="space-y-3">
+                      <div className="space-y-1.5">
                         <div>
                           <Label htmlFor="nomeModelo" className="text-sm font-medium text-gray-700">
                             Nome do Modelo
@@ -1439,7 +1457,7 @@ export default function ModelosFluxo() {
                             id="nomeModelo"
                             value={nomeModelo}
                             onChange={(e) => setNomeModelo(e.target.value)}
-                            className="text-lg font-semibold mt-1"
+                            className="text-base font-semibold mt-1"
                           />
                         </div>
                         <div>
@@ -1457,8 +1475,8 @@ export default function ModelosFluxo() {
                       </div>
                     ) : (
                       <div>
-                        <div className="flex items-center gap-3 mb-1">
-                          <h2 className="text-lg font-bold text-gray-900 truncate">
+                        <div className="flex items-center gap-2 mb-1.5">
+                          <h2 className="text-base font-bold text-gray-900 truncate">
                             {modeloSelecionado.nome}
                           </h2>
                           {modeloSelecionado.ehPadrao && (
@@ -1473,10 +1491,10 @@ export default function ModelosFluxo() {
                             </Badge>
                           )}
                         </div>
-                        <p className="text-sm text-gray-600 mb-2 line-clamp-2">
+                        <p className="text-sm text-gray-600 mb-1.5 line-clamp-1">
                           {modeloSelecionado.descricao}
                         </p>
-                        <div className="flex items-center gap-4 text-xs text-gray-500">
+                        <div className="flex items-center gap-3 text-xs text-gray-500">
                           <span className="flex items-center gap-1">
                             <Hash className="w-3 h-3" />
                             {modeloSelecionado.etapas.length} etapas
@@ -1592,61 +1610,57 @@ export default function ModelosFluxo() {
               </div>
 
               {/* Editor de Etapas */}
-              <div className="flex-1 overflow-y-auto px-4 lg:px-6 py-4 lg:py-6">
+              <div className="flex-1 overflow-y-auto px-4 lg:px-6 py-3 lg:py-4">
                 {modoEdicao && !modeloSelecionado?.ehModeloSistema ? (
-                  <div className="space-y-6">
+                  <div className="space-y-4">
                     {/* Botão Adicionar Etapa */}
                     <Card className="border-2 border-dashed border-gray-300 hover:border-purple-400 transition-colors">
-                      <CardContent className="p-6">
+                      <CardContent className="p-3">
                         <Button
                           variant="ghost"
-                          className="w-full h-16 text-gray-600 hover:text-purple-600"
+                          className="w-full h-10 text-gray-600 hover:text-purple-600"
                           onClick={() => setShowNovaEtapaModal(true)}
                         >
-                          <Plus className="w-6 h-6 mr-2" />
+                          <Plus className="w-4 h-4 mr-2" />
                           Adicionar Nova Etapa
                         </Button>
                       </CardContent>
                     </Card>
 
-                    {/* Cards de Etapas Estilo Fiscatus - Layout Horizontal */}
-                    <div className="space-y-8">
-                      {Array.from({ length: Math.ceil(modeloSelecionado.etapas.length / 6) }, (_, rowIndex) => (
-                        <div key={rowIndex} className="relative flex flex-wrap gap-6 justify-start">
+                    {/* Cards de Etapas - Layout Compacto */}
+                    <div className="space-y-3">
+                      {Array.from({ length: Math.ceil(modeloSelecionado.etapas.length / 8) }, (_, rowIndex) => (
+                        <div key={rowIndex} className="relative flex gap-2 justify-start">
                           {/* Linha de conectores */}
-                          <div className="absolute top-[100px] left-0 right-0 h-0.5 bg-gray-200 z-0" />
+                          <div className="absolute top-[70px] left-0 right-0 h-0.5 bg-gray-200 z-0" />
                           
                           {modeloSelecionado.etapas
-                            .slice(rowIndex * 6, (rowIndex + 1) * 6)
+                            .slice(rowIndex * 8, (rowIndex + 1) * 8)
                             .map((etapa, indexInRow) => {
-                              const globalIndex = rowIndex * 6 + indexInRow;
-                              const isLastInRow = indexInRow === 5 || globalIndex === modeloSelecionado.etapas.length - 1;
+                              const globalIndex = rowIndex * 8 + indexInRow;
+                              const isLastInRow = indexInRow === 7 || globalIndex === modeloSelecionado.etapas.length - 1;
                               
                               return (
                                 <div key={etapa.id} className="relative flex-shrink-0 z-20">
                                   {/* Conectores */}
                                   {!isLastInRow && (
                                     <>
-                                      <div className="absolute -top-3 -right-3 w-6 h-6 bg-gray-200 rounded-full flex items-center justify-center z-10">
-                                        <div className="w-2 h-2 bg-white rounded-full" />
+                                      <div className="absolute -top-2 -right-2 w-4 h-4 bg-gray-200 rounded-full flex items-center justify-center z-10">
+                                        <div className="w-1.5 h-1.5 bg-white rounded-full" />
                                       </div>
-                                      <div className="absolute top-[97px] -right-6 w-12 h-0.5 bg-gray-200 z-0" />
+                                      <div className="absolute top-[68px] -right-4 w-8 h-0.5 bg-gray-200 z-0" />
                                     </>
                                   )}
                                   
                                   <Card 
-                                    className={`relative w-[200px] transition-all duration-200 hover:shadow-lg border-2 ${
-                                      etapa.etapaObrigatoria 
-                                        ? globalIndex < 1 ? 'border-green-400 bg-green-50' : globalIndex < 2 ? 'border-blue-400 bg-blue-50' : 'border-gray-200 bg-white'
-                                        : 'border-gray-200 bg-white'
-                                    } ${draggedEtapa === etapa.id ? 'opacity-50 scale-95' : ''}`}
+                                    className={`relative w-[160px] transition-all duration-200 hover:shadow-lg border-2 border-gray-200 bg-white ${draggedEtapa === etapa.id ? 'opacity-50 scale-95' : ''}`}
                                     draggable={modoEdicao}
                                     onDragStart={(e) => handleDragStart(e, etapa.id)}
                                     onDragOver={handleDragOver}
                                     onDrop={(e) => handleDrop(e, etapa.id)}
                                   >
                                     {/* Número da etapa */}
-                                    <div className={`absolute -top-3 -left-3 w-8 h-8 rounded-full border-2 flex items-center justify-center font-bold text-sm text-white z-30 ${
+                                    <div className={`absolute -top-2 -left-2 w-5 h-5 rounded-full border-2 flex items-center justify-center font-bold text-xs text-white z-30 ${
                                       globalIndex < 1 ? 'bg-green-500 border-green-600' : 
                                       globalIndex < 2 ? 'bg-blue-500 border-blue-600' : 
                                       'bg-purple-500 border-purple-600'
@@ -1655,53 +1669,39 @@ export default function ModelosFluxo() {
                                     </div>
 
                                     {/* Ícone de relógio no canto superior direito */}
-                                    <div className="absolute top-2 right-2">
-                                      <Clock className="w-4 h-4 text-gray-400" />
+                                    <div className="absolute top-1 right-1">
+                                      <Clock className="w-3 h-3 text-gray-400" />
                                     </div>
 
                                     {/* Drag handle para modo edição */}
                                     {modoEdicao && (
-                                      <div className="absolute top-2 left-2 cursor-move">
-                                        <GripVertical className="w-4 h-4 text-gray-400" />
+                                      <div className="absolute top-1 left-1 cursor-move">
+                                        <GripVertical className="w-3 h-3 text-gray-400" />
                                       </div>
                                     )}
 
-                                    <CardContent className="p-4 pt-6">
+                                    <CardContent className="p-3 pt-5">
                                       {/* Título da etapa */}
-                                      <h3 className="font-semibold text-center text-sm mb-3 min-h-[2.5rem] flex items-center justify-center">
+                                      <h3 className="font-semibold text-center text-sm mb-3 min-h-[2.5rem] flex items-center justify-center leading-tight">
                                         {etapa.nomeEtapa}
                                       </h3>
 
                                       {/* Gerência responsável */}
-                                      <p className="text-xs text-center text-gray-600 mb-3 min-h-[2rem] flex items-center justify-center">
+                                      <p className="text-xs text-center text-gray-600 mb-3 min-h-[2rem] flex items-center justify-center leading-tight">
                                         {etapa.gerenciaResponsavel}
                                       </p>
 
                                       {/* Prazo */}
                                       <div className="flex items-center justify-center gap-1 text-xs text-gray-500 mb-3">
                                         <Clock className="w-3 h-3" />
-                                        <span>{etapa.prazoPadrao} dias úteis</span>
-                                      </div>
-
-                                      {/* Status */}
-                                      <div className="text-center mb-3">
-                                        <Badge 
-                                          variant="outline" 
-                                          className={`text-xs ${
-                                            globalIndex < 1 ? 'bg-green-100 text-green-800 border-green-300' :
-                                            globalIndex < 2 ? 'bg-blue-100 text-blue-800 border-blue-300' :
-                                            'bg-gray-100 text-gray-600 border-gray-300'
-                                          }`}
-                                        >
-                                          {globalIndex < 1 ? 'Concluído ✓' : globalIndex < 2 ? 'Em Andamento' : 'Pendente'}
-                                        </Badge>
+                                        <span>{etapa.prazoPadrao} dias</span>
                                       </div>
 
                                       {/* Botão Ver Detalhes */}
                                       <div className="text-center">
-                                        <Button variant="ghost" size="sm" className="text-xs h-6 px-2">
+                                        <Button variant="ghost" size="sm" className="text-xs h-7 px-2">
                                           <Eye className="w-3 h-3 mr-1" />
-                                          Ver Detalhes
+                                          Detalhes
                                         </Button>
                                       </div>
 
@@ -1711,7 +1711,7 @@ export default function ModelosFluxo() {
                                           <Button
                                             size="sm"
                                             variant="ghost"
-                                            className="h-6 w-6 p-0"
+                                            className="h-5 w-5 p-0"
                                             onClick={() => moverEtapa(etapa.id, 'up')}
                                             disabled={globalIndex === 0}
                                           >
@@ -1720,7 +1720,7 @@ export default function ModelosFluxo() {
                                           <Button
                                             size="sm"
                                             variant="ghost"
-                                            className="h-6 w-6 p-0"
+                                            className="h-5 w-5 p-0"
                                             onClick={() => moverEtapa(etapa.id, 'down')}
                                             disabled={globalIndex === modeloSelecionado.etapas.length - 1}
                                           >
@@ -1729,7 +1729,7 @@ export default function ModelosFluxo() {
                                           <Button
                                             size="sm"
                                             variant="ghost"
-                                            className="h-6 w-6 p-0"
+                                            className="h-5 w-5 p-0"
                                             onClick={() => setEtapaEditando(etapa)}
                                           >
                                             <Edit3 className="w-3 h-3" />
@@ -1739,7 +1739,7 @@ export default function ModelosFluxo() {
                                               <Button
                                                 size="sm"
                                                 variant="ghost"
-                                                className="h-6 w-6 p-0 text-red-600 hover:bg-red-50"
+                                                className="h-5 w-5 p-0 text-red-600 hover:bg-red-50"
                                               >
                                                 <Trash2 className="w-3 h-3" />
                                               </Button>
@@ -1773,97 +1773,82 @@ export default function ModelosFluxo() {
                       ))} 
                     </div>
                   </div>
-                ) : (
-                  <div className="space-y-8">
-                    {Array.from({ length: Math.ceil(modeloSelecionado.etapas.length / 6) }, (_, rowIndex) => (
-                      <div key={rowIndex} className="relative flex flex-wrap gap-6 justify-start">
-                        {/* Linha de conectores */}
-                        <div className="absolute top-[100px] left-0 right-0 h-0.5 bg-gray-200 z-0" />
-                        
-                        {modeloSelecionado.etapas
-                          .slice(rowIndex * 6, (rowIndex + 1) * 6)
-                          .map((etapa, indexInRow) => {
-                            const globalIndex = rowIndex * 6 + indexInRow;
-                            const isLastInRow = indexInRow === 5 || globalIndex === modeloSelecionado.etapas.length - 1;
-                            
-                            return (
-                              <div key={etapa.id} className="relative flex-shrink-0 z-20">
-                                {/* Conectores */}
-                                {!isLastInRow && (
-                                  <>
-                                    <div className="absolute -top-3 -right-3 w-6 h-6 bg-gray-200 rounded-full flex items-center justify-center z-10">
-                                      <div className="w-2 h-2 bg-white rounded-full" />
-                                    </div>
-                                    <div className="absolute top-[97px] -right-6 w-12 h-0.5 bg-gray-200 z-0" />
-                                  </>
-                                )}
-                                
-                                <Card 
-                                  className={`relative w-[200px] transition-all duration-200 hover:shadow-lg border-2 ${
-                                    etapa.etapaObrigatoria 
-                                      ? globalIndex < 1 ? 'border-green-400 bg-green-50' : globalIndex < 2 ? 'border-blue-400 bg-blue-50' : 'border-gray-200 bg-white'
-                                      : 'border-gray-200 bg-white'
-                                  }`}
-                                >
-                                  {/* Número da etapa */}
-                                  <div className={`absolute -top-3 -left-3 w-8 h-8 rounded-full border-2 flex items-center justify-center font-bold text-sm text-white z-30 ${
-                                    globalIndex < 1 ? 'bg-green-500 border-green-600' : 
-                                    globalIndex < 2 ? 'bg-blue-500 border-blue-600' : 
-                                    'bg-purple-500 border-purple-600'
-                                  }`}>
-                                    {etapa.numeroEtapa}
-                                  </div>
-
-                                  {/* Ícone de relógio no canto superior direito */}
-                                  <div className="absolute top-2 right-2">
-                                    <Clock className="w-4 h-4 text-gray-400" />
-                                  </div>
-
-                                  <CardContent className="p-4 pt-6">
-                                    {/* Título da etapa */}
-                                    <h3 className="font-semibold text-center text-sm mb-3 min-h-[2.5rem] flex items-center justify-center">
-                                      {etapa.nomeEtapa}
-                                    </h3>
-
-                                    {/* Gerência responsável */}
-                                    <p className="text-xs text-center text-gray-600 mb-3 min-h-[2rem] flex items-center justify-center">
-                                      {etapa.gerenciaResponsavel}
-                                    </p>
-
-                                    {/* Prazo */}
-                                    <div className="flex items-center justify-center gap-1 text-xs text-gray-500 mb-3">
-                                      <Clock className="w-3 h-3" />
-                                      <span>{etapa.prazoPadrao} dias úteis</span>
+                                  ) : (
+                    <div className="space-y-6">
+                      {/* Cards de Etapas - Layout Compacto */}
+                      <div className="space-y-6">
+                        {Array.from({ length: Math.ceil(modeloSelecionado.etapas.length / 8) }, (_, rowIndex) => (
+                          <div key={rowIndex} className="relative flex gap-4 justify-start">
+                          {/* Linha de conectores */}
+                          <div className="absolute top-[80px] left-0 right-0 h-0.5 bg-gray-200 z-0" />
+                          
+                          {modeloSelecionado.etapas
+                            .slice(rowIndex * 8, (rowIndex + 1) * 8)
+                            .map((etapa, indexInRow) => {
+                              const globalIndex = rowIndex * 8 + indexInRow;
+                              const isLastInRow = indexInRow === 7 || globalIndex === modeloSelecionado.etapas.length - 1;
+                              
+                              return (
+                                <div key={etapa.id} className="relative flex-shrink-0 z-20">
+                                  {/* Conectores */}
+                                  {!isLastInRow && (
+                                    <>
+                                      <div className="absolute -top-2 -right-2 w-4 h-4 bg-gray-200 rounded-full flex items-center justify-center z-10">
+                                        <div className="w-1.5 h-1.5 bg-white rounded-full" />
+                                      </div>
+                                      <div className="absolute top-[78px] -right-4 w-8 h-0.5 bg-gray-200 z-0" />
+                                    </>
+                                  )}
+                                  
+                                  <Card 
+                                    className={`relative w-[180px] transition-all duration-200 hover:shadow-lg border-2 border-gray-200 bg-white`}
+                                  >
+                                    {/* Número da etapa */}
+                                    <div className={`absolute -top-2 -left-2 w-6 h-6 rounded-full border-2 flex items-center justify-center font-bold text-xs text-white z-30 ${
+                                      globalIndex < 1 ? 'bg-green-500 border-green-600' : 
+                                      globalIndex < 2 ? 'bg-blue-500 border-blue-600' : 
+                                      'bg-purple-500 border-purple-600'
+                                    }`}>
+                                      {etapa.numeroEtapa}
                                     </div>
 
-                                    {/* Status */}
-                                    <div className="text-center mb-3">
-                                      <Badge 
-                                        variant="outline" 
-                                        className={`text-xs ${
-                                          globalIndex < 1 ? 'bg-green-100 text-green-800 border-green-300' :
-                                          globalIndex < 2 ? 'bg-blue-100 text-blue-800 border-blue-300' :
-                                          'bg-gray-100 text-gray-600 border-gray-300'
-                                        }`}
-                                      >
-                                        {globalIndex < 1 ? 'Concluído ✓' : globalIndex < 2 ? 'Em Andamento' : 'Pendente'}
-                                      </Badge>
+                                    {/* Ícone de relógio no canto superior direito */}
+                                    <div className="absolute top-1 right-1">
+                                      <Clock className="w-3 h-3 text-gray-400" />
                                     </div>
 
-                                    {/* Botão Ver Detalhes */}
-                                    <div className="text-center">
-                                      <Button variant="ghost" size="sm" className="text-xs h-6 px-2">
-                                        <Eye className="w-3 h-3 mr-1" />
-                                        Ver Detalhes
-                                      </Button>
-                                    </div>
-                                  </CardContent>
-                                </Card>
-                              </div>
-                            );
-                          })}
-                      </div>
-                    ))} 
+                                    <CardContent className="p-3 pt-5">
+                                      {/* Título da etapa */}
+                                      <h3 className="font-semibold text-center text-sm mb-3 min-h-[2.5rem] flex items-center justify-center leading-tight">
+                                        {etapa.nomeEtapa}
+                                      </h3>
+
+                                      {/* Gerência responsável */}
+                                      <p className="text-xs text-center text-gray-600 mb-3 min-h-[2rem] flex items-center justify-center leading-tight">
+                                        {etapa.gerenciaResponsavel}
+                                      </p>
+
+                                      {/* Prazo */}
+                                      <div className="flex items-center justify-center gap-1 text-xs text-gray-500 mb-3">
+                                        <Clock className="w-3 h-3" />
+                                        <span>{etapa.prazoPadrao} dias</span>
+                                      </div>
+
+                                      {/* Botão Ver Detalhes */}
+                                      <div className="text-center">
+                                        <Button variant="ghost" size="sm" className="text-xs h-7 px-2">
+                                          <Eye className="w-3 h-3 mr-1" />
+                                          Detalhes
+                                        </Button>
+                                      </div>
+                                    </CardContent>
+                                  </Card>
+                                </div>
+                              );
+                            })}
+                        </div>
+                      ))} 
+                    </div>
                   </div>
                 )}
               </div>
@@ -1914,25 +1899,25 @@ export default function ModelosFluxo() {
             </DialogTitle>
           </DialogHeader>
           
-          <div className="py-4">
-            <div className="text-center mb-6">
-              <h2 className="text-xl font-bold text-gray-900 mb-2">
-                Fluxo Completo do Processo
-              </h2>
-              <p className="text-gray-600">
-                Acompanhe todas as etapas do planejamento de contratação
-              </p>
-              <div className="mt-4 text-sm text-gray-500">
-                {modeloSelecionado?.etapas.length} etapas configuradas
-              </div>
-            </div>
+                            <div className="py-3">
+                    <div className="text-center mb-4">
+                      <h2 className="text-lg font-bold text-gray-900 mb-1.5">
+                        Fluxo Completo do Processo
+                      </h2>
+                      <p className="text-gray-600">
+                        Acompanhe todas as etapas do planejamento de contratação
+                      </p>
+                      <div className="mt-2 text-sm text-gray-500">
+                        {modeloSelecionado?.etapas.length} etapas configuradas
+                      </div>
+                    </div>
 
             {/* Cards em layout horizontal como no sistema original */}
-            <div className="space-y-8">
+            <div className="space-y-6">
               {Array.from({ length: Math.ceil((modeloSelecionado?.etapas.length || 0) / 6) }, (_, rowIndex) => (
-                <div key={rowIndex} className="relative flex flex-wrap gap-6 justify-start">
+                <div key={rowIndex} className="relative flex flex-wrap gap-4 justify-start">
                   {/* Linha de conectores */}
-                  <div className="absolute top-[100px] left-0 right-0 h-0.5 bg-gray-200 z-0" />
+                  <div className="absolute top-[90px] left-0 right-0 h-0.5 bg-gray-200 z-0" />
                   
                   {modeloSelecionado?.etapas
                     .slice(rowIndex * 6, (rowIndex + 1) * 6)
@@ -1953,14 +1938,14 @@ export default function ModelosFluxo() {
                           )}
                           
                           <Card 
-                            className={`relative w-[200px] transition-all duration-200 hover:shadow-lg border-2 ${
+                            className={`relative w-[180px] transition-all duration-200 hover:shadow-lg border-2 ${
                               etapa.etapaObrigatoria 
                                 ? globalIndex < 1 ? 'border-green-400 bg-green-50' : globalIndex < 2 ? 'border-blue-400 bg-blue-50' : 'border-gray-200 bg-white'
                                 : 'border-gray-200 bg-white'
                             }`}
                           >
                             {/* Número da etapa */}
-                            <div className={`absolute -top-3 -left-3 w-8 h-8 rounded-full border-2 flex items-center justify-center font-bold text-sm text-white z-30 ${
+                            <div className={`absolute -top-2 -left-2 w-6 h-6 rounded-full border-2 flex items-center justify-center font-bold text-xs text-white z-30 ${
                               globalIndex < 1 ? 'bg-green-500 border-green-600' : 
                               globalIndex < 2 ? 'bg-blue-500 border-blue-600' : 
                               'bg-purple-500 border-purple-600'
@@ -1969,29 +1954,29 @@ export default function ModelosFluxo() {
                             </div>
 
                             {/* Ícone de relógio no canto superior direito */}
-                            <div className="absolute top-2 right-2">
-                              <Clock className="w-4 h-4 text-gray-400" />
+                            <div className="absolute top-1 right-1">
+                              <Clock className="w-3 h-3 text-gray-400" />
                             </div>
 
-                            <CardContent className="p-4 pt-6">
+                            <CardContent className="p-3 pt-5">
                               {/* Título da etapa */}
-                              <h3 className="font-semibold text-center text-sm mb-3 min-h-[2.5rem] flex items-center justify-center">
+                              <h3 className="font-semibold text-center text-sm mb-2 min-h-[2rem] flex items-center justify-center">
                                 {etapa.nomeEtapa}
                               </h3>
 
                               {/* Gerência responsável */}
-                              <p className="text-xs text-center text-gray-600 mb-3 min-h-[2rem] flex items-center justify-center">
+                              <p className="text-xs text-center text-gray-600 mb-2 min-h-[1.5rem] flex items-center justify-center">
                                 {etapa.gerenciaResponsavel}
                               </p>
 
                               {/* Prazo */}
-                              <div className="flex items-center justify-center gap-1 text-xs text-gray-500 mb-3">
+                              <div className="flex items-center justify-center gap-1 text-xs text-gray-500 mb-2">
                                 <Clock className="w-3 h-3" />
                                 <span>{etapa.prazoPadrao} dias úteis</span>
                               </div>
 
                               {/* Status */}
-                              <div className="text-center mb-3">
+                              <div className="text-center mb-2">
                                 <Badge 
                                   variant="outline" 
                                   className={`text-xs ${
@@ -2006,7 +1991,7 @@ export default function ModelosFluxo() {
 
                               {/* Botão Ver Detalhes */}
                               <div className="text-center">
-                                <Button variant="ghost" size="sm" className="text-xs h-6 px-2">
+                                <Button variant="ghost" size="sm" className="text-xs h-5 px-2">
                                   <Eye className="w-3 h-3 mr-1" />
                                   Ver Detalhes
                                 </Button>
@@ -2021,7 +2006,7 @@ export default function ModelosFluxo() {
             </div>
           </div>
           
-          <div className="flex justify-end pt-4 border-t">
+          <div className="flex justify-end pt-3 border-t">
             <Button onClick={() => setModoVisualizacao(false)}>
               Fechar Visualização
             </Button>

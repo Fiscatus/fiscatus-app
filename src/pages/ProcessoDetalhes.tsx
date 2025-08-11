@@ -623,7 +623,7 @@ export default function ProcessoDetalhes() {
           </DialogDescription>
           
           {/* Header do Modal */}
-          <div className="flex items-center justify-between px-8 py-4 border-b border-gray-100">
+          <div className="flex items-center px-8 py-4 border-b border-gray-100">
             <div className="flex items-center gap-3">
               <div className="p-2 bg-blue-100 rounded-lg">
                 <Settings className="w-5 h-5 text-blue-600" />
@@ -635,14 +635,6 @@ export default function ProcessoDetalhes() {
                 </p>
               </div>
             </div>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => setIsEditModalOpen(false)}
-              className="h-8 w-8 rounded-full hover:bg-gray-100"
-            >
-              <XCircle className="w-5 h-5 text-gray-500" />
-            </Button>
           </div>
 
           {/* Conteúdo do Formulário */}

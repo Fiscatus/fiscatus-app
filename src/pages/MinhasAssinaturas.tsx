@@ -8,10 +8,8 @@ import {
   Clock, 
   CheckCircle, 
   AlertTriangle,
-  ArrowLeft,
 } from "lucide-react";
 import Topbar from "@/components/Topbar";
-import ReturnButton from "@/components/ReturnButton";
 import FilterBar from "@/components/FilterBar";
 import SignatureRow from "@/components/SignatureRow";
 import SignatureModalV2 from "@/components/SignatureModalV2";
@@ -147,17 +145,12 @@ export default function MinhasAssinaturas() {
     <div className="h-screen bg-gray-50 flex flex-col">
       <Topbar />
       
-      <div className="flex-1 px-4 pt-24 pb-4 overflow-hidden">
+      <div className="flex-1 px-4 pt-20 pb-4 overflow-hidden">
         <div className="h-full w-full flex flex-col">
-          {/* Cabeçalho */}
+          {/* Cabeçalho Principal */}
           <div className="mb-6">
-            <ReturnButton className="mb-4 text-gray-600 hover:text-gray-900" />
-            
-            {/* Cabeçalho Principal */}
-            <div className="mb-6">
-              <h1 className="text-2xl font-semibold text-gray-900 mb-1">Minhas Assinaturas</h1>
-              <p className="text-gray-600 text-sm">Visualize e assine os documentos atribuídos a você</p>
-            </div>
+            <h1 className="text-2xl font-semibold text-gray-900 mb-1">Minhas Assinaturas</h1>
+            <p className="text-gray-600 text-sm">Visualize e assine os documentos atribuídos a você</p>
           </div>
 
                             {/* Estatísticas rápidas */}

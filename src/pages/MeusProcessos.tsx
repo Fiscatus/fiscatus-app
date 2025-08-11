@@ -28,11 +28,9 @@ import {
   CalendarDays,
   User,
   Settings,
-  BarChart3,
-  ArrowLeft
+  BarChart3
 } from "lucide-react";
 import Topbar from "@/components/Topbar";
-import ReturnButton from "@/components/ReturnButton";
 import { useUser, mockUsers } from "@/contexts/UserContext";
 import { formatarNumeroProcesso } from "@/lib/processoUtils";
 
@@ -500,14 +498,8 @@ export default function MeusProcessos() {
     <div className="min-h-screen bg-gray-50">
       <Topbar />
       
-      {/* Botão de Retorno */}
-      <div className="pt-20 px-6 pb-4">
-        <ReturnButton className="mb-4" />
-        
-
-      </div>
-      
-      <div className="px-6 pb-6">
+            {/* Container principal sem botão de retorno */}
+      <div className="pt-20 px-6 pb-6">
         {/* Header com Indicadores */}
         <ProcessListHeader estatisticas={estatisticas} navigate={navigate} />
 

@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { 
   ArrowLeft, 
   Plus, 
@@ -350,9 +351,38 @@ export default function NovoProcesso() {
 
                 {/* Tipo de Tramitação */}
                 <div className="space-y-2">
-                  <Label htmlFor="tipoTramitacao" className="text-sm font-medium text-gray-700">
-                    Tipo de Tramitação *
-                  </Label>
+                                     <div className="flex items-center gap-2">
+                     <Label htmlFor="tipoTramitacao" className="text-sm font-medium text-gray-700">
+                       Tipo de Tramitação *
+                     </Label>
+                     <Popover>
+                       <PopoverTrigger asChild>
+                         <Button
+                           variant="ghost"
+                           size="icon"
+                           className="h-5 w-5 rounded-full hover:bg-blue-50"
+                         >
+                           <AlertTriangle className="w-3 h-3 text-blue-600" />
+                         </Button>
+                       </PopoverTrigger>
+                       <PopoverContent className="max-w-sm p-4 bg-white border border-gray-200 shadow-lg rounded-lg">
+                         <div className="space-y-3">
+                           <h4 className="font-semibold text-gray-900 text-sm">Tipos de Tramitação:</h4>
+                           <div className="space-y-2 text-xs text-gray-700">
+                             <div>
+                               <span className="font-medium text-blue-600">Ordinária:</span> Processo padrão com prazo normal de tramitação, seguindo o fluxo regular estabelecido.
+                             </div>
+                             <div>
+                               <span className="font-medium text-orange-600">Urgente:</span> Processo que requer tramitação acelerada devido a situações de emergência ou necessidade imediata.
+                             </div>
+                             <div>
+                               <span className="font-medium text-purple-600">Prioritária:</span> Processo com prioridade elevada, mas sem caráter de urgência, recebendo atenção preferencial na fila de tramitação.
+                             </div>
+                           </div>
+                         </div>
+                       </PopoverContent>
+                     </Popover>
+                   </div>
                   <Select 
                     value={formData.tipoTramitacao} 
                     onValueChange={(value) => handleInputChange("tipoTramitacao", value)}

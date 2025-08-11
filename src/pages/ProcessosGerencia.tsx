@@ -8,6 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import MultiSelectField from "@/components/MultiSelectField";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogTrigger } from "@/components/ui/dialog";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -44,11 +45,9 @@ import {
   AlertTriangle,
   User,
   PenLine,
-  FileSignature,
-  ArrowLeft
+  FileSignature
 } from "lucide-react";
 import Topbar from "@/components/Topbar";
-import ReturnButton from "@/components/ReturnButton";
 import GerenciarPastasModal from "@/components/GerenciarPastasModal";
 import { usePastasOrganizacionais } from "@/hooks/usePastasOrganizacionais";
 import { formatarNumeroProcesso } from "@/lib/processoUtils";
@@ -933,20 +932,20 @@ function CreateProcessModal() {
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button className="bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm hover:shadow-lg transition-all duration-200 hover:scale-105">
-          <Plus className="w-4 h-4 mr-2" />
-          Criar Novo Processo
-        </Button>
-      </DialogTrigger>
+                      <DialogTrigger asChild>
+                  <Button className="bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 px-6 py-3 text-base font-semibold border-0 rounded-xl">
+                    <Plus className="w-5 h-5 mr-2" />
+                    Criar Novo Processo
+                  </Button>
+                </DialogTrigger>
       <DialogContent className="max-w-6xl w-[80vw] p-0 bg-white rounded-2xl shadow-xl border-0">
         <DialogTitle className="sr-only">Criar Novo Processo</DialogTitle>
         <DialogDescription className="sr-only">
           Inicie um novo processo administrativo com fluxo completo
         </DialogDescription>
         
-        {/* Header com botão de fechar */}
-        <div className="flex items-center justify-between px-8 py-6 border-b border-gray-100">
+        {/* Header */}
+        <div className="flex items-center px-8 py-6 border-b border-gray-100">
           <div className="flex items-center gap-3">
             <div className="p-2 bg-gray-100 rounded-lg">
               <Plus className="w-6 h-6 text-gray-600" />
@@ -958,14 +957,6 @@ function CreateProcessModal() {
               </p>
             </div>
           </div>
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => setOpen(false)}
-            className="h-8 w-8 rounded-full hover:bg-gray-100"
-          >
-            <XCircle className="w-5 h-5 text-gray-500" />
-          </Button>
         </div>
 
         {/* Conteúdo do formulário */}
@@ -1015,9 +1006,38 @@ function CreateProcessModal() {
 
               {/* Tipo de Tramitação */}
               <div className="space-y-2">
-                <label className="text-lg font-semibold text-gray-900">
-                  Tipo de Tramitação *
-                </label>
+                                 <div className="flex items-center gap-2">
+                   <label className="text-lg font-semibold text-gray-900">
+                     Tipo de Tramitação *
+                   </label>
+                   <Popover>
+                     <PopoverTrigger asChild>
+                       <Button
+                         variant="ghost"
+                         size="icon"
+                         className="h-6 w-6 rounded-full hover:bg-blue-50"
+                       >
+                         <AlertTriangle className="w-4 h-4 text-blue-600" />
+                       </Button>
+                     </PopoverTrigger>
+                     <PopoverContent className="max-w-sm p-4 bg-white border border-gray-200 shadow-lg rounded-lg">
+                       <div className="space-y-3">
+                         <h4 className="font-semibold text-gray-900 text-sm">Tipos de Tramitação:</h4>
+                         <div className="space-y-2 text-xs text-gray-700">
+                           <div>
+                             <span className="font-medium text-blue-600">Ordinária:</span> Processo padrão com prazo normal de tramitação, seguindo o fluxo regular estabelecido.
+                           </div>
+                           <div>
+                             <span className="font-medium text-orange-600">Urgente:</span> Processo que requer tramitação acelerada devido a situações de emergência ou necessidade imediata.
+                           </div>
+                           <div>
+                             <span className="font-medium text-purple-600">Prioritária:</span> Processo com prioridade elevada, mas sem caráter de urgência, recebendo atenção preferencial na fila de tramitação.
+                           </div>
+                         </div>
+                       </div>
+                     </PopoverContent>
+                   </Popover>
+                 </div>
                 <Select 
                   value={formData.tipoTramitacao} 
                   onValueChange={(value) => handleInputChange("tipoTramitacao", value)}
@@ -1189,12 +1209,8 @@ export default function ProcessosGerencia() {
     <div className="min-h-screen bg-gray-50">
       <Topbar />
       
-      {/* Botão de Retorno */}
-      <div className="pt-20 px-6 pb-4">
-        <ReturnButton className="mb-4" />
-      </div>
-
-      <div className="px-6 pb-6">
+      {/* Container principal sem botão de retorno */}
+      <div className="pt-20 px-6 pb-6">
         {/* Header */}
         <div className="mb-6">
           {/* Cabeçalho Principal */}
@@ -1203,25 +1219,47 @@ export default function ProcessosGerencia() {
               <h1 className="text-2xl font-semibold text-gray-900 mb-1">Processos da Gerência</h1>
               <p className="text-gray-600 text-sm">Organize, monitore e gerencie todos os processos da sua gerência</p>
             </div>
-            <div className="flex-shrink-0">
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <div>
-                      <CreateProcessModal />
-                    </div>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p>Iniciar novo processo administrativo com fluxo completo</p>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
+          </div>
+        </div>
+
+        {/* Seção Destacada - Criar Novo Processo */}
+        <div className="mb-6">
+          <div className="bg-gradient-to-br from-blue-50 via-cyan-50 to-emerald-50 border border-blue-200/50 rounded-2xl p-6 shadow-lg hover:shadow-xl transition-all duration-300 min-h-[120px]">
+            <div className="flex items-center justify-between h-full">
+              <div className="flex items-center gap-4">
+                <div className="relative">
+                  <div className="p-4 bg-gradient-to-br from-blue-100 to-cyan-100 rounded-xl shadow-inner">
+                    <Plus className="w-8 h-8 text-blue-600" />
+                  </div>
+                  <div className="absolute -top-1 -right-1 w-4 h-4 bg-blue-500 rounded-full flex items-center justify-center">
+                    <Plus className="w-2 h-2 text-white" />
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <h2 className="text-2xl font-bold text-gray-900 leading-tight">Iniciar Novo Processo</h2>
+                  <p className="text-gray-500 text-sm font-medium max-w-md">Crie um novo processo administrativo com fluxo completo e acompanhamento</p>
+                </div>
+              </div>
+              <div className="flex-shrink-0">
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <div>
+                        <CreateProcessModal />
+                      </div>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>Iniciar novo processo administrativo com fluxo completo</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              </div>
             </div>
           </div>
         </div>
 
-                                                {/* Layout em 4 Seções Reorganizadas */}
-                        <div className="space-y-10">
+        {/* Layout em 4 Seções Reorganizadas */}
+        <div className="space-y-10">
 
                           {/* 1. ACESSO RÁPIDO */}
                           <section className="bg-emerald-50/30 rounded-xl border border-emerald-100/50 shadow-sm p-8">
