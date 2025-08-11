@@ -120,7 +120,7 @@ const coresDisponiveis = [
 const modelosIniciais: ModeloFluxo[] = [
   {
     id: "modelo-sistema-fiscatus",
-    nome: "Fluxo Completo de Contratação - Fiscatus",
+            nome: "Modelo Fiscatus",
     descricao: "Modelo padrão utilizado para planejamento e tramitação completa de processos de contratação pública, com base na estrutura original do sistema Fiscatus.",
     instituicao: "Sistema",
     ehPadrao: true,
@@ -630,8 +630,8 @@ export default function ModelosFluxo() {
   const { user } = useUser();
   
   // Estados principais
-  const [modelos, setModelos] = useState<ModeloFluxo[]>(modelosIniciais);
-  const [modeloSelecionado, setModeloSelecionado] = useState<ModeloFluxo | null>(modelosIniciais[0] || null);
+  const [modelos, setModelos] = useState<ModeloFluxo[]>([]);
+  const [modeloSelecionado, setModeloSelecionado] = useState<ModeloFluxo | null>(null);
   const [modoEdicao, setModoEdicao] = useState(false);
   const [modoVisualizacao, setModoVisualizacao] = useState(false);
   
@@ -664,6 +664,26 @@ export default function ModelosFluxo() {
     ];
     return gerenciasAutorizadas.some(g => user.gerencia.includes(g));
   };
+
+  // Carregar modelos do localStorage ou usar modelos iniciais
+  useEffect(() => {
+    const modelosSalvos = localStorage.getItem('modelosFluxo');
+    if (modelosSalvos) {
+      const modelosCarregados = JSON.parse(modelosSalvos);
+      setModelos(modelosCarregados);
+      setModeloSelecionado(modelosCarregados[0] || null);
+    } else {
+      setModelos(modelosIniciais);
+      setModeloSelecionado(modelosIniciais[0] || null);
+    }
+  }, []);
+
+  // Salvar modelos no localStorage quando houver mudanças
+  useEffect(() => {
+    if (modelos.length > 0) {
+      localStorage.setItem('modelosFluxo', JSON.stringify(modelos));
+    }
+  }, [modelos]);
 
   // Redirecionar se não tiver permissão
   useEffect(() => {
@@ -1093,56 +1113,53 @@ export default function ModelosFluxo() {
       
       <main className="pt-16 flex h-screen">
         {/* Sidebar - Lista de Modelos */}
-        <div className="w-80 lg:w-80 md:w-72 sm:w-64 bg-white border-r border-gray-200 flex flex-col flex-shrink-0">
-          {/* Header fixo do sidebar */}
-          <div className="p-2 lg:p-3 border-b border-gray-200 bg-gray-50">
-            <div className="flex items-center gap-2 mb-2 lg:mb-3">
-              <div className="p-1.5 bg-purple-100 rounded-lg flex-shrink-0">
-                <Workflow className="w-4 h-4 lg:w-5 lg:h-5 text-purple-600" />
+        <div className="w-80 bg-white border-r border-gray-200 flex flex-col flex-shrink-0">
+          {/* Header do sidebar */}
+          <div className="p-4 border-b border-gray-200 bg-white">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="p-2 bg-purple-100 rounded-lg">
+                <Workflow className="w-5 h-5 text-purple-600" />
               </div>
-              <div className="min-w-0 flex-1">
-                <h1 className="text-sm lg:text-base font-bold text-gray-900 truncate">Modelos de Fluxo</h1>
-                <p className="text-xs text-gray-500 truncate">
-                  {user?.gerencia}
-                </p>
+              <div>
+                <h1 className="text-lg font-semibold text-gray-900">Modelos de Fluxo</h1>
+                <p className="text-sm text-gray-500">{user?.gerencia}</p>
               </div>
             </div>
             
-            {/* Botão principal destacado */}
-            <Button onClick={criarNovoModelo} className="w-full h-10 text-sm font-medium shadow-sm">
-              <Plus className="w-4 h-4 mr-2" />
-              Criar Novo Modelo
-            </Button>
-            
-            {/* Botão secundário */}
-            <Button 
-              onClick={duplicarFiscatus} 
-              variant="outline" 
-              className="w-full mt-1.5 h-8 text-sm"
-            >
-              <Copy className="w-3 h-3 mr-1.5" />
-              Duplicar Fiscatus
-            </Button>
+            {/* Botões de ação */}
+            <div className="space-y-2">
+              <Button onClick={criarNovoModelo} className="w-full">
+                <Plus className="w-4 h-4 mr-2" />
+                Novo Modelo
+              </Button>
+              <Button 
+                onClick={duplicarFiscatus} 
+                variant="outline" 
+                className="w-full"
+              >
+                <Copy className="w-4 h-4 mr-2" />
+                Duplicar Fiscatus
+              </Button>
+            </div>
           </div>
           
           <div className="flex-1 overflow-y-auto">
-            <div className="p-3 space-y-4">
-              {/* Barra de Busca */}
-              <div className="space-y-2">
+            <div className="p-4 space-y-4">
+              {/* Busca e filtros */}
+              <div className="space-y-3">
                 <div className="relative">
                   <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
                   <Input
                     placeholder="Buscar modelos..."
                     value={busca}
                     onChange={(e) => setBusca(e.target.value)}
-                    className="pl-10 h-8 text-sm"
+                    className="pl-10"
                   />
                 </div>
                 
-                {/* Filtros */}
                 <div className="flex gap-2">
                   <Select value={filtroTipo} onValueChange={(value: any) => setFiltroTipo(value)}>
-                    <SelectTrigger className="h-7 text-xs">
+                    <SelectTrigger className="text-sm">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -1153,7 +1170,7 @@ export default function ModelosFluxo() {
                   </Select>
                   
                   <Select value={ordenacao} onValueChange={(value: any) => setOrdenacao(value)}>
-                    <SelectTrigger className="h-7 text-xs">
+                    <SelectTrigger className="text-sm">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -1165,279 +1182,93 @@ export default function ModelosFluxo() {
                 </div>
               </div>
 
-              {/* Resultados da busca */}
-              {busca.trim() && (
-                <div className="text-xs text-gray-500 px-2">
-                  {modelosFiltrados.length} modelo{modelosFiltrados.length !== 1 ? 's' : ''} encontrado{modelosFiltrados.length !== 1 ? 's' : ''}
-                </div>
-              )}
+              {/* Lista de modelos */}
+              <div className="space-y-3">
+                {/* Modelos do Sistema */}
+                {modelosFiltrados.some(m => m.ehModeloSistema) && (
+                  <div>
+                    <div className="flex items-center gap-2 mb-3">
+                      <h3 className="text-sm font-medium text-gray-700">Modelos do Sistema</h3>
+                      <Badge variant="secondary" className="text-xs">
+                        {modelosFiltrados.filter(m => m.ehModeloSistema).length}
+                      </Badge>
+                    </div>
+                    <div className="space-y-2">
+                      {modelosFiltrados
+                        .filter(modelo => modelo.ehModeloSistema)
+                        .map((modelo) => (
+                          <ModeloCard 
+                            key={modelo.id}
+                            modelo={modelo}
+                            isSelected={modeloSelecionado?.id === modelo.id}
+                            onSelect={() => setModeloSelecionado(modelo)}
+                            onDuplicate={() => duplicarModelo(modelo)}
+                            onSetDefault={() => definirComoPadrao(modelo.id)}
+                            isSystem={true}
+                          />
+                        ))}
+                    </div>
+                  </div>
+                )}
 
-              {/* Modelos do Sistema */}
-              {modelosFiltrados.some(m => m.ehModeloSistema) && (
-                <div>
-                  <div className="flex items-center gap-2 mb-2 px-2">
-                    <Monitor className="w-3 h-3 text-blue-600" />
-                    <h3 className="text-xs font-semibold text-gray-700 uppercase tracking-wide">
-                      Modelos do Sistema
-                    </h3>
-                    <Badge variant="secondary" className="text-xs bg-blue-100 text-blue-800">
-                      {modelosFiltrados.filter(m => m.ehModeloSistema).length}
-                    </Badge>
+                {/* Modelos Pessoais */}
+                {modelosFiltrados.some(m => !m.ehModeloSistema) && (
+                  <div>
+                    <div className="flex items-center gap-2 mb-3">
+                      <h3 className="text-sm font-medium text-gray-700">Seus Modelos</h3>
+                      <Badge variant="secondary" className="text-xs">
+                        {modelosFiltrados.filter(m => !m.ehModeloSistema).length}
+                      </Badge>
+                    </div>
+                    <div className="space-y-2">
+                      {modelosFiltrados
+                        .filter(modelo => !modelo.ehModeloSistema)
+                        .map((modelo) => (
+                          <ModeloCard 
+                            key={modelo.id}
+                            modelo={modelo}
+                            isSelected={modeloSelecionado?.id === modelo.id}
+                            onSelect={() => setModeloSelecionado(modelo)}
+                            onEdit={() => {
+                              setModeloSelecionado(modelo);
+                              setModoEdicao(true);
+                              setNomeModelo(modelo.nome);
+                              setDescricaoModelo(modelo.descricao);
+                            }}
+                            onDuplicate={() => duplicarModelo(modelo)}
+                            onSetDefault={() => definirComoPadrao(modelo.id)}
+                            onDelete={() => excluirModelo(modelo.id)}
+                            isSystem={false}
+                          />
+                        ))}
+                    </div>
                   </div>
-                  <div className="space-y-1.5">
-                    {modelosFiltrados
-                      .filter(modelo => modelo.ehModeloSistema)
-                      .map((modelo) => (
-                        <Card 
-                          key={modelo.id}
-                          className={`cursor-pointer transition-all border-l-4 ${
-                            modeloSelecionado?.id === modelo.id 
-                              ? 'ring-2 ring-purple-500 bg-purple-50 border-l-blue-500' 
-                              : 'hover:bg-gray-50 border-l-blue-200 hover:border-l-blue-400'
-                          }`}
-                          onClick={() => setModeloSelecionado(modelo)}
-                        >
-                          <CardContent className="p-2.5">
-                            <div className="space-y-1.5">
-                              {/* Cabeçalho do Card */}
-                              <div className="flex items-start justify-between">
-                                <div className="flex-1 min-w-0">
-                                  <div className="flex items-center gap-2 mb-1">
-                                    <h3 className="font-medium text-gray-900 text-sm truncate">
-                                      {modelo.nome}
-                                    </h3>
-                                    {modelo.ehPadrao && (
-                                      <Star className="w-3 h-3 text-yellow-500 fill-current flex-shrink-0" />
-                                    )}
-                                    <Badge variant="secondary" className="text-xs bg-blue-100 text-blue-800 flex-shrink-0">
-                                      Sistema
-                                    </Badge>
-                                  </div>
-                                  <p className="text-xs text-gray-600 mb-2 line-clamp-2">
-                                    {modelo.descricao}
-                                  </p>
-                                </div>
-                              </div>
-                      
-                              {/* Informações do Modelo */}
-                              <div className="flex items-center justify-between text-xs text-gray-500">
-                                <span className="flex items-center gap-1">
-                                  <Square className="w-3 h-3 flex-shrink-0" />
-                                  {modelo.etapas.length} etapas
-                                </span>
-                                <span className="flex items-center gap-1">
-                                  <Calendar className="w-3 h-3 flex-shrink-0" />
-                                  {modelo.modificadoEm}
-                                </span>
-                              </div>
-                              <div className="text-xs text-gray-400 truncate">
-                                por {modelo.criadoPor}
-                              </div>
-                              
-                              {/* Botões de Ação */}
-                              <div className="flex items-center gap-1 pt-1">
-                                <Button
-                                  size="sm"
-                                  variant="ghost"
-                                  className="h-6 w-6 p-0 flex-shrink-0"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    duplicarModelo(modelo);
-                                  }}
-                                >
-                                  <Copy className="w-3 h-3" />
-                                </Button>
-                                
-                                <Button
-                                  size="sm"
-                                  variant="ghost"
-                                  className="h-6 w-6 p-0 flex-shrink-0"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    definirComoPadrao(modelo.id);
-                                  }}
-                                >
-                                  {modelo.ehPadrao ? (
-                                    <StarOff className="w-3 h-3" />
-                                  ) : (
-                                    <Star className="w-3 h-3" />
-                                  )}
-                                </Button>
-                              </div>
-                            </div>
-                          </CardContent>
-                        </Card>
-                      ))}
-                  </div>
-                </div>
-              )}
+                )}
 
-              {/* Modelos Pessoais */}
-              {modelosFiltrados.some(m => !m.ehModeloSistema) && (
-                <div>
-                  <div className="flex items-center gap-2 mb-2 px-2">
-                    <User className="w-3 h-3 text-purple-600" />
-                    <h3 className="text-xs font-semibold text-gray-700 uppercase tracking-wide">
-                      Seus Modelos
-                    </h3>
-                    <Badge variant="secondary" className="text-xs bg-purple-100 text-purple-800">
-                      {modelosFiltrados.filter(m => !m.ehModeloSistema).length}
-                    </Badge>
+                {/* Estado vazio */}
+                {modelosFiltrados.length === 0 && (
+                  <div className="text-center py-8">
+                    <Workflow className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+                    <p className="text-sm text-gray-500">
+                      {busca.trim() ? 'Nenhum modelo encontrado' : 'Nenhum modelo disponível'}
+                    </p>
                   </div>
-                  <div className="space-y-1.5">
-                    {modelosFiltrados
-                      .filter(modelo => !modelo.ehModeloSistema)
-                      .map((modelo) => (
-                        <Card 
-                          key={modelo.id}
-                          className={`cursor-pointer transition-all border-l-4 ${
-                            modeloSelecionado?.id === modelo.id 
-                              ? 'ring-2 ring-purple-500 bg-purple-50 border-l-purple-500' 
-                              : 'hover:bg-gray-50 border-l-gray-200 hover:border-l-purple-300'
-                          }`}
-                          onClick={() => setModeloSelecionado(modelo)}
-                        >
-                          <CardContent className="p-2.5">
-                            <div className="space-y-1.5">
-                              {/* Cabeçalho do Card */}
-                              <div className="flex items-start justify-between">
-                                <div className="flex-1 min-w-0">
-                                  <div className="flex items-center gap-2 mb-1">
-                                    <h3 className="font-medium text-gray-900 text-sm truncate">
-                                      {modelo.nome}
-                                    </h3>
-                                    {modelo.ehPadrao && (
-                                      <Star className="w-3 h-3 text-yellow-500 fill-current flex-shrink-0" />
-                                    )}
-                                  </div>
-                                  <p className="text-xs text-gray-600 mb-2 line-clamp-2">
-                                    {modelo.descricao}
-                                  </p>
-                                </div>
-                              </div>
-                              
-                              {/* Informações do Modelo */}
-                              <div className="flex items-center justify-between text-xs text-gray-500">
-                                <span className="flex items-center gap-1">
-                                  <Hash className="w-3 h-3 flex-shrink-0" />
-                                  {modelo.etapas.length} etapas
-                                </span>
-                                <span className="flex items-center gap-1">
-                                  <Calendar className="w-3 h-3 flex-shrink-0" />
-                                  {modelo.modificadoEm}
-                                </span>
-                              </div>
-                              <div className="text-xs text-gray-400 truncate">
-                                por {modelo.criadoPor}
-                              </div>
-                              
-                              {/* Botões de Ação */}
-                              <div className="flex items-center gap-1 pt-1">
-                                <Button
-                                  size="sm"
-                                  variant="ghost"
-                                  className="h-6 w-6 p-0 flex-shrink-0"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    setModeloSelecionado(modelo);
-                                    setModoEdicao(true);
-                                    setNomeModelo(modelo.nome);
-                                    setDescricaoModelo(modelo.descricao);
-                                  }}
-                                >
-                                  <Edit3 className="w-3 h-3" />
-                                </Button>
-                                
-                                <Button
-                                  size="sm"
-                                  variant="ghost"
-                                  className="h-6 w-6 p-0 flex-shrink-0"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    duplicarModelo(modelo);
-                                  }}
-                                >
-                                  <Copy className="w-3 h-3" />
-                                </Button>
-                                
-                                <Button
-                                  size="sm"
-                                  variant="ghost"
-                                  className="h-6 w-6 p-0 flex-shrink-0"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    definirComoPadrao(modelo.id);
-                                  }}
-                                >
-                                  {modelo.ehPadrao ? (
-                                    <StarOff className="w-3 h-3" />
-                                  ) : (
-                                    <Star className="w-3 h-3" />
-                                  )}
-                                </Button>
-                                
-                                <AlertDialog>
-                                  <AlertDialogTrigger asChild>
-                                    <Button
-                                      size="sm"
-                                      variant="ghost"
-                                      className="h-6 w-6 p-0 text-red-600 hover:text-red-700 hover:bg-red-50 flex-shrink-0"
-                                      onClick={(e) => e.stopPropagation()}
-                                    >
-                                      <Trash2 className="w-3 h-3" />
-                                    </Button>
-                                  </AlertDialogTrigger>
-                                  <AlertDialogContent>
-                                    <AlertDialogHeader>
-                                      <AlertDialogTitle>Confirmar Exclusão</AlertDialogTitle>
-                                      <AlertDialogDescription>
-                                        Tem certeza de que deseja excluir o modelo "{modelo.nome}"? 
-                                        Esta ação não pode ser desfeita.
-                                      </AlertDialogDescription>
-                                    </AlertDialogHeader>
-                                    <AlertDialogFooter>
-                                      <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                                      <AlertDialogAction
-                                        onClick={() => excluirModelo(modelo.id)}
-                                        className="bg-red-600 hover:bg-red-700"
-                                      >
-                                        Excluir
-                                      </AlertDialogAction>
-                                    </AlertDialogFooter>
-                                  </AlertDialogContent>
-                                </AlertDialog>
-                              </div>
-                            </div>
-                          </CardContent>
-                        </Card>
-                      ))}
-                  </div>
-                </div>
-              )}
-
-              {/* Estado vazio */}
-              {modelosFiltrados.length === 0 && (
-                <div className="text-center py-6">
-                  <Workflow className="w-10 h-10 text-gray-300 mx-auto mb-2" />
-                  <p className="text-sm text-gray-500">
-                    {busca.trim() ? 'Nenhum modelo encontrado' : 'Nenhum modelo disponível'}
-                  </p>
-                </div>
-              )}
+                )}
+              </div>
             </div>
           </div>
         </div>
 
-        {/* Área Principal - Editor do Modelo */}
+        {/* Área Principal */}
         <div className="flex-1 flex flex-col min-w-0">
           {modeloSelecionado ? (
             <>
-              {/* Header do Editor - Compacto */}
-              <div className="bg-white border-b border-gray-200 px-4 lg:px-6 py-2.5">
-                <div className="flex items-center justify-between gap-4">
+              {/* Header do Editor */}
+              <div className="bg-white border-b border-gray-200 px-6 py-4">
+                <div className="flex items-center justify-between">
                   <div className="flex-1 min-w-0">
                     {modoEdicao ? (
-                      <div className="space-y-1.5">
+                      <div className="space-y-3">
                         <div>
                           <Label htmlFor="nomeModelo" className="text-sm font-medium text-gray-700">
                             Nome do Modelo
@@ -1446,7 +1277,7 @@ export default function ModelosFluxo() {
                             id="nomeModelo"
                             value={nomeModelo}
                             onChange={(e) => setNomeModelo(e.target.value)}
-                            className="text-base font-semibold mt-1"
+                            className="mt-1"
                           />
                         </div>
                         <div>
@@ -1464,36 +1295,36 @@ export default function ModelosFluxo() {
                       </div>
                     ) : (
                       <div>
-                        <div className="flex items-center gap-2 mb-1.5">
-                          <h2 className="text-base font-bold text-gray-900 truncate">
+                        <div className="flex items-center gap-3 mb-2">
+                          <h2 className="text-xl font-semibold text-gray-900">
                             {modeloSelecionado.nome}
                           </h2>
                           {modeloSelecionado.ehPadrao && (
-                            <Badge variant="secondary" className="bg-yellow-100 text-yellow-800 text-xs">
+                            <Badge variant="secondary" className="bg-yellow-100 text-yellow-800">
                               <Star className="w-3 h-3 mr-1 fill-current" />
                               Padrão
                             </Badge>
                           )}
                           {modeloSelecionado.ehModeloSistema && (
-                            <Badge variant="secondary" className="bg-blue-100 text-blue-800 text-xs">
+                            <Badge variant="secondary" className="bg-blue-100 text-blue-800">
                               Sistema
                             </Badge>
                           )}
                         </div>
-                        <p className="text-sm text-gray-600 mb-1.5 line-clamp-1">
+                        <p className="text-gray-600 mb-3">
                           {modeloSelecionado.descricao}
                         </p>
-                        <div className="flex items-center gap-3 text-xs text-gray-500">
+                        <div className="flex items-center gap-4 text-sm text-gray-500">
                           <span className="flex items-center gap-1">
-                            <Hash className="w-3 h-3" />
+                            <Hash className="w-4 h-4" />
                             {modeloSelecionado.etapas.length} etapas
                           </span>
                           <span className="flex items-center gap-1">
-                            <Calendar className="w-3 h-3" />
+                            <Calendar className="w-4 h-4" />
                             {modeloSelecionado.modificadoEm}
                           </span>
                           <span className="flex items-center gap-1">
-                            <User className="w-3 h-3" />
+                            <User className="w-4 h-4" />
                             {modeloSelecionado.criadoPor}
                           </span>
                         </div>
@@ -1501,33 +1332,32 @@ export default function ModelosFluxo() {
                     )}
                   </div>
                   
-                  <div className="flex items-center gap-2 flex-shrink-0">
+                  <div className="flex items-center gap-2 ml-4">
                     {modoEdicao ? (
                       <>
                         <Button
                           variant="outline"
-                          size="sm"
                           onClick={() => {
                             setModoEdicao(false);
                             setNomeModelo(modeloSelecionado.nome);
                             setDescricaoModelo(modeloSelecionado.descricao);
                           }}
                         >
-                          <X className="w-4 h-4 mr-1" />
+                          <X className="w-4 h-4 mr-2" />
                           Cancelar
                         </Button>
-                        <Button size="sm" onClick={salvarModelo}>
-                          <Save className="w-4 h-4 mr-1" />
+                        <Button onClick={salvarModelo}>
+                          <Save className="w-4 h-4 mr-2" />
                           Salvar
                         </Button>
                       </>
                     ) : (
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                          <Button variant="outline" size="sm" className="h-9 px-3">
-                            <Settings className="w-4 h-4 mr-1" />
+                          <Button variant="outline">
+                            <Settings className="w-4 h-4 mr-2" />
                             Ações
-                            <ChevronDown className="w-3 h-3 ml-1" />
+                            <ChevronDown className="w-3 h-3 ml-2" />
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end" className="w-48">
@@ -1558,16 +1388,12 @@ export default function ModelosFluxo() {
                           {!modeloSelecionado.ehModeloSistema && (
                             <>
                               <DropdownMenuSeparator />
-                              <DropdownMenuItem
-                                onClick={() => duplicarModelo(modeloSelecionado)}
-                              >
+                              <DropdownMenuItem onClick={() => duplicarModelo(modeloSelecionado)}>
                                 <Copy className="w-4 h-4 mr-2" />
                                 Duplicar Modelo
                               </DropdownMenuItem>
                               
-                              <DropdownMenuItem
-                                onClick={() => definirComoPadrao(modeloSelecionado.id)}
-                              >
+                              <DropdownMenuItem onClick={() => definirComoPadrao(modeloSelecionado.id)}>
                                 {modeloSelecionado.ehPadrao ? (
                                   <>
                                     <StarOff className="w-4 h-4 mr-2" />
@@ -1599,7 +1425,7 @@ export default function ModelosFluxo() {
               </div>
 
               {/* Editor de Etapas */}
-              <div className="flex-1 overflow-y-auto px-4 lg:px-6 py-3 lg:py-4">
+              <div className="flex-1 overflow-y-auto px-6 py-4">
                 {modoEdicao && !modeloSelecionado?.ehModeloSistema ? (
                   <div className="space-y-4">
                     {/* Botão Adicionar Etapa */}
@@ -2309,5 +2135,151 @@ function EtapaModal({ etapa, isOpen, onClose, onSave, iconesDisponiveis, coresDi
         </div>
       </DialogContent>
     </Dialog>
+  );
+}
+
+// Componente ModeloCard
+interface ModeloCardProps {
+  modelo: ModeloFluxo;
+  isSelected: boolean;
+  onSelect: () => void;
+  onEdit?: () => void;
+  onDuplicate: () => void;
+  onSetDefault: () => void;
+  onDelete?: () => void;
+  isSystem: boolean;
+}
+
+function ModeloCard({ 
+  modelo, 
+  isSelected, 
+  onSelect, 
+  onEdit, 
+  onDuplicate, 
+  onSetDefault, 
+  onDelete, 
+  isSystem 
+}: ModeloCardProps) {
+  return (
+    <Card 
+      className={`cursor-pointer transition-all border-l-4 ${
+        isSelected 
+          ? 'ring-2 ring-purple-500 bg-purple-50 border-l-purple-500' 
+          : 'hover:bg-gray-50 border-l-gray-200 hover:border-l-purple-300'
+      }`}
+      onClick={onSelect}
+    >
+      <CardContent className="p-3">
+        <div className="space-y-2">
+          {/* Cabeçalho */}
+          <div className="flex items-start justify-between">
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2 mb-1">
+                <h3 className="font-medium text-gray-900 text-sm truncate">
+                  {modelo.nome}
+                </h3>
+                {modelo.ehPadrao && (
+                  <Star className="w-3 h-3 text-yellow-500 fill-current flex-shrink-0" />
+                )}
+                {isSystem && (
+                  <Badge variant="secondary" className="text-xs bg-blue-100 text-blue-800 flex-shrink-0">
+                    Sistema
+                  </Badge>
+                )}
+              </div>
+              <p className="text-xs text-gray-600 line-clamp-2">
+                {modelo.descricao}
+              </p>
+            </div>
+          </div>
+          
+          {/* Informações */}
+          <div className="flex items-center text-xs text-gray-500">
+            <span className="flex items-center gap-1">
+              <Hash className="w-3 h-3" />
+              {modelo.etapas.length} etapas
+            </span>
+          </div>
+          
+          {/* Botões de ação */}
+          <div className="flex items-center gap-1 pt-1">
+            {onEdit && (
+              <Button
+                size="sm"
+                variant="ghost"
+                className="h-6 w-6 p-0"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onEdit();
+                }}
+              >
+                <Edit3 className="w-3 h-3" />
+              </Button>
+            )}
+            
+            <Button
+              size="sm"
+              variant="ghost"
+              className="h-6 w-6 p-0"
+              onClick={(e) => {
+                e.stopPropagation();
+                onDuplicate();
+              }}
+            >
+              <Copy className="w-3 h-3" />
+            </Button>
+            
+            <Button
+              size="sm"
+              variant="ghost"
+              className="h-6 w-6 p-0"
+              onClick={(e) => {
+                e.stopPropagation();
+                onSetDefault();
+              }}
+            >
+              {modelo.ehPadrao ? (
+                <StarOff className="w-3 h-3" />
+              ) : (
+                <Star className="w-3 h-3" />
+              )}
+            </Button>
+            
+            {onDelete && (
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className="h-6 w-6 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <Trash2 className="w-3 h-3" />
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Confirmar Exclusão</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      Tem certeza de que deseja excluir o modelo "{modelo.nome}"? 
+                      Esta ação não pode ser desfeita.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                    <AlertDialogAction
+                      onClick={onDelete}
+                      className="bg-red-600 hover:bg-red-700"
+                    >
+                      Excluir
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            )}
+          </div>
+        </div>
+      </CardContent>
+    </Card>
   );
 }
