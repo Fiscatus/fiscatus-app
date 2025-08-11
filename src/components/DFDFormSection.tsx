@@ -33,6 +33,7 @@ import { useUser } from '@/contexts/UserContext';
 import { usePermissoes } from '@/hooks/usePermissoes';
 import { useToast } from '@/hooks/use-toast';
 import { useDFD, DFDData, DFDVersion, DFDVersionStatus, DFDAnnex } from '@/hooks/useDFD';
+import { DatePicker } from '@/components/date';
 
 interface DFDFormSectionProps {
   processoId: string;
@@ -497,13 +498,15 @@ export default function DFDFormSection({
                       <Calendar className="w-4 h-4" />
                       Data de Elaboração *
                     </Label>
-                    <Input
-                      id="data"
-                      type="date"
-                      value={formData.dataElaboracao}
-                      onChange={(e) => setFormData({...formData, dataElaboracao: e.target.value})}
+                    <DatePicker
+                      value={formData.dataElaboracao || null}
+                      onChange={(date) => setFormData({...formData, dataElaboracao: date || ''})}
+                      placeholder="Selecione a data"
+                      showPresets={true}
+                      businessDaysOnly={true}
                       disabled={!canEditCurrentVersion()}
-                      className="mt-2 border-gray-200 focus:border-blue-300 focus:ring-blue-300"
+                      className="w-full"
+                      inputClassName="mt-2 border-gray-200 focus:border-blue-300 focus:ring-blue-300"
                     />
                   </div>
                   

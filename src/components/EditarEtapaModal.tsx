@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
+import { DatePicker } from "@/components/date";
 import { 
   Edit3, 
   X,
@@ -61,7 +62,8 @@ export default function EditarEtapaModal({
     handleSubmit,
     formState: { errors, isDirty },
     reset,
-    setValue
+    setValue,
+    watch
   } = useForm<EditarEtapaFormData>({
     resolver: zodResolver(editarEtapaSchema)
   });
@@ -204,10 +206,15 @@ export default function EditarEtapaModal({
                   <Label htmlFor="prazoPrevisao" className="text-sm font-medium text-gray-700">
                     Prazo Previsto *
                   </Label>
-                  <Input
-                    {...register("prazoPrevisao")}
-                    type="date"
-                    className={errors.prazoPrevisao ? "border-red-300" : ""}
+                  <DatePicker
+                    value={watch("prazoPrevisao") || null}
+                    onChange={(date) => setValue("prazoPrevisao", date || '')}
+                    placeholder="Selecione a data"
+                    showPresets={true}
+                    businessDaysOnly={true}
+                    minDate={new Date()}
+                    className="w-full"
+                    inputClassName={errors.prazoPrevisao ? "border-red-300" : ""}
                   />
                   {errors.prazoPrevisao && (
                     <div className="flex items-center gap-2 text-red-600">

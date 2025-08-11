@@ -1,6 +1,7 @@
 import React from "react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import DateField from "./DateField";
 
 interface InputFieldProps {
   label: string;
@@ -12,6 +13,12 @@ interface InputFieldProps {
   disabled?: boolean;
   type?: "text" | "email" | "number" | "date";
   className?: string;
+  // Props específicas para data
+  showPresets?: boolean;
+  businessDaysOnly?: boolean;
+  minDate?: Date;
+  maxDate?: Date;
+  withTime?: boolean;
 }
 
 export default function InputField({
@@ -23,8 +30,36 @@ export default function InputField({
   required = false,
   disabled = false,
   type = "text",
-  className = ""
+  className = "",
+  // Props específicas para data
+  showPresets = true,
+  businessDaysOnly = false,
+  minDate,
+  maxDate,
+  withTime = false
 }: InputFieldProps) {
+  // Se for tipo date, usar o DateField com o novo calendário
+  if (type === "date") {
+    return (
+      <DateField
+        label={label}
+        name={name}
+        value={value}
+        onChange={onChange}
+        placeholder={placeholder}
+        required={required}
+        disabled={disabled}
+        className={className}
+        showPresets={showPresets}
+        businessDaysOnly={businessDaysOnly}
+        minDate={minDate}
+        maxDate={maxDate}
+        withTime={withTime}
+      />
+    );
+  }
+
+  // Para outros tipos, usar o input normal
   return (
     <div className={`space-y-2 ${className}`}>
       <Label htmlFor={name} className="text-sm font-medium text-gray-700">

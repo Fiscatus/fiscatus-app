@@ -8,6 +8,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { DatePicker } from "@/components/date";
 import { 
   Calendar, 
   User, 
@@ -647,13 +648,15 @@ export default function ProcessoDetalhes() {
                   <Label htmlFor="prazoFinal" className="text-base font-semibold text-gray-900">
                     Prazo Final
                   </Label>
-                  <Input
-                    id="prazoFinal"
-                    type="date"
-                    value={editFormData.prazoFinal}
-                    onChange={(e) => handleEditFormChange('prazoFinal', e.target.value)}
-                    className="h-10 border-2 border-gray-300 focus:border-blue-500 focus:ring-blue-200"
+                  <DatePicker
+                    value={editFormData.prazoFinal || null}
+                    onChange={(date) => handleEditFormChange('prazoFinal', date || '')}
                     placeholder="Selecione a data"
+                    showPresets={true}
+                    businessDaysOnly={true}
+                    minDate={new Date()}
+                    className="w-full"
+                    inputClassName="h-10 border-2 border-gray-300 focus:border-blue-500 focus:ring-blue-200"
                   />
                   <p className="text-xs text-gray-500">
                     Obrigatório apenas se for definido manualmente

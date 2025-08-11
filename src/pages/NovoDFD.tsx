@@ -272,6 +272,9 @@ export default function NovoDFD() {
                 onChange={(value) => handleInputChange("dataConclusao", value)}
                 type="date"
                 required={true}
+                businessDaysOnly={true}
+                minDate={new Date()}
+                showPresets={true}
               />
               <InputField
                 label="Estimativa Preliminar do Valor"
