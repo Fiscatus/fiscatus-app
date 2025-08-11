@@ -1,169 +1,57 @@
 /**
- * Exemplo de uso dos componentes de data
+ * Exemplo de uso do DatePicker com sistema de dias úteis
  */
 
 import React, { useState } from 'react';
+import { DatePicker } from './DatePicker';
+import { getTodayISO } from '@/lib/dates/today';
+import { ORG_TZ } from '@/config/timezone';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Separator } from '@/components/ui/separator';
-import { DatePicker, DateRangePicker, YearCalendar } from './index';
 
-export const DatePickerExample: React.FC = () => {
-  const [singleDate, setSingleDate] = useState<string | null>(null);
-  const [dateRange, setDateRange] = useState<{ start: string; end: string } | null>(null);
-  const [selectedYearDate, setSelectedYearDate] = useState<string | null>(null);
-  const [currentYear, setCurrentYear] = useState(new Date().getFullYear());
+export function DatePickerExample() {
+  const [selectedDate, setSelectedDate] = useState<string>('');
+  const todayISO = getTodayISO(ORG_TZ);
 
   return (
-    <div className="space-y-6 p-6">
-      <div className="text-center">
-        <h1 className="text-3xl font-bold">Sistema de Seletores de Data</h1>
-        <p className="text-muted-foreground mt-2">
-          Exemplos de uso dos componentes padronizados
-        </p>
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* DatePicker */}
-        <Card>
-          <CardHeader>
-            <CardTitle>DatePicker - Data Única</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <DatePicker
-              value={singleDate}
-              onChange={setSingleDate}
-              label="Data de início"
-              placeholder="Selecione uma data"
-              showPresets={true}
-              withTime={false}
-            />
-            
-            <Separator />
-            
-            <div className="text-sm">
-              <strong>Data selecionada:</strong> {singleDate || 'Nenhuma'}
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* DatePicker com Hora */}
-        <Card>
-          <CardHeader>
-            <CardTitle>DatePicker - Com Hora</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <DatePicker
-              value={singleDate}
-              onChange={setSingleDate}
-              label="Data e hora"
-              placeholder="Selecione data e hora"
-              withTime={true}
-              defaultHour={9}
-              defaultMinute={0}
-            />
-            
-            <Separator />
-            
-            <div className="text-sm">
-              <strong>Data selecionada:</strong> {singleDate || 'Nenhuma'}
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* DateRangePicker */}
-        <Card>
-          <CardHeader>
-            <CardTitle>DateRangePicker - Intervalo</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <DateRangePicker
-              value={dateRange}
-              onChange={setDateRange}
-              label="Período de execução"
-              placeholder="Selecione um período"
-              showPresets={true}
-              showRangeStats={true}
-            />
-            
-            <Separator />
-            
-            <div className="text-sm">
-              <strong>Intervalo selecionado:</strong>
-              {dateRange ? (
-                <div>
-                  <div>Início: {dateRange.start}</div>
-                  <div>Fim: {dateRange.end}</div>
-                </div>
-              ) : (
-                'Nenhum'
-              )}
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* DatePicker com Restrições */}
-        <Card>
-          <CardHeader>
-            <CardTitle>DatePicker - Com Restrições</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <DatePicker
-              value={singleDate}
-              onChange={setSingleDate}
-              label="Apenas dias úteis"
-              placeholder="Selecione um dia útil"
-              businessDaysOnly={true}
-              minDate={new Date()}
-              maxDate={new Date(Date.now() + 365 * 24 * 60 * 60 * 1000)} // +1 ano
-            />
-            
-            <Separator />
-            
-            <div className="text-sm">
-              <strong>Data selecionada:</strong> {singleDate || 'Nenhuma'}
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* YearCalendar */}
+    <div className="max-w-md mx-auto p-6 space-y-4">
       <Card>
         <CardHeader>
-          <CardTitle>YearCalendar - Visualização Anual</CardTitle>
+          <CardTitle>Teste de Correção de Timezone</CardTitle>
         </CardHeader>
-        <CardContent>
-          <YearCalendar
-            year={currentYear}
-            selectedDate={selectedYearDate}
-            onDateSelect={setSelectedYearDate}
-            onYearChange={setCurrentYear}
-            showHolidays={true}
-            showWeekends={true}
-          />
-          
-          <Separator className="my-4" />
-          
-          <div className="text-sm">
-            <strong>Data selecionada:</strong> {selectedYearDate || 'Nenhuma'}
+        <CardContent className="space-y-4">
+          <div>
+            <p className="text-sm text-gray-600 mb-2">
+              Data de hoje: <strong>{todayISO}</strong>
+            </p>
+            <p className="text-sm text-gray-600 mb-4">
+              Clique em uma data no calendário e verifique se a data selecionada é a mesma que você clicou.
+            </p>
           </div>
-        </CardContent>
-      </Card>
 
-      {/* Informações */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Informações do Sistema</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-2 text-sm">
-          <div>✅ Localização pt-BR completa</div>
-          <div>✅ Feriados brasileiros automáticos</div>
-          <div>✅ Presets rápidos</div>
-          <div>✅ Suporte a dias úteis</div>
-          <div>✅ Design responsivo</div>
-          <div>✅ Integração com react-hook-form</div>
-          <div>✅ Tipagem TypeScript completa</div>
+          <DatePicker
+            value={selectedDate}
+            onChange={(date) => {
+              setSelectedDate(date || '');
+              console.log('Data selecionada:', date);
+            }}
+            label="Selecione uma data"
+            description="Teste de correção de timezone"
+            defaultToToday={false}
+            timezone={ORG_TZ}
+          />
+
+          {selectedDate && (
+            <div className="mt-4 p-3 bg-green-50 border border-green-200 rounded-md">
+              <p className="text-sm text-green-800">
+                <strong>Data selecionada:</strong> {selectedDate}
+              </p>
+              <p className="text-xs text-green-600 mt-1">
+                Se esta data corresponde exatamente à data que você clicou, a correção funcionou!
+              </p>
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>
   );
-};
+}

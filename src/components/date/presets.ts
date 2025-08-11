@@ -2,7 +2,8 @@
  * Presets de datas rápidas para seletores
  */
 
-import { addBusinessDays, getNextBusinessDay } from '@/lib/holidays-br';
+import { addBusinessDays, nextBusinessDay } from '@/lib/business-days/utils';
+import { DEFAULT_BUSINESS_CONFIG } from '@/lib/business-days/regional-config';
 
 export interface DatePreset {
   label: string;
@@ -21,26 +22,28 @@ export interface DateRangePreset {
 // Presets para data única
 export const DATE_PRESETS: DatePreset[] = [
   {
-    label: 'Hoje',
-    value: 'today',
-    getDate: () => new Date(),
-    description: 'Data atual'
-  },
-  {
-    label: 'Amanhã',
-    value: 'tomorrow',
-    getDate: () => {
-      const tomorrow = new Date();
-      tomorrow.setDate(tomorrow.getDate() + 1);
-      return tomorrow;
-    },
-    description: 'Próximo dia'
-  },
-  {
     label: 'Próximo dia útil',
     value: 'next-business-day',
-    getDate: () => getNextBusinessDay(new Date()),
+    getDate: () => nextBusinessDay(new Date()),
     description: 'Próximo dia útil (excluindo fins de semana e feriados)'
+  },
+  {
+    label: '+5 dias úteis',
+    value: 'plus-5-business-days',
+    getDate: () => addBusinessDays(new Date(), 5),
+    description: '5 dias úteis a partir de hoje'
+  },
+  {
+    label: '+10 dias úteis',
+    value: 'plus-10-business-days',
+    getDate: () => addBusinessDays(new Date(), 10),
+    description: '10 dias úteis a partir de hoje'
+  },
+  {
+    label: '+20 dias úteis',
+    value: 'plus-20-business-days',
+    getDate: () => addBusinessDays(new Date(), 20),
+    description: '20 dias úteis a partir de hoje'
   },
   {
     label: '+7 dias',
@@ -71,60 +74,11 @@ export const DATE_PRESETS: DatePreset[] = [
       return date;
     },
     description: '30 dias a partir de hoje'
-  },
-  {
-    label: '+7 dias úteis',
-    value: 'plus-7-business-days',
-    getDate: () => addBusinessDays(new Date(), 7),
-    description: '7 dias úteis a partir de hoje'
-  },
-  {
-    label: '+15 dias úteis',
-    value: 'plus-15-business-days',
-    getDate: () => addBusinessDays(new Date(), 15),
-    description: '15 dias úteis a partir de hoje'
-  },
-  {
-    label: '+30 dias úteis',
-    value: 'plus-30-business-days',
-    getDate: () => addBusinessDays(new Date(), 30),
-    description: '30 dias úteis a partir de hoje'
   }
 ];
 
 // Presets para intervalo de datas
 export const DATE_RANGE_PRESETS: DateRangePreset[] = [
-  {
-    label: 'Hoje',
-    value: 'today',
-    getRange: () => {
-      const today = new Date();
-      return { start: today, end: today };
-    },
-    description: 'Apenas hoje'
-  },
-  {
-    label: 'Este mês',
-    value: 'this-month',
-    getRange: () => {
-      const now = new Date();
-      const start = new Date(now.getFullYear(), now.getMonth(), 1);
-      const end = new Date(now.getFullYear(), now.getMonth() + 1, 0);
-      return { start, end };
-    },
-    description: 'Do primeiro ao último dia do mês atual'
-  },
-  {
-    label: 'Mês passado',
-    value: 'last-month',
-    getRange: () => {
-      const now = new Date();
-      const start = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-      const end = new Date(now.getFullYear(), now.getMonth(), 0);
-      return { start, end };
-    },
-    description: 'Do primeiro ao último dia do mês anterior'
-  },
   {
     label: 'Esta semana',
     value: 'this-week',
@@ -152,6 +106,48 @@ export const DATE_RANGE_PRESETS: DateRangePreset[] = [
       return { start, end };
     },
     description: 'De segunda a domingo da semana anterior'
+  },
+  {
+    label: 'Próximos 5 dias úteis',
+    value: 'next-5-business-days',
+    getRange: () => {
+      const start = new Date();
+      const end = addBusinessDays(start, 4); // +4 para ter 5 dias úteis
+      return { start, end };
+    },
+    description: 'De hoje até 5 dias úteis à frente'
+  },
+  {
+    label: 'Próximos 10 dias úteis',
+    value: 'next-10-business-days',
+    getRange: () => {
+      const start = new Date();
+      const end = addBusinessDays(start, 9); // +9 para ter 10 dias úteis
+      return { start, end };
+    },
+    description: 'De hoje até 10 dias úteis à frente'
+  },
+  {
+    label: 'Este mês',
+    value: 'this-month',
+    getRange: () => {
+      const now = new Date();
+      const start = new Date(now.getFullYear(), now.getMonth(), 1);
+      const end = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+      return { start, end };
+    },
+    description: 'Do primeiro ao último dia do mês atual'
+  },
+  {
+    label: 'Mês passado',
+    value: 'last-month',
+    getRange: () => {
+      const now = new Date();
+      const start = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+      const end = new Date(now.getFullYear(), now.getMonth(), 0);
+      return { start, end };
+    },
+    description: 'Do primeiro ao último dia do mês anterior'
   },
   {
     label: 'Próximos 7 dias',

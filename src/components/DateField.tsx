@@ -1,57 +1,99 @@
-import React from "react";
-import { Label } from "@/components/ui/label";
-import { DatePicker } from "@/components/date";
+/**
+ * Componente DateField integrado com react-hook-form e zod
+ */
 
-interface DateFieldProps {
-  label: string;
+import React from 'react';
+import { useFormContext, Controller } from 'react-hook-form';
+import { DatePicker, DatePickerProps } from '@/components/date/DatePicker';
+import { isBusinessDay } from '@/lib/business-days/utils';
+import { useBusinessConfig } from '@/lib/business-days/context';
+import { parseISO } from 'date-fns';
+
+export interface DateFieldProps extends Omit<DatePickerProps, 'value' | 'onChange'> {
   name: string;
-  value: string;
-  onChange: (value: string) => void;
-  placeholder?: string;
+  label?: string;
+  description?: string;
   required?: boolean;
-  disabled?: boolean;
-  className?: string;
-  showPresets?: boolean;
   businessDaysOnly?: boolean;
-  minDate?: Date;
-  maxDate?: Date;
-  withTime?: boolean;
+  showOptionalToggle?: boolean;
+  className?: string;
 }
 
-export default function DateField({
-  label,
+export const DateField: React.FC<DateFieldProps> = ({
   name,
-  value,
-  onChange,
-  placeholder = "Selecione uma data",
+  label,
+  description,
   required = false,
-  disabled = false,
-  className = "",
-  showPresets = true,
-  businessDaysOnly = false,
-  minDate,
-  maxDate,
-  withTime = false
-}: DateFieldProps) {
+  businessDaysOnly = true,
+  showOptionalToggle = true,
+  className,
+  ...datePickerProps
+}) => {
+  const { control, formState: { errors } } = useFormContext();
+  const businessConfig = useBusinessConfig();
+  const error = errors[name];
+
   return (
-    <div className={`space-y-2 ${className}`}>
-      <Label htmlFor={name} className="text-sm font-medium text-gray-700">
-        {label}
-        {required && <span className="text-red-500 ml-1">*</span>}
-      </Label>
-      <DatePicker
-        value={value || null}
-        onChange={(date) => onChange(date || "")}
-        placeholder={placeholder}
-        disabled={disabled}
-        showPresets={showPresets}
-        businessDaysOnly={businessDaysOnly}
-        minDate={minDate}
-        maxDate={maxDate}
-        withTime={withTime}
-        className="w-full"
-        inputClassName={`${disabled ? 'bg-gray-50 text-gray-500 cursor-not-allowed' : ''} border-gray-200 focus:border-blue-300 focus:ring-blue-200`}
-      />
-    </div>
+    <Controller
+      name={name}
+      control={control}
+      rules={{
+        required: required ? 'Este campo é obrigatório' : false,
+        validate: (value) => {
+          if (!value) return true; // Campo não obrigatório
+          
+          const date = typeof value === 'string' ? parseISO(value) : value;
+          
+          if (businessDaysOnly && !isBusinessDay(date, businessConfig)) {
+            return 'Selecione um dia útil';
+          }
+          
+          return true;
+        }
+      }}
+      render={({ field }) => (
+        <DatePicker
+          {...field}
+          {...datePickerProps}
+          label={label}
+          description={description}
+          required={required}
+          businessDaysOnly={businessDaysOnly}
+          showOptionalToggle={showOptionalToggle}
+          className={className}
+          error={!!error}
+          errorMessage={error?.message as string}
+        />
+      )}
+    />
   );
-}
+};
+
+/**
+ * Hook para criar validação zod para dias úteis
+ */
+export const createBusinessDayValidation = (businessConfig?: any) => {
+  return (value: string) => {
+    if (!value) return true;
+    
+    try {
+      const date = parseISO(value);
+      return isBusinessDay(date, businessConfig) || 'Selecione um dia útil';
+    } catch {
+      return 'Data inválida';
+    }
+  };
+};
+
+/**
+ * Componente DateField com validação automática de dias úteis
+ */
+export const BusinessDateField: React.FC<DateFieldProps> = (props) => {
+  return (
+    <DateField
+      {...props}
+      businessDaysOnly={true}
+      showOptionalToggle={true}
+    />
+  );
+};

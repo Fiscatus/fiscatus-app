@@ -1,5 +1,5 @@
 /**
- * Componente DatePicker padronizado com localização pt-BR
+ * Componente DatePicker padronizado com localização pt-BR e suporte a dias úteis
  */
 
 import React, { useState, useCallback, useMemo } from 'react';
@@ -16,6 +16,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
 import { 
   formatDate, 
   parseDate, 
@@ -34,12 +36,18 @@ import {
 import { 
   isBusinessDay, 
   isHoliday, 
-  getHolidayName 
-} from '@/lib/holidays-br';
+  isWeekend,
+  getDayType,
+  getDateTooltip as getBusinessDateTooltip,
+  clampToBusinessDay
+} from '@/lib/business-days/utils';
+import { useBusinessConfig } from '@/lib/business-days/context';
 import { 
   DATE_PRESETS, 
   applyDatePreset 
 } from './presets';
+import { getTodayISO } from '@/lib/dates/today';
+import { ORG_TZ } from '@/config/timezone';
 
 export interface DatePickerProps {
   /** Data selecionada (string ISO ou Date) */
@@ -102,8 +110,18 @@ export interface DatePickerProps {
   showMonthNavigation?: boolean;
   /** Se deve mostrar o calendário em modo anual */
   annualView?: boolean;
+  /** Se deve mostrar toggle para pontos facultativos */
+  showOptionalToggle?: boolean;
+  /** Se deve esconder fins de semana (5 colunas) */
+  hideWeekends?: boolean;
   /** Callback quando o popover abre/fecha */
   onOpenChange?: (open: boolean) => void;
+  /** Se deve definir como hoje por padrão quando vazio */
+  defaultToToday?: boolean;
+  /** Se o campo é somente leitura */
+  readOnly?: boolean;
+  /** Timezone para cálculo da data de hoje */
+  timezone?: string;
 }
 
 export const DatePicker: React.FC<DatePickerProps> = ({
@@ -114,7 +132,7 @@ export const DatePicker: React.FC<DatePickerProps> = ({
   disabledDates = [],
   disableWeekends = false,
   disableHolidays = false,
-  businessDaysOnly = false,
+  businessDaysOnly = true, // Padrão agora é true
   holidays = [],
   defaultMonth,
   defaultYear,
@@ -136,9 +154,17 @@ export const DatePicker: React.FC<DatePickerProps> = ({
   showTooltips = true,
   showYearNavigation = true,
   showMonthNavigation = true,
+  showOptionalToggle = true,
+  hideWeekends = false,
   annualView = false,
   onOpenChange,
+  defaultToToday = true,
+  readOnly = false,
+  timezone = ORG_TZ,
 }) => {
+  // Contexto de dias úteis
+  const businessConfig = useBusinessConfig();
+  
   // Estado interno
   const [open, setOpen] = useState(false);
   const [selectedDate, setSelectedDate] = useState<Date | null>(
@@ -151,15 +177,24 @@ export const DatePicker: React.FC<DatePickerProps> = ({
     hour: defaultHour,
     minute: defaultMinute,
   });
+  const [includeOptional, setIncludeOptional] = useState(businessConfig.includeOptional);
 
   // Atualiza o estado quando o valor externo muda
   React.useEffect(() => {
-    const newDate = value ? (typeof value === 'string' ? fromISOString(value) : value) : null;
+    let newDate = value ? (typeof value === 'string' ? fromISOString(value) : value) : null;
+    
+    // Se defaultToToday está ativo e não há valor, definir como hoje
+    if (defaultToToday && !newDate && onChange) {
+      const todayISO = getTodayISO(timezone);
+      newDate = fromISOString(todayISO);
+      onChange(todayISO);
+    }
+    
     setSelectedDate(newDate);
     if (newDate) {
       setCurrentMonth(newDate);
     }
-  }, [value]);
+  }, [value, defaultToToday, onChange, timezone]);
 
   // Configuração do react-day-picker
   const dayPickerProps = useMemo(() => ({
@@ -167,18 +202,36 @@ export const DatePicker: React.FC<DatePickerProps> = ({
     selected: selectedDate,
     onSelect: (date: Date | undefined) => {
       if (date) {
-        const newDate = new Date(date);
+        // Criar nova data preservando a data local selecionada
+        let newDate = new Date(date.getFullYear(), date.getMonth(), date.getDate(), 12, 0, 0, 0);
+        
+        // Se businessDaysOnly está ativo, ajustar automaticamente
+        if (businessDaysOnly && !isBusinessDay(newDate, { ...businessConfig, includeOptional })) {
+          newDate = clampToBusinessDay(newDate, { ...businessConfig, includeOptional });
+        }
+        
         if (withTime) {
           newDate.setHours(time.hour, time.minute, 0, 0);
         }
         setSelectedDate(newDate);
+        
+        // Chamar onChange com a data selecionada
+        if (onChange) {
+          onChange(toISOString(newDate));
+        }
+      } else if (defaultToToday && onChange) {
+        // Se o usuário desmarcou a data e defaultToToday está ativo, restaurar hoje
+        const todayISO = getTodayISO(timezone);
+        const todayDate = fromISOString(todayISO);
+        setSelectedDate(todayDate);
+        onChange(todayISO);
       }
     },
     month: currentMonth,
     onMonthChange: setCurrentMonth,
     locale: ptBR,
     weekStartsOn: 1 as const, // Segunda-feira
-    showOutsideDays: false, // Mostrar apenas datas do mês atual
+    showOutsideDays: true, // Mostrar datas de outros meses
     fixedWeeks: true,
     className: 'p-0',
     classNames: {
@@ -195,9 +248,15 @@ export const DatePicker: React.FC<DatePickerProps> = ({
       nav_button_next: 'absolute right-1',
       table: 'w-full h-full border-collapse space-y-1',
       head_row: 'flex w-full',
-      head_cell: 'text-muted-foreground rounded-md w-full font-normal text-[0.8rem] flex-1 text-center',
+      head_cell: cn(
+        'text-muted-foreground rounded-md w-full font-normal text-[0.8rem] flex-1 text-center',
+        hideWeekends && 'hidden' // Esconder sábado e domingo se hideWeekends
+      ),
       row: 'flex w-full mt-2',
-      cell: 'h-full w-full text-center text-sm p-0 relative [&:has([aria-selected].day-range-end)]:rounded-r-md [&:has([aria-selected].day-outside)]:bg-accent/50 [&:has([aria-selected])]:bg-accent first:[&:has([aria-selected])]:rounded-l-md last:[&:has([aria-selected])]:rounded-r-md focus-within:relative focus-within:z-20 flex-1',
+      cell: cn(
+        'h-full w-full text-center text-sm p-0 relative [&:has([aria-selected].day-range-end)]:rounded-r-md [&:has([aria-selected].day-outside)]:bg-accent/50 [&:has([aria-selected])]:bg-accent first:[&:has([aria-selected])]:rounded-l-md last:[&:has([aria-selected])]:rounded-r-md focus-within:relative focus-within:z-20 flex-1',
+        hideWeekends && 'hidden' // Esconder células de fim de semana se hideWeekends
+      ),
       day: cn(
         'h-full w-full p-0 font-normal aria-selected:opacity-100',
         'focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2'
@@ -223,28 +282,33 @@ export const DatePicker: React.FC<DatePickerProps> = ({
         }
         
         // Fins de semana
-        if (disableWeekends && (date.getDay() === 0 || date.getDay() === 6)) {
+        if (disableWeekends && isWeekend(date)) {
           return true;
         }
         
         // Feriados
-        if (disableHolidays && isHoliday(date, holidays)) {
+        if (disableHolidays && isHoliday(date, { ...businessConfig, includeOptional })) {
           return true;
         }
         
         // Apenas dias úteis
-        if (businessDaysOnly && !isBusinessDay(date, holidays)) {
+        if (businessDaysOnly && !isBusinessDay(date, { ...businessConfig, includeOptional })) {
           return true;
         }
         
         return false;
       },
-      holiday: (date: Date) => isHoliday(date, holidays),
-      weekend: (date: Date) => date.getDay() === 0 || date.getDay() === 6,
+      holiday: (date: Date) => isHoliday(date, { ...businessConfig, includeOptional }),
+      weekend: (date: Date) => isWeekend(date),
+      optional: (date: Date) => {
+        const dayType = getDayType(date, { ...businessConfig, includeOptional });
+        return dayType.isOptional;
+      }
     },
     modifiersStyles: {
       holiday: { color: 'hsl(var(--destructive))', fontWeight: 'bold' },
       weekend: { color: 'hsl(var(--muted-foreground) / 0.6)' },
+      optional: { color: 'hsl(var(--orange-500))', fontStyle: 'italic' },
     },
   }), [
     selectedDate,
@@ -257,21 +321,29 @@ export const DatePicker: React.FC<DatePickerProps> = ({
     disableWeekends,
     disableHolidays,
     businessDaysOnly,
-    holidays,
+    businessConfig,
+    includeOptional,
+    hideWeekends,
   ]);
 
   // Função para aplicar preset
   const handlePresetSelect = useCallback((presetValue: string) => {
     const presetDate = applyDatePreset(presetValue);
     if (presetDate) {
-      const newDate = new Date(presetDate);
+      let newDate = new Date(presetDate);
+      
+      // Se businessDaysOnly está ativo, ajustar automaticamente
+      if (businessDaysOnly && !isBusinessDay(newDate, { ...businessConfig, includeOptional })) {
+        newDate = clampToBusinessDay(newDate, { ...businessConfig, includeOptional });
+      }
+      
       if (withTime) {
         newDate.setHours(time.hour, time.minute, 0, 0);
       }
       setSelectedDate(newDate);
       setCurrentMonth(newDate);
     }
-  }, [withTime, time]);
+  }, [withTime, time, businessDaysOnly, businessConfig, includeOptional]);
 
   // Função para confirmar seleção
   const handleConfirm = useCallback(() => {
@@ -349,9 +421,11 @@ export const DatePicker: React.FC<DatePickerProps> = ({
         </label>
       )}
       
-      <Popover open={open} onOpenChange={(newOpen) => {
-        setOpen(newOpen);
-        onOpenChange?.(newOpen);
+      <Popover open={readOnly ? false : open} onOpenChange={(newOpen) => {
+        if (!readOnly) {
+          setOpen(newOpen);
+          onOpenChange?.(newOpen);
+        }
       }}>
         <PopoverTrigger asChild>
           <Button
@@ -360,9 +434,10 @@ export const DatePicker: React.FC<DatePickerProps> = ({
               'w-full justify-start text-left font-normal',
               !selectedDate && 'text-muted-foreground',
               error && 'border-destructive',
+              readOnly && 'bg-gray-50 cursor-not-allowed',
               inputClassName
             )}
-            disabled={disabled}
+            disabled={disabled || readOnly}
           >
             <Calendar className="mr-2 h-4 w-4" />
             {displayValue || placeholder}
@@ -376,7 +451,23 @@ export const DatePicker: React.FC<DatePickerProps> = ({
           collisionPadding={16}
           sideOffset={8}
         >
-          <div className="grid grid-rows-[auto_auto_1fr_auto] h-full">
+          <div className="grid grid-rows-[auto_auto_auto_1fr_auto] h-full">
+            {/* Toggle para pontos facultativos */}
+            {showOptionalToggle && (
+              <div className="px-3 pt-3 pb-2 border-b">
+                <div className="flex items-center space-x-2">
+                  <Switch
+                    id="include-optional"
+                    checked={includeOptional}
+                    onCheckedChange={setIncludeOptional}
+                  />
+                  <Label htmlFor="include-optional" className="text-sm">
+                    Considerar pontos facultativos
+                  </Label>
+                </div>
+              </div>
+            )}
+
             {/* Navegação (ano/mês/setas) */}
             {showMonthNavigation && (
               <div className="px-3 pt-3 pb-4 flex flex-wrap items-center gap-2 justify-center">

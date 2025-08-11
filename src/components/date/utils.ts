@@ -58,21 +58,28 @@ export const parseDate = (
 };
 
 /**
- * Converte uma data para string ISO (YYYY-MM-DD)
+ * Converte uma data para string ISO (YYYY-MM-DD) preservando o timezone local
  */
 export const toISOString = (date: Date | null | undefined): string => {
   if (!date || !isValid(date)) return '';
+  
+  // Usar format do date-fns que preserva o timezone local
   return format(date, DATE_FORMATS.iso);
 };
 
 /**
- * Converte uma string ISO para objeto Date
+ * Converte uma string ISO para objeto Date preservando a data local
  */
 export const fromISOString = (isoString: string): Date | null => {
   if (!isoString) return null;
   
   try {
-    const date = new Date(isoString);
+    // Parse a string ISO (YYYY-MM-DD) preservando a data local
+    const [year, month, day] = isoString.split('-').map(Number);
+    
+    // Criar data no timezone local (sem conversão UTC)
+    const date = new Date(year, month - 1, day, 12, 0, 0, 0);
+    
     return isValid(date) ? date : null;
   } catch {
     return null;

@@ -21,6 +21,7 @@ import { ThemeProvider } from "@/components/ThemeProvider";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { UserProvider } from "@/contexts/UserContext";
+import { BusinessCalendarProvider } from "@/lib/business-days/context";
 
 const queryClient = new QueryClient();
 
@@ -29,34 +30,36 @@ const App = () => (
     <ThemeProvider attribute="class" defaultTheme="dark" enableSystem>
       <TooltipProvider>
         <UserProvider>
-          <Toaster />
-          <Sonner />
-          <BrowserRouter>
-          <Routes>
-            <Route path="/" element={<Dashboard />} />
-            <Route path="/dashboard" element={<Dashboard />} />
-            <Route path="/login" element={<Auth />} />
-            <Route path="/home" element={<Home />} />
-            <Route path="/dfd" element={<Navigate to="/planejamento-da-contratacao" replace />} />
-            <Route path="/dfd/novo" element={<Navigate to="/planejamento-da-contratacao" replace />} />
-            <Route path="/planejamento-da-contratacao" element={<PlanejamentoContratacao />} />
-            <Route path="/assinaturas" element={<MinhasAssinaturas />} />
-            <Route path="/assinaturas/:id" element={<MinhasAssinaturas />} />
-            <Route path="/processos" element={<MeusProcessos />} />
-            <Route path="/processos/:id" element={<ProcessoDetalhes />} />
-            <Route path="/processo/:id" element={<ProcessoDetalhes />} />
-            <Route path="/novo-processo" element={<NovoProcesso />} />
-            <Route path="/processos-gerencia" element={<ProcessosGerencia />} />
-            <Route path="/processos-gerencia/pasta/:pastaId" element={<PastaOrganizacional />} />
-            <Route path="/modelos-de-fluxo" element={<ModelosFluxo />} />
-            <Route path="/configuracoes" element={<ConfiguracoesSistema />} />
-            <Route path="/notificacoes" element={<Notificacoes />} />
-            <Route path="/tubelight-demo" element={<TubelightDemo />} />
-            
-            {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </BrowserRouter>
+          <BusinessCalendarProvider>
+            <Toaster />
+            <Sonner />
+            <BrowserRouter>
+            <Routes>
+              <Route path="/" element={<Dashboard />} />
+              <Route path="/dashboard" element={<Dashboard />} />
+              <Route path="/login" element={<Auth />} />
+              <Route path="/home" element={<Home />} />
+              <Route path="/dfd" element={<Navigate to="/planejamento-da-contratacao" replace />} />
+              <Route path="/dfd/novo" element={<Navigate to="/planejamento-da-contratacao" replace />} />
+              <Route path="/planejamento-da-contratacao" element={<PlanejamentoContratacao />} />
+              <Route path="/assinaturas" element={<MinhasAssinaturas />} />
+              <Route path="/assinaturas/:id" element={<MinhasAssinaturas />} />
+              <Route path="/processos" element={<MeusProcessos />} />
+              <Route path="/processos/:id" element={<ProcessoDetalhes />} />
+              <Route path="/processo/:id" element={<ProcessoDetalhes />} />
+              <Route path="/novo-processo" element={<NovoProcesso />} />
+              <Route path="/processos-gerencia" element={<ProcessosGerencia />} />
+              <Route path="/processos-gerencia/pasta/:pastaId" element={<PastaOrganizacional />} />
+              <Route path="/modelos-de-fluxo" element={<ModelosFluxo />} />
+              <Route path="/configuracoes" element={<ConfiguracoesSistema />} />
+              <Route path="/notificacoes" element={<Notificacoes />} />
+              <Route path="/tubelight-demo" element={<TubelightDemo />} />
+              
+              {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </BrowserRouter>
+          </BusinessCalendarProvider>
         </UserProvider>
       </TooltipProvider>
     </ThemeProvider>
