@@ -52,6 +52,7 @@ import GerenciarPastasModal from "@/components/GerenciarPastasModal";
 import { usePastasOrganizacionais } from "@/hooks/usePastasOrganizacionais";
 import { formatarNumeroProcesso } from "@/lib/processoUtils";
 import { GerenciaSelect } from "@/components/GerenciaSelect";
+import { GerenciaMultiSelect } from "@/components/GerenciaMultiSelect";
 
 // Tipos
 type ProcessStatus = "em_andamento" | "pendente" | "atrasado" | "concluido" | "cancelado";
@@ -804,10 +805,11 @@ function CreateProcessModal() {
   const [formData, setFormData] = useState({
     numeroProcesso: "",
     objetoProcesso: "",
-    gerenciaCriadora: "GTEC - Gerência de Tecnologia da Informação", // Mock baseado no perfil
+    gerenciaCriadora: "GRH - Gerência de Recursos Humanos", // Mock baseado no perfil
     gerenciasEnvolvidas: [] as string[],
     anoProcesso: new Date().getFullYear().toString(),
     tipoTramitacao: "",
+    justificativaTipoTramitacao: "",
     comentariosIniciais: "",
   });
 
@@ -896,7 +898,7 @@ function CreateProcessModal() {
       objeto: formData.objetoProcesso || "Processo em construção",
       status: "em_andamento" as const,
       prazoFinal: "",
-      gerenciaResponsavel: "GTEC - Gerência de Tecnologia da Informação",
+      gerenciaResponsavel: "GRH - Gerência de Recursos Humanos",
       dataCriacao: new Date().toLocaleDateString('pt-BR'),
       criador: "Usuário Atual",
       situacaoAtual: "Em construção",
@@ -915,9 +917,17 @@ function CreateProcessModal() {
   };
 
   const isFormValid = () => {
-    return formData.objetoProcesso.trim() !== "" && 
-           formData.tipoTramitacao !== "" &&
-           formData.gerenciasEnvolvidas.length > 0;
+    const camposObrigatorios = 
+      formData.objetoProcesso.trim() !== "" && 
+      formData.tipoTramitacao !== "" &&
+      formData.gerenciasEnvolvidas.length > 0;
+    
+    // Se tipo de tramitação foi selecionado, justificativa é obrigatória
+    const justificativaValida = 
+      formData.tipoTramitacao === "" || 
+      formData.justificativaTipoTramitacao.trim() !== "";
+    
+    return camposObrigatorios && justificativaValida;
   };
 
   return (
@@ -984,10 +994,10 @@ function CreateProcessModal() {
                     </div>
                     <div>
                       <p className="font-semibold text-blue-900">
-                        Gerência: GTEC
+                        Gerência: GRH
                       </p>
                       <p className="text-sm text-blue-700">
-                        Gerência de Tecnologia da Informação
+                        Gerência de Recursos Humanos
                       </p>
                     </div>
                   </div>
@@ -1041,6 +1051,21 @@ function CreateProcessModal() {
                     <SelectItem value="prioritaria">Prioritária</SelectItem>
                   </SelectContent>
                 </Select>
+
+                {/* Campo de Justificativa do Tipo de Tramitação */}
+                {formData.tipoTramitacao && (
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-gray-700">
+                      Justificativa do Tipo de Tramitação *
+                    </label>
+                    <Textarea
+                      value={formData.justificativaTipoTramitacao}
+                      onChange={(e) => handleInputChange("justificativaTipoTramitacao", e.target.value)}
+                      placeholder="Explique o motivo da escolha deste tipo de tramitação."
+                      className="min-h-[80px] resize-none border-2 border-gray-300 focus:border-green-500 focus:ring-green-200 transition-colors"
+                    />
+                  </div>
+                )}
               </div>
             </div>
 
@@ -1063,12 +1088,12 @@ function CreateProcessModal() {
                 <label className="text-lg font-semibold text-gray-900">
                   Outras Gerências que podem participar *
                 </label>
-                <GerenciaSelect
-                  value={formData.gerenciasEnvolvidas[0] || ""}
-                  onValueChange={(value) => handleInputChange("gerenciasEnvolvidas", [value])}
+                <GerenciaMultiSelect
+                  value={formData.gerenciasEnvolvidas}
+                  onValueChange={(value) => handleInputChange("gerenciasEnvolvidas", value)}
                   placeholder="Selecione as gerências participantes"
                   required={true}
-                  showResponsavel={true}
+                  excludeValues={[formData.gerenciaCriadora]}
                 />
               </div>
             </div>

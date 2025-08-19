@@ -94,7 +94,7 @@ const SETORES_DISPONIVEIS = [
   { id: '7', nome: 'GUE - Gerência de Urgência e Emergência', gerencia: 'GUE - Gerência de Urgência e Emergência' },
   { id: '8', nome: 'GLC - Gerência de Licitações e Contratos', gerencia: 'GLC - Gerência de Licitações e Contratos' },
   { id: '9', nome: 'GFC - Gerência Financeira e Contábil', gerencia: 'GFC - Gerência Financeira e Contábil' },
-  { id: '10', nome: 'GTEC - Gerência de Tecnologia da Informação', gerencia: 'GTEC - Gerência de Tecnologia da Informação' },
+  { id: '10', nome: 'GRH - Gerência de Recursos Humanos', gerencia: 'GRH - Gerência de Recursos Humanos' },
   { id: '11', nome: 'GAP - Gerência de Administração e Patrimônio', gerencia: 'GAP - Gerência de Administração e Patrimônio' },
   { id: '12', nome: 'GESP - Gerência de Especialidades', gerencia: 'GESP - Gerência de Especialidades' },
   { id: '13', nome: 'NAJ - Assessoria Jurídica', gerencia: 'NAJ - Assessoria Jurídica' }

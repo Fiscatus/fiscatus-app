@@ -160,7 +160,7 @@ const gerencias = [
   "GUE - Gerência de Urgência e Emergência",
   "GLC - Gerência de Licitações e Contratos",
   "GFC - Gerência Financeira e Contábil",
-  "GTEC - Gerência de Tecnologia da Informação",
+      "GRH - Gerência de Recursos Humanos",
   "GAP - Gerência de Administração e Patrimônio",
   "GESP - Gerência de Especialidades",
   "NAJ - Assessoria Jurídica"
@@ -269,7 +269,7 @@ export default function ProcessoDetalhes() {
     objeto: "Processo em construção",
     status: "em_andamento" as const,
     prazoFinal: "",
-    gerenciaResponsavel: "GTEC - Gerência de Tecnologia da Informação",
+    gerenciaResponsavel: "GRH - Gerência de Recursos Humanos",
     dataCriacao: new Date().toLocaleDateString('pt-BR'),
     criador: "Usuário Atual",
     situacaoAtual: "Em construção",
@@ -594,7 +594,7 @@ export default function ProcessoDetalhes() {
               {/* Fluxo Completo do Processo */}
               <FluxoProcessoCompleto 
                 etapas={etapasAtuais} 
-                gerenciaCriadora="GTEC - Gerência de Tecnologia da Informação" // Mock da gerência criadora
+                gerenciaCriadora="GRH - Gerência de Recursos Humanos" // Mock da gerência criadora
               />
 
               {/* Histórico de Ações */}

@@ -782,7 +782,7 @@ export default function FluxoProcessoCompleto({ etapas = etapasPadrao, onEtapaCl
 
       {/* Dialog para DFD */}
       <Dialog open={showDFDModal} onOpenChange={setShowDFDModal}>
-        <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="w-[95vw] max-w-[95vw] max-h-[92vh] overflow-y-auto">
           {currentEtapa?.id === 1 ? (
             <DFDFormSection
               processoId="1"
@@ -790,6 +790,7 @@ export default function FluxoProcessoCompleto({ etapas = etapasPadrao, onEtapaCl
               onComplete={handleDFDComplete}
               onSave={handleDFDSave}
               canEdit={canManageEtapa(currentEtapa)}
+              gerenciaCriadora={gerenciaCriadora}
             />
           ) : currentEtapa?.id === 2 ? (
             <DFDAprovacaoSection
@@ -805,7 +806,7 @@ export default function FluxoProcessoCompleto({ etapas = etapasPadrao, onEtapaCl
 
       {/* Dialog para Consolidação da Demanda */}
       <Dialog open={showConsolidacaoModal} onOpenChange={setShowConsolidacaoModal}>
-        <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="w-[95vw] max-w-[95vw] max-h-[92vh] overflow-y-auto">
           {currentEtapa?.nome === 'Consolidação da Demanda' && (
             <ConsolidacaoDemandaSection
               processoId="1"

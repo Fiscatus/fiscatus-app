@@ -14,6 +14,7 @@ import RadioGroupField from "@/components/RadioGroupField";
 import FileUploadField from "@/components/FileUploadField";
 import EquipeMemberField from "@/components/EquipeMemberField";
 import { GerenciaSelect } from "@/components/GerenciaSelect";
+import { GerenciaMultiSelect } from "@/components/GerenciaMultiSelect";
 
 // Removido arrays de gerências mockadas - agora usa GerenciaSelect
 
@@ -183,12 +184,11 @@ export default function NovoDFD() {
               <Label className="text-sm font-medium text-gray-700">
                 Selecione as gerências participantes *
               </Label>
-              <GerenciaSelect
-                value={formData.gerenciasParticipantes[0] || ""}
-                onValueChange={(value) => handleInputChange("gerenciasParticipantes", [value])}
+              <GerenciaMultiSelect
+                value={formData.gerenciasParticipantes}
+                onValueChange={(value) => handleInputChange("gerenciasParticipantes", value)}
                 placeholder="Selecione as gerências participantes"
                 required={true}
-                showResponsavel={true}
               />
             </div>
           </DFDFormSection>

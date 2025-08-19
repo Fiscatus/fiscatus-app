@@ -30,6 +30,7 @@ import MultiSelectField from "@/components/MultiSelectField";
 import FileUploadField from "@/components/FileUploadField";
 import { useUser } from "@/contexts/UserContext";
 import { GerenciaSelect } from "@/components/GerenciaSelect";
+import { GerenciaMultiSelect } from "@/components/GerenciaMultiSelect";
 
 // Removido array de gerências mockadas - agora usa GerenciaSelect
 
@@ -94,6 +95,7 @@ interface NovoProcessoForm {
   gerenciasEnvolvidas: string[];
   anoProcesso: string;
   tipoTramitacao: string;
+  justificativaTipoTramitacao: string;
   comentariosIniciais: string;
   documentosIniciais: File[];
 }
@@ -117,10 +119,11 @@ export default function NovoProcesso() {
     numeroProcesso: "",
     modeloFluxoId: getModeloPadrao()?.id || "",
     objetoProcesso: "",
-    gerenciaCriadora: user?.gerencia || "GTEC - Gerência de Tecnologia da Informação",
+    gerenciaCriadora: user?.gerencia || "GRH - Gerência de Recursos Humanos",
     gerenciasEnvolvidas: [],
     anoProcesso: new Date().getFullYear().toString(),
     tipoTramitacao: "",
+    justificativaTipoTramitacao: "",
     comentariosIniciais: "",
     documentosIniciais: [],
   });
@@ -172,10 +175,18 @@ export default function NovoProcesso() {
 
 
   const isFormValid = () => {
-    return formData.objetoProcesso.trim() !== "" && 
-           formData.tipoTramitacao !== "" &&
-           formData.gerenciasEnvolvidas.length > 0 &&
-           formData.modeloFluxoId !== "";
+    const camposObrigatorios = 
+      formData.objetoProcesso.trim() !== "" && 
+      formData.tipoTramitacao !== "" &&
+      formData.gerenciasEnvolvidas.length > 0 &&
+      formData.modeloFluxoId !== "";
+    
+    // Se tipo de tramitação foi selecionado, justificativa é obrigatória
+    const justificativaValida = 
+      formData.tipoTramitacao === "" || 
+      formData.justificativaTipoTramitacao.trim() !== "";
+    
+    return camposObrigatorios && justificativaValida;
   };
 
   // Obter modelo selecionado
@@ -389,6 +400,22 @@ export default function NovoProcesso() {
                     </SelectContent>
                   </Select>
                 </div>
+
+                {/* Campo de Justificativa do Tipo de Tramitação */}
+                {formData.tipoTramitacao && (
+                  <div className="space-y-2">
+                    <Label htmlFor="justificativaTipoTramitacao" className="text-sm font-medium text-gray-700">
+                      Justificativa do Tipo de Tramitação *
+                    </Label>
+                    <Textarea
+                      id="justificativaTipoTramitacao"
+                      value={formData.justificativaTipoTramitacao}
+                      onChange={(e) => handleInputChange("justificativaTipoTramitacao", e.target.value)}
+                      placeholder="Explique o motivo da escolha deste tipo de tramitação."
+                      className="min-h-[80px] resize-none"
+                    />
+                  </div>
+                )}
               </div>
             </CardContent>
           </Card>
@@ -438,12 +465,12 @@ export default function NovoProcesso() {
                    <Label className="text-sm font-medium text-gray-700">
                      Outras gerências que podem participar do processo *
                    </Label>
-                   <GerenciaSelect
-                     value={formData.gerenciasEnvolvidas[0] || ""}
-                     onValueChange={(value) => handleInputChange("gerenciasEnvolvidas", [value])}
+                   <GerenciaMultiSelect
+                     value={formData.gerenciasEnvolvidas}
+                     onValueChange={(value) => handleInputChange("gerenciasEnvolvidas", value)}
                      placeholder="Selecione as gerências participantes"
                      required={true}
-                     showResponsavel={true}
+                     excludeValues={[formData.gerenciaCriadora]}
                    />
                  </div>
               </div>
