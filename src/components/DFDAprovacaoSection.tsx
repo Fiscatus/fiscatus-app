@@ -7,6 +7,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   FileText,
   CheckCircle,
@@ -30,12 +31,46 @@ import {
   Clock,
   Search,
   Info,
-  Send
+  Send,
+  File,
+  CalendarDays,
+  Users,
+  CheckSquare,
+  Square
 } from 'lucide-react';
 import { useUser } from '@/contexts/UserContext';
 import { usePermissoes } from '@/hooks/usePermissoes';
 import { useToast } from '@/hooks/use-toast';
 import { useDFD, DFDData, DFDVersion, DFDVersionStatus, DFDAnnex } from '@/hooks/useDFD';
+
+// Tipos para o novo sistema
+type AnaliseStatus = 'AGUARDANDO_ANALISE' | 'APROVADA' | 'REPROVADA_NOVA_VERSAO';
+
+interface ParecerTecnico {
+  texto: string;
+  analisadoEm?: string; // ISO
+  analisadoPor?: { id: string; nome: string; cargo: string };
+}
+
+interface VersaoAnaliseResumo {
+  versaoId: string;
+  numeroVersao: number;
+  status: 'enviada' | 'aprovada' | 'reprovada';
+  autorId: string;
+  criadoEm: string;
+  decididoEm?: string;
+  prazoDiasUteis?: number;
+  slaStatus?: 'ok' | 'risco' | 'estourado';
+  documentoPrincipal?: { nome: string; url: string; mimeType: string };
+}
+
+interface Comentario {
+  id: string;
+  autorId: string;
+  autorNome: string;
+  criadoEm: string;
+  texto: string;
+}
 
 interface DFDAprovacaoSectionProps {
   processoId: string;
@@ -55,7 +90,7 @@ export default function DFDAprovacaoSection({
   canEdit = true
 }: DFDAprovacaoSectionProps) {
   const { user } = useUser();
-  const { podeEditarCard } = usePermissoes();
+  const { podeEditarCard, isGSP } = usePermissoes();
   const { toast } = useToast();
   const { 
     dfdData, 
@@ -68,16 +103,24 @@ export default function DFDAprovacaoSection({
     canDevolver
   } = useDFD(processoId);
   
-  const [analiseTecnica, setAnaliseTecnica] = useState('');
-  const [devolucaoJustificativa, setDevolucaoJustificativa] = useState('');
+  // Estados principais
+  const [parecerTecnico, setParecerTecnico] = useState('');
+  const [dataAnalise, setDataAnalise] = useState<string>('');
   const [validationErrors, setValidationErrors] = useState<string[]>([]);
-  const [showDevolucaoDialog, setShowDevolucaoDialog] = useState(false);
-  const [showVersionModal, setShowVersionModal] = useState(false);
-  const [selectedVersion, setSelectedVersion] = useState<DFDVersion | null>(null);
-  const [showUploadDialog, setShowUploadDialog] = useState(false);
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
-
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [showAprovarDialog, setShowAprovarDialog] = useState(false);
+  const [showCorrecaoDialog, setShowCorrecaoDialog] = useState(false);
+  const [justificativaCorrecao, setJustificativaCorrecao] = useState('');
+  const [activeTab, setActiveTab] = useState('versoes');
+  const [comentarios, setComentarios] = useState<Comentario[]>([
+    {
+      id: '1',
+      autorId: 'user1',
+      autorNome: 'João Silva',
+      criadoEm: '2024-01-15T10:00:00Z',
+      texto: 'DFD enviado para análise técnica da GSP.'
+    }
+  ]);
+  const [novoComentario, setNovoComentario] = useState('');
 
   // Verificar se é usuário da GSP
   const isGSPUser = () => {
@@ -86,24 +129,55 @@ export default function DFDAprovacaoSection({
 
   // Verificar se pode aprovar - usar nova lógica de permissões
   const canApproveUser = () => {
-    return podeEditarCard('GSL - Gerência de Suprimentos e Logística', 2) && dfdData.status === 'enviado_analise';
+    return isGSPUser() && dfdData.status === 'enviado_analise';
   };
 
-  // Verificar se pode devolver - usar nova lógica de permissões
-  const canDevolverUser = () => {
-    return podeEditarCard('GSL - Gerência de Suprimentos e Logística', 2) && dfdData.status === 'enviado_analise';
+  // Verificar se pode solicitar correção - usar nova lógica de permissões
+  const canSolicitarCorrecaoUser = () => {
+    return isGSPUser() && dfdData.status === 'enviado_analise';
   };
 
   // Verificar se pode editar - usar nova lógica de permissões
   const canEditCurrentVersion = () => {
-    return podeEditarCard('GSL - Gerência de Suprimentos e Logística', 2) && dfdData.status === 'enviado_analise';
+    return dfdData.status === 'enviado_analise';
+  };
+
+  // Verificar se pode editar o parecer técnico - permitir para usuários autorizados
+  const canEditParecerTecnico = () => {
+    return dfdData.status === 'enviado_analise';
+  };
+
+  // Calcular SLA da análise
+  const calcularSLA = (dataEnvio: string, dataAnalise?: string) => {
+    const inicio = new Date(dataEnvio);
+    const fim = dataAnalise ? new Date(dataAnalise) : new Date();
+    const diasUteis = countBusinessDays(inicio, fim);
+    
+    // Regras padrão
+    const prazoMaximo = 2; // 2 dias úteis para 1ª versão
+    
+    if (diasUteis <= prazoMaximo) return { status: 'ok' as const, dias: diasUteis };
+    if (diasUteis <= prazoMaximo + 1) return { status: 'risco' as const, dias: diasUteis };
+    return { status: 'estourado' as const, dias: diasUteis };
+  };
+
+  // Contar dias úteis
+  const countBusinessDays = (start: Date, end: Date) => {
+    let count = 0;
+    const curDate = new Date(start.getTime());
+    while (curDate <= end) {
+      const dayOfWeek = curDate.getDay();
+      if (dayOfWeek !== 0 && dayOfWeek !== 6) count++;
+      curDate.setDate(curDate.getDate() + 1);
+    }
+    return count;
   };
 
   const validateForm = (): boolean => {
     const errors: string[] = [];
     
-    if (!analiseTecnica.trim()) {
-      errors.push('Análise Técnica da GSP é obrigatória');
+    if (!parecerTecnico.trim()) {
+      errors.push('Parecer Técnico é obrigatório');
     }
 
     setValidationErrors(errors);
@@ -114,45 +188,86 @@ export default function DFDAprovacaoSection({
     if (!validateForm()) {
       toast({
         title: "Erro de Validação",
-        description: "Por favor, preencha todos os campos obrigatórios.",
+        description: "Por favor, preencha o Parecer Técnico.",
         variant: "destructive"
       });
       return;
     }
 
+    setShowAprovarDialog(true);
+  };
+
+  const confirmarAprovar = () => {
+    const dataAnaliseAtual = new Date().toISOString();
+    setDataAnalise(dataAnaliseAtual);
+    
     aprovarVersao(user?.nome || 'Usuário');
     onComplete(dfdData);
     
     toast({
       title: "DFD Aprovado",
-      description: "O DFD foi aprovado e o próximo card foi liberado."
+      description: "O DFD foi aprovado e a próxima etapa foi liberada."
     });
+    
+    setShowAprovarDialog(false);
   };
 
-  const handleDevolver = () => {
-    if (!devolucaoJustificativa.trim()) {
+  const handleSolicitarCorrecao = () => {
+    if (!validateForm()) {
       toast({
-        title: "Erro",
-        description: "A justificativa da devolução é obrigatória.",
+        title: "Erro de Validação",
+        description: "Por favor, preencha o Parecer Técnico.",
         variant: "destructive"
       });
       return;
     }
 
-    devolverParaCorrecao(devolucaoJustificativa, user?.nome || 'Usuário');
-    onSave(dfdData);
-    setShowDevolucaoDialog(false);
-    setDevolucaoJustificativa('');
-    
-    toast({
-      title: "DFD Devolvido",
-      description: "O DFD foi devolvido para correção."
-    });
+    if (!justificativaCorrecao.trim()) {
+      toast({
+        title: "Erro",
+        description: "A justificativa da correção é obrigatória.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setShowCorrecaoDialog(true);
   };
 
-  const handleViewVersion = (version: DFDVersion) => {
-    setSelectedVersion(version);
-    setShowVersionModal(true);
+  const confirmarSolicitarCorrecao = () => {
+    const dataAnaliseAtual = new Date().toISOString();
+    setDataAnalise(dataAnaliseAtual);
+    
+    devolverParaCorrecao(justificativaCorrecao, user?.nome || 'Usuário');
+    onSave(dfdData);
+    
+    toast({
+      title: "Correção Solicitada",
+      description: "O DFD foi devolvido para correção."
+    });
+    
+    setShowCorrecaoDialog(false);
+    setJustificativaCorrecao('');
+  };
+
+  const handleAddComentario = () => {
+    if (!novoComentario.trim()) return;
+    
+    const comentario: Comentario = {
+      id: `comentario_${Date.now()}`,
+      autorId: user?.id || 'user1',
+      autorNome: user?.nome || 'Usuário',
+      criadoEm: new Date().toISOString(),
+      texto: novoComentario.trim()
+    };
+    
+    setComentarios(prev => [comentario, ...prev]);
+    setNovoComentario('');
+    
+    toast({
+      title: "Comentário Adicionado",
+      description: "Comentário foi adicionado com sucesso."
+    });
   };
 
   const getStatusConfig = (status: DFDVersionStatus) => {
@@ -211,66 +326,31 @@ export default function DFDAprovacaoSection({
     return { statusConfig, actionInfo };
   };
 
-  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (file) {
-      setSelectedFile(file);
-      setShowUploadDialog(true);
-    }
-  };
-
-  const confirmFileUpload = () => {
-    if (selectedFile) {
-      const annex: DFDAnnex = {
-        id: `annex_${Date.now()}`,
-        name: selectedFile.name,
-        url: URL.createObjectURL(selectedFile),
-        uploadedAt: new Date().toISOString(),
-        uploadedBy: user?.nome || 'Usuário',
-        size: `${(selectedFile.size / 1024).toFixed(1)} KB`
-      };
-      
-      addAnnex(annex);
-      onSave(dfdData);
-      
-      toast({
-        title: "Anexo Adicionado",
-        description: `${selectedFile.name} foi anexado com sucesso.`
-      });
-    }
-    
-    setShowUploadDialog(false);
-    setSelectedFile(null);
-    if (fileInputRef.current) {
-      fileInputRef.current.value = '';
-    }
-  };
-
-  const handleDeleteAnnex = (annexId: string) => {
-    removeAnnex(annexId);
-    onSave(dfdData);
-    
-    toast({
-      title: "Anexo Removido",
-      description: "Anexo foi removido com sucesso."
-    });
-  };
-
-  const handleObservationChange = (observations: string) => {
-    updateObservations(observations);
-    onSave(dfdData);
-  };
-
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleString('pt-BR');
   };
 
-  // Obter versão final para análise
-  const finalVersion = dfdData.versions.find(v => v.isFinal);
+  const formatDateTime = (dateString: string) => {
+    return new Date(dateString).toLocaleString('pt-BR', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  };
+
+  // Obter versão enviada para análise (última)
+  const versaoEnviada = dfdData.versions.find(v => v.status === 'enviado_analise' && v.isFinal);
+  
+  // Para não-GSP, mostrar apenas versão final aprovada
+  const versaoParaExibir = !isGSPUser() && dfdData.status === 'aprovado' 
+    ? dfdData.versions.find(v => v.status === 'aprovado' && v.isFinal)
+    : versaoEnviada;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-green-50 via-white to-emerald-50">
-      {/* Header Moderno */}
+    <div className="min-h-screen bg-white">
+      {/* Header Moderno - IGUAL AO CARD 1 */}
       <div className="bg-white border-b border-gray-200 px-6 py-4 shadow-sm">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
@@ -279,7 +359,7 @@ export default function DFDAprovacaoSection({
             </div>
             <div>
               <h1 className="text-2xl font-bold text-gray-900">Aprovação do DFD</h1>
-              <p className="text-gray-600">Análise e Aprovação do Documento de Formalização da Demanda</p>
+              <p className="text-gray-600">Análise e Aprovação Técnica do Documento de Formalização da Demanda</p>
             </div>
           </div>
           <div className="flex items-center gap-3">
@@ -308,512 +388,437 @@ export default function DFDAprovacaoSection({
       </div>
 
       {/* Conteúdo Principal */}
-      <div className="p-6 max-w-7xl mx-auto">
-        {/* Alertas de Validação */}
-        {validationErrors.length > 0 && (
-          <Alert variant="destructive" className="mb-6 border-red-200 bg-red-50">
-            <AlertTriangle className="h-5 w-5 text-red-600" />
-            <AlertDescription>
-              <div className="space-y-1">
-                <p className="font-semibold text-red-800">Campos obrigatórios não preenchidos:</p>
-                <ul className="list-disc list-inside text-red-700">
-                  {validationErrors.map((error, index) => (
-                    <li key={index}>{error}</li>
-                  ))}
-                </ul>
-              </div>
-            </AlertDescription>
-          </Alert>
-        )}
-
-        {/* Layout Principal - Grid Responsivo */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="mx-auto w-full max-w-[1400px] px-4 md:px-6 lg:px-8">
           
-          {/* Coluna Principal - Dados e Análise */}
-          <div className="lg:col-span-2 space-y-6">
-            
-            {/* Card dos Dados do DFD (Modo Leitura) */}
-            <Card className="shadow-lg border-0 bg-white/80 backdrop-blur-sm">
-              <CardHeader className="bg-gradient-to-r from-blue-50 to-indigo-50 border-b border-blue-100">
-                <CardTitle className="flex items-center gap-3 text-xl font-bold text-gray-800">
-                  <div className="p-2 bg-blue-100 rounded-lg">
-                    <FileText className="w-5 h-5 text-blue-600" />
-                  </div>
-                  Dados do DFD
-                  {finalVersion && (
-                    <Badge className="bg-blue-100 text-blue-800 text-xs">
-                      V{finalVersion.version}
-                    </Badge>
-                  )}
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="p-6 space-y-6">
-                {finalVersion ? (
-                  <>
-                    {/* Campos Principais */}
-                    <div className="space-y-6">
-                      <div>
-                        <Label className="text-sm font-semibold text-gray-700 flex items-center gap-2">
-                          <Building2 className="w-4 h-4" />
-                          Objetivo da Contratação
-                        </Label>
-                        <div className="mt-2 p-4 bg-gray-50 rounded-lg border border-gray-200">
-                          <p className="text-gray-800">{finalVersion.objetivoContratacao}</p>
-                        </div>
-                      </div>
-                      
-                      <div>
-                        <Label className="text-sm font-semibold text-gray-700 flex items-center gap-2">
-                          <MessageCircle className="w-4 h-4" />
-                          Justificativa da Demanda
-                        </Label>
-                        <div className="mt-2 p-4 bg-gray-50 rounded-lg border border-gray-200">
-                          <p className="text-gray-800">{finalVersion.justificativaDemanda}</p>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Campos Secundários */}
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                      <div>
-                        <Label className="text-sm font-semibold text-gray-700 flex items-center gap-2">
-                          <Building2 className="w-4 h-4" />
-                          Gerência Demandante
-                        </Label>
-                        <div className="mt-2 p-4 bg-gray-50 rounded-lg border border-gray-200">
-                          <p className="text-gray-800">{finalVersion.unidadeDemandante}</p>
-                        </div>
-                      </div>
-                      
-                      <div>
-                        <Label className="text-sm font-semibold text-gray-700 flex items-center gap-2">
-                          <Calendar className="w-4 h-4" />
-                          Data de Elaboração
-                        </Label>
-                        <div className="mt-2 p-4 bg-gray-50 rounded-lg border border-gray-200">
-                          <p className="text-gray-800">{formatDate(finalVersion.dataElaboracao)}</p>
-                        </div>
-                      </div>
-                      
-                      <div>
-                        <Label className="text-sm font-semibold text-gray-700 flex items-center gap-2">
-                          <User className="w-4 h-4" />
-                          Responsável pela Elaboração
-                        </Label>
-                        <div className="mt-2 p-4 bg-gray-50 rounded-lg border border-gray-200">
-                          <p className="text-gray-800">{finalVersion.responsavelElaboracao}</p>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Informações da Versão */}
-                    <div className="border-t border-gray-200 pt-4">
-                      <div className="flex items-center justify-between text-sm text-gray-600">
-                        <span>Criado por {finalVersion.createdBy}</span>
-                        <span>{formatDate(finalVersion.createdAt)}</span>
-                      </div>
-                    </div>
-                  </>
-                ) : (
-                  <div className="text-center py-8">
-                    <div className="p-4 bg-gray-100 rounded-full w-16 h-16 mx-auto mb-4 flex items-center justify-center">
-                      <FileText className="w-8 h-8 text-gray-400" />
-                    </div>
-                    <p className="text-gray-500 font-medium">Nenhuma versão final encontrada</p>
-                    <p className="text-sm text-gray-400 mt-1">Aguarde o envio de uma versão para análise</p>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-
-            {/* Card da Análise Técnica da GSP */}
-            <Card className="shadow-lg border-0 bg-white/80 backdrop-blur-sm">
-              <CardHeader className="bg-gradient-to-r from-green-50 to-emerald-50 border-b border-green-100">
-                <CardTitle className="flex items-center gap-3 text-xl font-bold text-gray-800">
-                  <div className="p-2 bg-green-100 rounded-lg">
-                    <Search className="w-5 h-5 text-green-600" />
-                  </div>
-                  Análise Técnica da GSP
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="p-6">
-                <div>
-                  <Label htmlFor="analise" className="text-sm font-semibold text-gray-700 flex items-center gap-2">
-                    <MessageCircle className="w-4 h-4" />
-                    Análise Técnica da GSP *
-                  </Label>
-                  <Textarea
-                    id="analise"
-                    value={analiseTecnica}
-                    onChange={(e) => setAnaliseTecnica(e.target.value)}
-                    placeholder="Descreva a análise técnica do DFD..."
-                    disabled={!canEditCurrentVersion()}
-                    className="min-h-[120px] mt-2 resize-none border-gray-200 focus:border-green-300 focus:ring-green-300"
-                  />
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Card do Histórico de Ações da GSP */}
-            <Card className="shadow-lg border-0 bg-white/80 backdrop-blur-sm">
-              <CardHeader className="bg-gradient-to-r from-purple-50 to-pink-50 border-b border-purple-100">
-                <CardTitle className="flex items-center gap-3 text-xl font-bold text-gray-800">
-                  <div className="p-2 bg-purple-100 rounded-lg">
-                    <History className="w-5 h-5 text-purple-600" />
-                  </div>
-                  Histórico de Ações da GSP
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="p-6">
-                {dfdData.versions.length === 0 ? (
-                  <div className="text-center py-8">
-                    <div className="p-4 bg-gray-100 rounded-full w-16 h-16 mx-auto mb-4 flex items-center justify-center">
-                      <History className="w-8 h-8 text-gray-400" />
-                    </div>
-                    <p className="text-gray-500 font-medium">Nenhuma ação registrada</p>
-                    <p className="text-sm text-gray-400 mt-1">As ações da GSP aparecerão aqui</p>
-                  </div>
-                ) : (
-                  <div className="space-y-3 max-h-80 overflow-y-auto">
-                    {dfdData.versions.map((version) => {
-                      const statusConfig = getStatusConfig(version.status);
-                      return (
-                        <div key={version.id} className="border border-gray-200 rounded-xl p-4 hover:bg-gray-50 transition-colors">
-                          <div className="flex items-center justify-between mb-3">
-                            <div className="flex items-center gap-3">
-                              <Badge variant={version.isFinal ? "default" : "outline"} className="text-xs font-medium">
-                                V{version.version}
-                                {version.isFinal && <CheckCircle className="w-3 h-3 ml-1" />}
-                              </Badge>
-                              <Badge className={`text-xs font-medium ${statusConfig.color}`}>
-                                {statusConfig.icon}
-                                <span className="ml-1">{statusConfig.label}</span>
-                              </Badge>
-                              <span className="text-xs text-gray-500">
-                                {formatDate(version.createdAt)}
-                              </span>
-                            </div>
-                            <div className="flex items-center gap-2">
-                              <span className="text-xs text-gray-500 font-medium">
-                                {version.createdBy}
-                              </span>
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={() => handleViewVersion(version)}
-                                className="h-7 w-7 p-0 hover:bg-blue-50 hover:border-blue-300"
-                              >
-                                <Eye className="w-3 h-3" />
-                              </Button>
-                            </div>
-                          </div>
-                          <div className="text-xs text-gray-700 space-y-1">
-                            <p className="truncate"><strong>Objetivo:</strong> {version.objetivoContratacao}</p>
-                            <p className="truncate"><strong>Gerência:</strong> {version.unidadeDemandante}</p>
-                            {version.devolucaoJustificativa && (
-                              <p className="truncate text-red-600"><strong>Devolução:</strong> {version.devolucaoJustificativa}</p>
-                            )}
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-
-            {/* Botões de Ação - Integrados ao Layout */}
-            <Card className="shadow-lg border-0 bg-white/80 backdrop-blur-sm">
-              <CardHeader className="bg-gradient-to-r from-gray-50 to-slate-50 border-b border-gray-100">
-                <CardTitle className="flex items-center gap-3 text-xl font-bold text-gray-800">
-                  <div className="p-2 bg-gray-100 rounded-lg">
-                    <CheckCircle className="w-5 h-5 text-gray-600" />
-                  </div>
-                  Ações
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="p-6">
-                <div className="flex flex-col sm:flex-row gap-4">
-                  <div className="flex flex-col sm:flex-row gap-3 flex-1">
-                    {/* Botão Devolver para Correção - Apenas para GSP */}
-                    {canDevolverUser() && (
-                      <Button 
-                        onClick={() => setShowDevolucaoDialog(true)}
-                        variant="outline" 
-                        className="border-red-200 text-red-700 hover:bg-red-50"
-                      >
-                        <XCircle className="w-4 h-4 mr-2" />
-                        Devolver para Correção
-                      </Button>
+        {/* Grid principal em 12 colunas */}
+        <div className="grid grid-cols-12 gap-6">
+          
+          {/* ESQUERDA - Dados do DFD (8 colunas) */}
+          <section className="col-span-12 lg:col-span-8">
+            <Card className="rounded-2xl border shadow-sm overflow-hidden bg-white">
+              <CardHeader className="bg-indigo-50 px-4 py-3 rounded-t-2xl font-semibold text-slate-900">
+                  <CardTitle className="flex items-center gap-3 text-lg">
+                    <FileText className="w-5 h-5 text-indigo-600" />
+                    Dados do DFD
+                    {versaoParaExibir && (
+                      <Badge className="bg-indigo-100 text-indigo-800 text-xs">
+                        V{versaoParaExibir.version}
+                      </Badge>
                     )}
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="p-4 md:p-6">
+                  {versaoParaExibir ? (
+                    <div className="space-y-4">
+                      {/* Metadados curtos */}
+                      <div className="flex items-center gap-4 text-sm text-gray-600 border-b border-gray-100 pb-3">
+                        <span>V{versaoParaExibir.version}</span>
+                        <span>•</span>
+                        <span>{versaoParaExibir.createdBy}</span>
+                        <span>•</span>
+                        <span>{formatDate(versaoParaExibir.createdAt)}</span>
+                      </div>
+
+                      {/* Visualização do documento */}
+                      <div className="space-y-4">
+                        <div>
+                          <Label className="text-sm font-semibold text-gray-700">
+                            Objetivo da Contratação
+                          </Label>
+                          <div className="mt-2 p-4 bg-gray-50 rounded-lg border border-gray-200">
+                            <p className="text-gray-800">{versaoParaExibir.objetivoContratacao}</p>
+                          </div>
+                        </div>
+                        
+                        <div>
+                          <Label className="text-sm font-semibold text-gray-700">
+                            Justificativa da Demanda
+                          </Label>
+                          <div className="mt-2 p-4 bg-gray-50 rounded-lg border border-gray-200">
+                            <p className="text-gray-800">{versaoParaExibir.justificativaDemanda}</p>
+                          </div>
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                          <div>
+                            <Label className="text-sm font-semibold text-gray-700">Gerência Demandante</Label>
+                            <div className="mt-2 p-3 bg-gray-50 rounded-lg border border-gray-200">
+                              <p className="text-gray-800">{versaoParaExibir.unidadeDemandante}</p>
+                            </div>
+                          </div>
+                          
+                          <div>
+                            <Label className="text-sm font-semibold text-gray-700">Data de Elaboração</Label>
+                            <div className="mt-2 p-3 bg-gray-50 rounded-lg border border-gray-200">
+                              <p className="text-gray-800">{formatDate(versaoParaExibir.dataElaboracao)}</p>
+                            </div>
+                          </div>
+                          
+                          <div>
+                            <Label className="text-sm font-semibold text-gray-700">Responsável</Label>
+                            <div className="mt-2 p-3 bg-gray-50 rounded-lg border border-gray-200">
+                              <p className="text-gray-800">{versaoParaExibir.responsavelElaboracao}</p>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="w-full min-h-[520px] flex flex-col items-center justify-center text-center rounded-lg border">
+                      <div className="p-4 bg-gray-100 rounded-full w-16 h-16 mx-auto mb-4 flex items-center justify-center">
+                        <FileText className="w-8 h-8 text-gray-400" />
+                      </div>
+                      <p className="text-gray-500 font-medium">Nenhuma versão encontrada</p>
+                      <p className="text-sm text-gray-400 mt-1">
+                        {!isGSPUser() ? 'Aguarde a aprovação da versão final' : 'Aguarde o envio de uma versão para análise'}
+                      </p>
+                    </div>
+                  )}
+                </CardContent>
+            </Card>
+          </section>
+
+          {/* DIREITA - Gerenciamento (4 colunas) */}
+          <aside className="col-span-12 lg:col-span-4">
+            <Card className="rounded-2xl border shadow-sm overflow-hidden bg-white">
+              <CardHeader className="bg-slate-50 px-4 py-3 rounded-t-2xl font-semibold text-slate-900">
+                  <CardTitle className="flex items-center gap-3 text-lg">
+                    <History className="w-5 h-5 text-slate-600" />
+                    Gerenciamento
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="p-4 md:p-6">
+                  <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+                    <TabsList className="grid w-full grid-cols-2">
+                      <TabsTrigger value="versoes">Versões</TabsTrigger>
+                      <TabsTrigger value="anexos">Anexos</TabsTrigger>
+                    </TabsList>
+                    
+                    <TabsContent value="versoes" className="mt-4">
+                      {dfdData.versions.length === 0 ? (
+                        <div className="text-center py-6">
+                          <div className="p-3 bg-gray-100 rounded-full w-12 h-12 mx-auto mb-3 flex items-center justify-center">
+                            <History className="w-6 h-6 text-gray-400" />
+                          </div>
+                          <p className="text-gray-500 text-sm">Nenhuma versão disponível</p>
+                        </div>
+                      ) : (
+                        <div className="space-y-3 max-h-60 overflow-y-auto">
+                          {dfdData.versions.map((version) => {
+                            const statusConfig = getStatusConfig(version.status);
+                            const sla = calcularSLA(version.createdAt, version.aprovadoData);
+                            
+                            return (
+                              <div key={version.id} className="border border-gray-200 rounded-lg p-3 hover:bg-gray-50 transition-colors">
+                                <div className="flex items-center justify-between mb-2">
+                                  <div className="flex items-center gap-2">
+                                    <Badge variant={version.isFinal ? "default" : "outline"} className="text-xs">
+                                      V{version.version}
+                                      {version.isFinal && <CheckCircle className="w-3 h-3 ml-1" />}
+                                    </Badge>
+                                    <Badge className={`text-xs ${statusConfig.color}`}>
+                                      {statusConfig.icon}
+                                      <span className="ml-1">{statusConfig.label}</span>
+                                    </Badge>
+                                  </div>
+                                  <div className="flex items-center gap-1">
+                                    <Button size="sm" variant="outline" className="h-6 w-6 p-0">
+                                      <Eye className="w-3 h-3" />
+                                    </Button>
+                                    <Button size="sm" variant="outline" className="h-6 w-6 p-0">
+                                      <Download className="w-3 h-3" />
+                                    </Button>
+                                  </div>
+                                </div>
+                                <div className="text-xs text-gray-600 space-y-1">
+                                  <p><strong>Autor:</strong> {version.createdBy}</p>
+                                  <p><strong>Data:</strong> {formatDate(version.createdAt)}</p>
+                                  {sla && (
+                                    <div className="flex items-center gap-2">
+                                      <span><strong>SLA:</strong> {sla.dias} dias úteis</span>
+                                      <Badge 
+                                        className={`text-xs ${
+                                          sla.status === 'ok' ? 'bg-green-100 text-green-800' :
+                                          sla.status === 'risco' ? 'bg-yellow-100 text-yellow-800' :
+                                          'bg-red-100 text-red-800'
+                                        }`}
+                                      >
+                                        {sla.status === 'ok' ? 'Dentro do Prazo' :
+                                         sla.status === 'risco' ? 'Em Risco' : 'Estourado'}
+                                      </Badge>
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </TabsContent>
+                    
+                    <TabsContent value="anexos" className="mt-4">
+                      {dfdData.annexes.length === 0 ? (
+                        <div className="text-center py-6">
+                          <div className="p-3 bg-gray-100 rounded-full w-12 h-12 mx-auto mb-3 flex items-center justify-center">
+                            <Upload className="w-6 h-6 text-gray-400" />
+                          </div>
+                          <p className="text-gray-500 text-sm">Nenhum anexo adicionado</p>
+                        </div>
+                      ) : (
+                        <div className="space-y-3 max-h-60 overflow-y-auto">
+                          {dfdData.annexes.map((annex) => (
+                            <div key={annex.id} className="flex items-center justify-between p-3 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
+                              <div className="flex items-center gap-3 min-w-0 flex-1">
+                                <div className="p-2 bg-blue-100 rounded-lg">
+                                  <FileText className="w-4 h-4 text-blue-600" />
+                                </div>
+                                <div className="min-w-0 flex-1">
+                                  <p className="text-sm font-medium truncate">{annex.name}</p>
+                                  <p className="text-xs text-gray-500">
+                                    {annex.size} • {formatDate(annex.uploadedAt)}
+                                  </p>
+                                </div>
+                              </div>
+                              <div className="flex items-center gap-1 flex-shrink-0">
+                                <Button size="sm" variant="outline" className="h-6 w-6 p-0">
+                                  <Eye className="w-3 h-3" />
+                                </Button>
+                                <Button size="sm" variant="outline" className="h-6 w-6 p-0">
+                                  <Download className="w-3 h-3" />
+                                </Button>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </TabsContent>
+                  </Tabs>
+              </CardContent>
+            </Card>
+          </aside>
+        </div>
+
+        {/* FULL WIDTH - Parecer Técnico */}
+        <section className="mt-6">
+          <Card className="rounded-2xl border shadow-sm overflow-hidden bg-white">
+            <CardHeader className="bg-green-50 px-4 py-3 rounded-t-2xl font-semibold text-slate-900">
+                <CardTitle className="flex items-center gap-3 text-lg">
+                  <Search className="w-5 h-5 text-green-600" />
+                  Parecer Técnico
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="p-4 md:p-6">
+                <div className="space-y-4">
+                  <div>
+                    <Label htmlFor="parecer" className="text-sm font-semibold text-gray-700">
+                      Parecer Técnico *
+                    </Label>
+                    <Textarea
+                      id="parecer"
+                      value={parecerTecnico}
+                      onChange={(e) => setParecerTecnico(e.target.value)}
+                      placeholder="Descreva a análise técnica do DFD..."
+                      disabled={!canEditParecerTecnico()}
+                      className="min-h-[120px] mt-2 resize-none border-gray-200 focus:border-green-300 focus:ring-green-300"
+                    />
                   </div>
                   
-                  {/* Botão Aprovar DFD - Apenas para GSP */}
-                  {canApproveUser() && (
-                    <Button 
-                      onClick={handleAprovar}
-                      className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white px-8 py-3 shadow-lg"
-                    >
-                      <CheckCircle className="w-5 h-5 mr-2" />
-                      Aprovar DFD
-                    </Button>
-                  )}
-                </div>
-                
-                {/* Informações sobre permissões */}
-                <div className="mt-4 text-xs text-gray-500">
-                  {!isGSPUser() && (
-                    <p>🔒 Esta etapa é restrita à Gerência de Soluções e Projetos</p>
-                  )}
-                  {isGSPUser() && dfdData.status === 'enviado_analise' && (
-                    <p>✅ Você pode aprovar ou devolver este DFD</p>
-                  )}
-                  {dfdData.status === 'aprovado' && (
-                    <p>✅ DFD já foi aprovado</p>
-                  )}
-                  {dfdData.status === 'devolvido' && (
-                    <p>🔄 DFD foi devolvido para correção</p>
-                  )}
-                  {isGSPUser() && dfdData.status !== 'enviado_analise' && (
-                    <p>⏳ Aguardando envio para análise</p>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Coluna Lateral - Anexos e Observações */}
-          <div className="space-y-6">
-            
-            {/* Card de Anexos */}
-            <Card className="shadow-lg border-0 bg-white/80 backdrop-blur-sm">
-              <CardHeader className="bg-gradient-to-r from-green-50 to-emerald-50 border-b border-green-100">
-                <CardTitle className="flex items-center gap-3 text-xl font-bold text-gray-800">
-                  <div className="p-2 bg-green-100 rounded-lg">
-                    <Upload className="w-5 h-5 text-green-600" />
-                  </div>
-                  Anexos
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="p-6">
-                {canEditCurrentVersion() && (
-                  <div className="mb-4">
-                    <input
-                      ref={fileInputRef}
-                      type="file"
-                      onChange={handleFileUpload}
-                      accept=".pdf,.docx,.xlsx,.jpg,.jpeg,.png"
-                      className="hidden"
-                    />
-                    <Button
-                      onClick={() => fileInputRef.current?.click()}
-                      variant="outline"
-                      size="sm"
-                      className="w-full border-dashed border-2 border-gray-300 hover:border-green-400 hover:bg-green-50 transition-colors"
-                    >
-                      <Plus className="w-4 h-4 mr-2" />
-                      Adicionar Anexo
-                    </Button>
-                  </div>
-                )}
-
-                {dfdData.annexes.length === 0 ? (
-                  <div className="text-center py-8">
-                    <div className="p-4 bg-gray-100 rounded-full w-16 h-16 mx-auto mb-4 flex items-center justify-center">
-                      <Upload className="w-8 h-8 text-gray-400" />
-                    </div>
-                    <p className="text-gray-500 font-medium">Nenhum anexo adicionado</p>
-                    <p className="text-sm text-gray-400 mt-1">Adicione arquivos complementares</p>
-                  </div>
-                ) : (
-                  <div className="space-y-3 max-h-60 overflow-y-auto">
-                    {dfdData.annexes.map((annex) => (
-                      <div key={annex.id} className="flex items-center justify-between p-3 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
-                        <div className="flex items-center gap-3 min-w-0 flex-1">
-                          <div className="p-2 bg-blue-100 rounded-lg">
-                            <FileText className="w-4 h-4 text-blue-600" />
-                          </div>
-                          <div className="min-w-0 flex-1">
-                            <p className="text-sm font-medium truncate">{annex.name}</p>
-                            <p className="text-xs text-gray-500">
-                              {annex.size} • {formatDate(annex.uploadedAt)}
-                            </p>
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-1 flex-shrink-0">
-                          <Button size="sm" variant="outline" className="h-7 w-7 p-0 hover:bg-blue-50">
-                            <Eye className="w-3 h-3" />
-                          </Button>
-                          <Button size="sm" variant="outline" className="h-7 w-7 p-0 hover:bg-green-50">
-                            <Download className="w-3 h-3" />
-                          </Button>
-                          {canEditCurrentVersion() && (
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => handleDeleteAnnex(annex.id)}
-                              className="h-7 w-7 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
-                            >
-                              <Trash2 className="w-3 h-3" />
-                            </Button>
-                          )}
-                        </div>
+                  {dataAnalise && (
+                    <div>
+                      <Label className="text-sm font-semibold text-gray-700">Data da Análise</Label>
+                      <div className="mt-2 p-3 bg-gray-50 rounded-lg border border-gray-200">
+                        <p className="text-gray-800">{formatDate(dataAnalise)}</p>
                       </div>
-                    ))}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
+                    </div>
+                  )}
+                </div>
+            </CardContent>
+          </Card>
+        </section>
 
-            {/* Card de Observações */}
-            <Card className="shadow-lg border-0 bg-white/80 backdrop-blur-sm">
-              <CardHeader className="bg-gradient-to-r from-orange-50 to-amber-50 border-b border-orange-100">
-                <CardTitle className="flex items-center gap-3 text-xl font-bold text-gray-800">
-                  <div className="p-2 bg-orange-100 rounded-lg">
-                    <MessageCircle className="w-5 h-5 text-orange-600" />
-                  </div>
-                  Observações Internas
+        {/* FULL WIDTH - Comentários (padrão do sistema) */}
+        <section className="mt-6">
+          <Card className="rounded-2xl border shadow-sm overflow-hidden bg-white">
+            <CardHeader className="bg-orange-50 px-4 py-3 rounded-t-2xl font-semibold text-slate-900">
+                <CardTitle className="flex items-center gap-3 text-lg">
+                  <MessageCircle className="w-5 h-5 text-orange-600" />
+                  Comentários
                 </CardTitle>
               </CardHeader>
-              <CardContent className="p-6">
-                <Textarea
-                  value={dfdData.observations}
-                  onChange={(e) => handleObservationChange(e.target.value)}
-                  placeholder="Adicione observações internas sobre a análise..."
-                  disabled={!canEditCurrentVersion()}
-                  className="min-h-[120px] resize-none border-gray-200 focus:border-orange-300 focus:ring-orange-300"
-                />
+              <CardContent className="p-4 md:p-6">
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                  
+                  {/* Adicionar Comentário */}
+                  <div className="lg:col-span-1 space-y-4">
+                    <div className="space-y-2">
+                      <Label className="text-sm font-semibold text-gray-700">
+                        Adicionar Novo Comentário
+                      </Label>
+                      <Textarea
+                        value={novoComentario}
+                        onChange={(e) => setNovoComentario(e.target.value)}
+                        placeholder="Digite seu comentário aqui..."
+                        maxLength={500}
+                        className="w-full min-h-[120px] resize-none border-gray-200 focus:border-orange-300 focus:ring-orange-300"
+                      />
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs text-gray-400">Máx. 500 caracteres</span>
+                        <span className="text-xs text-gray-400">{novoComentario.length}/500</span>
+                      </div>
+                      <Button
+                        onClick={handleAddComentario}
+                        disabled={!novoComentario.trim()}
+                        className="w-full bg-orange-600 hover:bg-orange-700 text-white"
+                      >
+                        <Plus className="w-4 h-4 mr-2" />
+                        Adicionar Comentário
+                      </Button>
+                    </div>
+                  </div>
+
+                  {/* Lista de Comentários */}
+                  <div className="lg:col-span-2">
+                    <div className="flex items-center justify-between border-b border-gray-100 pb-3 mb-4">
+                      <Label className="text-sm font-semibold text-gray-700">
+                        Histórico de Comentários ({comentarios.length})
+                      </Label>
+                      <span className="text-xs text-gray-400">Mais recentes primeiro</span>
+                    </div>
+                    
+                    {comentarios.length === 0 ? (
+                      <div className="text-center py-10">
+                        <div className="p-4 bg-gray-100 rounded-full w-16 h-16 mx-auto mb-4 flex items-center justify-center">
+                          <MessageCircle className="w-8 h-8 text-gray-400" />
+                        </div>
+                        <p className="text-gray-500 font-medium">Nenhum comentário ainda</p>
+                        <p className="text-sm text-gray-400 mt-1">Seja o primeiro a comentar</p>
+                      </div>
+                    ) : (
+                      <div className="space-y-3 max-h-96 overflow-y-auto">
+                        {comentarios.map((comentario) => (
+                          <div key={comentario.id} className="p-4 bg-white rounded-xl border border-gray-100 shadow-sm hover:shadow-md transition">
+                            <div className="flex items-center justify-between mb-2">
+                              <div className="flex items-center gap-3">
+                                <div className="w-9 h-9 bg-gradient-to-br from-orange-100 to-amber-100 rounded-full flex items-center justify-center shadow-inner">
+                                  <User className="w-4 h-4 text-orange-600" />
+                                </div>
+                                <span className="text-sm font-semibold text-gray-800">{comentario.autorNome}</span>
+                              </div>
+                              <span className="text-xs text-gray-400">{formatDateTime(comentario.criadoEm)}</span>
+                            </div>
+                            <p className="text-sm text-gray-700 leading-relaxed">{comentario.texto}</p>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+              </div>
+            </CardContent>
+          </Card>
+        </section>
+
+        {/* Rodapé com Botões de Ação */}
+        {isGSPUser() && (
+          <div className="mt-6">
+            <Card className="w-full shadow-lg border-0 bg-white/80 backdrop-blur-sm">
+              <CardContent className="p-4">
+                <div className="flex flex-col sm:flex-row gap-4 justify-between items-center w-full">
+                  <div className="flex flex-col sm:flex-row gap-3">
+                    {/* Botão Solicitar Correção */}
+                    <Button 
+                      onClick={handleSolicitarCorrecao}
+                      variant="outline" 
+                      disabled={!canSolicitarCorrecaoUser()}
+                      className="border-red-200 text-red-700 hover:bg-red-50"
+                    >
+                      <XCircle className="w-4 h-4 mr-2" />
+                      Solicitar Correção
+                    </Button>
+                  </div>
+                  
+                  {/* Botão Aprovar DFD */}
+                  <Button 
+                    onClick={handleAprovar}
+                    disabled={!canApproveUser()}
+                    className="bg-green-600 hover:bg-green-700 text-white px-8 py-3 shadow-lg"
+                  >
+                    <CheckCircle className="w-4 h-4 mr-2" />
+                    Aprovar DFD
+                  </Button>
+                </div>
               </CardContent>
             </Card>
           </div>
-        </div>
+        )}
       </div>
 
-      {/* Dialog de Upload */}
-      <Dialog open={showUploadDialog} onOpenChange={setShowUploadDialog}>
-        <DialogContent className="max-w-md">
+      {/* Dialog de Confirmação - Aprovar */}
+      <Dialog open={showAprovarDialog} onOpenChange={setShowAprovarDialog}>
+        <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <Upload className="w-5 h-5" />
-              Confirmar Upload
+              <CheckCircle className="w-5 h-5 text-green-600" />
+              Confirmar Aprovação
             </DialogTitle>
             <DialogDescription>
-              Deseja anexar "{selectedFile?.name}" ao DFD?
+              Tem certeza que deseja aprovar o DFD? Esta ação irá:
+              <ul className="list-disc list-inside mt-2 space-y-1">
+                <li>Marcar a versão como Aprovada e Versão Final</li>
+                <li>Liberar a próxima etapa (Assinatura do DFD)</li>
+                <li>Salvar o Parecer Técnico e Data da Análise</li>
+              </ul>
             </DialogDescription>
           </DialogHeader>
           <div className="flex gap-3">
-            <Button onClick={confirmFileUpload} className="bg-green-600 hover:bg-green-700">
-              Confirmar
-            </Button>
-            <Button variant="outline" onClick={() => setShowUploadDialog(false)}>
+            <Button variant="outline" onClick={() => setShowAprovarDialog(false)}>
               Cancelar
+            </Button>
+            <Button onClick={confirmarAprovar} className="bg-green-600 hover:bg-green-700">
+              <CheckCircle className="w-4 h-4 mr-2" />
+              Confirmar Aprovação
             </Button>
           </div>
         </DialogContent>
       </Dialog>
 
-      {/* Dialog de Devolução */}
-      <Dialog open={showDevolucaoDialog} onOpenChange={setShowDevolucaoDialog}>
+      {/* Dialog de Confirmação - Solicitar Correção */}
+      <Dialog open={showCorrecaoDialog} onOpenChange={setShowCorrecaoDialog}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <XCircle className="w-5 h-5 text-red-600" />
-              Devolver para Correção
+              Confirmar Solicitação de Correção
             </DialogTitle>
             <DialogDescription>
-              Informe o motivo da devolução. Esta justificativa será exibida para o elaborador.
+              Tem certeza que deseja solicitar correção? Esta ação irá:
+              <ul className="list-disc list-inside mt-2 space-y-1">
+                <li>Marcar a versão como Reprovada</li>
+                <li>Devolver o DFD para o Card 1 para nova versão</li>
+                <li>Salvar o Parecer Técnico e Data da Análise</li>
+              </ul>
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             <div>
               <Label htmlFor="justificativa" className="text-sm font-medium">
-                Justificativa da Devolução *
+                Justificativa da Correção *
               </Label>
               <Textarea
                 id="justificativa"
-                value={devolucaoJustificativa}
-                onChange={(e) => setDevolucaoJustificativa(e.target.value)}
-                placeholder="Descreva os motivos da devolução..."
-                className="min-h-[120px] mt-2 resize-none"
+                value={justificativaCorrecao}
+                onChange={(e) => setJustificativaCorrecao(e.target.value)}
+                placeholder="Descreva os motivos da correção..."
+                className="min-h-[100px] mt-2 resize-none"
               />
             </div>
           </div>
           <div className="flex gap-3">
-            <Button variant="outline" onClick={() => setShowDevolucaoDialog(false)}>
+            <Button variant="outline" onClick={() => setShowCorrecaoDialog(false)}>
               Cancelar
             </Button>
-            <Button onClick={handleDevolver} className="bg-red-600 hover:bg-red-700">
+            <Button onClick={confirmarSolicitarCorrecao} className="bg-red-600 hover:bg-red-700">
               <XCircle className="w-4 h-4 mr-2" />
-              Devolver
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
-
-      {/* Modal de Visualização de Versão */}
-      <Dialog open={showVersionModal} onOpenChange={setShowVersionModal}>
-        <DialogContent className="max-w-2xl">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <FileText className="w-5 h-5" />
-              Versão {selectedVersion?.version} do DFD
-            </DialogTitle>
-            <DialogDescription>
-              Criada em {selectedVersion && formatDate(selectedVersion.createdAt)} por {selectedVersion?.createdBy}
-            </DialogDescription>
-          </DialogHeader>
-          
-          {selectedVersion && (
-            <div className="space-y-4">
-              <div>
-                <Label className="text-sm font-semibold text-gray-700">Objetivo da Contratação</Label>
-                <div className="mt-1 p-3 bg-gray-50 rounded border text-sm">
-                  {selectedVersion.objetivoContratacao}
-                </div>
-              </div>
-              
-              <div>
-                <Label className="text-sm font-semibold text-gray-700">Justificativa da Demanda</Label>
-                <div className="mt-1 p-3 bg-gray-50 rounded border text-sm">
-                  {selectedVersion.justificativaDemanda}
-                </div>
-              </div>
-              
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label className="text-sm font-semibold text-gray-700">Gerência Demandante</Label>
-                  <div className="mt-1 p-2 bg-gray-50 rounded border text-sm">
-                    {selectedVersion.unidadeDemandante}
-                  </div>
-                </div>
-                
-                <div>
-                  <Label className="text-sm font-semibold text-gray-700">Responsável pela Elaboração</Label>
-                  <div className="mt-1 p-2 bg-gray-50 rounded border text-sm">
-                    {selectedVersion.responsavelElaboracao}
-                  </div>
-                </div>
-              </div>
-              
-              <div>
-                <Label className="text-sm font-semibold text-gray-700">Data de Elaboração</Label>
-                <div className="mt-1 p-2 bg-gray-50 rounded border text-sm">
-                  {selectedVersion.dataElaboracao}
-                </div>
-              </div>
-              
-              {selectedVersion.isFinal && (
-                <div className="flex items-center gap-2 p-3 bg-green-50 rounded border border-green-200">
-                  <CheckCircle className="w-4 h-4 text-green-600" />
-                  <span className="text-sm font-medium text-green-800">Versão Final</span>
-                </div>
-              )}
-            </div>
-          )}
-          
-          <div className="flex justify-end">
-            <Button variant="outline" onClick={() => setShowVersionModal(false)}>
-              Fechar
+              Confirmar Correção
             </Button>
           </div>
         </DialogContent>
