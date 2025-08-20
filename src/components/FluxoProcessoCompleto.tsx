@@ -42,6 +42,7 @@ import AdicionarEtapaButton from './AdicionarEtapaButton';
 import BarraAcoesEdicao from './BarraAcoesEdicao';
 import DFDFormSection from './DFDFormSection';
 import DFDAprovacaoSection from './DFDAprovacaoSection';
+import DFDAssinaturaSection from './DFDAssinaturaSection';
 import ConsolidacaoDemandaSection from './ConsolidacaoDemandaSection';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from './ui/dialog';
 
@@ -228,6 +229,10 @@ export default function FluxoProcessoCompleto({ etapas = etapasPadrao, onEtapaCl
       setShowDFDModal(true);
     } else if (etapa.id === 2) {
       // Card "Aprovação do DFD"
+      setCurrentEtapa(etapa);
+      setShowDFDModal(true);
+    } else if (etapa.id === 3) {
+      // Card "Assinatura do DFD"
       setCurrentEtapa(etapa);
       setShowDFDModal(true);
     } else if (etapa.nome === 'Consolidação da Demanda') {
@@ -799,6 +804,15 @@ export default function FluxoProcessoCompleto({ etapas = etapasPadrao, onEtapaCl
               onComplete={handleDFDAprovar}
               onSave={handleDFDSave}
               canEdit={canManageEtapa(currentEtapa)}
+            />
+          ) : currentEtapa?.id === 3 ? (
+            <DFDAssinaturaSection
+              processoId="1"
+              etapaId={currentEtapa.id}
+              onComplete={handleDFDComplete}
+              onSave={handleDFDSave}
+              canEdit={canManageEtapa(currentEtapa)}
+              gerenciaCriadora={gerenciaCriadora}
             />
           ) : null}
         </DialogContent>
