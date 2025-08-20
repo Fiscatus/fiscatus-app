@@ -85,7 +85,7 @@ interface FluxoProcessoCompletoProps {
 const etapasPadrao: Etapa[] = [
   { id: 1, nome: "Elaboração do DFD", nomeCompleto: "Elaboração do DFD", status: "concluido", prazoPrevisao: "5 dias úteis", dataConclusao: "05/01/2025", prazoCumprido: true, responsavel: "Yasmin Pissolati Mattos Bretz", cargo: "Gerente de Soluções e Projetos", gerencia: "GSP - Gerência de Soluções e Projetos", dataInicio: "01/01/2025", documento: "DFD_012_2025.pdf", documentoUrl: "/docs/dfd.pdf" },
   { id: 2, nome: "Aprovação do DFD", nomeCompleto: "Aprovação do DFD", status: "concluido", prazoPrevisao: "3 dias úteis", dataConclusao: "08/01/2025", prazoCumprido: true, responsavel: "Guilherme de Carvalho Silva", cargo: "Gerente Suprimentos e Logistica", gerencia: "GSL - Gerência de Suprimentos e Logística", dataInicio: "06/01/2025" },
-  { id: 3, nome: "Assinatura do DFD", nomeCompleto: "Assinatura do DFD", status: "concluido", prazoPrevisao: "3 dias úteis", dataConclusao: "12/01/2025", prazoCumprido: true, responsavel: "Lucas Moreira Brito", cargo: "GERENTE DE RH", gerencia: "GRH - Gerência de Recursos Humanos", dataInicio: "09/01/2025" },
+  { id: 3, nome: "Assinatura do DFD", nomeCompleto: "Assinatura do DFD", status: "concluido", prazoPrevisao: "3 dias úteis", dataConclusao: "12/01/2025", prazoCumprido: true, responsavel: "Diran Rodrigues de Souza Filho", cargo: "Secretário Executivo", gerencia: "SE - Secretaria Executiva", dataInicio: "09/01/2025" },
   { id: 4, nome: "Despacho do DFD", nomeCompleto: "Despacho do DFD", status: "concluido", prazoPrevisao: "2 dias úteis", dataConclusao: "15/01/2025", prazoCumprido: true, responsavel: "Andressa Sterfany Santos da Silva", cargo: "Assessora Técnica de Saúde", gerencia: "GUE - Gerência de Urgência e Emergência", dataInicio: "13/01/2025" },
   { id: 5, nome: "Elaboração do ETP", nomeCompleto: "Elaboração do ETP", status: "andamento", prazoPrevisao: "10 dias úteis", responsavel: "Leticia Bonfim Guilherme", cargo: "Gerente de Licitações e Contratos", gerencia: "GLC - Gerência de Licitações e Contratos", dataInicio: "16/01/2025", documento: "ETP_012_2025_v1.pdf", documentoUrl: "/docs/etp.pdf" },
   { id: 6, nome: "Assinatura do ETP", nomeCompleto: "Assinatura do ETP", status: "pendente", prazoPrevisao: "2 dias úteis", responsavel: "Dallas Kelson Francisco de Souza", cargo: "Gerente Financeiro", gerencia: "GFC - Gerência Financeira e Contábil" },
@@ -614,7 +614,7 @@ export default function FluxoProcessoCompleto({ etapas = etapasPadrao, onEtapaCl
               <div key={etapa.id} className="w-full h-full">
                 {/* Card da Etapa */}
                 <motion.div
-                  className={`border-2 rounded-xl transition-all duration-300 ${statusConfig.bgColor} hover:shadow-md bg-white relative w-full h-full min-h-[240px] ${getBordaEtapa(etapa.status, etapa.dataInicio, etapa.prazoPrevisao)} ${
+                  className={`border-2 rounded-xl transition-all duration-300 ${statusConfig.bgColor} hover:shadow-md bg-white relative w-full h-full min-h-[260px] ${getBordaEtapa(etapa.status, etapa.dataInicio, etapa.prazoPrevisao)} ${
                     etapa.status === 'concluido' ? 'ring-2 ring-green-200 shadow-lg' : ''
                   }`}
                   initial={{ opacity: 0, y: 20 }}
@@ -662,14 +662,14 @@ export default function FluxoProcessoCompleto({ etapas = etapasPadrao, onEtapaCl
                     </div>
 
                     {/* Nome da Etapa */}
-                    <h3 className={`font-semibold text-center text-sm mb-3 leading-tight flex-1 ${
+                    <h3 className={`font-semibold text-center text-sm mb-2 leading-tight ${
                       etapa.status === 'concluido' ? 'text-green-800 font-bold' : 'text-gray-900'
                     }`}>
                       {etapa.nome}
                     </h3>
 
                     {/* Gerência Responsável */}
-                    <p className="text-xs text-gray-600 text-center mb-3">
+                    <p className="text-xs text-gray-600 text-center mb-3 min-h-[1rem]">
                       {etapa.gerencia}
                     </p>
                     

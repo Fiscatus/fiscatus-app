@@ -113,7 +113,7 @@ O card "Assinatura do DFD" foi completamente implementado seguindo as especifica
 ### 7. Regras de Acesso ✅
 - ✅ **Todos os setores**: Podem acessar este card
 - ✅ **Assinantes selecionados**: Veem botão "Assinar Documento"
-- ✅ **GSP**: Pode selecionar/remover assinantes, cancelar pendências
+- ✅ **GSP e SE**: Podem selecionar/remover assinantes, cancelar pendências
 - ✅ **Demais usuários**: Somente leitura
 - ✅ **Prevenção**: Múltiplas assinaturas da mesma pessoa
 - ✅ **Bloqueio**: Reabertura do documento após assinado
@@ -141,8 +141,10 @@ O card "Assinatura do DFD" foi completamente implementado seguindo as especifica
 
 ### 11. Usuários Reais do Sistema ✅
 - ✅ **Responsável pela etapa**: Diran Rodrigues de Souza Filho (Secretário Executivo)
+- ✅ **Gerência responsável**: SE - Secretaria Executiva (exibida fora do card)
 - ✅ **Assinantes padrão**: Diran Rodrigues de Souza Filho e Gabriel Radamesis Gomes Nascimento
 - ✅ **Aprovador GSP**: Yasmin Pissolati Mattos Bretz (Gerente de Soluções e Projetos)
+- ✅ **Permissões de gerenciamento**: GSP e SE podem adicionar/remover assinantes
 - ✅ **Usuários disponíveis**: 10 usuários reais do sistema de permissões
 - ✅ **Comentários**: Usando nomes reais dos usuários do sistema
 
@@ -217,7 +219,7 @@ const [showAdicionarAssinante, setShowAdicionarAssinante] = useState(false);
 
 ### Permissões e Controle de Acesso
 ```typescript
-const isGSP = user?.gerencia?.includes('GSP') || false;
+const isGSPouSE = user?.gerencia?.includes('GSP') || user?.gerencia?.includes('SE') || false;
 const isAssinantePendente = cardData.assinantes.some(
   assinante => assinante.email === user?.email && assinante.status === 'PENDENTE'
 );

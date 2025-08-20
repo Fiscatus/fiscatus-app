@@ -196,12 +196,12 @@ export default function DFDAssinaturaSection({
   const [assinanteSelecionado, setAssinanteSelecionado] = useState<Assinante | null>(null);
   const [motivoCancelamento, setMotivoCancelamento] = useState('');
   
-  // Estados para seleção de assinantes (GSP)
+  // Estados para seleção de assinantes (GSP ou SE)
   const [showAdicionarAssinante, setShowAdicionarAssinante] = useState(false);
   const [usuariosSelecionados, setUsuariosSelecionados] = useState<string[]>([]);
 
-  // Verificar se é GSP (pode gerenciar assinaturas)
-  const isGSP = user?.gerencia?.includes('GSP') || false;
+  // Verificar se é GSP ou SE (pode gerenciar assinaturas)
+  const isGSPouSE = user?.gerencia?.includes('GSP') || user?.gerencia?.includes('SE') || false;
   
   // Verificar se o usuário atual é um assinante pendente
   const isAssinantePendente = cardData.assinantes.some(
@@ -415,7 +415,7 @@ export default function DFDAssinaturaSection({
     }
   };
 
-  // Função para adicionar assinantes (GSP)
+  // Função para adicionar assinantes (GSP ou SE)
   const handleAdicionarAssinantes = async () => {
     if (usuariosSelecionados.length === 0) return;
 
@@ -462,7 +462,7 @@ export default function DFDAssinaturaSection({
     }
   };
 
-  // Função para remover assinante (GSP)
+  // Função para remover assinante (GSP ou SE)
   const handleRemoverAssinante = async (assinanteId: string) => {
     setIsLoading(true);
     
@@ -602,8 +602,8 @@ export default function DFDAssinaturaSection({
                   </div>
                 </div>
 
-                {/* Seleção de assinantes (GSP) */}
-                {isGSP && (
+                {/* Seleção de assinantes (GSP ou SE) */}
+                {isGSPouSE && (
                   <div className="space-y-3">
                     <div className="flex items-center justify-between">
                       <Label className="text-sm font-semibold text-gray-700">
@@ -659,7 +659,7 @@ export default function DFDAssinaturaSection({
                               
                               {/* Ações */}
                               <div className="flex items-center gap-1">
-                                {isGSP && assinante.status === 'PENDENTE' && (
+                                {isGSPouSE && assinante.status === 'PENDENTE' && (
                                   <Button
                                     size="sm"
                                     variant="ghost"
@@ -671,7 +671,7 @@ export default function DFDAssinaturaSection({
                                 )}
                                 
                                 {assinante.status === 'PENDENTE' && 
-                                 (assinante.email === user?.email || isGSP) && (
+                                 (assinante.email === user?.email || isGSPouSE) && (
                                   <Button
                                     size="sm"
                                     variant="ghost"
@@ -1006,7 +1006,7 @@ export default function DFDAssinaturaSection({
         </DialogContent>
       </Dialog>
 
-      {/* Modal de Adicionar Assinantes (GSP) */}
+      {/* Modal de Adicionar Assinantes (GSP ou SE) */}
       <Dialog open={showAdicionarAssinante} onOpenChange={setShowAdicionarAssinante}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
