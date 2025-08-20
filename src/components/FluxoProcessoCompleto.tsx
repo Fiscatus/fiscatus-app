@@ -43,7 +43,9 @@ import BarraAcoesEdicao from './BarraAcoesEdicao';
 import DFDFormSection from './DFDFormSection';
 import DFDAprovacaoSection from './DFDAprovacaoSection';
 import DFDAssinaturaSection from './DFDAssinaturaSection';
+import DFDDespachoSection from './DFDDespachoSection';
 import ConsolidacaoDemandaSection from './ConsolidacaoDemandaSection';
+import ETPElaboracaoSection from './ETPElaboracaoSection';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from './ui/dialog';
 
 interface Etapa {
@@ -86,7 +88,7 @@ const etapasPadrao: Etapa[] = [
   { id: 1, nome: "Elaboração do DFD", nomeCompleto: "Elaboração do DFD", status: "concluido", prazoPrevisao: "5 dias úteis", dataConclusao: "05/01/2025", prazoCumprido: true, responsavel: "Yasmin Pissolati Mattos Bretz", cargo: "Gerente de Soluções e Projetos", gerencia: "GSP - Gerência de Soluções e Projetos", dataInicio: "01/01/2025", documento: "DFD_012_2025.pdf", documentoUrl: "/docs/dfd.pdf" },
   { id: 2, nome: "Aprovação do DFD", nomeCompleto: "Aprovação do DFD", status: "concluido", prazoPrevisao: "3 dias úteis", dataConclusao: "08/01/2025", prazoCumprido: true, responsavel: "Guilherme de Carvalho Silva", cargo: "Gerente Suprimentos e Logistica", gerencia: "GSL - Gerência de Suprimentos e Logística", dataInicio: "06/01/2025" },
   { id: 3, nome: "Assinatura do DFD", nomeCompleto: "Assinatura do DFD", status: "concluido", prazoPrevisao: "3 dias úteis", dataConclusao: "12/01/2025", prazoCumprido: true, responsavel: "Diran Rodrigues de Souza Filho", cargo: "Secretário Executivo", gerencia: "SE - Secretaria Executiva", dataInicio: "09/01/2025" },
-  { id: 4, nome: "Despacho do DFD", nomeCompleto: "Despacho do DFD", status: "concluido", prazoPrevisao: "2 dias úteis", dataConclusao: "15/01/2025", prazoCumprido: true, responsavel: "Andressa Sterfany Santos da Silva", cargo: "Assessora Técnica de Saúde", gerencia: "GUE - Gerência de Urgência e Emergência", dataInicio: "13/01/2025" },
+  { id: 4, nome: "Despacho do DFD", nomeCompleto: "Despacho do DFD", status: "pendente", prazoPrevisao: "2 dias úteis", dataConclusao: "15/01/2025", prazoCumprido: true, responsavel: "Yasmin Pissolati Mattos Bretz", cargo: "Gerente de Soluções e Projetos", gerencia: "GSP - Gerência de Soluções e Projetos", dataInicio: "13/01/2025" },
   { id: 5, nome: "Elaboração do ETP", nomeCompleto: "Elaboração do ETP", status: "andamento", prazoPrevisao: "10 dias úteis", responsavel: "Leticia Bonfim Guilherme", cargo: "Gerente de Licitações e Contratos", gerencia: "GLC - Gerência de Licitações e Contratos", dataInicio: "16/01/2025", documento: "ETP_012_2025_v1.pdf", documentoUrl: "/docs/etp.pdf" },
   { id: 6, nome: "Assinatura do ETP", nomeCompleto: "Assinatura do ETP", status: "pendente", prazoPrevisao: "2 dias úteis", responsavel: "Dallas Kelson Francisco de Souza", cargo: "Gerente Financeiro", gerencia: "GFC - Gerência Financeira e Contábil" },
   { id: 7, nome: "Despacho do ETP", nomeCompleto: "Despacho do ETP", status: "pendente", prazoPrevisao: "5 dias úteis", responsavel: "Georgia Guimaraes Pereira", cargo: "Controladora Interna", gerencia: "OUV - Ouvidoria" },
@@ -119,9 +121,21 @@ export default function FluxoProcessoCompleto({ etapas = etapasPadrao, onEtapaCl
   const [isNovaEtapa, setIsNovaEtapa] = useState(false);
   const [temAlteracoes, setTemAlteracoes] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [dfdData, setDfdData] = useState<any>(null);
+  const [dfdData, setDfdData] = useState<any>({
+    numeroDFD: 'DFD 006/2025',
+    objeto: 'Aquisição de equipamentos de informática para modernização dos sistemas da GSP',
+    regimeTramitacao: 'ORDINARIO',
+    areaSetorDemandante: 'GSP - Gerência de Soluções e Projetos',
+    responsavelElaboracao: 'Yasmin Pissolati Mattos Bretz',
+    dataElaboracao: '2025-01-15',
+    prioridade: 'MEDIO',
+    status: 'aprovado',
+    aprovadoPor: 'Yasmin Pissolati Mattos Bretz',
+    aprovadoData: '2025-01-15T10:00:00Z'
+  });
   const [showDFDModal, setShowDFDModal] = useState(false);
   const [showConsolidacaoModal, setShowConsolidacaoModal] = useState(false);
+  const [showETPModal, setShowETPModal] = useState(false);
   const [currentEtapa, setCurrentEtapa] = useState<Etapa | null>(null);
 
   const { isGerenciaPai, podeEditarFluxo, podeExcluirEtapa, podeEditarCard } = usePermissoes();
@@ -204,7 +218,7 @@ export default function FluxoProcessoCompleto({ etapas = etapasPadrao, onEtapaCl
       1: <FileText className="w-5 h-5" />, // DFD
       2: <Search className="w-5 h-5" />, // Análise
       3: <CheckCircle className="w-5 h-5" />, // Validação
-      4: <PenTool className="w-5 h-5" />, // Assinatura
+      4: <FileText className="w-5 h-5" />, // Despacho do DFD
       5: <FileText className="w-5 h-5" />, // ETP
       6: <PenTool className="w-5 h-5" />, // Assinatura
       7: <Search className="w-5 h-5" />, // Análise
@@ -235,6 +249,14 @@ export default function FluxoProcessoCompleto({ etapas = etapasPadrao, onEtapaCl
       // Card "Assinatura do DFD"
       setCurrentEtapa(etapa);
       setShowDFDModal(true);
+    } else if (etapa.id === 4) {
+      // Card "Despacho do DFD"
+      setCurrentEtapa(etapa);
+      setShowDFDModal(true);
+    } else if (etapa.id === 5) {
+      // Card "Elaboração do ETP"
+      setCurrentEtapa(etapa);
+      setShowETPModal(true);
     } else if (etapa.nome === 'Consolidação da Demanda') {
       // Card "Consolidação da Demanda"
       setCurrentEtapa(etapa);
@@ -462,7 +484,13 @@ export default function FluxoProcessoCompleto({ etapas = etapasPadrao, onEtapaCl
     }
   };
 
-  const handleDFDComplete = (dfdData: any) => {
+  const handleDFDComplete = (newDfdData: any) => {
+    // Atualizar os dados do DFD com os novos dados
+    setDfdData(prevData => ({
+      ...prevData,
+      ...newDfdData
+    }));
+    
     const etapasAtualizadas = etapasEditadas.map(etapa => {
       if (etapa.id === 1) {
         return { ...etapa, status: 'concluido' as const };
@@ -511,7 +539,10 @@ export default function FluxoProcessoCompleto({ etapas = etapasPadrao, onEtapaCl
   };
 
   const handleDFDSave = (data: any) => {
-    setDfdData(data);
+    setDfdData(prevData => ({
+      ...prevData,
+      ...data
+    }));
     // Salvar dados do DFD (implementar integração com backend)
     console.log('DFD Data saved:', data);
   };
@@ -525,6 +556,36 @@ export default function FluxoProcessoCompleto({ etapas = etapasPadrao, onEtapaCl
   const handleConsolidacaoSave = (data: any) => {
     console.log('Salvar Consolidação da Demanda:', data);
     // Implementar lógica de salvamento
+  };
+
+  const handleETPComplete = (data: any) => {
+    console.log('ETP concluído:', data);
+    setShowETPModal(false);
+    
+    // Atualizar status das etapas
+    const etapasAtualizadas = etapasEditadas.map(etapa => {
+      if (etapa.id === 5) {
+        return { ...etapa, status: 'concluido' as const };
+      } else if (etapa.id === 6) {
+        return { ...etapa, status: 'andamento' as const };
+      }
+      return etapa;
+    });
+    setEtapasEditadas(etapasAtualizadas);
+    
+    toast({
+      title: "ETP Concluído",
+      description: "O Estudo Técnico Preliminar foi finalizado com sucesso."
+    });
+  };
+
+  const handleETPSave = (data: any) => {
+    console.log('Salvar ETP:', data);
+    // Implementar lógica de salvamento do ETP
+    toast({
+      title: "ETP Salvo",
+      description: "O rascunho do ETP foi salvo com sucesso."
+    });
   };
 
   return (
@@ -583,7 +644,7 @@ export default function FluxoProcessoCompleto({ etapas = etapasPadrao, onEtapaCl
 
       {/* Container do Fluxo Horizontal */}
       <div className="w-full">
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-3 p-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-4 p-4">
           {/* Renderização dos cards baseada no modo */}
           {modoEdicao ? (
             <DndContext
@@ -609,6 +670,11 @@ export default function FluxoProcessoCompleto({ etapas = etapasPadrao, onEtapaCl
               const statusConfig = getStatusConfig(etapa.status);
               const isExpanded = false; // Modal substitui a expansão inline
               const canManage = canManageEtapa(etapa);
+              
+              // Debug para verificar se a gerência está sendo passada corretamente
+              if (etapa.id === 4) {
+                console.log('Card 4 - Gerência:', etapa.gerencia);
+              }
             
             return (
               <div key={etapa.id} className="w-full h-full">
@@ -644,12 +710,16 @@ export default function FluxoProcessoCompleto({ etapas = etapasPadrao, onEtapaCl
                     </div>
                   )}
                   {/* Header do Card */}
-                  <div className="p-4 h-full flex flex-col">
+                  <div className="p-4 h-full flex flex-col overflow-visible">
                     <div className="flex items-center justify-between mb-3">
                       {/* Número da Etapa */}
                       <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white font-bold text-sm ${
                         etapa.status === 'concluido' 
                           ? 'bg-gradient-to-br from-green-500 to-green-600 shadow-lg' 
+                          : etapa.status === 'andamento'
+                          ? 'bg-gradient-to-br from-blue-500 to-blue-600 shadow-lg'
+                          : etapa.status === 'atrasado'
+                          ? 'bg-gradient-to-br from-red-500 to-red-600 shadow-lg'
                           : 'bg-gradient-to-br from-blue-500 to-purple-600'
                       }`}>
                         {etapa.id}
@@ -662,16 +732,19 @@ export default function FluxoProcessoCompleto({ etapas = etapasPadrao, onEtapaCl
                     </div>
 
                     {/* Nome da Etapa */}
-                    <h3 className={`font-semibold text-center text-sm mb-2 leading-tight ${
-                      etapa.status === 'concluido' ? 'text-green-800 font-bold' : 'text-gray-900'
+                    <h3 className={`font-bold text-center text-base mb-2 leading-tight ${
+                      etapa.status === 'concluido' ? 'text-green-800' : 
+                      etapa.status === 'andamento' ? 'text-blue-800' : 
+                      etapa.status === 'atrasado' ? 'text-red-800' : 
+                      'text-gray-900'
                     }`}>
                       {etapa.nome}
                     </h3>
 
                     {/* Gerência Responsável */}
-                    <p className="text-xs text-gray-600 text-center mb-3 min-h-[1rem]">
-                      {etapa.gerencia}
-                    </p>
+                    <div className="text-xs text-gray-700 text-center mb-2 min-h-[1.5rem] leading-tight font-semibold px-1 bg-gray-50 py-1 rounded">
+                      <span className="block">{etapa.gerencia || 'Gerência não definida'}</span>
+                    </div>
                     
                     {/* Prazo */}
                     <div className="flex items-center justify-center gap-2 mb-3">
@@ -814,7 +887,33 @@ export default function FluxoProcessoCompleto({ etapas = etapasPadrao, onEtapaCl
               canEdit={canManageEtapa(currentEtapa)}
               gerenciaCriadora={gerenciaCriadora}
             />
+          ) : currentEtapa?.id === 4 ? (
+            <DFDDespachoSection
+              processoId="1"
+              etapaId={currentEtapa.id}
+              onComplete={handleDFDComplete}
+              onSave={handleDFDSave}
+              canEdit={canManageEtapa(currentEtapa)}
+              gerenciaCriadora={gerenciaCriadora}
+              initialData={dfdData}
+            />
           ) : null}
+        </DialogContent>
+      </Dialog>
+
+      {/* Dialog para ETP */}
+      <Dialog open={showETPModal} onOpenChange={setShowETPModal}>
+        <DialogContent className="w-[95vw] max-w-[95vw] max-h-[92vh] overflow-y-auto">
+          {currentEtapa?.id === 5 && (
+            <ETPElaboracaoSection
+              processoId="1"
+              etapaId={currentEtapa.id}
+              onComplete={handleETPComplete}
+              onSave={handleETPSave}
+              canEdit={canManageEtapa(currentEtapa)}
+              gerenciaCriadora={gerenciaCriadora}
+            />
+          )}
         </DialogContent>
       </Dialog>
 
