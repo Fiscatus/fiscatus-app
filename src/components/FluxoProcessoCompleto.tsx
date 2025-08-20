@@ -82,7 +82,7 @@ interface FluxoProcessoCompletoProps {
 
 // Substituir o array etapasPadrao para conter os 22 nomes fornecidos, mantendo a estrutura dos objetos e preenchendo os campos nome/nomeCompleto conforme a lista do usuário.
 const etapasPadrao: Etapa[] = [
-  { id: 1, nome: "Elaboração/Análise do DFD", nomeCompleto: "Elaboração/Análise do DFD", status: "concluido", prazoPrevisao: "5 dias úteis", dataConclusao: "05/01/2025", prazoCumprido: true, responsavel: "Yasmin Pissolati Mattos Bretz", cargo: "Gerente de Soluções e Projetos", gerencia: "GSP - Gerência de Soluções e Projetos", dataInicio: "01/01/2025", documento: "DFD_012_2025.pdf", documentoUrl: "/docs/dfd.pdf" },
+  { id: 1, nome: "Elaboração do DFD", nomeCompleto: "Elaboração do DFD", status: "concluido", prazoPrevisao: "5 dias úteis", dataConclusao: "05/01/2025", prazoCumprido: true, responsavel: "Yasmin Pissolati Mattos Bretz", cargo: "Gerente de Soluções e Projetos", gerencia: "GSP - Gerência de Soluções e Projetos", dataInicio: "01/01/2025", documento: "DFD_012_2025.pdf", documentoUrl: "/docs/dfd.pdf" },
   { id: 2, nome: "Aprovação do DFD", nomeCompleto: "Aprovação do DFD", status: "concluido", prazoPrevisao: "3 dias úteis", dataConclusao: "08/01/2025", prazoCumprido: true, responsavel: "Guilherme de Carvalho Silva", cargo: "Gerente Suprimentos e Logistica", gerencia: "GSL - Gerência de Suprimentos e Logística", dataInicio: "06/01/2025" },
   { id: 3, nome: "Assinatura do DFD", nomeCompleto: "Assinatura do DFD", status: "concluido", prazoPrevisao: "3 dias úteis", dataConclusao: "12/01/2025", prazoCumprido: true, responsavel: "Lucas Moreira Brito", cargo: "GERENTE DE RH", gerencia: "GRH - Gerência de Recursos Humanos", dataInicio: "09/01/2025" },
   { id: 4, nome: "Despacho do DFD", nomeCompleto: "Despacho do DFD", status: "concluido", prazoPrevisao: "2 dias úteis", dataConclusao: "15/01/2025", prazoCumprido: true, responsavel: "Andressa Sterfany Santos da Silva", cargo: "Assessora Técnica de Saúde", gerencia: "GUE - Gerência de Urgência e Emergência", dataInicio: "13/01/2025" },
@@ -223,7 +223,7 @@ export default function FluxoProcessoCompleto({ etapas = etapasPadrao, onEtapaCl
 
   const handleEtapaClick = (etapa: Etapa) => {
     if (etapa.id === 1) {
-      // Card "Elaboração/Análise do DFD"
+      // Card "Elaboração do DFD"
       setCurrentEtapa(etapa);
       setShowDFDModal(true);
     } else if (etapa.id === 2) {

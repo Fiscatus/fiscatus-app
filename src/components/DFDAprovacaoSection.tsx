@@ -349,9 +349,9 @@ export default function DFDAprovacaoSection({
     : versaoEnviada;
 
   return (
-    <div className="min-h-screen bg-white">
-      {/* Header Moderno - IGUAL AO CARD 1 */}
-      <div className="bg-white border-b border-gray-200 px-6 py-4 shadow-sm">
+    <div className="bg-white">
+      {/* Header Moderno */}
+      <div className="bg-white border-b border-gray-200 px-4 py-3 shadow-sm">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
             <div className="p-3 bg-green-100 rounded-xl">
@@ -387,227 +387,226 @@ export default function DFDAprovacaoSection({
         </div>
       </div>
 
-      {/* Conteúdo Principal */}
-      <div className="mx-auto w-full max-w-[1400px] px-4 md:px-6 lg:px-8">
+      {/* Container central ocupando toda a área */}
+      <div className="w-full">
+        
+        {/* Grid principal 12 colunas */}
+        <div className="grid grid-cols-12 gap-4">
           
-        {/* Grid principal em 12 colunas */}
-        <div className="grid grid-cols-12 gap-6">
-          
-          {/* ESQUERDA - Dados do DFD (8 colunas) */}
-          <section className="col-span-12 lg:col-span-8">
-            <Card className="rounded-2xl border shadow-sm overflow-hidden bg-white">
-              <CardHeader className="bg-indigo-50 px-4 py-3 rounded-t-2xl font-semibold text-slate-900">
-                  <CardTitle className="flex items-center gap-3 text-lg">
-                    <FileText className="w-5 h-5 text-indigo-600" />
-                    Dados do DFD
-                    {versaoParaExibir && (
-                      <Badge className="bg-indigo-100 text-indigo-800 text-xs">
-                        V{versaoParaExibir.version}
-                      </Badge>
-                    )}
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="p-4 md:p-6">
-                  {versaoParaExibir ? (
+          {/* ESQUERDA: Dados do DFD (8 colunas) */}
+          <section id="dados-dfd" className="col-span-12 lg:col-span-8 w-full">
+            <div className="rounded-2xl border shadow-sm overflow-hidden bg-white">
+              <header className="bg-indigo-50 px-4 py-3 rounded-t-2xl font-semibold text-slate-900">
+                <div className="flex items-center gap-3 text-lg">
+                  <FileText className="w-5 h-5 text-indigo-600" />
+                  Dados do DFD
+                  {versaoParaExibir && (
+                    <Badge className="bg-indigo-100 text-indigo-800 text-xs">
+                      V{versaoParaExibir.version}
+                    </Badge>
+                  )}
+                </div>
+              </header>
+              <div className="p-4 md:p-6">
+                {versaoParaExibir ? (
+                  <div className="space-y-4">
+                    {/* Metadados curtos */}
+                    <div className="flex items-center gap-4 text-sm text-gray-600 border-b border-gray-100 pb-3">
+                      <span>V{versaoParaExibir.version}</span>
+                      <span>•</span>
+                      <span>{versaoParaExibir.createdBy}</span>
+                      <span>•</span>
+                      <span>{formatDate(versaoParaExibir.createdAt)}</span>
+                    </div>
+
+                    {/* Visualização do documento */}
                     <div className="space-y-4">
-                      {/* Metadados curtos */}
-                      <div className="flex items-center gap-4 text-sm text-gray-600 border-b border-gray-100 pb-3">
-                        <span>V{versaoParaExibir.version}</span>
-                        <span>•</span>
-                        <span>{versaoParaExibir.createdBy}</span>
-                        <span>•</span>
-                        <span>{formatDate(versaoParaExibir.createdAt)}</span>
+                      <div>
+                        <Label className="text-sm font-semibold text-gray-700">
+                          Objetivo da Contratação
+                        </Label>
+                        <div className="mt-2 p-4 bg-gray-50 rounded-lg border border-gray-200">
+                          <p className="text-gray-800">{versaoParaExibir.objetivoContratacao}</p>
+                        </div>
+                      </div>
+                      
+                      <div>
+                        <Label className="text-sm font-semibold text-gray-700">
+                          Justificativa da Demanda
+                        </Label>
+                        <div className="mt-2 p-4 bg-gray-50 rounded-lg border border-gray-200">
+                          <p className="text-gray-800">{versaoParaExibir.justificativaDemanda}</p>
+                        </div>
                       </div>
 
-                      {/* Visualização do documento */}
-                      <div className="space-y-4">
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                         <div>
-                          <Label className="text-sm font-semibold text-gray-700">
-                            Objetivo da Contratação
-                          </Label>
-                          <div className="mt-2 p-4 bg-gray-50 rounded-lg border border-gray-200">
-                            <p className="text-gray-800">{versaoParaExibir.objetivoContratacao}</p>
+                          <Label className="text-sm font-semibold text-gray-700">Gerência Demandante</Label>
+                          <div className="mt-2 p-3 bg-gray-50 rounded-lg border border-gray-200">
+                            <p className="text-gray-800">{versaoParaExibir.unidadeDemandante}</p>
                           </div>
                         </div>
                         
                         <div>
-                          <Label className="text-sm font-semibold text-gray-700">
-                            Justificativa da Demanda
-                          </Label>
-                          <div className="mt-2 p-4 bg-gray-50 rounded-lg border border-gray-200">
-                            <p className="text-gray-800">{versaoParaExibir.justificativaDemanda}</p>
+                          <Label className="text-sm font-semibold text-gray-700">Data de Elaboração</Label>
+                          <div className="mt-2 p-3 bg-gray-50 rounded-lg border border-gray-200">
+                            <p className="text-gray-800">{formatDate(versaoParaExibir.dataElaboracao)}</p>
                           </div>
                         </div>
-
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                          <div>
-                            <Label className="text-sm font-semibold text-gray-700">Gerência Demandante</Label>
-                            <div className="mt-2 p-3 bg-gray-50 rounded-lg border border-gray-200">
-                              <p className="text-gray-800">{versaoParaExibir.unidadeDemandante}</p>
-                            </div>
-                          </div>
-                          
-                          <div>
-                            <Label className="text-sm font-semibold text-gray-700">Data de Elaboração</Label>
-                            <div className="mt-2 p-3 bg-gray-50 rounded-lg border border-gray-200">
-                              <p className="text-gray-800">{formatDate(versaoParaExibir.dataElaboracao)}</p>
-                            </div>
-                          </div>
-                          
-                          <div>
-                            <Label className="text-sm font-semibold text-gray-700">Responsável</Label>
-                            <div className="mt-2 p-3 bg-gray-50 rounded-lg border border-gray-200">
-                              <p className="text-gray-800">{versaoParaExibir.responsavelElaboracao}</p>
-                            </div>
+                        
+                        <div>
+                          <Label className="text-sm font-semibold text-gray-700">Responsável</Label>
+                          <div className="mt-2 p-3 bg-gray-50 rounded-lg border border-gray-200">
+                            <p className="text-gray-800">{versaoParaExibir.responsavelElaboracao}</p>
                           </div>
                         </div>
                       </div>
                     </div>
-                  ) : (
-                    <div className="w-full min-h-[520px] flex flex-col items-center justify-center text-center rounded-lg border">
-                      <div className="p-4 bg-gray-100 rounded-full w-16 h-16 mx-auto mb-4 flex items-center justify-center">
-                        <FileText className="w-8 h-8 text-gray-400" />
-                      </div>
-                      <p className="text-gray-500 font-medium">Nenhuma versão encontrada</p>
-                      <p className="text-sm text-gray-400 mt-1">
-                        {!isGSPUser() ? 'Aguarde a aprovação da versão final' : 'Aguarde o envio de uma versão para análise'}
-                      </p>
+                  </div>
+                ) : (
+                  <div className="min-h-[520px] w-full rounded-lg border flex flex-col items-center justify-center text-center">
+                    <div className="p-4 bg-gray-100 rounded-full w-16 h-16 mx-auto mb-4 flex items-center justify-center">
+                      <FileText className="w-8 h-8 text-gray-400" />
                     </div>
-                  )}
-                </CardContent>
-            </Card>
+                    <p className="text-gray-500 font-medium">Nenhuma versão encontrada</p>
+                    <p className="text-sm text-gray-400 mt-1">
+                      {!isGSPUser() ? 'Aguarde a aprovação da versão final' : 'Aguarde o envio de uma versão para análise'}
+                    </p>
+                  </div>
+                )}
+              </div>
+            </div>
           </section>
 
-          {/* DIREITA - Gerenciamento (4 colunas) */}
-          <aside className="col-span-12 lg:col-span-4">
-            <Card className="rounded-2xl border shadow-sm overflow-hidden bg-white">
-              <CardHeader className="bg-slate-50 px-4 py-3 rounded-t-2xl font-semibold text-slate-900">
-                  <CardTitle className="flex items-center gap-3 text-lg">
-                    <History className="w-5 h-5 text-slate-600" />
-                    Gerenciamento
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="p-4 md:p-6">
-                  <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-                    <TabsList className="grid w-full grid-cols-2">
-                      <TabsTrigger value="versoes">Versões</TabsTrigger>
-                      <TabsTrigger value="anexos">Anexos</TabsTrigger>
-                    </TabsList>
-                    
-                    <TabsContent value="versoes" className="mt-4">
-                      {dfdData.versions.length === 0 ? (
-                        <div className="text-center py-6">
-                          <div className="p-3 bg-gray-100 rounded-full w-12 h-12 mx-auto mb-3 flex items-center justify-center">
-                            <History className="w-6 h-6 text-gray-400" />
-                          </div>
-                          <p className="text-gray-500 text-sm">Nenhuma versão disponível</p>
+          {/* DIREITA: Gerenciamento (4 colunas) */}
+          <aside id="gerenciamento" className="col-span-12 lg:col-span-4 w-full">
+            <div className="rounded-2xl border shadow-sm overflow-hidden bg-white">
+              <header className="bg-slate-50 px-4 py-3 rounded-t-2xl font-semibold text-slate-900">
+                <div className="flex items-center gap-3 text-lg">
+                  <History className="w-5 h-5 text-slate-600" />
+                  Gerenciamento
+                </div>
+              </header>
+              <div className="p-4 md:p-6">
+                <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+                  <TabsList className="grid w-full grid-cols-2">
+                    <TabsTrigger value="versoes">Versões</TabsTrigger>
+                    <TabsTrigger value="anexos">Anexos</TabsTrigger>
+                  </TabsList>
+                  
+                  <TabsContent value="versoes" className="mt-4">
+                    {dfdData.versions.length === 0 ? (
+                      <div className="text-center py-6">
+                        <div className="p-3 bg-gray-100 rounded-full w-12 h-12 mx-auto mb-3 flex items-center justify-center">
+                          <History className="w-6 h-6 text-gray-400" />
                         </div>
-                      ) : (
-                        <div className="space-y-3 max-h-60 overflow-y-auto">
-                          {dfdData.versions.map((version) => {
-                            const statusConfig = getStatusConfig(version.status);
-                            const sla = calcularSLA(version.createdAt, version.aprovadoData);
-                            
-                            return (
-                              <div key={version.id} className="border border-gray-200 rounded-lg p-3 hover:bg-gray-50 transition-colors">
-                                <div className="flex items-center justify-between mb-2">
+                        <p className="text-gray-500 text-sm">Nenhuma versão disponível</p>
+                      </div>
+                    ) : (
+                      <div className="space-y-3 max-h-60 overflow-y-auto">
+                        {dfdData.versions.map((version) => {
+                          const statusConfig = getStatusConfig(version.status);
+                          const sla = calcularSLA(version.createdAt, version.aprovadoData);
+                          
+                          return (
+                            <div key={version.id} className="border border-gray-200 rounded-lg p-3 hover:bg-gray-50 transition-colors">
+                              <div className="flex items-center justify-between mb-2">
+                                <div className="flex items-center gap-2">
+                                  <Badge variant={version.isFinal ? "default" : "outline"} className="text-xs">
+                                    V{version.version}
+                                    {version.isFinal && <CheckCircle className="w-3 h-3 ml-1" />}
+                                  </Badge>
+                                  <Badge className={`text-xs ${statusConfig.color}`}>
+                                    {statusConfig.icon}
+                                    <span className="ml-1">{statusConfig.label}</span>
+                                  </Badge>
+                                </div>
+                                <div className="flex items-center gap-1">
+                                  <Button size="sm" variant="outline" className="h-6 w-6 p-0">
+                                    <Eye className="w-3 h-3" />
+                                  </Button>
+                                  <Button size="sm" variant="outline" className="h-6 w-6 p-0">
+                                    <Download className="w-3 h-3" />
+                                  </Button>
+                                </div>
+                              </div>
+                              <div className="text-xs text-gray-600 space-y-1">
+                                <p><strong>Autor:</strong> {version.createdBy}</p>
+                                <p><strong>Data:</strong> {formatDate(version.createdAt)}</p>
+                                {sla && (
                                   <div className="flex items-center gap-2">
-                                    <Badge variant={version.isFinal ? "default" : "outline"} className="text-xs">
-                                      V{version.version}
-                                      {version.isFinal && <CheckCircle className="w-3 h-3 ml-1" />}
-                                    </Badge>
-                                    <Badge className={`text-xs ${statusConfig.color}`}>
-                                      {statusConfig.icon}
-                                      <span className="ml-1">{statusConfig.label}</span>
+                                    <span><strong>SLA:</strong> {sla.dias} dias úteis</span>
+                                    <Badge 
+                                      className={`text-xs ${
+                                        sla.status === 'ok' ? 'bg-green-100 text-green-800' :
+                                        sla.status === 'risco' ? 'bg-yellow-100 text-yellow-800' :
+                                        'bg-red-100 text-red-800'
+                                      }`}
+                                    >
+                                      {sla.status === 'ok' ? 'Dentro do Prazo' :
+                                       sla.status === 'risco' ? 'Em Risco' : 'Estourado'}
                                     </Badge>
                                   </div>
-                                  <div className="flex items-center gap-1">
-                                    <Button size="sm" variant="outline" className="h-6 w-6 p-0">
-                                      <Eye className="w-3 h-3" />
-                                    </Button>
-                                    <Button size="sm" variant="outline" className="h-6 w-6 p-0">
-                                      <Download className="w-3 h-3" />
-                                    </Button>
-                                  </div>
-                                </div>
-                                <div className="text-xs text-gray-600 space-y-1">
-                                  <p><strong>Autor:</strong> {version.createdBy}</p>
-                                  <p><strong>Data:</strong> {formatDate(version.createdAt)}</p>
-                                  {sla && (
-                                    <div className="flex items-center gap-2">
-                                      <span><strong>SLA:</strong> {sla.dias} dias úteis</span>
-                                      <Badge 
-                                        className={`text-xs ${
-                                          sla.status === 'ok' ? 'bg-green-100 text-green-800' :
-                                          sla.status === 'risco' ? 'bg-yellow-100 text-yellow-800' :
-                                          'bg-red-100 text-red-800'
-                                        }`}
-                                      >
-                                        {sla.status === 'ok' ? 'Dentro do Prazo' :
-                                         sla.status === 'risco' ? 'Em Risco' : 'Estourado'}
-                                      </Badge>
-                                    </div>
-                                  )}
-                                </div>
-                              </div>
-                            );
-                          })}
-                        </div>
-                      )}
-                    </TabsContent>
-                    
-                    <TabsContent value="anexos" className="mt-4">
-                      {dfdData.annexes.length === 0 ? (
-                        <div className="text-center py-6">
-                          <div className="p-3 bg-gray-100 rounded-full w-12 h-12 mx-auto mb-3 flex items-center justify-center">
-                            <Upload className="w-6 h-6 text-gray-400" />
-                          </div>
-                          <p className="text-gray-500 text-sm">Nenhum anexo adicionado</p>
-                        </div>
-                      ) : (
-                        <div className="space-y-3 max-h-60 overflow-y-auto">
-                          {dfdData.annexes.map((annex) => (
-                            <div key={annex.id} className="flex items-center justify-between p-3 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
-                              <div className="flex items-center gap-3 min-w-0 flex-1">
-                                <div className="p-2 bg-blue-100 rounded-lg">
-                                  <FileText className="w-4 h-4 text-blue-600" />
-                                </div>
-                                <div className="min-w-0 flex-1">
-                                  <p className="text-sm font-medium truncate">{annex.name}</p>
-                                  <p className="text-xs text-gray-500">
-                                    {annex.size} • {formatDate(annex.uploadedAt)}
-                                  </p>
-                                </div>
-                              </div>
-                              <div className="flex items-center gap-1 flex-shrink-0">
-                                <Button size="sm" variant="outline" className="h-6 w-6 p-0">
-                                  <Eye className="w-3 h-3" />
-                                </Button>
-                                <Button size="sm" variant="outline" className="h-6 w-6 p-0">
-                                  <Download className="w-3 h-3" />
-                                </Button>
+                                )}
                               </div>
                             </div>
-                          ))}
+                          );
+                        })}
+                      </div>
+                    )}
+                  </TabsContent>
+                  
+                  <TabsContent value="anexos" className="mt-4">
+                    {dfdData.annexes.length === 0 ? (
+                      <div className="text-center py-6">
+                        <div className="p-3 bg-gray-100 rounded-full w-12 h-12 mx-auto mb-3 flex items-center justify-center">
+                          <Upload className="w-6 h-6 text-gray-400" />
                         </div>
-                      )}
-                    </TabsContent>
-                  </Tabs>
-              </CardContent>
-            </Card>
+                        <p className="text-gray-500 text-sm">Nenhum anexo adicionado</p>
+                      </div>
+                    ) : (
+                      <div className="space-y-3 max-h-60 overflow-y-auto">
+                        {dfdData.annexes.map((annex) => (
+                          <div key={annex.id} className="flex items-center justify-between p-3 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
+                            <div className="flex items-center gap-3 min-w-0 flex-1">
+                              <div className="p-2 bg-blue-100 rounded-lg">
+                                <FileText className="w-4 h-4 text-blue-600" />
+                              </div>
+                              <div className="min-w-0 flex-1">
+                                <p className="text-sm font-medium truncate">{annex.name}</p>
+                                <p className="text-xs text-gray-500">
+                                  {annex.size} • {formatDate(annex.uploadedAt)}
+                                </p>
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-1 flex-shrink-0">
+                              <Button size="sm" variant="outline" className="h-6 w-6 p-0">
+                                <Eye className="w-3 h-3" />
+                              </Button>
+                              <Button size="sm" variant="outline" className="h-6 w-6 p-0">
+                                <Download className="w-3 h-3" />
+                              </Button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </TabsContent>
+                </Tabs>
+              </div>
+            </div>
           </aside>
-        </div>
 
-        {/* FULL WIDTH - Parecer Técnico */}
-        <section className="mt-6">
-          <Card className="rounded-2xl border shadow-sm overflow-hidden bg-white">
-            <CardHeader className="bg-green-50 px-4 py-3 rounded-t-2xl font-semibold text-slate-900">
-                <CardTitle className="flex items-center gap-3 text-lg">
+          {/* FULL: Parecer Técnico */}
+          <section id="parecer" className="col-span-12 w-full">
+            <div className="rounded-2xl border shadow-sm overflow-hidden bg-white">
+              <header className="bg-green-50 px-4 py-3 rounded-t-2xl font-semibold text-slate-900">
+                <div className="flex items-center gap-3 text-lg">
                   <Search className="w-5 h-5 text-green-600" />
                   Parecer Técnico
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="p-4 md:p-6">
+                </div>
+              </header>
+              <div className="p-4 md:p-6">
                 <div className="space-y-4">
                   <div>
                     <Label htmlFor="parecer" className="text-sm font-semibold text-gray-700">
@@ -632,20 +631,20 @@ export default function DFDAprovacaoSection({
                     </div>
                   )}
                 </div>
-            </CardContent>
-          </Card>
-        </section>
+              </div>
+            </div>
+          </section>
 
-        {/* FULL WIDTH - Comentários (padrão do sistema) */}
-        <section className="mt-6">
-          <Card className="rounded-2xl border shadow-sm overflow-hidden bg-white">
-            <CardHeader className="bg-orange-50 px-4 py-3 rounded-t-2xl font-semibold text-slate-900">
-                <CardTitle className="flex items-center gap-3 text-lg">
+          {/* FULL: Comentários */}
+          <section id="comentarios" className="col-span-12 w-full">
+            <div className="rounded-2xl border shadow-sm overflow-hidden bg-white">
+              <header className="bg-orange-50 px-4 py-3 rounded-t-2xl font-semibold text-slate-900">
+                <div className="flex items-center gap-3 text-lg">
                   <MessageCircle className="w-5 h-5 text-orange-600" />
                   Comentários
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="p-4 md:p-6">
+                </div>
+              </header>
+              <div className="p-4 md:p-6">
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                   
                   {/* Adicionar Comentário */}
@@ -712,44 +711,36 @@ export default function DFDAprovacaoSection({
                       </div>
                     )}
                   </div>
-              </div>
-            </CardContent>
-          </Card>
-        </section>
-
-        {/* Rodapé com Botões de Ação */}
-        {isGSPUser() && (
-          <div className="mt-6">
-            <Card className="w-full shadow-lg border-0 bg-white/80 backdrop-blur-sm">
-              <CardContent className="p-4">
-                <div className="flex flex-col sm:flex-row gap-4 justify-between items-center w-full">
-                  <div className="flex flex-col sm:flex-row gap-3">
-                    {/* Botão Solicitar Correção */}
-                    <Button 
-                      onClick={handleSolicitarCorrecao}
-                      variant="outline" 
-                      disabled={!canSolicitarCorrecaoUser()}
-                      className="border-red-200 text-red-700 hover:bg-red-50"
-                    >
-                      <XCircle className="w-4 h-4 mr-2" />
-                      Solicitar Correção
-                    </Button>
-                  </div>
-                  
-                  {/* Botão Aprovar DFD */}
-                  <Button 
-                    onClick={handleAprovar}
-                    disabled={!canApproveUser()}
-                    className="bg-green-600 hover:bg-green-700 text-white px-8 py-3 shadow-lg"
-                  >
-                    <CheckCircle className="w-4 h-4 mr-2" />
-                    Aprovar DFD
-                  </Button>
                 </div>
-              </CardContent>
-            </Card>
-          </div>
-        )}
+              </div>
+            </div>
+          </section>
+
+          {/* FULL: Ações (rodapé não fixo) */}
+          {isGSPUser() && (
+            <section id="acoes" className="col-span-12 w-full mt-6">
+              <div className="flex w-full items-center justify-end gap-3">
+                <Button 
+                  onClick={handleSolicitarCorrecao}
+                  variant="outline" 
+                  disabled={!canSolicitarCorrecaoUser()}
+                  className="border-red-200 text-red-700 hover:bg-red-50"
+                >
+                  <XCircle className="w-4 h-4 mr-2" />
+                  Solicitar Correção
+                </Button>
+                <Button 
+                  onClick={handleAprovar}
+                  disabled={!canApproveUser()}
+                  className="bg-green-600 hover:bg-green-700 text-white px-8 py-3 shadow-lg"
+                >
+                  <CheckCircle className="w-4 h-4 mr-2" />
+                  Aprovar DFD
+                </Button>
+              </div>
+            </section>
+          )}
+        </div>
       </div>
 
       {/* Dialog de Confirmação - Aprovar */}

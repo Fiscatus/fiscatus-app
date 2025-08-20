@@ -625,16 +625,16 @@ export default function DFDFormSection({
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50">
-      {/* Header Moderno - MANTIDO */}
-      <div className="bg-white border-b border-gray-200 px-6 py-4 shadow-sm">
+    <div className="bg-white">
+      {/* Header Moderno */}
+      <div className="bg-white border-b border-gray-200 px-4 py-3 shadow-sm">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
             <div className="p-3 bg-blue-100 rounded-xl">
               <FileText className="w-8 h-8 text-blue-600" />
             </div>
             <div>
-              <h1 className="text-2xl font-bold text-gray-900">Elaboração/Análise do DFD</h1>
+              <h1 className="text-2xl font-bold text-gray-900">Elaboração do DFD</h1>
               <p className="text-gray-600">Documento de Formalização da Demanda</p>
             </div>
           </div>
@@ -659,25 +659,23 @@ export default function DFDFormSection({
         </div>
       </div>
 
-      {/* Conteúdo Principal - NOVO LAYOUT SIMPLIFICADO */}
-      <div className="p-4 w-full">
-        {/* Layout Principal - Grid Duas Colunas */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+      {/* Container central ocupando toda a área */}
+      <div className="w-full">
+        {/* Grid principal 12 colunas */}
+        <div className="grid grid-cols-12 gap-4">
           
-          {/* Coluna Esquerda - Formulário */}
-          <div className="space-y-4">
+          {/* ESQUERDA: Formulário do DFD */}
+          <section id="formulario-dfd" className="col-span-12 lg:col-span-8 w-full">
             
             {/* Card do Formulário */}
-            <Card className="w-full shadow-lg border-0 bg-white/80 backdrop-blur-sm">
-              <CardHeader className="bg-gradient-to-r from-blue-50 to-indigo-50 border-b border-blue-100 p-0">
-                <CardTitle className="flex items-center gap-3 text-xl font-bold text-gray-800 mb-0 p-4">
-                  <div className="p-2 bg-blue-100 rounded-lg">
-                    <FileText className="w-5 h-5 text-blue-600" />
-                  </div>
+            <div className="rounded-2xl border shadow-sm overflow-hidden bg-white">
+              <header className="bg-indigo-50 px-4 py-3 rounded-t-2xl font-semibold text-slate-900">
+                <div className="flex items-center gap-3">
+                  <FileText className="w-5 h-5 text-indigo-600" />
                   Formulário do DFD
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="p-0 space-y-0">
+                </div>
+              </header>
+              <div className="p-4 md:p-6 space-y-0">
                 
                 {/* Objeto da Contratação */}
                 <div className="w-full p-4 border-b border-gray-100">
@@ -779,24 +777,22 @@ export default function DFDFormSection({
                     </div>
                   </RadioGroup>
                 </div>
-              </CardContent>
-            </Card>
-          </div>
+              </div>
+            </div>
+          </section>
 
-          {/* Coluna Direita - Abas: Versões | Anexos */}
-          <div className="space-y-4">
+          {/* DIREITA: Gerenciamento (Versões/Anexos) */}
+          <aside id="gerenciamento" className="col-span-12 lg:col-span-4 w-full">
             
             {/* Card com Abas */}
-            <Card className="w-full shadow-lg border-0 bg-white/80 backdrop-blur-sm">
-              <CardHeader className="bg-gradient-to-r from-purple-50 to-pink-50 border-b border-purple-100 p-0">
-                <CardTitle className="flex items-center gap-3 text-xl font-bold text-gray-800 mb-0 p-4">
-                  <div className="p-2 bg-purple-100 rounded-lg">
-                    <History className="w-5 h-5 text-purple-600" />
-                  </div>
+            <div className="rounded-2xl border shadow-sm overflow-hidden bg-white">
+              <header className="bg-indigo-50 px-4 py-3 rounded-t-2xl font-semibold text-slate-900">
+                <div className="flex items-center gap-3">
+                  <History className="w-5 h-5 text-indigo-600" />
                   Gerenciamento
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="p-0">
+                </div>
+              </header>
+              <div className="p-4 md:p-6">
                 <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
                   <TabsList className="grid w-full grid-cols-2 rounded-none">
                     <TabsTrigger value="versoes">Versões</TabsTrigger>
@@ -949,23 +945,20 @@ export default function DFDFormSection({
                     </div>
                   </TabsContent>
                 </Tabs>
-              </CardContent>
-            </Card>
-          </div>
-        </div>
+              </div>
+            </div>
+          </aside>
 
-        {/* Seção de Comentários - SEMPRE VISÍVEL */}
-        <div className="mt-4">
-          <Card className="w-full shadow-lg border-0 bg-white/80 backdrop-blur-sm">
-            <CardHeader className="bg-gradient-to-r from-orange-50 to-amber-50 border-b border-orange-100 p-0">
-              <CardTitle className="flex items-center gap-3 text-xl font-bold text-gray-800 mb-0 p-4">
-                <div className="p-2 bg-orange-100 rounded-lg">
-                  <MessageCircle className="w-5 h-5 text-orange-600" />
+          {/* FULL: Comentários */}
+          <section id="comentarios" className="col-span-12 w-full">
+            <div className="rounded-2xl border shadow-sm overflow-hidden bg-white">
+              <header className="bg-indigo-50 px-4 py-3 rounded-t-2xl font-semibold text-slate-900">
+                <div className="flex items-center gap-3">
+                  <MessageCircle className="w-5 h-5 text-indigo-600" />
+                  Comentários
                 </div>
-                Comentários
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="p-0">
+              </header>
+              <div className="p-4 md:p-6">
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-0 w-full">
                 
                 {/* Adicionar Comentário */}
@@ -1033,15 +1026,13 @@ export default function DFDFormSection({
                   )}
                 </div>
               </div>
-            </CardContent>
-          </Card>
-        </div>
+              </div>
+            </div>
+          </section>
 
-        {/* Rodapé Fixo com Botões de Ação */}
-        <div className="mt-4">
-          <Card className="w-full shadow-lg border-0 bg-white/80 backdrop-blur-sm">
-            <CardContent className="p-4">
-              <div className="flex flex-col sm:flex-row gap-4 justify-between items-center w-full">
+          {/* FULL: Ações (rodapé não fixo) */}
+          <section id="acoes" className="col-span-12 w-full mt-6">
+            <div className="flex w-full items-center justify-end gap-3">
                 <div className="flex flex-col sm:flex-row gap-3">
                   {/* Botão Salvar Versão */}
                   {permissoes.podeEditar && currentVersion.status === 'rascunho' && !etapaConcluida && (
@@ -1122,9 +1113,8 @@ export default function DFDFormSection({
                     </span>
                   )}
                 </div>
-              </div>
-            </CardContent>
-          </Card>
+            </div>
+          </section>
         </div>
 
         {/* Modal de Confirmação de Conclusão */}

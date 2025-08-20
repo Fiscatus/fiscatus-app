@@ -93,7 +93,7 @@ const proximasEtapas = [
 const gerarEtapasCompletas = (isNovoProcesso: boolean) => {
   // Substituir o array etapasTemplate dentro da função gerarEtapasCompletas para conter os 22 nomes fornecidos, mantendo a estrutura dos objetos e preenchendo os campos nome/nomeCompleto conforme a lista do usuário.
   const etapasTemplate = [
-    { id: 1, nome: "Elaboração/Análise do DFD", nomeCompleto: "Elaboração/Análise do DFD", status: "pendente" as const, prazoPrevisao: "5 dias úteis", responsavel: "", cargo: "", gerencia: "" },
+            { id: 1, nome: "Elaboração do DFD", nomeCompleto: "Elaboração do DFD", status: "pendente" as const, prazoPrevisao: "5 dias úteis", responsavel: "", cargo: "", gerencia: "" },
     { id: 2, nome: "Aprovação do DFD", nomeCompleto: "Aprovação do DFD", status: "pendente" as const, prazoPrevisao: "3 dias úteis", responsavel: "", cargo: "", gerencia: "" },
     { id: 3, nome: "Assinatura do DFD", nomeCompleto: "Assinatura do DFD", status: "pendente" as const, prazoPrevisao: "3 dias úteis", responsavel: "", cargo: "", gerencia: "" },
     { id: 4, nome: "Despacho do DFD", nomeCompleto: "Despacho do DFD", status: "pendente" as const, prazoPrevisao: "2 dias úteis", responsavel: "", cargo: "", gerencia: "" },

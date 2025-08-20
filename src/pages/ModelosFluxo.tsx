@@ -132,7 +132,7 @@ const modelosIniciais: ModeloFluxo[] = [
       {
         id: "sist-e1",
         numeroEtapa: 1,
-        nomeEtapa: "Elaboração/Análise do DFD",
+        nomeEtapa: "Elaboração do DFD",
         descricao: "Elaboração e análise do Documento de Formalização da Demanda",
         prazoPadrao: 5,
         gerenciaResponsavel: "GSP - Gerência de Soluções e Projetos",
@@ -522,7 +522,7 @@ const modelosIniciais: ModeloFluxo[] = [
       {
         id: "e1",
         numeroEtapa: 1,
-        nomeEtapa: "Elaboração/Análise do DFD",
+        nomeEtapa: "Elaboração do DFD",
         descricao: "Elaboração e análise do Documento de Formalização da Demanda",
         prazoPadrao: 5,
         gerenciaResponsavel: "GSP - Gerência de Soluções e Projetos",

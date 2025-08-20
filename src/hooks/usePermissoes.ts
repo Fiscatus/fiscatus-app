@@ -62,7 +62,7 @@ export function usePermissoes() {
       return true;
     }
     
-    // NOVA REGRA: Para o primeiro card (Elaboração/Análise do DFD), 
+    // NOVA REGRA: Para o primeiro card (Elaboração do DFD), 
     // permitir acesso à gerência criadora do processo
     if (etapaId === 1 && gerenciaCriadora && user.gerencia === gerenciaCriadora) {
       return true;
