@@ -1,0 +1,159 @@
+/* calendar-fill.css */
+.calendar-fill .rdp { 
+  height: 100%; 
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  max-width: 100%;
+  overflow: hidden;
+}
+
+.calendar-fill .rdp-months,
+.calendar-fill .rdp-month { 
+  height: 100%; 
+  margin: 0; 
+  padding: 0;
+  width: 100%;
+  max-width: 100%;
+  overflow: hidden;
+}
+
+.calendar-fill .rdp-caption { 
+  padding: 0.75rem 0 0.25rem 0; 
+  margin: 0;
+  text-align: center;
+}
+
+.calendar-fill .rdp-caption_label {
+  text-align: center;
+  width: 100%;
+}
+
+.calendar-fill .rdp-weekdays {
+  height: 2rem; 
+  display: grid; 
+  grid-template-columns: repeat(7, 1fr);
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  max-width: 100%;
+}
+
+.calendar-fill .rdp-weekdays .rdp-head_cell {
+  text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.calendar-fill .rdp-table { 
+  height: calc(100% - 2rem); 
+  width: 100%; 
+  margin: 0;
+  padding: 0;
+  border-collapse: separate;
+  border-spacing: 0;
+  max-width: 100%;
+}
+
+.calendar-fill .rdp-tbody {
+  height: 100%; 
+  display: grid; 
+  grid-template-rows: repeat(6, 1fr);
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  max-width: 100%;
+}
+
+.calendar-fill .rdp-row {
+  display: grid !important; 
+  grid-template-columns: repeat(7, 1fr);
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  max-width: 100%;
+  gap: 0;
+}
+
+.calendar-fill .rdp-cell { 
+  padding: 0; 
+  height: 100%; 
+  width: 100%;
+  margin: 0;
+  border: none;
+  max-width: 100%;
+  overflow: hidden;
+}
+
+.calendar-fill .rdp-day {
+  height: 100%; 
+  width: 100%;
+  display: flex; 
+  align-items: center; 
+  justify-content: center;
+  margin: 0;
+  padding: 0;
+  border: none;
+  border-radius: 0;
+  min-width: 0;
+  min-height: 0;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Células vazias quando showOutsideDays é false */
+.calendar-fill .rdp-cell:empty {
+  background: transparent;
+}
+
+.calendar-fill .rdp-day:not([aria-label]) {
+  visibility: hidden;
+}
+
+/* garante que a margem da página vá até o último número do mês, sem "sobras" */
+.calendar-fill .rdp-month { 
+  padding: 0; 
+  margin: 0;
+  max-width: 100%;
+  overflow: hidden;
+}
+
+.calendar-fill .rdp { 
+  --rdp-cell-size: auto; /* altura governa o tamanho */
+  padding: 0 !important;
+  margin: 0 !important;
+  max-width: 100%;
+  overflow: hidden;
+}
+
+/* Garantir que todos os elementos usem border-box */
+.calendar-fill * {
+  box-sizing: border-box;
+}
+
+/* Remover espaçamentos desnecessários */
+.calendar-fill .rdp-head_cell,
+.calendar-fill .rdp-cell {
+  padding: 0 !important;
+  margin: 0 !important;
+  max-width: 100%;
+}
+
+/* Forçar largura total para o container */
+.calendar-fill {
+  min-width: 100%;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  max-width: 100%;
+}
+
+/* Garantir que o popover não ultrapasse os limites da tela */
+.calendar-fill .rdp-months {
+  max-width: 100% !important;
+  overflow: hidden !important;
+}
+
+/* Dark mode: não usamos cores diretas; respeita tokens atuais */

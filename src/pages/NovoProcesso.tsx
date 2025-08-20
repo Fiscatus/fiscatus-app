@@ -1,0 +1,647 @@
+import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { 
+  ArrowLeft, 
+  Plus, 
+  FileText, 
+  Building2, 
+  Users, 
+  Calendar,
+  Clock,
+  Upload,
+  CheckCircle,
+  AlertTriangle,
+  Workflow,
+  Star,
+  Eye
+} from "lucide-react";
+import Topbar from "@/components/Topbar";
+import ReturnButton from "@/components/ReturnButton";
+import MultiSelectField from "@/components/MultiSelectField";
+import FileUploadField from "@/components/FileUploadField";
+import { useUser } from "@/contexts/UserContext";
+import { GerenciaSelect } from "@/components/GerenciaSelect";
+import { GerenciaMultiSelect } from "@/components/GerenciaMultiSelect";
+
+// Removido array de gerências mockadas - agora usa GerenciaSelect
+
+const tiposTramitacao = [
+  { value: "ordinaria", label: "Ordinária" },
+  { value: "urgente", label: "Urgente" },
+  { value: "prioritaria", label: "Prioritária" },
+];
+
+// Função para gerar número do processo
+const gerarNumeroProcesso = () => {
+  const ano = new Date().getFullYear();
+  // Simular último número salvo (em produção viria do backend)
+  const ultimoNumero = 77; // Mock
+  const novoNumero = ultimoNumero + 1;
+  return `${novoNumero.toString().padStart(3, '0')}/${ano}`;
+};
+
+// Interface para modelo de fluxo (simplificada para a seleção)
+interface ModeloFluxoSumario {
+  id: string;
+  nome: string;
+  descricao: string;
+  ehPadrao: boolean;
+  quantidadeEtapas: number;
+  instituicao: string;
+}
+
+// Mock de modelos disponíveis (em produção viriam da API)
+const modelosDisponiveis: ModeloFluxoSumario[] = [
+  {
+    id: "modelo-sistema-fiscatus",
+    nome: "Fluxo Completo de Contratação - Fiscatus",
+    descricao: "Modelo padrão utilizado para planejamento e tramitação completa de processos de contratação pública, com base na estrutura original do sistema Fiscatus.",
+    ehPadrao: true,
+    quantidadeEtapas: 21,
+    instituicao: "Sistema"
+  },
+  {
+    id: "modelo-1",
+    nome: "Modelo Padrão de Contratação",
+    descricao: "Modelo padrão para processos de contratação de serviços e produtos",
+    ehPadrao: false,
+    quantidadeEtapas: 3,
+    instituicao: "Comissão de Implantação"
+  },
+  {
+    id: "modelo-2", 
+    nome: "Modelo Simplificado",
+    descricao: "Modelo com menos etapas para contratações simples",
+    ehPadrao: false,
+    quantidadeEtapas: 2,
+    instituicao: "Comissão de Implantação"
+  }
+];
+
+interface NovoProcessoForm {
+  numeroProcesso: string;
+  modeloFluxoId: string;
+  objetoProcesso: string;
+  gerenciaCriadora: string;
+  gerenciasEnvolvidas: string[];
+  anoProcesso: string;
+  tipoTramitacao: string;
+  justificativaTipoTramitacao: string;
+  comentariosIniciais: string;
+  documentosIniciais: File[];
+}
+
+export default function NovoProcesso() {
+  const navigate = useNavigate();
+  const { user } = useUser();
+  
+  // Obter modelo padrão da instituição do usuário
+  const getModeloPadrao = () => {
+    // Primeiro procura por modelos padrão da instituição do usuário
+    const modeloPadrao = modelosDisponiveis.find(m => 
+      m.ehPadrao && m.instituicao === user?.gerencia
+    );
+    // Se não encontrar, usa o modelo padrão do sistema
+    return modeloPadrao || modelosDisponiveis.find(m => m.ehPadrao) || modelosDisponiveis[0];
+  };
+  
+  // Estado do formulário
+  const [formData, setFormData] = useState<NovoProcessoForm>({
+    numeroProcesso: "",
+    modeloFluxoId: getModeloPadrao()?.id || "",
+    objetoProcesso: "",
+    gerenciaCriadora: user?.gerencia || "GRH - Gerência de Recursos Humanos",
+    gerenciasEnvolvidas: [],
+    anoProcesso: new Date().getFullYear().toString(),
+    tipoTramitacao: "",
+    justificativaTipoTramitacao: "",
+    comentariosIniciais: "",
+    documentosIniciais: [],
+  });
+
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showSuccess, setShowSuccess] = useState(false);
+  const [showSeletorModelo, setShowSeletorModelo] = useState(false);
+
+  // Gerar número do processo ao montar o componente
+  useEffect(() => {
+    setFormData(prev => ({
+      ...prev,
+      numeroProcesso: gerarNumeroProcesso()
+    }));
+  }, []);
+
+  const handleInputChange = (field: keyof NovoProcessoForm, value: string | string[] | File[]) => {
+    setFormData(prev => ({
+      ...prev,
+      [field]: value
+    }));
+  };
+
+  const handleCriarProcesso = async () => {
+    setIsSubmitting(true);
+    
+    try {
+      // Simular chamada para API
+      await new Promise(resolve => setTimeout(resolve, 1500));
+      
+      // Simular criação do processo
+      const numeroProcesso = formData.numeroProcesso;
+      
+      // Mostrar sucesso
+      setShowSuccess(true);
+      
+      // Redirecionar após 2 segundos
+      setTimeout(() => {
+        navigate(`/processos/${numeroProcesso}`);
+      }, 2000);
+      
+    } catch (error) {
+      console.error("Erro ao criar processo:", error);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+
+
+  const isFormValid = () => {
+    const camposObrigatorios = 
+      formData.objetoProcesso.trim() !== "" && 
+      formData.tipoTramitacao !== "" &&
+      formData.gerenciasEnvolvidas.length > 0 &&
+      formData.modeloFluxoId !== "";
+    
+    // Se tipo de tramitação foi selecionado, justificativa é obrigatória
+    const justificativaValida = 
+      formData.tipoTramitacao === "" || 
+      formData.justificativaTipoTramitacao.trim() !== "";
+    
+    return camposObrigatorios && justificativaValida;
+  };
+
+  // Obter modelo selecionado
+  const modeloSelecionado = modelosDisponiveis.find(m => m.id === formData.modeloFluxoId);
+
+  const handleSelecionarModelo = (modeloId: string) => {
+    setFormData(prev => ({ ...prev, modeloFluxoId: modeloId }));
+    setShowSeletorModelo(false);
+  };
+
+  return (
+    <div className="min-h-screen bg-gray-50">
+      <Topbar />
+      
+      <main className="pt-20 px-4 sm:px-6 lg:px-8 py-6 min-h-screen max-w-full">
+        {/* Header da página */}
+        <div className="mb-8">
+          <ReturnButton className="mb-4 text-gray-600 hover:text-gray-900" />
+          
+          {/* Título principal */}
+          <div className="text-center mt-4">
+            <h1 className="text-3xl font-bold text-center text-primary flex items-center justify-center">
+              <Plus className="w-8 h-8 mr-3 text-blue-500" />
+              Novo Processo
+            </h1>
+            <p className="text-sm text-muted-foreground text-center mt-1">
+              Criação de novo processo administrativo
+            </p>
+          </div>
+        </div>
+
+        {/* Mensagem de sucesso */}
+        {showSuccess && (
+          <Card className="mb-6 bg-green-50 border-green-200">
+            <CardContent className="p-4">
+              <div className="flex items-center gap-3">
+                <CheckCircle className="w-5 h-5 text-green-600" />
+                <div>
+                  <p className="font-medium text-green-800">
+                    Processo criado com sucesso!
+                  </p>
+                  <p className="text-sm text-green-700">
+                    Número do processo: {formData.numeroProcesso}
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        <div className="w-full space-y-6">
+          {/* Seção 0: Seleção do Modelo de Fluxo */}
+          <Card className="bg-white rounded-xl shadow-md border border-gray-200">
+            <CardContent className="p-6">
+              <div className="flex items-center gap-3 mb-6">
+                <div className="p-2 bg-purple-100 rounded-lg">
+                  <Workflow className="w-5 h-5 text-purple-600" />
+                </div>
+                <h2 className="text-xl font-semibold text-gray-900">Modelo de Fluxo</h2>
+              </div>
+              
+              {modeloSelecionado ? (
+                <div className="space-y-4">
+                  <div className="p-4 border border-purple-200 rounded-lg bg-purple-50">
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-2">
+                          <h3 className="font-medium text-purple-900">
+                            {modeloSelecionado.nome}
+                          </h3>
+                          {modeloSelecionado.ehPadrao && (
+                            <Badge variant="secondary" className="bg-yellow-100 text-yellow-800">
+                              <Star className="w-3 h-3 mr-1 fill-current" />
+                              Padrão
+                            </Badge>
+                          )}
+                        </div>
+                        <p className="text-sm text-purple-700 mb-2">
+                          {modeloSelecionado.descricao}
+                        </p>
+                        <div className="flex items-center gap-4 text-xs text-purple-600">
+                          <span>{modeloSelecionado.quantidadeEtapas} etapas</span>
+                          <span>{modeloSelecionado.instituicao}</span>
+                        </div>
+                      </div>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setShowSeletorModelo(true)}
+                        className="ml-4"
+                      >
+                        <Workflow className="w-4 h-4 mr-2" />
+                        Alterar Modelo
+                      </Button>
+                    </div>
+                  </div>
+                  
+                  <p className="text-sm text-gray-600">
+                    Este modelo será aplicado ao seu processo, definindo as etapas e responsáveis padrão.
+                  </p>
+                </div>
+              ) : (
+                <div className="text-center py-8">
+                  <Workflow className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                  <h3 className="text-lg font-medium text-gray-900 mb-2">
+                    Selecione um Modelo de Fluxo
+                  </h3>
+                  <p className="text-gray-600 mb-4">
+                    Escolha um modelo para definir as etapas do seu processo
+                  </p>
+                  <Button onClick={() => setShowSeletorModelo(true)}>
+                    <Workflow className="w-4 h-4 mr-2" />
+                    Selecionar Modelo
+                  </Button>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Seção 1: Informações Básicas */}
+          <Card className="bg-white rounded-xl shadow-md border border-gray-200">
+            <CardContent className="p-6">
+              <div className="flex items-center gap-3 mb-6">
+                <div className="p-2 bg-blue-100 rounded-lg">
+                  <FileText className="w-5 h-5 text-blue-600" />
+                </div>
+                <h2 className="text-xl font-semibold text-gray-900">Informações Básicas</h2>
+              </div>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {/* Número do Processo */}
+                <div className="space-y-2">
+                  <Label htmlFor="numeroProcesso" className="text-sm font-medium text-gray-700">
+                    Número do Processo
+                  </Label>
+                  <div className="relative">
+                    <Input
+                      id="numeroProcesso"
+                      value={formData.numeroProcesso}
+                      disabled
+                      className="bg-gray-50 text-gray-600 cursor-not-allowed"
+                    />
+                    <div className="absolute inset-y-0 right-0 flex items-center pr-3">
+                      <span className="text-xs text-gray-500">Gerado automaticamente</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Ano do Processo */}
+                <div className="space-y-2">
+                  <Label htmlFor="anoProcesso" className="text-sm font-medium text-gray-700">
+                    Ano do Processo
+                  </Label>
+                  <div className="relative">
+                    <Input
+                      id="anoProcesso"
+                      value={`Ano: ${formData.anoProcesso}`}
+                      disabled
+                      className="bg-gray-50 text-gray-600 cursor-not-allowed"
+                    />
+                  </div>
+                </div>
+
+                {/* Tipo de Tramitação */}
+                <div className="space-y-2">
+                                     <div className="flex items-center gap-2">
+                     <Label htmlFor="tipoTramitacao" className="text-sm font-medium text-gray-700">
+                       Tipo de Tramitação *
+                     </Label>
+                     <Popover>
+                       <PopoverTrigger asChild>
+                         <Button
+                           variant="ghost"
+                           size="icon"
+                           className="h-5 w-5 rounded-full hover:bg-blue-50"
+                         >
+                           <AlertTriangle className="w-3 h-3 text-blue-600" />
+                         </Button>
+                       </PopoverTrigger>
+                       <PopoverContent className="max-w-sm p-4 bg-white border border-gray-200 shadow-lg rounded-lg">
+                         <div className="space-y-3">
+                           <h4 className="font-semibold text-gray-900 text-sm">Tipos de Tramitação:</h4>
+                           <div className="space-y-2 text-xs text-gray-700">
+                             <div>
+                               <span className="font-medium text-blue-600">Ordinária:</span> Processo padrão com prazo normal de tramitação, seguindo o fluxo regular estabelecido.
+                             </div>
+                             <div>
+                               <span className="font-medium text-orange-600">Urgente:</span> Processo que requer tramitação acelerada devido a situações de emergência ou necessidade imediata.
+                             </div>
+                             <div>
+                               <span className="font-medium text-purple-600">Prioritária:</span> Processo com prioridade elevada, mas sem caráter de urgência, recebendo atenção preferencial na fila de tramitação.
+                             </div>
+                           </div>
+                         </div>
+                       </PopoverContent>
+                     </Popover>
+                   </div>
+                  <Select 
+                    value={formData.tipoTramitacao} 
+                    onValueChange={(value) => handleInputChange("tipoTramitacao", value)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecione o tipo" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {tiposTramitacao.map((tipo) => (
+                        <SelectItem key={tipo.value} value={tipo.value}>
+                          {tipo.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* Campo de Justificativa do Tipo de Tramitação */}
+                {formData.tipoTramitacao && (
+                  <div className="space-y-2">
+                    <Label htmlFor="justificativaTipoTramitacao" className="text-sm font-medium text-gray-700">
+                      Justificativa do Tipo de Tramitação *
+                    </Label>
+                    <Textarea
+                      id="justificativaTipoTramitacao"
+                      value={formData.justificativaTipoTramitacao}
+                      onChange={(e) => handleInputChange("justificativaTipoTramitacao", e.target.value)}
+                      placeholder="Explique o motivo da escolha deste tipo de tramitação."
+                      className="min-h-[80px] resize-none"
+                    />
+                  </div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Seção 2: Objeto e Gerências */}
+          <Card className="bg-white rounded-xl shadow-md border border-gray-200">
+            <CardContent className="p-6">
+              <div className="flex items-center gap-3 mb-6">
+                <div className="p-2 bg-green-100 rounded-lg">
+                  <Building2 className="w-5 h-5 text-green-600" />
+                </div>
+                <h2 className="text-xl font-semibold text-gray-900">Objeto e Participação</h2>
+              </div>
+              
+              <div className="space-y-6">
+                {/* Objeto do Processo */}
+                <div className="space-y-2">
+                  <Label htmlFor="objetoProcesso" className="text-sm font-medium text-gray-700">
+                    Objeto do Processo *
+                  </Label>
+                  <Textarea
+                    id="objetoProcesso"
+                    value={formData.objetoProcesso}
+                    onChange={(e) => handleInputChange("objetoProcesso", e.target.value)}
+                    placeholder="Descreva o objeto da contratação"
+                    className="min-h-[100px] resize-none"
+                  />
+                </div>
+
+                {/* Gerência Criadora */}
+                <div className="space-y-2">
+                  <Label className="text-sm font-medium text-gray-700">
+                    Gerência Criadora
+                  </Label>
+                  <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                    <div className="flex items-center gap-2">
+                      <Users className="w-4 h-4 text-blue-600" />
+                      <span className="font-medium text-blue-800">
+                        Gerência: {formData.gerenciaCriadora}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                                 {/* Gerências Envolvidas */}
+                 <div className="space-y-2">
+                   <Label className="text-sm font-medium text-gray-700">
+                     Outras gerências que podem participar do processo *
+                   </Label>
+                   <GerenciaMultiSelect
+                     value={formData.gerenciasEnvolvidas}
+                     onValueChange={(value) => handleInputChange("gerenciasEnvolvidas", value)}
+                     placeholder="Selecione as gerências participantes"
+                     required={true}
+                     excludeValues={[formData.gerenciaCriadora]}
+                   />
+                 </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Seção 3: Comentários e Anexos */}
+          <Card className="bg-white rounded-xl shadow-md border border-gray-200">
+            <CardContent className="p-6">
+              <div className="flex items-center gap-3 mb-6">
+                <div className="p-2 bg-purple-100 rounded-lg">
+                  <Upload className="w-5 h-5 text-purple-600" />
+                </div>
+                <h2 className="text-xl font-semibold text-gray-900">Comentários e Anexos</h2>
+              </div>
+              
+              <div className="space-y-6">
+                {/* Comentários Iniciais */}
+                <div className="space-y-2">
+                  <Label htmlFor="comentariosIniciais" className="text-sm font-medium text-gray-700">
+                    Observações iniciais (opcional)
+                  </Label>
+                  <Textarea
+                    id="comentariosIniciais"
+                    value={formData.comentariosIniciais}
+                    onChange={(e) => handleInputChange("comentariosIniciais", e.target.value)}
+                    placeholder="Digite comentários ou justificativas relevantes para a abertura do processo..."
+                    className="min-h-[100px] resize-none"
+                  />
+                </div>
+
+                                 {/* Anexar documentos iniciais */}
+                 <div className="space-y-2">
+                   <Label className="text-sm font-medium text-gray-700">
+                     Anexar documentos iniciais (opcional)
+                   </Label>
+                   <FileUploadField
+                     label="Anexar documentos iniciais"
+                     name="documentosIniciais"
+                     files={formData.documentosIniciais}
+                     onChange={(files) => handleInputChange("documentosIniciais", files)}
+                     accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
+                     multiple={true}
+                   />
+                 </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Botões de Ação */}
+          <Card className="bg-white rounded-xl shadow-md border border-gray-200">
+            <CardContent className="p-6">
+              <div className="flex flex-col sm:flex-row gap-4 justify-end">
+                <ReturnButton
+                  variant="outline"
+                  className="flex items-center gap-2 px-6 py-3 text-base"
+                  size="lg"
+                />
+                <Button
+                  onClick={handleCriarProcesso}
+                  disabled={!isFormValid() || isSubmitting}
+                  className="flex items-center gap-2 bg-green-600 hover:bg-green-700 disabled:bg-gray-400 px-6 py-3 text-base"
+                  size="lg"
+                >
+                  {isSubmitting ? (
+                    <>
+                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                      Criando Processo...
+                    </>
+                  ) : (
+                    <>
+                      <Plus className="w-5 h-5" />
+                      Criar Processo
+                    </>
+                  )}
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </main>
+
+      {/* Modal Seletor de Modelo */}
+      <Dialog open={showSeletorModelo} onOpenChange={setShowSeletorModelo}>
+        <DialogContent className="sm:max-w-4xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Selecionar Modelo de Fluxo</DialogTitle>
+          </DialogHeader>
+          
+          <div className="py-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {modelosDisponiveis.map((modelo) => (
+                <Card 
+                  key={modelo.id}
+                  className={`cursor-pointer transition-all hover:shadow-lg ${
+                    formData.modeloFluxoId === modelo.id
+                      ? 'ring-2 ring-purple-500 bg-purple-50'
+                      : 'hover:bg-gray-50'
+                  }`}
+                  onClick={() => handleSelecionarModelo(modelo.id)}
+                >
+                  <CardContent className="p-6">
+                    <div className="flex items-start justify-between mb-3">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-2">
+                          <h3 className="font-semibold text-gray-900">
+                            {modelo.nome}
+                          </h3>
+                          {modelo.ehPadrao && (
+                            <Badge variant="secondary" className="bg-yellow-100 text-yellow-800">
+                              <Star className="w-3 h-3 mr-1 fill-current" />
+                              Padrão
+                            </Badge>
+                          )}
+                        </div>
+                        <p className="text-sm text-gray-600 mb-3">
+                          {modelo.descricao}
+                        </p>
+                        <div className="flex items-center gap-4 text-xs text-gray-500">
+                          <span className="flex items-center gap-1">
+                            <Workflow className="w-3 h-3" />
+                            {modelo.quantidadeEtapas} etapas
+                          </span>
+                          <span className="flex items-center gap-1">
+                            <Building2 className="w-3 h-3" />
+                            {modelo.instituicao}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div className="flex justify-between items-center">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="text-xs"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          // Aqui poderia abrir um modal de preview das etapas
+                        }}
+                      >
+                        <Eye className="w-3 h-3 mr-1" />
+                        Visualizar Etapas
+                      </Button>
+                      
+                      {formData.modeloFluxoId === modelo.id && (
+                        <Badge className="bg-purple-600">
+                          <CheckCircle className="w-3 h-3 mr-1" />
+                          Selecionado
+                        </Badge>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+            
+            <div className="flex justify-end gap-2 mt-6 pt-4 border-t">
+              <Button variant="outline" onClick={() => setShowSeletorModelo(false)}>
+                Cancelar
+              </Button>
+              <Button 
+                onClick={() => setShowSeletorModelo(false)}
+                disabled={!formData.modeloFluxoId}
+              >
+                Confirmar Seleção
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+} 
