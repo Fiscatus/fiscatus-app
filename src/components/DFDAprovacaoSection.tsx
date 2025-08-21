@@ -350,43 +350,6 @@ export default function DFDAprovacaoSection({
 
   return (
     <div className="bg-white">
-      {/* Header Moderno */}
-      <div className="bg-white border-b border-gray-200 px-4 py-3 shadow-sm">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <div className="p-3 bg-green-100 rounded-xl">
-              <Search className="w-8 h-8 text-green-600" />
-            </div>
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900">Aprovação do DFD</h1>
-              <p className="text-gray-600">Análise e Aprovação Técnica do Documento de Formalização da Demanda</p>
-            </div>
-          </div>
-          <div className="flex items-center gap-3">
-            {(() => {
-              const { statusConfig, actionInfo } = getStatusInfo();
-              return (
-                <>
-                  <Badge className={`${statusConfig.color} px-3 py-1`}>
-                    {statusConfig.icon}
-                    <span className="ml-2">{statusConfig.label}</span>
-                  </Badge>
-                  {actionInfo && (
-                    <span className="text-xs text-gray-500">{actionInfo}</span>
-                  )}
-                </>
-              );
-            })()}
-            {!isGSPUser() && (
-              <Badge variant="outline" className="px-3 py-1">
-                <Lock className="w-4 h-4 mr-2" />
-                Etapa Restrita à GSP
-              </Badge>
-            )}
-          </div>
-        </div>
-      </div>
-
       {/* Container central ocupando toda a área */}
       <div className="w-full">
         
@@ -718,7 +681,7 @@ export default function DFDAprovacaoSection({
 
           {/* FULL: Ações (rodapé não fixo) */}
           {isGSPUser() && (
-            <section id="acoes" className="col-span-12 w-full mt-6">
+            <section id="acoes" className="col-span-12 w-full mt-6 pb-6">
               <div className="flex w-full items-center justify-end gap-3">
                 <Button 
                   onClick={handleSolicitarCorrecao}

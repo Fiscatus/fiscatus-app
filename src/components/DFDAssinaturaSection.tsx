@@ -495,39 +495,6 @@ export default function DFDAssinaturaSection({
 
   return (
     <div className="min-h-screen bg-white">
-      {/* Header Moderno - IGUAL AO CARD 1 */}
-      <div className="bg-white border-b border-gray-200 px-6 py-4 shadow-sm">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <div className="p-3 bg-purple-100 rounded-xl">
-              <PenTool className="w-8 h-8 text-purple-600" />
-            </div>
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900">Assinatura do DFD</h1>
-              <p className="text-gray-600">Assinatura Digital do Documento de Formalização da Demanda</p>
-            </div>
-          </div>
-          <div className="flex items-center gap-3">
-            <Badge className="bg-purple-100 text-purple-800 px-3 py-1">
-              <PenTool className="w-4 h-4 mr-2" />
-              <span>Versão Final</span>
-            </Badge>
-            {cardData.statusEtapa === 'ASSINADO_N_N' && (
-              <Badge className="bg-green-100 text-green-800 border-green-300 px-3 py-1">
-                <CheckCircle2 className="w-4 h-4 mr-2" />
-                Assinado ({assinaturasConcluidas}/{totalAssinaturas})
-              </Badge>
-            )}
-            {!podeEditar && (
-              <Badge variant="outline" className="px-3 py-1">
-                <Lock className="w-4 h-4 mr-2" />
-                Somente Visualização
-              </Badge>
-            )}
-          </div>
-        </div>
-      </div>
-
       {/* Container central ocupando toda a área */}
       <div className="w-full">
         {/* Grid principal 12 colunas */}
@@ -817,7 +784,7 @@ export default function DFDAssinaturaSection({
         </section>
 
         {/* Barra de Ações (rodapé não fixo) */}
-        <Card className="w-full shadow-lg border-0 bg-white/80 backdrop-blur-sm mt-6">
+        <Card className="w-full shadow-lg border-0 bg-white/80 backdrop-blur-sm mt-6 mb-6">
           <CardContent className="p-4">
             <div className="flex flex-col sm:flex-row gap-4 justify-between items-center w-full">
               

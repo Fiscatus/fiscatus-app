@@ -23,7 +23,14 @@ import {
   Trash2,
   Save,
   X,
-  Settings
+  Settings,
+  CheckSquare,
+  FileSignature,
+  Send,
+  ClipboardList,
+  FileCheck,
+  AlertTriangle,
+  TrendingUp
 } from 'lucide-react';
 import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, horizontalListSortingStrategy } from '@dnd-kit/sortable';
@@ -34,6 +41,7 @@ import { Badge } from './ui/badge';
 import { useUser } from '@/contexts/UserContext';
 import { usePermissoes } from '@/hooks/usePermissoes';
 import { useToast } from '@/hooks/use-toast';
+import { useMediaQuery } from '@/hooks/use-media-query';
 import { getBordaEtapa } from '@/lib/utils';
 import EtapaDetalhesModal from './EtapaDetalhesModal';
 import EtapaCardEditavel from './EtapaCardEditavel';
@@ -46,7 +54,8 @@ import DFDAssinaturaSection from './DFDAssinaturaSection';
 import DFDDespachoSection from './DFDDespachoSection';
 import ConsolidacaoDemandaSection from './ConsolidacaoDemandaSection';
 import ETPElaboracaoSection from './ETPElaboracaoSection';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from './ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogClose } from './ui/dialog';
+import * as DialogPrimitive from '@radix-ui/react-dialog';
 
 interface Etapa {
   id: number;
@@ -113,6 +122,159 @@ export default function FluxoProcessoCompleto({ etapas = etapasPadrao, onEtapaCl
   const [isModalOpen, setIsModalOpen] = useState(false);
   const { user } = useUser();
   
+  // Função para obter informações do header de cada etapa
+  const getEtapaHeaderInfo = (etapa: Etapa) => {
+    switch (etapa.id) {
+      case 1: // Elaboração do DFD
+        return {
+          title: "Elaboração do DFD",
+          subtitle: "Documento de Formalização da Demanda",
+          icon: <FileText className="w-6 h-6 text-indigo-600" />,
+          statusBadges: [
+            <Badge key="versao" className="bg-blue-100 text-blue-800 px-3 py-1">
+              <FileText className="w-4 h-4 mr-2" />
+              <span>Versão 1.0</span>
+            </Badge>,
+            <Badge key="concluida" className="bg-green-100 text-green-800 border-green-300 px-3 py-1">
+              <CheckCircle className="w-4 h-4 mr-2" />
+              Etapa Concluída
+            </Badge>
+          ]
+        };
+      case 2: // Aprovação do DFD
+        return {
+          title: "Aprovação do DFD",
+          subtitle: "Análise e Aprovação Técnica",
+          icon: <CheckSquare className="w-6 h-6 text-indigo-600" />,
+          statusBadges: [
+            <Badge key="status" className="bg-blue-100 text-blue-800 px-3 py-1">
+              <Search className="w-4 h-4 mr-2" />
+              <span>Em Análise</span>
+            </Badge>
+          ]
+        };
+      case 3: // Assinatura do DFD
+        return {
+          title: "Assinatura do DFD",
+          subtitle: "Assinatura Digital do Documento",
+          icon: <FileSignature className="w-6 h-6 text-indigo-600" />,
+          statusBadges: [
+            <Badge key="versao" className="bg-purple-100 text-purple-800 px-3 py-1">
+              <PenTool className="w-4 h-4 mr-2" />
+              <span>Versão Final</span>
+            </Badge>,
+            <Badge key="assinado" className="bg-green-100 text-green-800 border-green-300 px-3 py-1">
+              <CheckCircle className="w-4 h-4 mr-2" />
+              Assinado (2/3)
+            </Badge>
+          ]
+        };
+      case 4: // Despacho do DFD
+        return {
+          title: "Despacho do DFD",
+          subtitle: "Despacho e Encaminhamento",
+          icon: <Send className="w-6 h-6 text-indigo-600" />,
+          statusBadges: [
+            <Badge key="status" className="bg-orange-100 text-orange-800 px-3 py-1">
+              <Send className="w-4 h-4 mr-2" />
+              <span>Pendente</span>
+            </Badge>
+          ]
+        };
+      case 5: // Elaboração do ETP
+        return {
+          title: "Elaboração do ETP",
+          subtitle: "Estudo Técnico Preliminar",
+          icon: <ClipboardList className="w-6 h-6 text-indigo-600" />,
+          statusBadges: [
+            <Badge key="status" className="bg-yellow-100 text-yellow-800 px-3 py-1">
+              <ClipboardList className="w-4 h-4 mr-2" />
+              Rascunho
+            </Badge>
+          ]
+        };
+      case 6: // Assinatura do ETP
+        return {
+          title: "Assinatura do ETP",
+          subtitle: "Assinatura Digital do ETP",
+          icon: <FileSignature className="w-6 h-6 text-indigo-600" />,
+          statusBadges: [
+            <Badge key="status" className="bg-purple-100 text-purple-800 px-3 py-1">
+              <FileSignature className="w-4 h-4 mr-2" />
+              <span>Aguardando Assinatura</span>
+            </Badge>
+          ]
+        };
+      case 7: // Despacho do ETP
+        return {
+          title: "Despacho do ETP",
+          subtitle: "Despacho e Encaminhamento do ETP",
+          icon: <Send className="w-6 h-6 text-indigo-600" />,
+          statusBadges: [
+            <Badge key="status" className="bg-gray-100 text-gray-800 px-3 py-1">
+              <Send className="w-4 h-4 mr-2" />
+              <span>Não Iniciado</span>
+            </Badge>
+          ]
+        };
+      case 8: // Elaboração/Análise da Matriz de Risco
+        return {
+          title: "Elaboração/Análise da Matriz de Risco",
+          subtitle: "Avaliação de Riscos do Projeto",
+          icon: <AlertTriangle className="w-6 h-6 text-indigo-600" />,
+          statusBadges: [
+            <Badge key="status" className="bg-gray-100 text-gray-800 px-3 py-1">
+              <AlertTriangle className="w-4 h-4 mr-2" />
+              <span>Não Iniciado</span>
+            </Badge>
+          ]
+        };
+      case 9: // Aprovação da Matriz de Risco
+        return {
+          title: "Aprovação da Matriz de Risco",
+          subtitle: "Aprovação da Avaliação de Riscos",
+          icon: <CheckSquare className="w-6 h-6 text-indigo-600" />,
+          statusBadges: [
+            <Badge key="status" className="bg-gray-100 text-gray-800 px-3 py-1">
+              <CheckSquare className="w-4 h-4 mr-2" />
+              <span>Não Iniciado</span>
+            </Badge>
+          ]
+        };
+      case 10: // Assinatura da Matriz de Risco
+        return {
+          title: "Assinatura da Matriz de Risco",
+          subtitle: "Assinatura da Avaliação de Riscos",
+          icon: <FileSignature className="w-6 h-6 text-indigo-600" />,
+          statusBadges: [
+            <Badge key="status" className="bg-gray-100 text-gray-800 px-3 py-1">
+              <FileSignature className="w-4 h-4 mr-2" />
+              <span>Não Iniciado</span>
+            </Badge>
+          ]
+        };
+      case 11: // Cotação
+        return {
+          title: "Cotação",
+          subtitle: "Solicitação de Preços",
+          icon: <DollarSign className="w-6 h-6 text-indigo-600" />,
+          statusBadges: [
+            <Badge key="status" className="bg-gray-100 text-gray-800 px-3 py-1">
+              <DollarSign className="w-4 h-4 mr-2" />
+              <span>Não Iniciado</span>
+            </Badge>
+          ]
+        };
+      default:
+        return {
+          title: etapa.nome,
+          subtitle: "",
+          icon: <FileText className="w-6 h-6 text-indigo-600" />,
+          statusBadges: []
+        };
+    }
+  };
+  
   // Estados para modo de edição
   const [modoEdicao, setModoEdicao] = useState(false);
   const [etapasEditadas, setEtapasEditadas] = useState<Etapa[]>(etapas);
@@ -138,6 +300,36 @@ export default function FluxoProcessoCompleto({ etapas = etapasPadrao, onEtapaCl
   const [showETPModal, setShowETPModal] = useState(false);
   const [currentEtapa, setCurrentEtapa] = useState<Etapa | null>(null);
 
+  // Hooks responsivos para detectar tamanho da tela
+  const isMobile = useMediaQuery('(max-width: 768px)');
+  const isTablet = useMediaQuery('(min-width: 769px) and (max-width: 1024px)');
+  const isDesktop = useMediaQuery('(min-width: 1025px)');
+
+  // Event listener para fechar modal com tecla ESC
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        if (showDFDModal) {
+          setShowDFDModal(false);
+        }
+        if (showETPModal) {
+          setShowETPModal(false);
+        }
+        if (showConsolidacaoModal) {
+          setShowConsolidacaoModal(false);
+        }
+      }
+    };
+
+    if (showDFDModal || showETPModal || showConsolidacaoModal) {
+      document.addEventListener('keydown', handleKeyDown);
+    }
+
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [showDFDModal, showETPModal, showConsolidacaoModal]);
+
   const { isGerenciaPai, podeEditarFluxo, podeExcluirEtapa, podeEditarCard } = usePermissoes();
   const { toast } = useToast();
 
@@ -156,6 +348,10 @@ export default function FluxoProcessoCompleto({ etapas = etapasPadrao, onEtapaCl
       setTemAlteracoes(false);
     }
   }, [etapas, modoEdicao]);
+
+
+
+
 
   const getStatusConfig = (status: string) => {
     switch (status) {
@@ -858,79 +1054,223 @@ export default function FluxoProcessoCompleto({ etapas = etapasPadrao, onEtapaCl
         isLoading={isLoading}
       />
 
-      {/* Dialog para DFD */}
-      <Dialog open={showDFDModal} onOpenChange={setShowDFDModal}>
-        <DialogContent className="w-[95vw] max-w-[95vw] max-h-[92vh] overflow-y-auto">
-          {currentEtapa?.id === 1 ? (
-            <DFDFormSection
-              processoId="1"
-              etapaId={currentEtapa.id}
-              onComplete={handleDFDComplete}
-              onSave={handleDFDSave}
-              canEdit={canManageEtapa(currentEtapa)}
-              gerenciaCriadora={gerenciaCriadora}
-            />
-          ) : currentEtapa?.id === 2 ? (
-            <DFDAprovacaoSection
-              processoId="1"
-              etapaId={currentEtapa.id}
-              onComplete={handleDFDAprovar}
-              onSave={handleDFDSave}
-              canEdit={canManageEtapa(currentEtapa)}
-            />
-          ) : currentEtapa?.id === 3 ? (
-            <DFDAssinaturaSection
-              processoId="1"
-              etapaId={currentEtapa.id}
-              onComplete={handleDFDComplete}
-              onSave={handleDFDSave}
-              canEdit={canManageEtapa(currentEtapa)}
-              gerenciaCriadora={gerenciaCriadora}
-            />
-          ) : currentEtapa?.id === 4 ? (
-            <DFDDespachoSection
-              processoId="1"
-              etapaId={currentEtapa.id}
-              onComplete={handleDFDComplete}
-              onSave={handleDFDSave}
-              canEdit={canManageEtapa(currentEtapa)}
-              gerenciaCriadora={gerenciaCriadora}
-              initialData={dfdData}
-            />
-          ) : null}
-        </DialogContent>
-      </Dialog>
+      {/* Modal DFD com tamanho responsivo */}
+      {showDFDModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div className={`
+            bg-white rounded-lg shadow-xl border overflow-hidden
+            ${isMobile 
+              ? 'w-full max-w-[96vw] max-h-[92vh]' 
+              : isTablet 
+                ? 'w-full max-w-[90vw] max-h-[88vh]' 
+                : 'w-full max-w-[75vw] max-h-[85vh]'
+            }
+          `}>
+            {/* Header com título, subtítulo e botão X */}
+            <div className="flex items-center justify-between p-4 border-b border-gray-200 bg-gray-50">
+              <div className="flex items-center gap-3">
+                {currentEtapa && getEtapaHeaderInfo(currentEtapa).icon}
+                <div>
+                  <h2 className="text-lg font-semibold text-slate-900">
+                    {currentEtapa ? getEtapaHeaderInfo(currentEtapa).title : 'Detalhes da Etapa'}
+                  </h2>
+                  {currentEtapa && getEtapaHeaderInfo(currentEtapa).subtitle && (
+                    <p className="text-sm text-slate-500">
+                      {getEtapaHeaderInfo(currentEtapa).subtitle}
+                    </p>
+                  )}
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                {currentEtapa && getEtapaHeaderInfo(currentEtapa).statusBadges}
+                <button 
+                  onClick={() => setShowDFDModal(false)}
+                  className="w-7 h-7 rounded-full bg-gray-100/80 border border-gray-200/60 shadow-sm opacity-60 hover:opacity-80 transition-all duration-200 flex items-center justify-center"
+                >
+                  <X className="h-3.5 w-3.5 text-gray-500" />
+                </button>
+              </div>
+            </div>
+            
+            {/* Conteúdo do modal */}
+            <div className={`
+              overflow-y-auto overflow-x-hidden px-6 py-4
+              ${isMobile 
+                ? 'max-h-[calc(92vh-120px)]' 
+                : isTablet 
+                  ? 'max-h-[calc(88vh-120px)]' 
+                  : 'max-h-[calc(85vh-120px)]'
+              }
+            `}>
+              {currentEtapa?.id === 1 ? (
+                <div className="pb-6">
+                  <DFDFormSection
+                    processoId="1"
+                    etapaId={currentEtapa.id}
+                    onComplete={handleDFDComplete}
+                    onSave={handleDFDSave}
+                    canEdit={true}
+                    gerenciaCriadora={gerenciaCriadora}
+                  />
+                </div>
+              ) : currentEtapa?.id === 2 ? (
+                <DFDAprovacaoSection
+                  processoId="1"
+                  etapaId={currentEtapa.id}
+                  onComplete={handleDFDAprovar}
+                  onSave={handleDFDSave}
+                  canEdit={canManageEtapa(currentEtapa)}
+                />
+              ) : currentEtapa?.id === 3 ? (
+                <DFDAssinaturaSection
+                  processoId="1"
+                  etapaId={currentEtapa.id}
+                  onComplete={handleDFDComplete}
+                  onSave={handleDFDSave}
+                  canEdit={canManageEtapa(currentEtapa)}
+                  gerenciaCriadora={gerenciaCriadora}
+                />
+              ) : currentEtapa?.id === 4 ? (
+                <DFDDespachoSection
+                  processoId="1"
+                  etapaId={currentEtapa.id}
+                  onComplete={handleDFDComplete}
+                  onSave={handleDFDSave}
+                  canEdit={canManageEtapa(currentEtapa)}
+                  gerenciaCriadora={gerenciaCriadora}
+                  initialData={dfdData}
+                />
+              ) : null}
+            </div>
+          </div>
+        </div>
+      )}
 
-      {/* Dialog para ETP */}
-      <Dialog open={showETPModal} onOpenChange={setShowETPModal}>
-        <DialogContent className="w-[95vw] max-w-[95vw] max-h-[92vh] overflow-y-auto">
-          {currentEtapa?.id === 5 && (
-            <ETPElaboracaoSection
-              processoId="1"
-              etapaId={currentEtapa.id}
-              onComplete={handleETPComplete}
-              onSave={handleETPSave}
-              canEdit={canManageEtapa(currentEtapa)}
-              gerenciaCriadora={gerenciaCriadora}
-            />
-          )}
-        </DialogContent>
-      </Dialog>
+      {/* Modal ETP com tamanho responsivo */}
+      {showETPModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div className={`
+            bg-white rounded-lg shadow-xl border overflow-hidden
+            ${isMobile 
+              ? 'w-full max-w-[96vw] max-h-[92vh]' 
+              : isTablet 
+                ? 'w-full max-w-[90vw] max-h-[88vh]' 
+                : 'w-full max-w-[75vw] max-h-[85vh]'
+            }
+          `}>
+            {/* Header com título, subtítulo e botão X */}
+            <div className="flex items-center justify-between p-4 border-b border-gray-200 bg-gray-50">
+              <div className="flex items-center gap-3">
+                {currentEtapa && getEtapaHeaderInfo(currentEtapa).icon}
+                <div>
+                  <h2 className="text-lg font-semibold text-slate-900">
+                    {currentEtapa ? getEtapaHeaderInfo(currentEtapa).title : 'Detalhes da Etapa'}
+                  </h2>
+                  {currentEtapa && getEtapaHeaderInfo(currentEtapa).subtitle && (
+                    <p className="text-sm text-slate-500">
+                      {getEtapaHeaderInfo(currentEtapa).subtitle}
+                    </p>
+                  )}
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                {currentEtapa && getEtapaHeaderInfo(currentEtapa).statusBadges}
+                <button 
+                  onClick={() => setShowETPModal(false)}
+                  className="w-7 h-7 rounded-full bg-gray-100/80 border border-gray-200/60 shadow-sm opacity-60 hover:opacity-80 transition-all duration-200 flex items-center justify-center"
+                >
+                  <X className="h-3.5 w-3.5 text-gray-500" />
+                </button>
+              </div>
+            </div>
+            
+            {/* Conteúdo do modal */}
+            <div className={`
+              overflow-y-auto overflow-x-hidden px-6 py-4
+              ${isMobile 
+                ? 'max-h-[calc(92vh-120px)]' 
+                : isTablet 
+                  ? 'max-h-[calc(88vh-120px)]' 
+                  : 'max-h-[calc(85vh-120px)]'
+              }
+            `}>
+              {currentEtapa?.id === 5 && (
+                <ETPElaboracaoSection
+                  processoId="1"
+                  etapaId={currentEtapa.id.toString()}
+                  onComplete={handleETPComplete}
+                  onSave={handleETPSave}
+                  canEdit={canManageEtapa(currentEtapa)}
+                  gerenciaCriadora={gerenciaCriadora}
+                />
+              )}
+            </div>
+          </div>
+        </div>
+      )}
 
-      {/* Dialog para Consolidação da Demanda */}
-      <Dialog open={showConsolidacaoModal} onOpenChange={setShowConsolidacaoModal}>
-        <DialogContent className="w-[95vw] max-w-[95vw] max-h-[92vh] overflow-y-auto">
-          {currentEtapa?.nome === 'Consolidação da Demanda' && (
-            <ConsolidacaoDemandaSection
-              processoId="1"
-              etapaId={currentEtapa.id}
-              onComplete={handleConsolidacaoComplete}
-              onSave={handleConsolidacaoSave}
-              canEdit={canManageEtapa(currentEtapa)}
-            />
-          )}
-        </DialogContent>
-      </Dialog>
+      {/* Modal Consolidação da Demanda com tamanho responsivo */}
+      {showConsolidacaoModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div className={`
+            bg-white rounded-lg shadow-xl border overflow-hidden
+            ${isMobile 
+              ? 'w-full max-w-[96vw] max-h-[92vh]' 
+              : isTablet 
+                ? 'w-full max-w-[90vw] max-h-[88vh]' 
+                : 'w-full max-w-[75vw] max-h-[85vh]'
+            }
+          `}>
+            {/* Header com título, subtítulo e botão X */}
+            <div className="flex items-center justify-between p-4 border-b border-gray-200 bg-gray-50">
+              <div className="flex items-center gap-3">
+                <Users className="w-6 h-6 text-indigo-600" />
+                <div>
+                  <h2 className="text-lg font-semibold text-slate-900">
+                    Consolidação da Demanda
+                  </h2>
+                  <p className="text-sm text-slate-500">
+                    Notificação e consolidação de setores interessados
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <Badge className="bg-blue-100 text-blue-800 px-3 py-1">
+                  <Users className="w-4 h-4 mr-2" />
+                  <span>Em Andamento</span>
+                </Badge>
+                <button 
+                  onClick={() => setShowConsolidacaoModal(false)}
+                  className="w-7 h-7 rounded-full bg-gray-100/80 border border-gray-200/60 shadow-sm opacity-60 hover:opacity-80 transition-all duration-200 flex items-center justify-center"
+                >
+                  <X className="h-3.5 w-3.5 text-gray-500" />
+                </button>
+              </div>
+            </div>
+            
+            {/* Conteúdo do modal */}
+            <div className={`
+              overflow-y-auto overflow-x-hidden px-6 py-4
+              ${isMobile 
+                ? 'max-h-[calc(92vh-120px)]' 
+                : isTablet 
+                  ? 'max-h-[calc(88vh-120px)]' 
+                  : 'max-h-[calc(85vh-120px)]'
+              }
+            `}>
+              {currentEtapa?.nome === 'Consolidação da Demanda' && (
+                <ConsolidacaoDemandaSection
+                  processoId="1"
+                  etapaId={currentEtapa.id}
+                  onComplete={handleConsolidacaoComplete}
+                  onSave={handleConsolidacaoSave}
+                  canEdit={canManageEtapa(currentEtapa)}
+                />
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

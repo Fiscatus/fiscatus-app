@@ -531,39 +531,6 @@ export default function DFDDespachoSection({
 
   return (
     <div className="min-h-screen bg-white">
-      {/* Header Moderno - IGUAL AOS OUTROS CARDS */}
-      <div className="bg-white border-b border-gray-200 px-6 py-4 shadow-sm">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <div className="p-3 bg-orange-100 rounded-xl">
-              <FileCheck className="w-8 h-8 text-orange-600" />
-            </div>
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900">Despacho do DFD</h1>
-              <p className="text-gray-600">Despacho do Documento de Formalização da Demanda</p>
-            </div>
-          </div>
-          <div className="flex items-center gap-3">
-            <Badge className={`${statusConfig.color} px-3 py-1`}>
-              {statusConfig.icon}
-              <span className="ml-2">{statusConfig.label}</span>
-            </Badge>
-            {!podeEditar && (
-              <Badge variant="outline" className="px-3 py-1">
-                <Lock className="w-4 h-4 mr-2" />
-                Somente Visualização
-              </Badge>
-            )}
-            {despachoData.status === 'ASSINADO' && (
-              <Badge className="bg-green-100 text-green-800 border-green-300 px-3 py-1">
-                <CheckCircle2 className="w-4 h-4 mr-2" />
-                Assinado pela SE
-              </Badge>
-            )}
-          </div>
-        </div>
-      </div>
-
       {/* Container central ocupando toda a área */}
       <div className="w-full">
         {/* Grid principal 12 colunas */}
@@ -929,7 +896,7 @@ export default function DFDDespachoSection({
               </div>
             </div>
 
-            <div className="flex justify-end gap-3 pt-4">
+            <div className="flex justify-end gap-3 pt-4 pb-2">
               <Button
                 variant="outline"
                 onClick={() => setShowAdicionarResponsavel(false)}
@@ -1007,7 +974,7 @@ export default function DFDDespachoSection({
               </Alert>
             </div>
 
-            <div className="flex justify-end gap-3 pt-4">
+            <div className="flex justify-end gap-3 pt-4 pb-2">
               <Button
                 variant="outline"
                 onClick={() => setShowConcluirModal(false)}

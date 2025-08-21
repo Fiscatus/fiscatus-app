@@ -626,39 +626,6 @@ export default function DFDFormSection({
 
   return (
     <div className="bg-white">
-      {/* Header Moderno */}
-      <div className="bg-white border-b border-gray-200 px-4 py-3 shadow-sm">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <div className="p-3 bg-blue-100 rounded-xl">
-              <FileText className="w-8 h-8 text-blue-600" />
-            </div>
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900">Elaboração do DFD</h1>
-              <p className="text-gray-600">Documento de Formalização da Demanda</p>
-            </div>
-          </div>
-          <div className="flex items-center gap-3">
-            <Badge className="bg-blue-100 text-blue-800 px-3 py-1">
-              <FileText className="w-4 h-4 mr-2" />
-              <span>Versão {currentVersion.numeroVersao}</span>
-            </Badge>
-            {!permissoes.podeEditar && (
-              <Badge variant="outline" className="px-3 py-1">
-                <Lock className="w-4 h-4 mr-2" />
-                Somente Visualização
-              </Badge>
-            )}
-            {etapaConcluida && (
-              <Badge className="bg-green-100 text-green-800 border-green-300 px-3 py-1">
-                <CheckCircle2 className="w-4 h-4 mr-2" />
-                Etapa Concluída
-              </Badge>
-            )}
-          </div>
-        </div>
-      </div>
-
       {/* Container central ocupando toda a área */}
       <div className="w-full">
         {/* Grid principal 12 colunas */}
@@ -1031,7 +998,7 @@ export default function DFDFormSection({
           </section>
 
           {/* FULL: Ações (rodapé não fixo) */}
-          <section id="acoes" className="col-span-12 w-full mt-6">
+          <section id="acoes" className="col-span-12 w-full mt-6 pb-6">
             <div className="flex w-full items-center justify-end gap-3">
                 <div className="flex flex-col sm:flex-row gap-3">
                   {/* Botão Salvar Versão */}
@@ -1166,7 +1133,7 @@ export default function DFDFormSection({
               </Alert>
             </div>
 
-            <div className="flex justify-end gap-3 pt-4">
+            <div className="flex justify-end gap-3 pt-4 pb-2">
               <Button
                 variant="outline"
                 onClick={() => setShowConcluirModal(false)}

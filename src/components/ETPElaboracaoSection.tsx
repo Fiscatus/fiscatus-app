@@ -380,27 +380,6 @@ export default function ETPElaboracaoSection({
 
   return (
     <div className="min-h-screen bg-white">
-      {/* Header Moderno - IGUAL AOS CARDS DFD */}
-      <div className="bg-white border-b border-gray-200 px-6 py-4 shadow-sm">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <div className="p-3 bg-orange-100 rounded-xl">
-              <FileText className="w-8 h-8 text-orange-600" />
-            </div>
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900">Elaboração do ETP</h1>
-              <p className="text-gray-600">Elaboração do Estudo Técnico Preliminar</p>
-            </div>
-          </div>
-          <div className="flex items-center gap-2">
-            <Badge className={`${etpData.status === 'finalizado' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}`}>
-              {etpData.status === 'finalizado' ? 'Finalizado' : 'Rascunho'}
-            </Badge>
-            {getSLABadge(etpData.cronograma.sla, etpData.tempoPermanencia)}
-          </div>
-        </div>
-      </div>
-
       {/* Container central ocupando toda a área */}
       <div className="w-full">
         {/* Grid principal 12 colunas */}
