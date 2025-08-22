@@ -31,7 +31,8 @@ import {
   FileCheck,
   AlertTriangle,
   TrendingUp,
-  RotateCcw
+  RotateCcw,
+  Newspaper
 } from 'lucide-react';
 import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, horizontalListSortingStrategy } from '@dnd-kit/sortable';
@@ -55,6 +56,7 @@ import DFDAssinaturaSection from './DFDAssinaturaSection';
 import DFDDespachoSection from './DFDDespachoSection';
 import DFDAnaliseJuridicaSection from './DFDAnaliseJuridicaSection';
 import DFDCumprimentoRessalvasSection from './DFDCumprimentoRessalvasSection';
+import DFDPublicacaoSection from './DFDPublicacaoSection';
 import ConsolidacaoDemandaSection from './ConsolidacaoDemandaSection';
 import ETPElaboracaoSection from './ETPElaboracaoSection';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogClose } from './ui/dialog';
@@ -299,6 +301,18 @@ export default function FluxoProcessoCompleto({ etapas = etapasPadrao, onEtapaCl
             </Badge>
           ]
         };
+      case 21: // Publicação
+        return {
+          title: "Publicação",
+          subtitle: "Publicação Oficial do Edital",
+          icon: <Newspaper className="w-6 h-6 text-green-600" />,
+          statusBadges: [
+            <Badge key="status" className="bg-green-100 text-green-800 px-3 py-1">
+              <Newspaper className="w-4 h-4 mr-2" />
+              <span>Pendente de Publicação</span>
+            </Badge>
+          ]
+        };
       default:
         return {
           title: etapa.nome,
@@ -493,6 +507,10 @@ export default function FluxoProcessoCompleto({ etapas = etapasPadrao, onEtapaCl
       setShowDFDModal(true);
     } else if (etapa.id === 16) {
       // Card "Cumprimento de Ressalvas pós Análise Jurídica Prévia"
+      setCurrentEtapa(etapa);
+      setShowDFDModal(true);
+    } else if (etapa.id === 21) {
+      // Card "Publicação"
       setCurrentEtapa(etapa);
       setShowDFDModal(true);
     } else if (etapa.nome === 'Consolidação da Demanda') {
@@ -1198,6 +1216,14 @@ export default function FluxoProcessoCompleto({ etapas = etapasPadrao, onEtapaCl
                   onSave={handleDFDSave}
                   canEdit={canManageEtapa(currentEtapa)}
                   initialData={dfdData}
+                />
+              ) : currentEtapa?.id === 21 ? (
+                <DFDPublicacaoSection
+                  processoId="1"
+                  etapaId={currentEtapa.id}
+                  onComplete={handleDFDComplete}
+                  onSave={handleDFDSave}
+                  canEdit={canManageEtapa(currentEtapa)}
                 />
               ) : null}
             </div>
