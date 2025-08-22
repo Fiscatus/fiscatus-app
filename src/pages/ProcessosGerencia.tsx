@@ -1030,9 +1030,6 @@ function CreateProcessModal() {
                            <div>
                              <span className="font-medium text-orange-600">Urgente:</span> Processo que requer tramitação acelerada devido a situações de emergência ou necessidade imediata.
                            </div>
-                           <div>
-                             <span className="font-medium text-purple-600">Prioritária:</span> Processo com prioridade elevada, mas sem caráter de urgência, recebendo atenção preferencial na fila de tramitação.
-                           </div>
                          </div>
                        </div>
                      </PopoverContent>
@@ -1048,7 +1045,6 @@ function CreateProcessModal() {
                   <SelectContent>
                     <SelectItem value="ordinaria">Ordinária</SelectItem>
                     <SelectItem value="urgente">Urgente</SelectItem>
-                    <SelectItem value="prioritaria">Prioritária</SelectItem>
                   </SelectContent>
                 </Select>
 

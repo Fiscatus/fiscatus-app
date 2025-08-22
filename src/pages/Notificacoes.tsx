@@ -21,7 +21,8 @@ import {
   RefreshCw,
   Eye,
   ExternalLink,
-  Sparkles
+  Sparkles,
+  AtSign
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -48,7 +49,7 @@ import { useToast } from "@/components/ui/use-toast";
 // Tipos
 interface Notification {
   id: string;
-  type: "process" | "signature" | "warning" | "info" | "success" | "system" | "deadline";
+  type: "process" | "signature" | "warning" | "info" | "success" | "system" | "deadline" | "mention";
   title: string;
   description: string;
   timestamp: string;
@@ -62,6 +63,17 @@ interface Notification {
 const mockNotifications: Notification[] = [
   {
     id: "1",
+    type: "mention",
+    title: "Você foi mencionado",
+    description: "Yasmin Pissolati Mattos Bretz mencionou você em um comentário do processo PA-001/2024.",
+    timestamp: "há 30 minutos",
+    isRead: false,
+    link: "/processo/1#comentario-123",
+    icon: <AtSign className="w-4 h-4" />,
+    priority: "medium"
+  },
+  {
+    id: "2",
     type: "signature",
     title: "Assinatura solicitada",
     description: "DFD 010/2025 está aguardando sua assinatura há mais de 24 horas",
@@ -72,7 +84,7 @@ const mockNotifications: Notification[] = [
     priority: "high"
   },
   {
-    id: "2",
+    id: "3",
     type: "process",
     title: "Processo atualizado",
     description: "ETP 011/2025 foi movido para 'Em andamento' pelo usuário João Silva",
@@ -164,6 +176,7 @@ const filterOptions = [
   { key: "todas", label: "Todas", icon: "✅", color: "bg-gray-100 hover:bg-gray-200 text-gray-700" },
   { key: "nao-lidas", label: "Não lidas", icon: "📥", color: "bg-blue-100 hover:bg-blue-200 text-blue-700" },
   { key: "lidas", label: "Lidas", icon: "📤", color: "bg-green-100 hover:bg-green-200 text-green-700" },
+  { key: "mencoes", label: "Menções", icon: "@", color: "bg-indigo-100 hover:bg-indigo-200 text-indigo-700" },
   { key: "processo", label: "Processo", icon: "🔄", color: "bg-blue-100 hover:bg-blue-200 text-blue-700" },
   { key: "assinatura", label: "Assinatura", icon: "✍️", color: "bg-purple-100 hover:bg-purple-200 text-purple-700" },
   { key: "sistema", label: "Sistema", icon: "⚙️", color: "bg-gray-100 hover:bg-gray-200 text-gray-700" },
@@ -197,6 +210,8 @@ export default function Notificacoes() {
               return !notification.isRead;
             case "lidas":
               return notification.isRead;
+            case "mencoes":
+              return notification.type === "mention";
             case "processo":
               return notification.type === "process";
             case "assinatura":
@@ -311,6 +326,8 @@ export default function Notificacoes() {
   // Obter ícone baseado no tipo
   const getNotificationIcon = (type: string) => {
     switch (type) {
+      case "mention":
+        return <AtSign className="w-4 h-4" />;
       case "process":
         return <FileText className="w-4 h-4" />;
       case "signature":
@@ -333,6 +350,8 @@ export default function Notificacoes() {
   // Obter cor baseada no tipo
   const getNotificationColor = (type: string) => {
     switch (type) {
+      case "mention":
+        return "text-indigo-600 bg-indigo-50 border-indigo-200";
       case "process":
         return "text-blue-600 bg-blue-50 border-blue-200";
       case "signature":

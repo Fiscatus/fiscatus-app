@@ -31,13 +31,13 @@ import FileUploadField from "@/components/FileUploadField";
 import { useUser } from "@/contexts/UserContext";
 import { GerenciaSelect } from "@/components/GerenciaSelect";
 import { GerenciaMultiSelect } from "@/components/GerenciaMultiSelect";
+import TextareaWithMentions from "@/components/TextareaWithMentions";
 
 // Removido array de gerências mockadas - agora usa GerenciaSelect
 
 const tiposTramitacao = [
   { value: "ordinaria", label: "Ordinária" },
   { value: "urgente", label: "Urgente" },
-  { value: "prioritaria", label: "Prioritária" },
 ];
 
 // Função para gerar número do processo
@@ -373,12 +373,9 @@ export default function NovoProcesso() {
                              <div>
                                <span className="font-medium text-blue-600">Ordinária:</span> Processo padrão com prazo normal de tramitação, seguindo o fluxo regular estabelecido.
                              </div>
-                             <div>
-                               <span className="font-medium text-orange-600">Urgente:</span> Processo que requer tramitação acelerada devido a situações de emergência ou necessidade imediata.
-                             </div>
-                             <div>
-                               <span className="font-medium text-purple-600">Prioritária:</span> Processo com prioridade elevada, mas sem caráter de urgência, recebendo atenção preferencial na fila de tramitação.
-                             </div>
+                                                        <div>
+                             <span className="font-medium text-orange-600">Urgente:</span> Processo que requer tramitação acelerada devido a situações de emergência ou necessidade imediata.
+                           </div>
                            </div>
                          </div>
                        </PopoverContent>
@@ -493,12 +490,14 @@ export default function NovoProcesso() {
                   <Label htmlFor="comentariosIniciais" className="text-sm font-medium text-gray-700">
                     Observações iniciais (opcional)
                   </Label>
-                  <Textarea
-                    id="comentariosIniciais"
+                  <TextareaWithMentions
                     value={formData.comentariosIniciais}
-                    onChange={(e) => handleInputChange("comentariosIniciais", e.target.value)}
-                    placeholder="Digite comentários ou justificativas relevantes para a abertura do processo..."
-                    className="min-h-[100px] resize-none"
+                    onChange={(value) => handleInputChange("comentariosIniciais", value)}
+                    placeholder="Digite comentários ou justificativas relevantes para a abertura do processo... Use @ para mencionar usuários"
+                    minHeight="100px"
+                    maxLength={1000}
+                    processoId="novo-processo"
+                    cardId="observacoes-iniciais"
                   />
                 </div>
 

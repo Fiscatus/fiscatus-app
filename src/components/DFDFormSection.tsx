@@ -47,6 +47,7 @@ import { useUser } from '@/contexts/UserContext';
 import { usePermissoes } from '@/hooks/usePermissoes';
 import { useToast } from '@/hooks/use-toast';
 import { DatePicker } from '@/components/date';
+import StandardCommentsSection from './StandardCommentsSection';
 
 // Tipos TypeScript conforme especificação
 type DFDVersionStatus = 'rascunho' | 'finalizada' | 'enviada_para_analise' | 'aprovada' | 'reprovada';
@@ -183,15 +184,7 @@ const mockAnexos: Anexo[] = [
   }
 ];
 
-const mockComentarios: Comentario[] = [
-  {
-    id: 'comentario1',
-    autorId: 'user1',
-    autorNome: 'João Silva',
-    criadoEm: '2024-01-15T11:00:00Z',
-    texto: 'Iniciando elaboração do DFD conforme solicitado.'
-  }
-];
+
 
 export default function DFDFormSection({
   processoId,
@@ -210,8 +203,7 @@ export default function DFDFormSection({
   const [currentVersion, setCurrentVersion] = useState<DFDVersion>(mockVersions[0]);
   const [formData, setFormData] = useState(currentVersion.payload);
   const [anexos, setAnexos] = useState<Anexo[]>(mockAnexos);
-  const [comentarios, setComentarios] = useState<Comentario[]>(mockComentarios);
-  const [novoComentario, setNovoComentario] = useState('');
+
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [activeTab, setActiveTab] = useState('versoes');
@@ -513,25 +505,7 @@ export default function DFDFormSection({
     });
   };
 
-  const handleAddComentario = () => {
-    if (!novoComentario.trim()) return;
 
-    const newComentario: Comentario = {
-      id: `comentario-${Date.now()}`,
-      autorId: user?.id || '',
-      autorNome: user?.nome || '',
-      criadoEm: new Date().toISOString(),
-      texto: novoComentario
-    };
-    
-    setComentarios(prev => [newComentario, ...prev]);
-    setNovoComentario('');
-    
-    toast({
-      title: "Comentário adicionado",
-      description: "Comentário adicionado com sucesso.",
-    });
-  };
 
   const getStatusConfig = (status: DFDVersionStatus) => {
     switch (status) {
@@ -918,83 +892,13 @@ export default function DFDFormSection({
 
           {/* FULL: Comentários */}
           <section id="comentarios" className="col-span-12 w-full">
-            <div className="rounded-2xl border shadow-sm overflow-hidden bg-white">
-              <header className="bg-indigo-50 px-4 py-3 rounded-t-2xl font-semibold text-slate-900">
-                <div className="flex items-center gap-3">
-                  <MessageCircle className="w-5 h-5 text-indigo-600" />
-                  Comentários
-                </div>
-              </header>
-              <div className="p-4 md:p-6">
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-0 w-full">
-                
-                {/* Adicionar Comentário */}
-                <div className="lg:col-span-1 space-y-4 w-full p-4 border-r border-gray-100">
-                  <div className="space-y-2 w-full">
-                    <Label className="text-sm font-semibold text-gray-700 mb-2 block">
-                      Adicionar Novo Comentário
-                    </Label>
-                    <Textarea
-                      value={novoComentario}
-                      onChange={(e) => setNovoComentario(e.target.value)}
-                      placeholder="Digite seu comentário aqui..."
-                      maxLength={500}
-                      className="w-full min-h-[120px] resize-none border-gray-200 focus:border-orange-300 focus:ring-orange-300 bg-white"
-                    />
-                    <div className="flex items-center justify-between">
-                      <span className="text-xs text-gray-400">Máx. 500 caracteres</span>
-                      <span className="text-xs text-gray-400">{novoComentario.length}/500</span>
-                    </div>
-                    <Button
-                      onClick={handleAddComentario}
-                      disabled={!novoComentario.trim()}
-                      className="w-full bg-gradient-to-r from-orange-600 to-amber-600 hover:from-orange-700 hover:to-amber-700 text-white shadow-sm"
-                    >
-                      <Plus className="w-4 h-4 mr-2" />
-                      Adicionar Comentário
-                    </Button>
-                  </div>
-                </div>
-
-                {/* Lista de Comentários */}
-                <div className="lg:col-span-2 w-full p-4">
-                  <div className="flex items-center justify-between border-b border-gray-100 pb-3 mb-4">
-                    <Label className="text-sm font-semibold text-gray-700">
-                      Histórico de Comentários ({comentarios.length})
-                    </Label>
-                    <span className="text-xs text-gray-400">Mais recentes primeiro</span>
-                  </div>
-                  
-                  {comentarios.length === 0 ? (
-                    <div className="text-center py-10 w-full">
-                      <div className="p-4 bg-gray-100 rounded-full w-16 h-16 mx-auto mb-4 flex items-center justify-center">
-                        <MessageCircle className="w-8 h-8 text-gray-400" />
-                      </div>
-                      <p className="text-gray-500 font-medium">Nenhum comentário ainda</p>
-                      <p className="text-sm text-gray-400 mt-1">Seja o primeiro a comentar</p>
-                    </div>
-                  ) : (
-                    <div className="space-y-3 max-h-96 overflow-y-auto w-full">
-                      {comentarios.map((comentario) => (
-                        <div key={comentario.id} className="p-4 bg-white rounded-xl border border-gray-100 shadow-sm hover:shadow-md transition w-full">
-                          <div className="flex items-center justify-between mb-2 w-full">
-                            <div className="flex items-center gap-3">
-                              <div className="w-9 h-9 bg-gradient-to-br from-orange-100 to-amber-100 rounded-full flex items-center justify-center shadow-inner">
-                                <User className="w-4 h-4 text-orange-600" />
-                              </div>
-                              <span className="text-sm font-semibold text-gray-800">{comentario.autorNome}</span>
-                            </div>
-                            <span className="text-xs text-gray-400">{formatDateTime(comentario.criadoEm)}</span>
-                          </div>
-                          <p className="text-sm text-gray-700 leading-relaxed w-full">{comentario.texto}</p>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              </div>
-              </div>
-            </div>
+            <StandardCommentsSection
+              processoId={processoId}
+              etapaId={etapaId}
+              cardId="dfd-form"
+              title="Comentários"
+              canAddComment={true}
+            />
           </section>
 
           {/* FULL: Ações (rodapé não fixo) */}

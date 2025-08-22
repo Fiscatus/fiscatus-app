@@ -42,6 +42,7 @@ import {
 } from "lucide-react";
 import { useUser } from "@/contexts/UserContext";
 import { toast } from "@/components/ui/use-toast";
+import StandardCommentsSection from './StandardCommentsSection';
 
 // Interfaces
 interface ETPElaboracaoSectionProps {
@@ -607,95 +608,13 @@ export default function ETPElaboracaoSection({
 
                  {/* Comentários (full-width) */}
          <section className="mt-4">
-          <div className="rounded-2xl border shadow-sm overflow-hidden bg-white">
-            <header className="bg-orange-50 px-4 py-3 rounded-t-2xl font-semibold text-slate-900">
-              <div className="flex items-center gap-3">
-                <MessageSquare className="w-5 h-5 text-orange-600" />
-                Comentários
-              </div>
-            </header>
-                         <div className="p-4 md:p-6 space-y-0">
-               
-               {/* Lista de comentários */}
-               <div className="space-y-4 mb-4">
-                {etpData.comentarios.map((comentario) => (
-                  <div key={comentario.id} className="flex gap-3">
-                    <div className="flex-shrink-0">
-                      <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
-                        <span className="text-sm font-medium text-blue-600">{comentario.avatar}</span>
-                      </div>
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-1">
-                        <span className="font-medium text-sm">{comentario.autor}</span>
-                        <span className="text-xs text-gray-500">{comentario.data}</span>
-                      </div>
-                      <p className="text-sm text-gray-700">{comentario.texto}</p>
-                      {comentario.marcacoes.length > 0 && (
-                        <div className="mt-1 flex flex-wrap gap-1">
-                          {comentario.marcacoes.map((marcacao, index) => (
-                            <Badge key={index} variant="outline" className="text-xs">
-                              @{marcacao}
-                            </Badge>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </div>
-
-              {/* Campo para novo comentário */}
-              <div className="space-y-3">
-                <div className="flex items-center gap-2">
-                  <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
-                    <span className="text-sm font-medium text-blue-600">
-                      {user?.nome?.substring(0, 2).toUpperCase() || 'US'}
-                    </span>
-                  </div>
-                  <div className="flex-1">
-                    <Textarea
-                      value={novoComentario}
-                      onChange={(e) => setNovoComentario(e.target.value)}
-                      placeholder="Adicione um comentário... Use @ para marcar usuários"
-                      className="min-h-[80px] resize-none"
-                    />
-                  </div>
-                </div>
-                
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setMarcacoes([...marcacoes, 'usuário'])}
-                    >
-                      <AtSign className="w-4 h-4 mr-1" />
-                      Marcar Usuário
-                    </Button>
-                    {marcacoes.length > 0 && (
-                      <div className="flex flex-wrap gap-1">
-                        {marcacoes.map((marcacao, index) => (
-                          <Badge key={index} variant="outline" className="text-xs">
-                            @{marcacao}
-                            <button
-                              onClick={() => setMarcacoes(marcacoes.filter((_, i) => i !== index))}
-                              className="ml-1"
-                            >
-                              <X className="w-3 h-3" />
-                            </button>
-                          </Badge>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                  <Button onClick={adicionarComentario} disabled={!novoComentario.trim()}>
-                    Enviar
-                  </Button>
-                </div>
-              </div>
-            </div>
-          </div>
+          <StandardCommentsSection
+            processoId={processoId}
+            etapaId={etapaId}
+            cardId="comentarios-etp"
+            title="Comentários"
+            canAddComment={true}
+          />
         </section>
 
                  {/* Rodapé com Botões de Ação */}

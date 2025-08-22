@@ -50,6 +50,8 @@ import {
 import { useUser } from '@/contexts/UserContext';
 import { usePermissoes } from '@/hooks/usePermissoes';
 import { useToast } from '@/hooks/use-toast';
+import TextareaWithMentions from './TextareaWithMentions';
+import StandardCommentsSection from './StandardCommentsSection';
 
 // Tipos TypeScript conforme especificação
 type AssinaturaStatus = 'PENDENTE' | 'ASSINADO' | 'CANCELADO';
@@ -708,11 +710,16 @@ export default function DFDAssinaturaSection({
                 </div>
               </header>
               <div className="p-4 md:p-6">
-                <Textarea
+                <TextareaWithMentions
                   value={observacoes}
-                  onChange={(e) => setObservacoes(e.target.value)}
-                  placeholder="Adicione observações antes de assinar o documento (opcional)..."
-                  className="w-full min-h-[100px] resize-none border-gray-200 focus:border-orange-300 focus:ring-orange-300"
+                  onChange={(value) => setObservacoes(value)}
+                  placeholder="Adicione observações antes de assinar o documento... Use @ para mencionar usuários"
+                  minHeight="100px"
+                  maxLength={500}
+                  className="w-full border-gray-200 focus:border-orange-300 focus:ring-orange-300"
+                  processoId={processoId}
+                  etapaId={etapaId}
+                  cardId="observacoes-assinatura"
                 />
               </div>
             </div>
@@ -721,66 +728,13 @@ export default function DFDAssinaturaSection({
 
         {/* Comentários (FULL WIDTH) */}
         <section className="mt-6">
-          <div className="rounded-2xl border shadow-sm overflow-hidden bg-white">
-            <header className="bg-blue-50 px-4 py-3 rounded-t-2xl font-semibold text-slate-900">
-              <div className="flex items-center gap-3">
-                <MessageCircle className="w-5 h-5 text-blue-600" />
-                Comentários
-              </div>
-            </header>
-            <div className="p-4 md:p-6">
-              
-              {/* Lista de comentários */}
-              <div className="space-y-4 mb-4">
-                {comentarios.map((comentario) => (
-                  <div key={comentario.id} className="flex gap-3">
-                    <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
-                      <span className="text-sm font-medium text-blue-600">
-                        {comentario.autor.split(' ').map(n => n[0]).join('').toUpperCase()}
-                      </span>
-                    </div>
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-1">
-                        <span className="font-medium text-sm">{comentario.autor}</span>
-                        <span className="text-xs text-gray-500">{comentario.cargo}</span>
-                        <span className="text-xs text-gray-400">{comentario.data}</span>
-                      </div>
-                      <p className="text-sm text-gray-700">{comentario.texto}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-
-              {/* Adicionar comentário */}
-              <div className="flex gap-3">
-                <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
-                  <span className="text-sm font-medium text-blue-600">
-                    {user?.nome?.split(' ').map(n => n[0]).join('').toUpperCase() || 'U'}
-                  </span>
-                </div>
-                <div className="flex-1">
-                  <Textarea
-                    value={novoComentario}
-                    onChange={(e) => setNovoComentario(e.target.value)}
-                    placeholder="Adicione um comentário..."
-                    className="w-full min-h-[80px] resize-none border-gray-200 focus:border-blue-300 focus:ring-blue-300"
-                  />
-                  <div className="flex justify-end mt-2">
-                    <Button
-                      onClick={handleAdicionarComentario}
-                      disabled={!novoComentario.trim()}
-                      size="sm"
-                      className="px-4"
-                    >
-                      <MessageCircle className="w-4 h-4 mr-2" />
-                      Adicionar Comentário
-                    </Button>
-                  </div>
-                </div>
-              </div>
-
-            </div>
-          </div>
+          <StandardCommentsSection
+            processoId={processoId}
+            etapaId={etapaId}
+            cardId="comentarios-assinatura"
+            title="Comentários"
+            canAddComment={true}
+          />
         </section>
 
         {/* Barra de Ações (rodapé não fixo) */}

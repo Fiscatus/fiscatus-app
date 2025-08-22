@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import { Bell, CheckCircle, AlertTriangle, FileText, PenLine, Clock, X, ChevronRight, Loader2 } from "lucide-react";
+import { Bell, CheckCircle, AlertTriangle, FileText, PenLine, Clock, X, ChevronRight, Loader2, AtSign } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
@@ -7,7 +7,7 @@ import { useNavigate } from "react-router-dom";
 // Tipos
 interface Notification {
   id: string;
-  type: "process" | "signature" | "warning" | "info" | "success";
+  type: "process" | "signature" | "warning" | "info" | "success" | "mention";
   title: string;
   description: string;
   timestamp: string;
@@ -20,6 +20,16 @@ interface Notification {
 const mockNotifications: Notification[] = [
   {
     id: "1",
+    type: "mention",
+    title: "Você foi mencionado",
+    description: "Yasmin Pissolati Mattos Bretz mencionou você em um comentário.",
+    timestamp: "há 30 minutos",
+    isRead: false,
+    link: "/processo/1#comentario-123",
+    icon: <AtSign className="w-4 h-4" />
+  },
+  {
+    id: "2",
     type: "signature",
     title: "Assinatura solicitada",
     description: "DFD 010/2025 está aguardando sua assinatura",
@@ -29,7 +39,7 @@ const mockNotifications: Notification[] = [
     icon: <PenLine className="w-4 h-4" />
   },
   {
-    id: "2",
+    id: "3",
     type: "process",
     title: "Processo atualizado",
     description: "ETP 011/2025 foi movido para 'Em andamento'",

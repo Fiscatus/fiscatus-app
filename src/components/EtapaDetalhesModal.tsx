@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Button } from './ui/button';
 import { Badge } from './ui/badge';
 import { Textarea } from './ui/textarea';
+import TextareaWithMentions from './TextareaWithMentions';
 import { 
   User, 
   Calendar, 
@@ -971,11 +972,16 @@ export default function EtapaDetalhesModal({
                             <PenTool className="w-4 h-4 text-blue-500" />
                             <p className="text-sm font-medium text-gray-700">Adicionar Comentário</p>
                           </div>
-                          <Textarea
-                            placeholder="Escreva um comentário..."
+                          <TextareaWithMentions
                             value={novaObservacao}
-                            onChange={(e) => setNovaObservacao(e.target.value)}
-                            className="w-full border rounded-md p-2 text-sm min-h-[80px] resize-none"
+                            onChange={(value) => setNovaObservacao(value)}
+                            placeholder="Escreva um comentário... Use @ para mencionar usuários"
+                            className="w-full border rounded-md p-2 text-sm"
+                            minHeight="80px"
+                            maxLength={500}
+                            processoId={etapa?.processoId}
+                            etapaId={etapa?.id}
+                            cardId="etapa-detalhes"
                           />
                           <Button
                             size="sm"

@@ -33,6 +33,7 @@ import TruncatedCard from "@/components/TruncatedCard";
 import { formatarNumeroProcesso } from "@/lib/processoUtils";
 import { useUser } from "@/contexts/UserContext";
 import { usePermissoes } from "@/hooks/usePermissoes";
+import { GerenciaMultiSelect } from "@/components/GerenciaMultiSelect";
 
 // Dados mockados do processo
 const processoMock = {
@@ -46,7 +47,12 @@ const processoMock = {
   criador: "Dr. Maria Silva",
   situacaoAtual: "Aguardando elaboração do ETP",
   etapaAtual: "Elaboração do ETP",
-  diasUteisConsumidos: 15
+  diasUteisConsumidos: 15,
+  gerenciasEnvolvidas: [
+    "GUE - Gerência de Urgência e Emergência",
+    "GFC - Gerência Financeira e Contábil"
+  ],
+  regimeTramitacao: "Ordinário"
 };
 
 // Pendências do usuário atual
@@ -196,6 +202,11 @@ const statusProcesso = [
   "Cancelado"
 ];
 
+const tiposTramitacao = [
+  { value: "ordinario", label: "Ordinário" },
+  { value: "urgente", label: "Urgente" },
+];
+
 
 
 interface Etapa {
@@ -223,7 +234,9 @@ export default function ProcessoDetalhes() {
     gerenciaResponsavel: "",
     etapaAtual: "",
     diasUteisConsumidos: 0,
-    status: ""
+    status: "",
+    gerenciasEnvolvidas: [] as string[],
+    regimeTramitacao: ""
   });
   const [originalFormData, setOriginalFormData] = useState({});
   const [isSaving, setIsSaving] = useState(false);
@@ -274,7 +287,9 @@ export default function ProcessoDetalhes() {
     criador: "Usuário Atual",
     situacaoAtual: "Em construção",
     etapaAtual: "Aguardando Elaboração do DFD",
-    diasUteisConsumidos: 0
+    diasUteisConsumidos: 0,
+    gerenciasEnvolvidas: [],
+    regimeTramitacao: "Ordinário"
   } : {
     ...processoMock,
     numeroProcesso: formatarNumeroProcesso(processoMock.numeroProcesso)
@@ -292,14 +307,26 @@ export default function ProcessoDetalhes() {
       gerenciaResponsavel: processoAtual.gerenciaResponsavel,
       etapaAtual: processoAtual.etapaAtual,
       diasUteisConsumidos: processoAtual.diasUteisConsumidos,
-      status: processoAtual.status || "em_andamento"
+      status: processoAtual.status || "em_andamento",
+      gerenciasEnvolvidas: processoAtual.gerenciasEnvolvidas || [],
+      regimeTramitacao: processoAtual.regimeTramitacao || ""
     };
     setEditFormData(initialData);
     setOriginalFormData(initialData);
     setIsEditModalOpen(true);
   };
 
-  const handleEditFormChange = (field: string, value: string | number) => {
+  // Função para calcular dias úteis automaticamente
+  const calcularDiasUteis = (dataCriacao: string, prazoFinal: string) => {
+    if (!prazoFinal) return 0;
+    
+    const dataInicio = new Date(dataCriacao.split('/').reverse().join('-'));
+    const dataFim = new Date(prazoFinal);
+    const diasUteis = Math.ceil((dataFim.getTime() - dataInicio.getTime()) / (1000 * 60 * 60 * 24));
+    return Math.max(0, diasUteis);
+  };
+
+  const handleEditFormChange = (field: string, value: string | number | string[]) => {
     setEditFormData(prev => {
       const newData = {
         ...prev,
@@ -307,11 +334,9 @@ export default function ProcessoDetalhes() {
       };
       
       // Calcular dias úteis automaticamente se prazo final for alterado
-      if (field === 'prazoFinal' && value) {
-        const dataCriacao = new Date(processoAtual.dataCriacao.split('/').reverse().join('-'));
-        const prazoFinal = new Date(value);
-        const diasUteis = Math.ceil((prazoFinal.getTime() - dataCriacao.getTime()) / (1000 * 60 * 60 * 24));
-        newData.diasUteisConsumidos = Math.max(0, diasUteis);
+      if (field === 'prazoFinal') {
+        const diasUteis = calcularDiasUteis(processoAtual.dataCriacao, value as string);
+        newData.diasUteisConsumidos = diasUteis;
       }
       
       return newData;
@@ -320,12 +345,26 @@ export default function ProcessoDetalhes() {
 
   // Verificar se houve modificações
   const hasChanges = () => {
-    return JSON.stringify(editFormData) !== JSON.stringify(originalFormData);
+    // Comparar arrays de gerências envolvidas corretamente
+    const currentGerencias = editFormData.gerenciasEnvolvidas || [];
+    const originalGerencias = originalFormData.gerenciasEnvolvidas || [];
+    
+    const gerenciasChanged = JSON.stringify(currentGerencias.sort()) !== JSON.stringify(originalGerencias.sort());
+    
+    // Comparar outros campos (excluindo dias úteis que são calculados automaticamente)
+    const otherFieldsChanged = 
+      editFormData.prazoFinal !== originalFormData.prazoFinal ||
+      editFormData.gerenciaResponsavel !== originalFormData.gerenciaResponsavel ||
+      editFormData.etapaAtual !== originalFormData.etapaAtual ||
+      editFormData.status !== originalFormData.status ||
+      editFormData.regimeTramitacao !== originalFormData.regimeTramitacao;
+    
+    return gerenciasChanged || otherFieldsChanged;
   };
 
   // Validar campos obrigatórios
   const isFormValid = () => {
-    return editFormData.gerenciaResponsavel.trim() !== "";
+    return editFormData.gerenciaResponsavel.trim() !== "" && editFormData.regimeTramitacao.trim() !== "";
   };
 
   const handleSaveChanges = async () => {
@@ -339,17 +378,31 @@ export default function ProcessoDetalhes() {
       // Simular chamada para API
       await new Promise(resolve => setTimeout(resolve, 1000));
       
-      // Identificar campos alterados
-      const camposAlterados = [];
-      Object.keys(editFormData).forEach(key => {
-        if (editFormData[key] !== originalFormData[key]) {
-          camposAlterados.push({
-            campo: key,
-            valorAnterior: originalFormData[key],
-            valorNovo: editFormData[key]
-          });
-        }
-      });
+             // Identificar campos alterados
+       const camposAlterados = [];
+       Object.keys(editFormData).forEach(key => {
+         // Pular dias úteis que são calculados automaticamente
+         if (key === 'diasUteisConsumidos') return;
+         
+         if (key === 'gerenciasEnvolvidas') {
+           // Comparar arrays de gerências envolvidas
+           const currentGerencias = editFormData[key] || [];
+           const originalGerencias = originalFormData[key] || [];
+           if (JSON.stringify(currentGerencias.sort()) !== JSON.stringify(originalGerencias.sort())) {
+             camposAlterados.push({
+               campo: key,
+               valorAnterior: originalFormData[key],
+               valorNovo: editFormData[key]
+             });
+           }
+         } else if (editFormData[key] !== originalFormData[key]) {
+           camposAlterados.push({
+             campo: key,
+             valorAnterior: originalFormData[key],
+             valorNovo: editFormData[key]
+           });
+         }
+       });
 
       // Atualizar o processo atual com os novos dados
       Object.assign(processoAtual, editFormData);
@@ -492,23 +545,23 @@ export default function ProcessoDetalhes() {
                 </div>
               </div>
 
-              {/* Informações Principais */}
-              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-6 w-full">
-                <motion.div 
-                  className="bg-gray-50 rounded-xl p-6 border border-gray-200 hover:border-gray-300 transition-all duration-200"
-                  whileHover={{ scale: 1.02, y: -2 }}
-                  transition={{ type: "spring", stiffness: 300 }}
-                >
-                  <div className="flex items-center gap-4">
-                    <div className="p-2 bg-blue-100 rounded-lg">
-                      <Calendar className="w-6 h-6 text-blue-600" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">Prazo Final</p>
-                      <p className="text-sm font-semibold text-gray-900 truncate">{processoAtual.prazoFinal || "Não definido"}</p>
-                    </div>
-                  </div>
-                </motion.div>
+                             {/* Informações Principais */}
+               <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 w-full">
+                                 <motion.div 
+                   className="bg-gray-50 rounded-xl p-4 border border-gray-200 hover:border-gray-300 transition-all duration-200"
+                   whileHover={{ scale: 1.02, y: -2 }}
+                   transition={{ type: "spring", stiffness: 300 }}
+                 >
+                   <div className="flex items-center gap-3">
+                     <div className="p-1.5 bg-blue-100 rounded-lg">
+                       <Calendar className="w-5 h-5 text-blue-600" />
+                     </div>
+                     <div className="flex-1 min-w-0">
+                       <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">Prazo Final</p>
+                       <p className="text-sm font-semibold text-gray-900 truncate">{processoAtual.prazoFinal || "Não definido"}</p>
+                     </div>
+                   </div>
+                 </motion.div>
 
                 <TruncatedCard
                   icon={<Building2 />}
@@ -518,21 +571,21 @@ export default function ProcessoDetalhes() {
                   iconColor="text-green-600"
                 />
 
-                <motion.div 
-                  className="bg-gray-50 rounded-xl p-6 border border-gray-200 hover:border-gray-300 transition-all duration-200"
-                  whileHover={{ scale: 1.02, y: -2 }}
-                  transition={{ type: "spring", stiffness: 300 }}
-                >
-                  <div className="flex items-center gap-4">
-                    <div className="p-2 bg-purple-100 rounded-lg">
-                      <User className="w-6 h-6 text-purple-600" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">Criador</p>
-                      <p className="text-sm font-semibold text-gray-900 truncate">{processoAtual.criador}</p>
-                    </div>
-                  </div>
-                </motion.div>
+                                 <motion.div 
+                   className="bg-gray-50 rounded-xl p-4 border border-gray-200 hover:border-gray-300 transition-all duration-200"
+                   whileHover={{ scale: 1.02, y: -2 }}
+                   transition={{ type: "spring", stiffness: 300 }}
+                 >
+                   <div className="flex items-center gap-3">
+                     <div className="p-1.5 bg-purple-100 rounded-lg">
+                       <User className="w-5 h-5 text-purple-600" />
+                     </div>
+                     <div className="flex-1 min-w-0">
+                       <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">Criador</p>
+                       <p className="text-sm font-semibold text-gray-900 truncate">{processoAtual.criador}</p>
+                     </div>
+                   </div>
+                 </motion.div>
 
                 <TruncatedCard
                   icon={<FileText />}
@@ -542,37 +595,53 @@ export default function ProcessoDetalhes() {
                   iconColor="text-orange-600"
                 />
 
-                <motion.div 
-                  className="bg-gray-50 rounded-xl p-6 border border-gray-200 hover:border-gray-300 transition-all duration-200"
-                  whileHover={{ scale: 1.02, y: -2 }}
-                  transition={{ type: "spring", stiffness: 300 }}
-                >
-                  <div className="flex items-center gap-4">
-                    <div className="p-2 bg-red-100 rounded-lg">
-                      <Clock className="w-6 h-6 text-red-600" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">Dias Úteis</p>
-                      <p className="text-sm font-semibold text-gray-900 truncate">{processoAtual.diasUteisConsumidos} dias</p>
-                    </div>
-                  </div>
-                </motion.div>
+                                 <motion.div 
+                   className="bg-gray-50 rounded-xl p-4 border border-gray-200 hover:border-gray-300 transition-all duration-200"
+                   whileHover={{ scale: 1.02, y: -2 }}
+                   transition={{ type: "spring", stiffness: 300 }}
+                 >
+                   <div className="flex items-center gap-3">
+                     <div className="p-1.5 bg-red-100 rounded-lg">
+                       <Clock className="w-5 h-5 text-red-600" />
+                     </div>
+                     <div className="flex-1 min-w-0">
+                       <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">Dias Úteis</p>
+                       <p className="text-sm font-semibold text-gray-900 truncate">{processoAtual.diasUteisConsumidos} dias</p>
+                     </div>
+                   </div>
+                 </motion.div>
 
-                <motion.div 
-                  className="bg-gray-50 rounded-xl p-6 border border-gray-200 hover:border-gray-300 transition-all duration-200"
-                  whileHover={{ scale: 1.02, y: -2 }}
-                  transition={{ type: "spring", stiffness: 300 }}
-                >
-                  <div className="flex items-center gap-4">
-                    <div className="p-2 bg-gray-100 rounded-lg">
-                      <Calendar className="w-6 h-6 text-gray-600" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">Data Criação</p>
-                      <p className="text-sm font-semibold text-gray-900 truncate">{processoAtual.dataCriacao}</p>
-                    </div>
-                  </div>
-                </motion.div>
+                                 <motion.div 
+                   className="bg-gray-50 rounded-xl p-4 border border-gray-200 hover:border-gray-300 transition-all duration-200"
+                   whileHover={{ scale: 1.02, y: -2 }}
+                   transition={{ type: "spring", stiffness: 300 }}
+                 >
+                   <div className="flex items-center gap-3">
+                     <div className="p-1.5 bg-indigo-100 rounded-lg">
+                       <AlertTriangle className="w-5 h-5 text-indigo-600" />
+                     </div>
+                     <div className="flex-1 min-w-0">
+                       <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">Regime</p>
+                       <p className="text-sm font-semibold text-gray-900 truncate">{processoAtual.regimeTramitacao}</p>
+                     </div>
+                   </div>
+                 </motion.div>
+
+                                 <motion.div 
+                   className="bg-gray-50 rounded-xl p-4 border border-gray-200 hover:border-gray-300 transition-all duration-200"
+                   whileHover={{ scale: 1.02, y: -2 }}
+                   transition={{ type: "spring", stiffness: 300 }}
+                 >
+                   <div className="flex items-center gap-3">
+                     <div className="p-1.5 bg-gray-100 rounded-lg">
+                       <Calendar className="w-5 h-5 text-gray-600" />
+                     </div>
+                     <div className="flex-1 min-w-0">
+                       <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">Data Criação</p>
+                       <p className="text-sm font-semibold text-gray-900 truncate">{processoAtual.dataCriacao}</p>
+                     </div>
+                   </div>
+                 </motion.div>
               </div>
             </motion.div>
           </div>
@@ -623,9 +692,9 @@ export default function ProcessoDetalhes() {
         </div>
       </div>
 
-      {/* Modal de Edição */}
-      <Dialog open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>
-        <DialogContent className="max-w-4xl w-[90vw] max-h-[80vh] p-0 bg-white rounded-2xl shadow-xl border-0 overflow-hidden">
+             {/* Modal de Edição */}
+       <Dialog open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>
+         <DialogContent className="max-w-6xl w-[95vw] max-h-[90vh] p-0 bg-white rounded-2xl shadow-xl border-0 overflow-hidden">
           <DialogTitle className="sr-only">Editar Informações do Processo</DialogTitle>
           <DialogDescription className="sr-only">
             Edite as informações principais do processo administrativo
@@ -646,8 +715,8 @@ export default function ProcessoDetalhes() {
             </div>
           </div>
 
-          {/* Conteúdo do Formulário */}
-          <div className="px-8 py-6 overflow-y-auto max-h-[60vh]">
+                     {/* Conteúdo do Formulário */}
+           <div className="px-8 py-6 overflow-y-auto max-h-[70vh]">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               {/* Coluna Esquerda */}
               <div className="space-y-4">
@@ -671,26 +740,68 @@ export default function ProcessoDetalhes() {
                   </p>
                 </div>
 
-                {/* Gerência */}
+                                 {/* Gerência */}
+                 <div className="space-y-2">
+                   <Label htmlFor="gerencia" className="text-base font-semibold text-gray-900">
+                     Gerência Responsável *
+                   </Label>
+                   <Select
+                     value={editFormData.gerenciaResponsavel}
+                     onValueChange={(value) => handleEditFormChange('gerenciaResponsavel', value)}
+                   >
+                     <SelectTrigger className="h-10 border-2 border-gray-300 focus:border-blue-500 focus:ring-blue-200">
+                       <SelectValue placeholder="Selecione a gerência" />
+                     </SelectTrigger>
+                     <SelectContent>
+                       {gerencias.map((gerencia) => (
+                         <SelectItem key={gerencia} value={gerencia}>
+                           {gerencia}
+                         </SelectItem>
+                       ))}
+                     </SelectContent>
+                   </Select>
+                 </div>
+
+                 {/* Regime de Tramitação */}
+                 <div className="space-y-2">
+                   <Label htmlFor="regimeTramitacao" className="text-base font-semibold text-gray-900">
+                     Regime de Tramitação *
+                   </Label>
+                   <Select
+                     value={editFormData.regimeTramitacao}
+                     onValueChange={(value) => handleEditFormChange('regimeTramitacao', value)}
+                   >
+                     <SelectTrigger className="h-10 border-2 border-gray-300 focus:border-blue-500 focus:ring-blue-200">
+                       <SelectValue placeholder="Selecione o regime de tramitação" />
+                     </SelectTrigger>
+                     <SelectContent>
+                       {tiposTramitacao.map((tipo) => (
+                         <SelectItem key={tipo.value} value={tipo.label}>
+                           {tipo.label}
+                         </SelectItem>
+                       ))}
+                     </SelectContent>
+                   </Select>
+                   <p className="text-xs text-gray-500">
+                     Define a prioridade e velocidade de tramitação do processo
+                   </p>
+                 </div>
+
+                {/* Gerências Envolvidas */}
                 <div className="space-y-2">
-                  <Label htmlFor="gerencia" className="text-base font-semibold text-gray-900">
-                    Gerência Responsável *
+                  <Label className="text-base font-semibold text-gray-900">
+                    Outras Gerências que podem participar
                   </Label>
-                  <Select
-                    value={editFormData.gerenciaResponsavel}
-                    onValueChange={(value) => handleEditFormChange('gerenciaResponsavel', value)}
-                  >
-                    <SelectTrigger className="h-10 border-2 border-gray-300 focus:border-blue-500 focus:ring-blue-200">
-                      <SelectValue placeholder="Selecione a gerência" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {gerencias.map((gerencia) => (
-                        <SelectItem key={gerencia} value={gerencia}>
-                          {gerencia}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <GerenciaMultiSelect
+                    value={editFormData.gerenciasEnvolvidas}
+                    onValueChange={(value) => handleEditFormChange("gerenciasEnvolvidas", value)}
+                    placeholder="Selecione as gerências participantes"
+                    required={false}
+                    excludeValues={[editFormData.gerenciaResponsavel]}
+                  />
+                  <p className="text-xs text-gray-500">
+                    Gerências que podem participar do processo além da responsável
+                  </p>
                 </div>
 
                 {/* Criador (Readonly) */}
@@ -737,23 +848,23 @@ export default function ProcessoDetalhes() {
                   </p>
                 </div>
 
-                {/* Dias Úteis */}
-                <div className="space-y-2">
-                  <Label htmlFor="diasUteis" className="text-base font-semibold text-gray-900">
-                    Dias Úteis Consumidos
-                  </Label>
-                  <Input
-                    id="diasUteis"
-                    type="number"
-                    value={editFormData.diasUteisConsumidos}
-                    onChange={(e) => handleEditFormChange('diasUteisConsumidos', parseInt(e.target.value) || 0)}
-                    className="h-10 border-2 border-gray-300 focus:border-blue-500 focus:ring-blue-200"
-                    placeholder="0"
-                  />
-                  <p className="text-xs text-gray-500">
-                    Calculado automaticamente baseado em data de início e prazo final
-                  </p>
-                </div>
+                                 {/* Dias Úteis */}
+                 <div className="space-y-2">
+                   <Label htmlFor="diasUteis" className="text-base font-semibold text-gray-900">
+                     Dias Úteis Consumidos
+                   </Label>
+                   <Input
+                     id="diasUteis"
+                     type="number"
+                     value={editFormData.diasUteisConsumidos}
+                     disabled
+                     className="h-10 bg-gray-50 text-gray-700 cursor-not-allowed border-2 border-gray-300"
+                     placeholder="0"
+                   />
+                   <p className="text-xs text-gray-500">
+                     Calculado automaticamente pelo sistema baseado na data de criação e prazo final
+                   </p>
+                 </div>
 
                 {/* Data de Criação (Readonly) */}
                 <div className="space-y-2">

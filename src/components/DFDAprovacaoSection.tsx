@@ -41,6 +41,8 @@ import {
 import { useUser } from '@/contexts/UserContext';
 import { usePermissoes } from '@/hooks/usePermissoes';
 import { useToast } from '@/hooks/use-toast';
+import TextareaWithMentions from './TextareaWithMentions';
+import StandardCommentsSection from './StandardCommentsSection';
 import { useDFD, DFDData, DFDVersion, DFDVersionStatus, DFDAnnex } from '@/hooks/useDFD';
 
 // Tipos para o novo sistema
@@ -64,13 +66,7 @@ interface VersaoAnaliseResumo {
   documentoPrincipal?: { nome: string; url: string; mimeType: string };
 }
 
-interface Comentario {
-  id: string;
-  autorId: string;
-  autorNome: string;
-  criadoEm: string;
-  texto: string;
-}
+
 
 interface DFDAprovacaoSectionProps {
   processoId: string;
@@ -111,16 +107,7 @@ export default function DFDAprovacaoSection({
   const [showCorrecaoDialog, setShowCorrecaoDialog] = useState(false);
   const [justificativaCorrecao, setJustificativaCorrecao] = useState('');
   const [activeTab, setActiveTab] = useState('versoes');
-  const [comentarios, setComentarios] = useState<Comentario[]>([
-    {
-      id: '1',
-      autorId: 'user1',
-      autorNome: 'João Silva',
-      criadoEm: '2024-01-15T10:00:00Z',
-      texto: 'DFD enviado para análise técnica da GSP.'
-    }
-  ]);
-  const [novoComentario, setNovoComentario] = useState('');
+
 
   // Verificar se é usuário da GSP
   const isGSPUser = () => {
@@ -250,25 +237,7 @@ export default function DFDAprovacaoSection({
     setJustificativaCorrecao('');
   };
 
-  const handleAddComentario = () => {
-    if (!novoComentario.trim()) return;
-    
-    const comentario: Comentario = {
-      id: `comentario_${Date.now()}`,
-      autorId: user?.id || 'user1',
-      autorNome: user?.nome || 'Usuário',
-      criadoEm: new Date().toISOString(),
-      texto: novoComentario.trim()
-    };
-    
-    setComentarios(prev => [comentario, ...prev]);
-    setNovoComentario('');
-    
-    toast({
-      title: "Comentário Adicionado",
-      description: "Comentário foi adicionado com sucesso."
-    });
-  };
+
 
   const getStatusConfig = (status: DFDVersionStatus) => {
     switch (status) {
@@ -600,83 +569,13 @@ export default function DFDAprovacaoSection({
 
           {/* FULL: Comentários */}
           <section id="comentarios" className="col-span-12 w-full">
-            <div className="rounded-2xl border shadow-sm overflow-hidden bg-white">
-              <header className="bg-orange-50 px-4 py-3 rounded-t-2xl font-semibold text-slate-900">
-                <div className="flex items-center gap-3 text-lg">
-                  <MessageCircle className="w-5 h-5 text-orange-600" />
-                  Comentários
-                </div>
-              </header>
-              <div className="p-4 md:p-6">
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                  
-                  {/* Adicionar Comentário */}
-                  <div className="lg:col-span-1 space-y-4">
-                    <div className="space-y-2">
-                      <Label className="text-sm font-semibold text-gray-700">
-                        Adicionar Novo Comentário
-                      </Label>
-                      <Textarea
-                        value={novoComentario}
-                        onChange={(e) => setNovoComentario(e.target.value)}
-                        placeholder="Digite seu comentário aqui..."
-                        maxLength={500}
-                        className="w-full min-h-[120px] resize-none border-gray-200 focus:border-orange-300 focus:ring-orange-300"
-                      />
-                      <div className="flex items-center justify-between">
-                        <span className="text-xs text-gray-400">Máx. 500 caracteres</span>
-                        <span className="text-xs text-gray-400">{novoComentario.length}/500</span>
-                      </div>
-                      <Button
-                        onClick={handleAddComentario}
-                        disabled={!novoComentario.trim()}
-                        className="w-full bg-orange-600 hover:bg-orange-700 text-white"
-                      >
-                        <Plus className="w-4 h-4 mr-2" />
-                        Adicionar Comentário
-                      </Button>
-                    </div>
-                  </div>
-
-                  {/* Lista de Comentários */}
-                  <div className="lg:col-span-2">
-                    <div className="flex items-center justify-between border-b border-gray-100 pb-3 mb-4">
-                      <Label className="text-sm font-semibold text-gray-700">
-                        Histórico de Comentários ({comentarios.length})
-                      </Label>
-                      <span className="text-xs text-gray-400">Mais recentes primeiro</span>
-                    </div>
-                    
-                    {comentarios.length === 0 ? (
-                      <div className="text-center py-10">
-                        <div className="p-4 bg-gray-100 rounded-full w-16 h-16 mx-auto mb-4 flex items-center justify-center">
-                          <MessageCircle className="w-8 h-8 text-gray-400" />
-                        </div>
-                        <p className="text-gray-500 font-medium">Nenhum comentário ainda</p>
-                        <p className="text-sm text-gray-400 mt-1">Seja o primeiro a comentar</p>
-                      </div>
-                    ) : (
-                      <div className="space-y-3 max-h-96 overflow-y-auto">
-                        {comentarios.map((comentario) => (
-                          <div key={comentario.id} className="p-4 bg-white rounded-xl border border-gray-100 shadow-sm hover:shadow-md transition">
-                            <div className="flex items-center justify-between mb-2">
-                              <div className="flex items-center gap-3">
-                                <div className="w-9 h-9 bg-gradient-to-br from-orange-100 to-amber-100 rounded-full flex items-center justify-center shadow-inner">
-                                  <User className="w-4 h-4 text-orange-600" />
-                                </div>
-                                <span className="text-sm font-semibold text-gray-800">{comentario.autorNome}</span>
-                              </div>
-                              <span className="text-xs text-gray-400">{formatDateTime(comentario.criadoEm)}</span>
-                            </div>
-                            <p className="text-sm text-gray-700 leading-relaxed">{comentario.texto}</p>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </div>
-            </div>
+            <StandardCommentsSection
+              processoId={processoId}
+              etapaId={etapaId}
+              cardId="comentarios-aprovacao"
+              title="Comentários"
+              canAddComment={true}
+            />
           </section>
 
           {/* FULL: Ações (rodapé não fixo) */}

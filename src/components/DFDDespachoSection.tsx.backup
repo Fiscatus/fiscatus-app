@@ -732,7 +732,7 @@ export default function DFDDespachoSection({
         </div>
 
         {/* FULL: Comentários */}
-        <section id="comentarios" className="col-span-12 w-full mt-6">
+        <section id="comentarios" className="col-span-12 w-full">
           <StandardCommentsSection
             processoId={processoId}
             etapaId={etapaId}
@@ -742,15 +742,16 @@ export default function DFDDespachoSection({
           />
         </section>
 
-        {/* Rodapé com botões */}
-        <div className="mt-6 p-4 bg-gray-50 rounded-lg border">
-          <div className="flex flex-wrap items-center justify-between gap-4">
-            <div className="flex items-center gap-2 text-sm text-gray-600">
-              <Shield className="w-4 h-4" />
-              <span>Assinatura obrigatória pela Secretaria Executiva</span>
-            </div>
-            
-            <div className="flex items-center gap-3">
+        {/* FULL: Ações (rodapé não fixo) */}
+        <section id="acoes" className="col-span-12 w-full mt-6 pb-6">
+          <div className="p-4 bg-gray-50 rounded-lg border">
+            <div className="flex flex-wrap items-center justify-between gap-4">
+              <div className="flex items-center gap-2 text-sm text-gray-600">
+                <Shield className="w-4 h-4" />
+                <span>Assinatura obrigatória pela Secretaria Executiva</span>
+              </div>
+              
+                            <div className="flex items-center gap-3">
               {/* Botão Salvar */}
               {podeEditar && despachoData.status === 'PENDENTE' && (
                 <Button
@@ -830,7 +831,7 @@ export default function DFDDespachoSection({
               )}
             </div>
           </div>
-        </div>
+        </section>
 
         {/* Modal para adicionar responsáveis */}
         <Dialog open={showAdicionarResponsavel} onOpenChange={setShowAdicionarResponsavel}>
