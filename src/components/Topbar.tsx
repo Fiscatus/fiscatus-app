@@ -9,8 +9,9 @@ import NotificationDropdown, { NotificationBell } from "./NotificationDropdown";
 import { useUser } from "@/contexts/UserContext";
 import { useToast } from "@/components/ui/use-toast";
 import { CleanNavBar } from "@/components/ui/clean-navbar";
-import { MenuHamburger } from "@/components/ui/menu-hamburger";
 import logo from "@/assets/logo_fiscatus.png";
+
+
 
 export default function Topbar() {
   const [sidebarOpen, setSidebarOpen] = React.useState(false);
@@ -76,149 +77,109 @@ export default function Topbar() {
     ];
     return gerenciasAutorizadas.some(g => user.gerencia.includes(g));
   };
-
-  // Itens de navegação
-  const navItems = [
-    { 
-      name: 'Planejamento da Contratação', 
-      url: '/planejamento-da-contratacao', 
-      icon: Home 
-    },
-    { 
-      name: 'Meus Processos', 
-      url: '/processos', 
-      icon: FileText 
-    },
-    { 
-      name: 'Processos da Gerência', 
-      url: '/processos-gerencia', 
-      icon: Users 
-    },
-    { 
-      name: 'Minhas Assinaturas', 
-      url: '/assinaturas', 
-      icon: PenLine 
-    },
-    ...(temPermissaoModelosFluxo() ? [{
-      name: 'Modelos de Fluxo', 
-      url: '/modelos-de-fluxo', 
-      icon: Workflow 
-    }] : [])
-  ];
   
   return (
     <>
-      <header className="fixed top-0 left-0 w-full bg-white/95 backdrop-blur-sm border-b border-gray-100 shadow-sm z-50 overflow-hidden">
-        <div className="flex items-center justify-between px-3 sm:px-4 md:px-6 py-2 md:py-3 min-h-[60px] md:min-h-[64px]">
-          {/* Esquerda: Logo e nome do sistema - sempre visível */}
-          <div className="flex items-center gap-2 sm:gap-3 md:gap-4 flex-shrink-0">
-            <button 
-              className="p-1.5 sm:p-2 rounded-lg hover:bg-gray-100 transition-colors" 
-              onClick={() => setSidebarOpen(true)} 
-              aria-label="Abrir menu lateral"
-            >
-              <Menu className="w-4 h-4 text-gray-600" />
-            </button>
-            <img 
-              src={logo} 
-              className="w-6 h-6 sm:w-7 sm:h-7 md:w-8 md:h-8 lg:w-10 lg:h-10" 
-              alt="Logo Fiscatus" 
+      <header className="fixed top-0 left-0 w-full h-16 bg-white/95 backdrop-blur-sm border-b border-gray-100 shadow-sm z-50 px-4 md:px-6 flex flex-col md:flex-row items-center justify-between gap-3 md:gap-4">
+        {/* Esquerda: menu, logo, nome do sistema */}
+        <div className="flex items-center gap-3 md:gap-4 flex-shrink-0">
+          <button className="p-2 rounded-lg hover:bg-gray-100 transition-colors" onClick={() => setSidebarOpen(true)} aria-label="Abrir menu">
+            <Menu className="w-4 h-4 text-gray-600" />
+          </button>
+          <img src={logo} className="w-8 h-8 md:w-10 md:h-10" alt="Logo Fiscatus" />
+          <span className="text-lg md:text-2xl font-bold text-gray-800">Fiscatus</span>
+        </div>
+        {/* Centro: navegação limpa e consistente */}
+        <div className="flex justify-center items-center flex-1 min-w-0 px-2 md:px-4 h-full">
+          {isPlanejamentoContratacao && (
+            <CleanNavBar 
+              items={[
+                { 
+                  name: 'Planejamento da Contratação', 
+                  url: '/planejamento-da-contratacao', 
+                  icon: Home 
+                },
+                { 
+                  name: 'Meus Processos', 
+                  url: '/processos', 
+                  icon: FileText 
+                },
+                { 
+                  name: 'Processos da Gerência', 
+                  url: '/processos-gerencia', 
+                  icon: Users 
+                },
+                { 
+                  name: 'Minhas Assinaturas', 
+                  url: '/assinaturas', 
+                  icon: PenLine 
+                },
+                { 
+                  name: 'Modelos de Fluxo', 
+                  url: '/modelos-de-fluxo', 
+                  icon: Workflow 
+                }
+              ]} 
+              className="w-full"
             />
-            <span className="text-sm sm:text-base md:text-lg lg:text-xl xl:text-2xl font-bold text-gray-800">
-              Fiscatus
-            </span>
+          )}
+        </div>
+        {/* Direita: busca, ícones, avatar */}
+        <div className="flex items-center gap-2 md:gap-3 flex-shrink-0 mt-2 md:mt-0 relative">
+          <Input type="text" placeholder="Buscar processo..." className="w-32 md:w-40 lg:w-64 border-gray-200 focus:border-blue-300 focus:ring-blue-200" />
+          <div className="relative">
+            <NotificationBell 
+              onClick={() => setNotificationsOpen(!notificationsOpen)}
+              onDoubleClick={() => navigate("/notificacoes")}
+            />
+            <NotificationDropdown 
+              isOpen={notificationsOpen} 
+              onClose={() => setNotificationsOpen(false)} 
+            />
           </div>
-
-          {/* Centro: Navegação responsiva */}
-          <div className="flex-1 flex justify-center items-center min-w-0 px-2 md:px-4">
-            {isPlanejamentoContratacao && (
-              <>
-                {/* Desktop e Tablet: Navegação horizontal */}
-                <div className="hidden md:block w-full max-w-4xl">
-                  <CleanNavBar 
-                    items={navItems}
-                    className="w-full"
-                  />
+          <button 
+            className="p-2 rounded-lg hover:bg-gray-100 transition-colors" 
+            aria-label="Configurações"
+            onClick={() => navigate("/configuracoes")}
+          >
+            <Settings className="w-4 h-4 text-gray-600" />
+          </button>
+          
+          {/* Menu do Usuário */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button className="flex items-center justify-center w-8 h-8 rounded-full border border-gray-200 bg-gray-100 hover:bg-gray-200 transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                <Avatar className="w-8 h-8 border-0">
+                  <AvatarImage src="/usuario.png" />
+                  <AvatarFallback className="bg-gray-100 text-gray-700 font-medium text-sm">
+                    {user ? getUserInitials(user.nome) : "GM"}
+                  </AvatarFallback>
+                </Avatar>
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-64 p-2">
+              {/* Informações do usuário */}
+              <div className="px-3 py-2">
+                <div className="font-semibold text-gray-900 text-sm">
+                  {user?.nome || "Usuário"}
                 </div>
-                
-                {/* Mobile: Menu hambúrguer */}
-                <div className="md:hidden">
-                  <MenuHamburger 
-                    items={navItems}
-                  />
+                <div className="text-gray-500 text-xs">
+                  {user?.email || "usuario@exemplo.com"}
                 </div>
-              </>
-            )}
-          </div>
-
-          {/* Direita: Busca, notificações, configurações e avatar - sempre visível */}
-          <div className="flex items-center gap-1 sm:gap-2 md:gap-3 flex-shrink-0">
-            {/* Campo de busca - responsivo */}
-            <div className="hidden sm:block">
-              <Input 
-                type="text" 
-                placeholder="Buscar processo..." 
-                className="w-24 sm:w-32 md:w-40 lg:w-64 border-gray-200 focus:border-blue-300 focus:ring-blue-200 text-xs sm:text-sm" 
-              />
-            </div>
-
-            {/* Notificações - sempre visível */}
-            <div className="relative">
-              <NotificationBell 
-                onClick={() => setNotificationsOpen(!notificationsOpen)}
-                onDoubleClick={() => navigate("/notificacoes")}
-              />
-              <NotificationDropdown 
-                isOpen={notificationsOpen} 
-                onClose={() => setNotificationsOpen(false)} 
-              />
-            </div>
-
-            {/* Configurações - sempre visível */}
-            <button 
-              className="p-1.5 sm:p-2 rounded-lg hover:bg-gray-100 transition-colors" 
-              aria-label="Configurações"
-              onClick={() => navigate("/configuracoes")}
-            >
-              <Settings className="w-4 h-4 text-gray-600" />
-            </button>
-            
-            {/* Menu do Usuário - sempre visível */}
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <button className="flex items-center justify-center w-7 h-7 sm:w-8 sm:h-8 rounded-full border border-gray-200 bg-gray-100 hover:bg-gray-200 transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
-                  <Avatar className="w-7 h-7 sm:w-8 sm:h-8 border-0">
-                    <AvatarImage src="/usuario.png" />
-                    <AvatarFallback className="bg-gray-100 text-gray-700 font-medium text-xs sm:text-sm">
-                      {user ? getUserInitials(user.nome) : "GM"}
-                    </AvatarFallback>
-                  </Avatar>
-                </button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-56 sm:w-64 p-2">
-                {/* Informações do usuário */}
-                <div className="px-3 py-2">
-                  <div className="font-semibold text-gray-900 text-sm">
-                    {user?.nome || "Usuário"}
-                  </div>
-                  <div className="text-gray-500 text-xs">
-                    {user?.email || "usuario@exemplo.com"}
-                  </div>
-                </div>
-                
-                <DropdownMenuSeparator />
-                
-                {/* Opção de logout */}
-                <DropdownMenuItem 
-                  onClick={handleLogout}
-                  className="cursor-pointer text-red-600 hover:text-red-700 hover:bg-red-50 focus:text-red-700 focus:bg-red-50"
-                >
-                  <LogOut className="mr-2 h-4 w-4" />
-                  <span>Sair do sistema</span>
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </div>
+              </div>
+              
+              <DropdownMenuSeparator />
+              
+              {/* Opção de logout */}
+              <DropdownMenuItem 
+                onClick={handleLogout}
+                className="cursor-pointer text-red-600 hover:text-red-700 hover:bg-red-50 focus:text-red-700 focus:bg-red-50"
+              >
+                <LogOut className="mr-2 h-4 w-4" />
+                <span>Sair do sistema</span>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </header>
       <Sidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
