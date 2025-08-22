@@ -22,8 +22,13 @@ export function CleanNavBar({ items, className }: CleanNavBarProps) {
   return (
     <div className={cn("relative w-full", className)}>
       <nav className={cn(
-        "flex items-center justify-center gap-6 md:gap-8 lg:gap-10 bg-white/80 backdrop-blur-sm border border-gray-200/50 rounded-xl p-3 md:p-4 h-12 shadow-sm",
-        isMobile ? "max-w-full gap-4" : "max-w-6xl"
+        "flex items-center justify-center bg-white/80 backdrop-blur-sm border border-gray-200/50 rounded-xl shadow-sm overflow-hidden",
+        // Responsivo: ajusta gap, padding e altura baseado no tamanho da tela
+        isMobile 
+          ? "gap-2 p-2 h-10" 
+          : isTablet 
+            ? "gap-4 p-3 h-11" 
+            : "gap-6 p-4 h-12"
       )}>
         {items.map((item, index) => {
           // Lógica específica para cada rota para evitar conflitos
@@ -50,26 +55,37 @@ export function CleanNavBar({ items, className }: CleanNavBarProps) {
               key={item.name}
               to={item.url}
               className={cn(
-                "relative flex items-center gap-2 px-4 py-2 rounded-lg transition-all duration-200 hover:bg-gray-100/80 hover:shadow-sm border-b-2 border-transparent",
-                isMobile ? "px-3 py-1.5" : "px-4 py-2",
+                "relative flex items-center rounded-lg transition-all duration-200 hover:bg-gray-100/80 hover:shadow-sm border-b-2 border-transparent",
+                // Responsivo: ajusta padding baseado no tamanho da tela
+                isMobile 
+                  ? "px-2 py-1 gap-1.5" 
+                  : isTablet 
+                    ? "px-3 py-1.5 gap-2" 
+                    : "px-4 py-2 gap-2",
                 isActive && "border-b-2 border-primary bg-primary/5"
               )}
             >
               <motion.div
-                className="flex items-center gap-2"
+                className={cn(
+                  "flex items-center",
+                  isMobile ? "gap-1.5" : "gap-2"
+                )}
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
               >
                 <Icon className={cn(
                   "transition-colors duration-200 flex-shrink-0",
-                  isMobile ? "w-4 h-4" : "w-4.5 h-4.5",
+                  // Responsivo: ajusta tamanho do ícone
+                  isMobile ? "w-3.5 h-3.5" : isTablet ? "w-4 h-4" : "w-4.5 h-4.5",
                   isActive ? "text-primary" : "text-gray-600"
                 )} />
                 <span className={cn(
                   "font-medium transition-colors duration-200 whitespace-nowrap leading-tight",
-                  isMobile ? "text-sm" : "text-sm",
+                  // Responsivo: ajusta tamanho da fonte
+                  isMobile ? "text-xs" : isTablet ? "text-sm" : "text-sm",
                   isActive ? "text-primary font-semibold" : "text-gray-700"
                 )}>
+                  {/* Em mobile, mostra apenas a primeira palavra */}
                   {isMobile ? item.name.split(' ')[0] : item.name}
                 </span>
               </motion.div>
