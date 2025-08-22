@@ -30,7 +30,8 @@ import {
   ClipboardList,
   FileCheck,
   AlertTriangle,
-  TrendingUp
+  TrendingUp,
+  RotateCcw
 } from 'lucide-react';
 import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, horizontalListSortingStrategy } from '@dnd-kit/sortable';
@@ -53,6 +54,7 @@ import DFDAprovacaoSection from './DFDAprovacaoSection';
 import DFDAssinaturaSection from './DFDAssinaturaSection';
 import DFDDespachoSection from './DFDDespachoSection';
 import DFDAnaliseJuridicaSection from './DFDAnaliseJuridicaSection';
+import DFDCumprimentoRessalvasSection from './DFDCumprimentoRessalvasSection';
 import ConsolidacaoDemandaSection from './ConsolidacaoDemandaSection';
 import ETPElaboracaoSection from './ETPElaboracaoSection';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogClose } from './ui/dialog';
@@ -110,7 +112,7 @@ const etapasPadrao: Etapa[] = [
   { id: 13, nome: "Assinatura do TR", nomeCompleto: "Assinatura do TR", status: "pendente", prazoPrevisao: "5 dias úteis", responsavel: "Leticia Bonfim Guilherme", cargo: "Gerente de Licitações e Contratos", gerencia: "GLC - Gerência de Licitações e Contratos" },
   { id: 14, nome: "Elaboração do Edital", nomeCompleto: "Elaboração do Edital", status: "pendente", prazoPrevisao: "3 dias úteis", responsavel: "Dallas Kelson Francisco de Souza", cargo: "Gerente Financeiro", gerencia: "GFC - Gerência Financeira e Contábil" },
   { id: 15, nome: "Análise Jurídica Prévia", nomeCompleto: "Análise Jurídica Prévia", status: "pendente", prazoPrevisao: "5 dias úteis", responsavel: "Gabriel Radamesis Gomes Nascimento", cargo: "Assessor Jurídico", gerencia: "NAJ - Assessoria Jurídica" },
-  { id: 16, nome: "Cumprimento de Ressalvas pós Análise Jurídica Prévia", nomeCompleto: "Cumprimento de Ressalvas pós Análise Jurídica Prévia", status: "pendente", prazoPrevisao: "10 dias úteis", responsavel: "Gabriel Radamesis Gomes Nascimento", cargo: "Assessor Jurídico", gerencia: "NAJ - Assessoria Jurídica" },
+  { id: 16, nome: "Cumprimento de Ressalvas pós Análise Jurídica Prévia", nomeCompleto: "Cumprimento de Ressalvas pós Análise Jurídica Prévia", status: "pendente", prazoPrevisao: "3 dias úteis", responsavel: "Gabriel Radamesis Gomes Nascimento", cargo: "Assessor Jurídico", gerencia: "NAJ - Assessoria Jurídica" },
   { id: 17, nome: "Elaboração do Parecer Jurídico", nomeCompleto: "Elaboração do Parecer Jurídico", status: "pendente", prazoPrevisao: "1 dia útil", responsavel: "Yasmin Pissolati Mattos Bretz", cargo: "Gerente de Soluções e Projetos", gerencia: "GSP - Gerência de Soluções e Projetos" },
   { id: 18, nome: "Cumprimento de Ressalvas pós Parecer Jurídico", nomeCompleto: "Cumprimento de Ressalvas pós Parecer Jurídico", status: "pendente", prazoPrevisao: "1 dia útil", responsavel: "Yasmin Pissolati Mattos Bretz", cargo: "Gerente de Soluções e Projetos", gerencia: "GSP - Gerência de Soluções e Projetos" },
   { id: 19, nome: "Aprovação Jurídica", nomeCompleto: "Aprovação Jurídica", status: "pendente", prazoPrevisao: "1 dia útil", responsavel: "Yasmin Pissolati Mattos Bretz", cargo: "Gerente de Soluções e Projetos", gerencia: "GSP - Gerência de Soluções e Projetos" },
@@ -282,6 +284,18 @@ export default function FluxoProcessoCompleto({ etapas = etapasPadrao, onEtapaCl
             <Badge key="status" className="bg-blue-100 text-blue-800 px-3 py-1">
               <Scale className="w-4 h-4 mr-2" />
               <span>Aguardando Análise</span>
+            </Badge>
+          ]
+        };
+      case 16: // Cumprimento de Ressalvas pós Análise Jurídica Prévia
+        return {
+          title: "Cumprimento de Ressalvas",
+          subtitle: "Correções pós Análise Jurídica Prévia",
+          icon: <RotateCcw className="w-6 h-6 text-orange-600" />,
+          statusBadges: [
+            <Badge key="status" className="bg-orange-100 text-orange-800 px-3 py-1">
+              <RotateCcw className="w-4 h-4 mr-2" />
+              <span>Em Correção</span>
             </Badge>
           ]
         };
@@ -475,6 +489,10 @@ export default function FluxoProcessoCompleto({ etapas = etapasPadrao, onEtapaCl
       setShowETPModal(true);
     } else if (etapa.id === 15) {
       // Card "Análise Jurídica Prévia"
+      setCurrentEtapa(etapa);
+      setShowDFDModal(true);
+    } else if (etapa.id === 16) {
+      // Card "Cumprimento de Ressalvas pós Análise Jurídica Prévia"
       setCurrentEtapa(etapa);
       setShowDFDModal(true);
     } else if (etapa.nome === 'Consolidação da Demanda') {
@@ -1171,6 +1189,15 @@ export default function FluxoProcessoCompleto({ etapas = etapasPadrao, onEtapaCl
                   onComplete={handleDFDComplete}
                   onSave={handleDFDSave}
                   canEdit={canManageEtapa(currentEtapa)}
+                />
+              ) : currentEtapa?.id === 16 ? (
+                <DFDCumprimentoRessalvasSection
+                  processoId="1"
+                  etapaId={currentEtapa.id}
+                  onComplete={handleDFDComplete}
+                  onSave={handleDFDSave}
+                  canEdit={canManageEtapa(currentEtapa)}
+                  initialData={dfdData}
                 />
               ) : null}
             </div>
