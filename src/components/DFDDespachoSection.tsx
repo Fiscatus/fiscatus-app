@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -228,6 +228,12 @@ export default function DFDDespachoSection({
   const [observacaoConclusao, setObservacaoConclusao] = useState('');
   const [notificarPartes, setNotificarPartes] = useState(true);
 
+  // Estados para gerenciamento de arquivos do despacho
+  const [despachoArquivo, setDespachoArquivo] = useState<{ name: string; size: string; uploadedAt: string; uploadedBy: string } | null>(null);
+  const [showSubstituirConfirmacao, setShowSubstituirConfirmacao] = useState(false);
+  const [arquivoParaSubstituir, setArquivoParaSubstituir] = useState<File | null>(null);
+  const despachoFileInputRef = useRef<HTMLInputElement>(null);
+
   // Verificar permissões
   const podeEditar = (user?.gerencia && (
     user.gerencia.includes('GSP') || 
@@ -235,6 +241,107 @@ export default function DFDDespachoSection({
   )) && canEdit;
 
   const podeAssinar = user?.gerencia && user.gerencia.includes('SE');
+
+  // Funções para gerenciamento de arquivos do despacho
+  const handleUploadDespacho = () => {
+    despachoFileInputRef.current?.click();
+  };
+
+  const handleDespachoFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      // Verificar se já existe um arquivo
+      if (despachoArquivo) {
+        // Mostrar confirmação de substituição
+        setArquivoParaSubstituir(file);
+        setShowSubstituirConfirmacao(true);
+      } else {
+        // Adicionar arquivo diretamente
+        processarArquivoDespacho(file);
+      }
+    }
+    
+    // Limpar o input
+    if (event.target) {
+      event.target.value = '';
+    }
+  };
+
+  const processarArquivoDespacho = (file: File) => {
+    const arquivoInfo = {
+      name: file.name,
+      size: `${(file.size / 1024 / 1024).toFixed(2)} MB`,
+      uploadedAt: new Date().toISOString(),
+      uploadedBy: user?.nome || 'Usuário'
+    };
+    
+    setDespachoArquivo(arquivoInfo);
+    
+    // Mock: salvar no localStorage
+    localStorage.setItem(`despacho-arquivo-${processoId}`, JSON.stringify(arquivoInfo));
+    
+    toast({
+      title: "Arquivo enviado",
+      description: `${file.name} foi enviado com sucesso.`
+    });
+  };
+
+  const handleConfirmarSubstituicao = () => {
+    if (arquivoParaSubstituir) {
+      processarArquivoDespacho(arquivoParaSubstituir);
+      setArquivoParaSubstituir(null);
+      setShowSubstituirConfirmacao(false);
+    }
+  };
+
+  const handleCancelarSubstituicao = () => {
+    setArquivoParaSubstituir(null);
+    setShowSubstituirConfirmacao(false);
+  };
+
+  const handleBaixarDespacho = () => {
+    if (!despachoArquivo) {
+      toast({
+        title: "Nenhum arquivo",
+        description: "Nenhum arquivo de despacho foi enviado ainda.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    // Mock: simular download do arquivo
+    toast({
+      title: "Download Iniciado",
+      description: `O arquivo ${despachoArquivo.name} está sendo baixado.`
+    });
+  };
+
+  const handleEditarDespacho = () => {
+    despachoFileInputRef.current?.click();
+  };
+
+  const handleExcluirDespacho = () => {
+    setDespachoArquivo(null);
+    localStorage.removeItem(`despacho-arquivo-${processoId}`);
+    
+    toast({
+      title: "Arquivo removido",
+      description: "O arquivo de despacho foi removido com sucesso."
+    });
+  };
+
+  // Carregar arquivo salvo do despacho
+  useEffect(() => {
+    const despachoArquivoSalvo = localStorage.getItem(`despacho-arquivo-${processoId}`);
+    if (despachoArquivoSalvo) {
+      try {
+        const arquivoData = JSON.parse(despachoArquivoSalvo);
+        setDespachoArquivo(arquivoData);
+      } catch (error) {
+        console.error('Erro ao carregar arquivo de despacho salvo:', error);
+      }
+    }
+  }, [processoId]);
 
   // Atualizar dados quando initialData mudar
   useEffect(() => {
@@ -602,13 +709,13 @@ export default function DFDDespachoSection({
                   <TextareaWithMentions
                     value={despachoData.observacoes}
                     onChange={(value) => setDespachoData({...despachoData, observacoes: value})}
-                    placeholder="Descreva as observações do despacho... Use @ para mencionar usuários"
+                    placeholder="Descreva as observações do despacho..."
                     disabled={!podeEditar || despachoData.status !== 'PENDENTE'}
-                    className="w-full border-gray-200 focus:border-blue-300 focus:ring-blue-300"
+                    className="min-h-[100px] resize-none border-gray-200 focus:border-blue-300 focus:ring-blue-300"
                     minHeight="100px"
                     maxLength={1000}
                     processoId={processoId}
-                    etapaId={etapaId}
+                    etapaId={etapaId.toString()}
                     cardId="observacoes-despacho"
                   />
                 </div>
@@ -694,7 +801,7 @@ export default function DFDDespachoSection({
               <div className="p-4 md:p-6 flex-1 flex flex-col">
                 
                 {/* Metadados do documento */}
-                <div className="mb-4 p-4 bg-gray-50 rounded-lg">
+                <div className="mb-4 p-4 bg-gray-50 rounded-lg flex-shrink-0">
                   <div className="grid grid-cols-1 gap-2 text-sm">
                     <div>
                       <span className="font-semibold text-gray-700">Versão:</span>
@@ -715,9 +822,9 @@ export default function DFDDespachoSection({
                   </div>
                 </div>
 
-                {/* Visualização do PDF */}
-                <div className="w-full min-h-[300px] rounded-lg border border-gray-200 bg-gray-50 flex items-center justify-center">
-                  <div className="text-center text-gray-500">
+                {/* Visualização do PDF - Ocupa todo o espaço restante */}
+                <div className="flex-1 rounded-lg border border-gray-200 bg-gray-50 flex items-center justify-center min-h-0">
+                  <div className="text-center text-gray-500 p-4">
                     <FileText className="w-12 h-12 mx-auto mb-3 text-gray-300" />
                     <p className="text-sm font-medium">Visualização do DFD</p>
                     <p className="text-xs">Documento final aprovado por {initialData?.aprovadoPor || 'Yasmin Pissolati Mattos Bretz'}</p>
@@ -731,11 +838,130 @@ export default function DFDDespachoSection({
           </aside>
         </div>
 
+        {/* FULL: Despacho do DFD */}
+        <section id="despacho-dfd" className="col-span-12 w-full mt-6">
+          <div className="rounded-2xl border shadow-sm overflow-hidden bg-white">
+            <header className="bg-indigo-50 px-4 py-3 rounded-t-2xl font-semibold text-slate-900">
+              <div className="flex items-center gap-3">
+                <FileText className="w-5 h-5 text-indigo-600" />
+                Despacho do DFD
+              </div>
+            </header>
+            <div className="p-4 md:p-6 flex flex-col gap-4">
+              
+              {/* Input oculto para upload de arquivo */}
+              <input
+                ref={despachoFileInputRef}
+                type="file"
+                onChange={handleDespachoFileUpload}
+                accept=".pdf,.docx"
+                className="hidden"
+              />
+
+              {/* Botão Adicionar Documento */}
+              <div className="flex justify-center">
+                <Button
+                  onClick={handleUploadDespacho}
+                  variant="outline"
+                  className="border-dashed border-2 border-gray-300 hover:border-indigo-400 hover:bg-indigo-50 transition-colors"
+                >
+                  <Upload className="w-4 h-4 mr-2" />
+                  Adicionar Documento
+                </Button>
+              </div>
+
+              {/* Lista de arquivos */}
+              {despachoArquivo ? (
+                <div className="border border-gray-200 rounded-lg p-4 bg-gray-50">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3 min-w-0 flex-1">
+                      <div className="p-2 bg-indigo-100 rounded-lg">
+                        <FileText className="w-4 h-4 text-indigo-600" />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="text-sm font-medium text-gray-900 truncate">{despachoArquivo.name}</p>
+                        <p className="text-xs text-gray-500">
+                          {despachoArquivo.size} • {new Date(despachoArquivo.uploadedAt).toLocaleString('pt-BR')}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-1 flex-shrink-0">
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button 
+                              size="sm" 
+                              variant="outline" 
+                              onClick={handleBaixarDespacho}
+                              className="h-8 w-8 p-0"
+                            >
+                              <Download className="w-3 h-3" />
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>Baixar arquivo</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button 
+                              size="sm" 
+                              variant="outline" 
+                              onClick={handleEditarDespacho}
+                              className="h-8 w-8 p-0"
+                            >
+                              <Edit3 className="w-3 h-3" />
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>Editar/Substituir arquivo</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button 
+                              size="sm" 
+                              variant="outline" 
+                              onClick={handleExcluirDespacho}
+                              className="h-8 w-8 p-0 text-red-600 hover:text-red-700"
+                            >
+                              <Trash2 className="w-3 h-3" />
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>Excluir arquivo</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div className="text-center py-8">
+                  <div className="p-4 bg-gray-100 rounded-full w-16 h-16 mx-auto mb-4 flex items-center justify-center">
+                    <FileText className="w-8 h-8 text-gray-400" />
+                  </div>
+                  <p className="text-gray-500 font-medium">Nenhum documento de despacho enviado ainda.</p>
+                  <p className="text-sm text-gray-400 mt-1">
+                    Clique em "Adicionar Documento" para enviar um arquivo PDF ou DOCX
+                  </p>
+                </div>
+              )}
+            </div>
+          </div>
+        </section>
+
         {/* FULL: Comentários */}
         <section id="comentarios" className="col-span-12 w-full mt-6">
           <CommentsSection
             processoId={processoId}
-            etapaId={etapaId}
+            etapaId={etapaId.toString()}
             cardId="comentarios-despacho"
             title="Comentários"
           />
@@ -963,6 +1189,57 @@ export default function DFDDespachoSection({
                   <>
                     <Flag className="w-4 h-4 mr-2" />
                     Concluir Etapa
+                  </>
+                )}
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        {/* Modal de Confirmação de Substituição */}
+        <Dialog open={showSubstituirConfirmacao} onOpenChange={setShowSubstituirConfirmacao}>
+          <DialogContent className="sm:max-w-[400px]">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <AlertTriangle className="w-5 h-5 text-yellow-600" />
+                Substituir Documento
+              </DialogTitle>
+              <DialogDescription>
+                Deseja substituir o documento de despacho existente por um novo?
+              </DialogDescription>
+            </DialogHeader>
+            
+            <div className="space-y-4">
+              <Alert>
+                <AlertTriangle className="h-4 w-4" />
+                <AlertDescription>
+                  <strong>Atenção:</strong> Ao substituir o documento, o arquivo anterior será removido.
+                </AlertDescription>
+              </Alert>
+            </div>
+
+            <div className="flex justify-end gap-3 pt-4 pb-2">
+              <Button
+                variant="outline"
+                onClick={handleCancelarSubstituicao}
+                disabled={isLoading}
+              >
+                Cancelar
+              </Button>
+              <Button
+                onClick={handleConfirmarSubstituicao}
+                disabled={isLoading}
+                className="bg-yellow-600 hover:bg-yellow-700"
+              >
+                {isLoading ? (
+                  <>
+                    <RotateCcw className="w-4 h-4 mr-2 animate-spin" />
+                    Substituindo...
+                  </>
+                ) : (
+                  <>
+                    <Upload className="w-4 h-4 mr-2" />
+                    Substituir Documento
                   </>
                 )}
               </Button>
