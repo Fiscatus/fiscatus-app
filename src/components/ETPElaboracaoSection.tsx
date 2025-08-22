@@ -625,27 +625,6 @@ export default function ETPElaboracaoSection({
 
               {/* Lado direito - Botões de ação */}
               <div className="flex items-center gap-2">
-                {podeEditar && (
-                  <>
-                    <Button
-                      variant="outline"
-                      onClick={salvarRascunho}
-                      className="flex items-center gap-2"
-                    >
-                      <Save className="w-4 h-4" />
-                      Salvar Rascunho
-                    </Button>
-                    
-                    <Button
-                      onClick={enviarParaAssinatura}
-                      className="flex items-center gap-2 bg-green-600 hover:bg-green-700"
-                    >
-                      <Send className="w-4 h-4" />
-                      Enviar para Assinatura
-                    </Button>
-                  </>
-                )}
-
                 {podeExcluir && (
                   <AlertDialog>
                     <AlertDialogTrigger asChild>
@@ -676,6 +655,27 @@ export default function ETPElaboracaoSection({
                       </AlertDialogFooter>
                     </AlertDialogContent>
                   </AlertDialog>
+                )}
+
+                {podeEditar && (
+                  <>
+                    <Button
+                      variant="outline"
+                      onClick={salvarRascunho}
+                      className="flex items-center gap-2"
+                    >
+                      <Save className="w-4 h-4" />
+                      Salvar Rascunho
+                    </Button>
+                    
+                    <Button
+                      onClick={enviarParaAssinatura}
+                      className="flex items-center gap-2 bg-green-600 hover:bg-green-700"
+                    >
+                      <Send className="w-4 h-4" />
+                      Enviar para Assinatura
+                    </Button>
+                  </>
                 )}
 
                 {!podeEditar && (

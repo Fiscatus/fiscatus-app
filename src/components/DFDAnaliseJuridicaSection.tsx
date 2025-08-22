@@ -1,0 +1,1043 @@
+import React, { useState, useRef, useEffect } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { Badge } from '@/components/ui/badge';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import {
+  FileText,
+  CheckCircle,
+  XCircle,
+  AlertTriangle,
+  Eye,
+  History,
+  Upload,
+  Plus,
+  Download,
+  Trash2,
+  Save,
+  MessageCircle,
+  User,
+  Calendar,
+  Building2,
+  Edit3,
+  Lock,
+  Unlock,
+  XCircle as XCircleIcon,
+  Clock,
+  Search,
+  Info,
+  Send,
+  File,
+  CalendarDays,
+  Users,
+  CheckSquare,
+  Square,
+  Settings,
+  Scale,
+  Gavel,
+  Shield
+} from 'lucide-react';
+import { useUser } from '@/contexts/UserContext';
+import { usePermissoes } from '@/hooks/usePermissoes';
+import { useToast } from '@/hooks/use-toast';
+import TextareaWithMentions from './TextareaWithMentions';
+import CommentsSection from './CommentsSection';
+import { useDFD, DFDData, DFDVersion, DFDVersionStatus, DFDAnnex } from '@/hooks/useDFD';
+import { formatDateBR, formatDateTimeBR } from '@/lib/utils';
+
+// Tipos para o sistema de análise jurídica
+type AnaliseJuridicaStatus = 'AGUARDANDO_ANALISE' | 'APROVADA_COM_RESSALVAS' | 'DEVOLVIDA_CORRECAO' | 'ANALISE_FAVORAVEL';
+
+interface AnaliseJuridica {
+  texto: string;
+  analisadoEm?: string; // ISO
+  analisadoPor?: { id: string; nome: string; cargo: string };
+  justificativa?: string;
+  status: AnaliseJuridicaStatus;
+}
+
+interface VersaoEdital {
+  id: string;
+  numeroVersao: number;
+  status: 'enviada' | 'aprovada' | 'reprovada';
+  autorId: string;
+  criadoEm: string;
+  decididoEm?: string;
+  prazoDiasUteis?: number;
+  slaStatus?: 'ok' | 'risco' | 'estourado';
+  documentoPrincipal?: { nome: string; url: string; mimeType: string };
+}
+
+interface InteracaoAnalise {
+  id: string;
+  setor: string;
+  responsavel: string;
+  dataHora: string;
+  resultado: AnaliseJuridicaStatus;
+  justificativa?: string;
+  parecer: string;
+}
+
+interface DFDAnaliseJuridicaSectionProps {
+  processoId: string;
+  etapaId: number;
+  onComplete: (data: DFDData) => void;
+  onSave: (data: DFDData) => void;
+  initialData?: DFDData;
+  canEdit?: boolean;
+}
+
+export default function DFDAnaliseJuridicaSection({
+  processoId,
+  etapaId,
+  onComplete,
+  onSave,
+  initialData,
+  canEdit = true
+}: DFDAnaliseJuridicaSectionProps) {
+  const { user } = useUser();
+  const { podeEditarCard, isNAJ } = usePermissoes();
+  const { toast } = useToast();
+  const { 
+    dfdData, 
+    addAnnex, 
+    removeAnnex, 
+    updateObservations
+  } = useDFD(processoId);
+  
+  // Estados principais
+  const [analiseJuridica, setAnaliseJuridica] = useState('');
+  const [dataAnalise, setDataAnalise] = useState<string>('');
+  const [validationErrors, setValidationErrors] = useState<string[]>([]);
+  const [showAprovarRessalvasDialog, setShowAprovarRessalvasDialog] = useState(false);
+  const [showDevolverDialog, setShowDevolverDialog] = useState(false);
+  const [showAnaliseFavoravelDialog, setShowAnaliseFavoravelDialog] = useState(false);
+  const [justificativa, setJustificativa] = useState('');
+  const [activeTab, setActiveTab] = useState('documentos');
+  const [analiseExiste, setAnaliseExiste] = useState(false);
+  const [editalArquivo, setEditalArquivo] = useState<{ name: string; size: string; uploadedAt: string; uploadedBy: string } | null>(null);
+  const [modeloAnalise, setModeloAnalise] = useState('');
+  const [interacoes, setInteracoes] = useState<InteracaoAnalise[]>([]);
+  const [diasNoCard, setDiasNoCard] = useState(0);
+  const [responsavelAtual, setResponsavelAtual] = useState('');
+  
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const editalFileInputRef = useRef<HTMLInputElement>(null);
+
+  // Verificar se é usuário da NAJ (Gabriel Radamesis Gomes Nascimento)
+  const isNAJUser = () => {
+    // Verificar se é da gerência NAJ (corrigindo nome da gerência)
+    const isNAJGerencia = user?.gerencia === 'NAJ - Assessoria Jurídica';
+    
+    // Para maior segurança, também verificar o nome do usuário
+    const isGabrielRadamesis = user?.nome === 'Gabriel Radamesis Gomes Nascimento';
+    
+    // Debug: log para verificar o usuário atual
+    console.log('Debug NAJ Check:', {
+      userName: user?.nome,
+      userGerencia: user?.gerencia,
+      isNAJGerencia,
+      isGabrielRadamesis
+    });
+    
+    // Retornar true se for da NAJ (e opcionalmente, se for o Gabriel)
+    return isNAJGerencia; // Usar apenas gerência por enquanto
+    
+    // Para usar verificação dupla (gerência + nome):
+    // return isNAJGerencia && isGabrielRadamesis;
+  };
+
+  // Verificar se pode editar - usar lógica de permissões
+  const canEditAnaliseJuridica = () => {
+    // Permitir edição se:
+    // 1. Usuário é da NAJ (Gabriel Radamesis Gomes Nascimento)
+    // 2. Processo está em andamento
+    // 3. Card não foi concluído
+    
+    if (isNAJUser()) {
+      return true; // NAJ pode editar em qualquer situação
+    }
+    
+    // Outros usuários não podem editar este card específico
+    return false;
+  };
+
+  // Calcular SLA da análise
+  const calcularSLA = (dataEnvio: string, dataAnalise?: string) => {
+    const inicio = new Date(dataEnvio);
+    const fim = dataAnalise ? new Date(dataAnalise) : new Date();
+    const diasUteis = countBusinessDays(inicio, fim);
+    
+    // Regras para análise jurídica
+    const prazoUrgente = 3; // 3 dias úteis para urgência
+    const prazoOrdinario = 5; // 5 dias úteis para ordinário
+    
+    // Determinar prazo baseado no regime do processo (mock)
+    const prazoMaximo = prazoOrdinario; // Por padrão, usar ordinário
+    
+    if (diasUteis <= prazoMaximo) return { status: 'ok' as const, dias: diasUteis };
+    if (diasUteis <= prazoMaximo + 1) return { status: 'risco' as const, dias: diasUteis };
+    return { status: 'estourado' as const, dias: diasUteis };
+  };
+
+  // Contar dias úteis
+  const countBusinessDays = (start: Date, end: Date) => {
+    let count = 0;
+    const curDate = new Date(start.getTime());
+    while (curDate <= end) {
+      const dayOfWeek = curDate.getDay();
+      if (dayOfWeek !== 0 && dayOfWeek !== 6) count++;
+      curDate.setDate(curDate.getDate() + 1);
+    }
+    return count;
+  };
+
+  const validateForm = (): boolean => {
+    const errors: string[] = [];
+    
+    if (!analiseJuridica.trim()) {
+      errors.push('Análise Jurídica Preliminar é obrigatória');
+    }
+
+    setValidationErrors(errors);
+    return errors.length === 0;
+  };
+
+  const handleAprovarComRessalvas = () => {
+    if (!validateForm()) {
+      toast({
+        title: "Erro de Validação",
+        description: "Por favor, preencha a Análise Jurídica Preliminar.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setShowAprovarRessalvasDialog(true);
+  };
+
+  const confirmarAprovarComRessalvas = () => {
+    if (!justificativa.trim()) {
+      toast({
+        title: "Erro",
+        description: "A justificativa é obrigatória para aprovação com ressalvas.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    const dataAnaliseAtual = new Date().toISOString();
+    setDataAnalise(dataAnaliseAtual);
+    
+    // Salvar análise jurídica
+    const analiseData: AnaliseJuridica = {
+      texto: analiseJuridica,
+      analisadoEm: dataAnaliseAtual,
+      analisadoPor: {
+        id: user?.id || '',
+        nome: user?.nome || 'Usuário',
+        cargo: user?.cargo || ''
+      },
+      justificativa: justificativa,
+      status: 'APROVADA_COM_RESSALVAS'
+    };
+    
+    // Mock: salvar no localStorage
+    localStorage.setItem(`analise-juridica-${processoId}`, JSON.stringify(analiseData));
+    setAnaliseExiste(true);
+    
+    // Adicionar interação
+    const novaInteracao: InteracaoAnalise = {
+      id: `interacao-${Date.now()}`,
+      setor: 'NAJ - Assessoria Jurídica',
+      responsavel: user?.nome || 'Usuário',
+      dataHora: dataAnaliseAtual,
+      resultado: 'APROVADA_COM_RESSALVAS',
+      justificativa: justificativa,
+      parecer: analiseJuridica
+    };
+    
+    setInteracoes(prev => [...prev, novaInteracao]);
+    localStorage.setItem(`interacoes-analise-juridica-${processoId}`, JSON.stringify([...interacoes, novaInteracao]));
+    
+    onComplete(dfdData);
+    
+    toast({
+      title: "Análise Aprovada com Ressalvas",
+      description: "A análise jurídica foi aprovada com ressalvas e a próxima etapa foi liberada."
+    });
+    
+    setShowAprovarRessalvasDialog(false);
+    setJustificativa('');
+  };
+
+  const handleDevolverCorrecao = () => {
+    if (!validateForm()) {
+      toast({
+        title: "Erro de Validação",
+        description: "Por favor, preencha a Análise Jurídica Preliminar.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setShowDevolverDialog(true);
+  };
+
+  const confirmarDevolverCorrecao = () => {
+    if (!justificativa.trim()) {
+      toast({
+        title: "Erro",
+        description: "A justificativa é obrigatória para devolução.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    const dataAnaliseAtual = new Date().toISOString();
+    setDataAnalise(dataAnaliseAtual);
+    
+    // Salvar análise jurídica
+    const analiseData: AnaliseJuridica = {
+      texto: analiseJuridica,
+      analisadoEm: dataAnaliseAtual,
+      analisadoPor: {
+        id: user?.id || '',
+        nome: user?.nome || 'Usuário',
+        cargo: user?.cargo || ''
+      },
+      justificativa: justificativa,
+      status: 'DEVOLVIDA_CORRECAO'
+    };
+    
+    // Mock: salvar no localStorage
+    localStorage.setItem(`analise-juridica-${processoId}`, JSON.stringify(analiseData));
+    setAnaliseExiste(true);
+    
+    // Adicionar interação
+    const novaInteracao: InteracaoAnalise = {
+      id: `interacao-${Date.now()}`,
+      setor: 'NAJ - Assessoria Jurídica',
+      responsavel: user?.nome || 'Usuário',
+      dataHora: dataAnaliseAtual,
+      resultado: 'DEVOLVIDA_CORRECAO',
+      justificativa: justificativa,
+      parecer: analiseJuridica
+    };
+    
+    setInteracoes(prev => [...prev, novaInteracao]);
+    localStorage.setItem(`interacoes-analise-juridica-${processoId}`, JSON.stringify([...interacoes, novaInteracao]));
+    
+    onSave(dfdData);
+    
+    toast({
+      title: "Devolução para Correção",
+      description: "O edital foi devolvido para correção e o card 'Cumprimento de Ressalvas pós Análise Jurídica Prévia' foi criado."
+    });
+    
+    setShowDevolverDialog(false);
+    setJustificativa('');
+  };
+
+  const handleAnaliseFavoravel = () => {
+    if (!validateForm()) {
+      toast({
+        title: "Erro de Validação",
+        description: "Por favor, preencha a Análise Jurídica Preliminar.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setShowAnaliseFavoravelDialog(true);
+  };
+
+  const confirmarAnaliseFavoravel = () => {
+    const dataAnaliseAtual = new Date().toISOString();
+    setDataAnalise(dataAnaliseAtual);
+    
+    // Salvar análise jurídica
+    const analiseData: AnaliseJuridica = {
+      texto: analiseJuridica,
+      analisadoEm: dataAnaliseAtual,
+      analisadoPor: {
+        id: user?.id || '',
+        nome: user?.nome || 'Usuário',
+        cargo: user?.cargo || ''
+      },
+      status: 'ANALISE_FAVORAVEL'
+    };
+    
+    // Mock: salvar no localStorage
+    localStorage.setItem(`analise-juridica-${processoId}`, JSON.stringify(analiseData));
+    setAnaliseExiste(true);
+    
+    // Adicionar interação
+    const novaInteracao: InteracaoAnalise = {
+      id: `interacao-${Date.now()}`,
+      setor: 'NAJ - Assessoria Jurídica',
+      responsavel: user?.nome || 'Usuário',
+      dataHora: dataAnaliseAtual,
+      resultado: 'ANALISE_FAVORAVEL',
+      parecer: analiseJuridica
+    };
+    
+    setInteracoes(prev => [...prev, novaInteracao]);
+    localStorage.setItem(`interacoes-analise-juridica-${processoId}`, JSON.stringify([...interacoes, novaInteracao]));
+    
+    onComplete(dfdData);
+    
+    toast({
+      title: "Análise Favorável",
+      description: "A análise jurídica foi aprovada integralmente e a próxima etapa foi liberada."
+    });
+    
+    setShowAnaliseFavoravelDialog(false);
+  };
+
+  // Funções para upload de documentos
+  const handleUploadEdital = () => {
+    editalFileInputRef.current?.click();
+  };
+
+  const handleEditalFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      const arquivoInfo = {
+        name: file.name,
+        size: `${(file.size / 1024 / 1024).toFixed(2)} MB`,
+        uploadedAt: new Date().toISOString(),
+        uploadedBy: user?.nome || 'Usuário'
+      };
+      
+      setEditalArquivo(arquivoInfo);
+      
+      // Mock: salvar no localStorage
+      localStorage.setItem(`edital-arquivo-${processoId}`, JSON.stringify(arquivoInfo));
+      
+      toast({
+        title: "Arquivo do Edital enviado",
+        description: `${file.name} foi enviado com sucesso.`
+      });
+    }
+    
+    // Limpar o input
+    if (event.target) {
+      event.target.value = '';
+    }
+  };
+
+  const handleBaixarEdital = () => {
+    if (!editalArquivo) {
+      toast({
+        title: "Nenhum arquivo",
+        description: "Nenhum arquivo do edital foi enviado ainda.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    // Mock: simular download do edital
+    toast({
+      title: "Download Iniciado",
+      description: `O arquivo ${editalArquivo.name} está sendo baixado.`
+    });
+  };
+
+  const handleExcluirEdital = () => {
+    setEditalArquivo(null);
+    localStorage.removeItem(`edital-arquivo-${processoId}`);
+    
+    toast({
+      title: "Arquivo removido",
+      description: "O arquivo do edital foi removido com sucesso."
+    });
+  };
+
+  // Função para carregar modelo de análise
+  const handleCarregarModelo = () => {
+    const modelo = `ANÁLISE JURÍDICA PRELIMINAR
+
+1. CONFORMIDADE LEGAL
+   - Verificação da conformidade com a legislação aplicável
+   - Análise dos requisitos legais para a contratação
+
+2. ASPECTOS JURÍDICOS
+   - Identificação de possíveis riscos jurídicos
+   - Recomendações para mitigação de riscos
+
+3. OBSERVAÇÕES
+   - Pontos que merecem atenção especial
+   - Sugestões de melhorias
+
+4. CONCLUSÃO
+   - Parecer final sobre a viabilidade jurídica`;
+    
+    setModeloAnalise(modelo);
+    setAnaliseJuridica(modelo);
+    
+    toast({
+      title: "Modelo Carregado",
+      description: "O modelo de análise jurídica foi carregado com sucesso."
+    });
+  };
+
+  // Função para upload de anexos
+  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      // Mock: simular upload
+      const newAnnex: DFDAnnex = {
+        id: `anexo-${Date.now().toString()}`,
+        name: file.name,
+        size: `${(file.size / 1024 / 1024).toFixed(2)} MB`,
+        uploadedAt: new Date().toISOString(),
+        uploadedBy: user?.nome || 'Usuário',
+        url: `mock-url-${Date.now().toString()}`
+      };
+      
+      addAnnex(newAnnex);
+      
+      toast({
+        title: "Anexo adicionado",
+        description: `${file.name} foi anexado com sucesso.`,
+      });
+    }
+    
+    // Limpar o input
+    if (event.target) {
+      event.target.value = '';
+    }
+  };
+
+  // Carregar dados salvos
+  useEffect(() => {
+    const analiseSalva = localStorage.getItem(`analise-juridica-${processoId}`);
+    if (analiseSalva) {
+      try {
+        const analiseData = JSON.parse(analiseSalva);
+        setAnaliseJuridica(analiseData.texto || '');
+        setDataAnalise(analiseData.analisadoEm || '');
+        setAnaliseExiste(true);
+      } catch (error) {
+        console.error('Erro ao carregar análise salva:', error);
+      }
+    }
+
+    // Carregar arquivo do edital
+    const editalArquivoSalvo = localStorage.getItem(`edital-arquivo-${processoId}`);
+    if (editalArquivoSalvo) {
+      try {
+        const arquivoData = JSON.parse(editalArquivoSalvo);
+        setEditalArquivo(arquivoData);
+      } catch (error) {
+        console.error('Erro ao carregar arquivo do edital salvo:', error);
+      }
+    }
+
+    // Carregar interações
+    const interacoesSalvas = localStorage.getItem(`interacoes-analise-juridica-${processoId}`);
+    if (interacoesSalvas) {
+      try {
+        const interacoesData = JSON.parse(interacoesSalvas);
+        setInteracoes(interacoesData);
+      } catch (error) {
+        console.error('Erro ao carregar interações salvas:', error);
+      }
+    }
+
+    // Calcular dias no card (mock)
+    setDiasNoCard(2);
+    setResponsavelAtual(user?.nome || 'Sem responsável definido');
+  }, [processoId, user?.nome]);
+
+  // Usar as funções padronizadas do utils
+  const formatDate = formatDateBR;
+  const formatDateTime = formatDateTimeBR;
+
+  const getStatusConfig = (status: AnaliseJuridicaStatus) => {
+    switch (status) {
+      case 'AGUARDANDO_ANALISE':
+        return {
+          label: 'Aguardando Análise',
+          color: 'bg-blue-100 text-blue-800 border-blue-300',
+          icon: <Clock className="w-3 h-3" />
+        };
+      case 'APROVADA_COM_RESSALVAS':
+        return {
+          label: 'Aprovada com Ressalvas',
+          color: 'bg-yellow-100 text-yellow-800 border-yellow-300',
+          icon: <AlertTriangle className="w-3 h-3" />
+        };
+      case 'DEVOLVIDA_CORRECAO':
+        return {
+          label: 'Devolvida para Correção',
+          color: 'bg-red-100 text-red-800 border-red-300',
+          icon: <XCircle className="w-3 h-3" />
+        };
+      case 'ANALISE_FAVORAVEL':
+        return {
+          label: 'Análise Favorável',
+          color: 'bg-green-100 text-green-800 border-green-300',
+          icon: <CheckCircle className="w-3 h-3" />
+        };
+      default:
+        return {
+          label: 'Pendente',
+          color: 'bg-gray-100 text-gray-800 border-gray-300',
+          icon: <Clock className="w-3 h-3" />
+        };
+    }
+  };
+
+  return (
+    <div className="bg-white">
+      {/* Container central ocupando toda a área */}
+      <div className="w-full px-2">
+        
+        {/* Grid principal 12 colunas */}
+        <div className="grid grid-cols-12 gap-4">
+          
+          {/* ESQUERDA: Análise Jurídica Prévia (8 colunas) */}
+          <section id="analise-juridica" className="col-span-12 lg:col-span-8 w-full">
+            <div className="rounded-2xl border shadow-sm overflow-hidden bg-white">
+              <header className="bg-blue-50 px-4 py-3 rounded-t-2xl font-semibold text-slate-900">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3 text-lg">
+                    <Scale className="w-5 h-5 text-blue-600" />
+                    Análise Jurídica Prévia
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={handleUploadEdital}
+                      disabled={!isNAJUser()}
+                      className="text-xs"
+                    >
+                      <Upload className="w-3 h-3 mr-1" />
+                      Enviar Edital
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={handleBaixarEdital}
+                      disabled={!editalArquivo}
+                      className="text-xs"
+                    >
+                      <Download className="w-3 h-3 mr-1" />
+                      Baixar Edital
+                    </Button>
+                    {editalArquivo && isNAJUser() && (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={handleExcluirEdital}
+                        className="text-xs text-red-600 hover:text-red-700"
+                      >
+                        <Trash2 className="w-3 h-3 mr-1" />
+                        Excluir Edital
+                      </Button>
+                    )}
+                  </div>
+                </div>
+              </header>
+              <div className="p-4 md:p-6">
+                <div className="space-y-4">
+                  <div>
+                    <Label htmlFor="analise-juridica-textarea" className="text-sm font-semibold text-gray-700">
+                      Análise Jurídica Preliminar *
+                    </Label>
+                    <div className="mt-2 space-y-2">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={handleCarregarModelo}
+                        disabled={!canEditAnaliseJuridica()}
+                        className="text-xs"
+                      >
+                        <FileText className="w-3 h-3 mr-1" />
+                        Carregar Modelo
+                      </Button>
+                      <Textarea
+                        id="analise-juridica-textarea"
+                        value={analiseJuridica}
+                        onChange={(e) => setAnaliseJuridica(e.target.value)}
+                        placeholder="Descreva a análise jurídica preliminar do edital..."
+                        disabled={!canEditAnaliseJuridica()}
+                        className="min-h-[200px] resize-none border-gray-200 focus:border-blue-300 focus:ring-blue-300"
+                      />
+                    </div>
+                    {validationErrors.includes('Análise Jurídica Preliminar é obrigatória') && (
+                      <p className="text-red-500 text-sm mt-1">Análise Jurídica Preliminar é obrigatória</p>
+                    )}
+                  </div>
+                  
+                  {dataAnalise && (
+                    <div>
+                      <Label className="text-sm font-semibold text-gray-700">Data da Análise</Label>
+                      <div className="mt-2 p-3 bg-gray-50 rounded-lg border border-gray-200">
+                        <p className="text-gray-800">{formatDate(dataAnalise)}</p>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Input oculto para upload de arquivos */}
+                  <input
+                    ref={editalFileInputRef}
+                    type="file"
+                    onChange={handleEditalFileUpload}
+                    accept="*/*"
+                    className="hidden"
+                  />
+
+                  {/* Exibir arquivo do edital enviado */}
+                  {editalArquivo && (
+                    <div className="p-3 bg-blue-50 rounded-lg border border-blue-200">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <FileText className="w-5 h-5 text-blue-600" />
+                          <div>
+                            <p className="text-sm font-medium text-blue-900">{editalArquivo.name}</p>
+                            <p className="text-xs text-blue-600">{editalArquivo.size} • {formatDate(editalArquivo.uploadedAt)}</p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <Button size="sm" variant="outline" onClick={handleBaixarEdital} className="h-6 w-6 p-0">
+                            <Download className="w-3 h-3" />
+                          </Button>
+                          {isNAJUser() && (
+                            <Button size="sm" variant="outline" onClick={handleExcluirEdital} className="h-6 w-6 p-0 text-red-600 hover:text-red-700">
+                              <Trash2 className="w-3 h-3" />
+                            </Button>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          </section>
+
+          {/* DIREITA: Gerenciamento (4 colunas) */}
+          <aside id="gerenciamento" className="col-span-12 lg:col-span-4 w-full flex flex-col">
+            <div className="rounded-2xl border shadow-sm overflow-hidden bg-white flex-1 flex flex-col">
+              <header className="bg-purple-50 px-4 py-3 rounded-t-2xl font-semibold text-slate-900">
+                <div className="flex items-center gap-3">
+                  <Settings className="w-5 h-5 text-purple-600" />
+                  Gerenciamento
+                </div>
+              </header>
+              <div className="p-4 md:p-6 flex-1 flex flex-col">
+                <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+                  <TabsList className="grid w-full grid-cols-2">
+                    <TabsTrigger value="documentos">Documentos</TabsTrigger>
+                    <TabsTrigger value="interacoes">Interações</TabsTrigger>
+                  </TabsList>
+                  
+                  <TabsContent value="documentos" className="mt-0 p-4">
+                    {/* Upload de Anexos */}
+                    {canEditAnaliseJuridica() && (
+                      <div className="mb-4">
+                        <input
+                          ref={fileInputRef}
+                          type="file"
+                          onChange={handleFileUpload}
+                          accept=".docx,.xlsx,.pdf,.odt,.csv,.png,.jpg,.txt"
+                          className="hidden"
+                        />
+                        <Button
+                          onClick={() => fileInputRef.current?.click()}
+                          variant="outline"
+                          className="w-full border-dashed border-2 border-gray-300 hover:border-blue-400 hover:bg-blue-50 transition-colors"
+                        >
+                          <Upload className="w-4 h-4 mr-2" />
+                          Adicionar Anexo
+                        </Button>
+                      </div>
+                    )}
+
+                    {dfdData.annexes.length === 0 ? (
+                      <div className="text-center py-8 w-full">
+                        <div className="p-4 bg-gray-100 rounded-full w-16 h-16 mx-auto mb-4 flex items-center justify-center">
+                          <Upload className="w-8 h-8 text-gray-400" />
+                        </div>
+                        <p className="text-gray-500 font-medium">Nenhum anexo adicionado</p>
+                        {!canEditAnaliseJuridica() && (
+                          <p className="text-sm text-gray-400 mt-1">
+                            Apenas usuários autorizados podem adicionar anexos
+                          </p>
+                        )}
+                      </div>
+                    ) : (
+                      <div className="space-y-3 max-h-60 overflow-y-auto">
+                        {dfdData.annexes.map((annex) => (
+                          <div key={annex.id} className="flex items-center justify-between p-3 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
+                            <div className="flex items-center gap-3 min-w-0 flex-1">
+                              <div className="p-2 bg-blue-100 rounded-lg">
+                                <FileText className="w-4 h-4 text-blue-600" />
+                              </div>
+                              <div className="min-w-0 flex-1">
+                                <p className="text-sm font-medium truncate">{annex.name}</p>
+                                <p className="text-xs text-gray-500">
+                                  {annex.size} • {formatDate(annex.uploadedAt)}
+                                </p>
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-1 flex-shrink-0">
+                              <Button size="sm" variant="outline" className="h-6 w-6 p-0">
+                                <Eye className="w-3 h-3" />
+                              </Button>
+                              <Button size="sm" variant="outline" className="h-6 w-6 p-0">
+                                <Download className="w-3 h-3" />
+                              </Button>
+                              {canEditAnaliseJuridica() && (
+                                <Button 
+                                  size="sm" 
+                                  variant="outline" 
+                                  className="h-6 w-6 p-0 text-red-600 hover:text-red-700"
+                                  onClick={() => removeAnnex(annex.id)}
+                                >
+                                  <Trash2 className="w-3 h-3" />
+                                </Button>
+                              )}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </TabsContent>
+                  
+                  <TabsContent value="interacoes" className="mt-0 p-4">
+                    {interacoes.length === 0 ? (
+                      <div className="text-center py-8 w-full">
+                        <div className="p-4 bg-gray-100 rounded-full w-16 h-16 mx-auto mb-4 flex items-center justify-center">
+                          <History className="w-8 h-8 text-gray-400" />
+                        </div>
+                        <p className="text-gray-500 font-medium">Nenhuma interação registrada</p>
+                      </div>
+                    ) : (
+                      <div className="space-y-3 max-h-60 overflow-y-auto">
+                        {interacoes.map((interacao) => {
+                          const statusConfig = getStatusConfig(interacao.resultado);
+                          
+                          return (
+                            <div key={interacao.id} className="border border-gray-200 rounded-lg p-3 hover:bg-gray-50 transition-colors">
+                              <div className="flex items-center justify-between mb-2">
+                                <div className="flex items-center gap-2">
+                                  <Badge className={`text-xs ${statusConfig.color}`}>
+                                    {statusConfig.icon}
+                                    <span className="ml-1">{statusConfig.label}</span>
+                                  </Badge>
+                                </div>
+                              </div>
+                              <div className="text-xs text-gray-600 space-y-1">
+                                <p><strong>Setor:</strong> {interacao.setor}</p>
+                                <p><strong>Responsável:</strong> {interacao.responsavel}</p>
+                                <p><strong>Data:</strong> {formatDateTime(interacao.dataHora)}</p>
+                                {interacao.justificativa && (
+                                  <p><strong>Justificativa:</strong> {interacao.justificativa}</p>
+                                )}
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </TabsContent>
+                </Tabs>
+              </div>
+            </div>
+          </aside>
+
+          {/* FULL: Comentários */}
+          <section id="comentarios" className="col-span-12 w-full">
+            <CommentsSection
+              processoId={processoId}
+              etapaId={etapaId.toString()}
+              cardId="comentarios-analise-juridica"
+              title="Comentários"
+            />
+          </section>
+
+          {/* FULL: Ações (rodapé não fixo) */}
+          {isNAJUser() && (
+            <section id="acoes" className="col-span-12 w-full mt-6 pb-6">
+              {/* Rodapé com Botões de Ação */}
+              <Card className="w-full shadow-lg border-0 bg-white/80 backdrop-blur-sm">
+                <CardContent className="p-4">
+                  <div className="flex flex-col sm:flex-row gap-4 justify-between items-center w-full">
+                    
+                    {/* Lado esquerdo - Status e informações */}
+                    <div className="flex items-center gap-4">
+                      <div className="flex items-center gap-2">
+                        <Clock className="w-4 h-4 text-gray-500" />
+                        <span className="text-sm text-gray-600">
+                          {diasNoCard} dias no card
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <User className="w-4 h-4 text-gray-500" />
+                        <span className="text-sm text-gray-600">
+                          {responsavelAtual}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Lado direito - Botões de ação */}
+                    <div className="flex items-center gap-2">
+                      <Button 
+                        onClick={handleDevolverCorrecao}
+                        variant="outline" 
+                        className="border-red-200 text-red-700 hover:bg-red-50"
+                      >
+                        <XCircle className="w-4 h-4 mr-2" />
+                        Devolver para Correção
+                      </Button>
+                      <Button 
+                        onClick={handleAprovarComRessalvas}
+                        variant="outline"
+                        className="border-yellow-200 text-yellow-700 hover:bg-yellow-50"
+                      >
+                        <AlertTriangle className="w-4 h-4 mr-2" />
+                        Aprovar com Ressalvas
+                      </Button>
+                      <Button 
+                        onClick={handleAnaliseFavoravel}
+                        className="bg-green-600 hover:bg-green-700 text-white px-8 py-3 shadow-lg"
+                      >
+                        <CheckCircle className="w-4 h-4 mr-2" />
+                        Análise Favorável
+                      </Button>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </section>
+          )}
+        </div>
+      </div>
+
+      {/* Dialog de Confirmação - Aprovar com Ressalvas */}
+      <Dialog open={showAprovarRessalvasDialog} onOpenChange={setShowAprovarRessalvasDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <AlertTriangle className="w-5 h-5 text-yellow-600" />
+              Confirmar Aprovação com Ressalvas
+            </DialogTitle>
+            <DialogDescription>
+              Tem certeza que deseja aprovar com ressalvas? Esta ação irá:
+              <ul className="list-disc list-inside mt-2 space-y-1">
+                <li>Registrar a análise jurídica com ressalvas</li>
+                <li>Liberar a próxima etapa no fluxo</li>
+                <li>Salvar a justificativa obrigatória</li>
+              </ul>
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="justificativa-ressalvas" className="text-sm font-medium">
+                Justificativa das Ressalvas *
+              </Label>
+              <Textarea
+                id="justificativa-ressalvas"
+                value={justificativa}
+                onChange={(e) => setJustificativa(e.target.value)}
+                placeholder="Descreva as ressalvas identificadas..."
+                className="min-h-[100px] mt-2 resize-none"
+              />
+            </div>
+          </div>
+          <div className="flex gap-3">
+            <Button variant="outline" onClick={() => setShowAprovarRessalvasDialog(false)}>
+              Cancelar
+            </Button>
+            <Button onClick={confirmarAprovarComRessalvas} className="bg-yellow-600 hover:bg-yellow-700">
+              <AlertTriangle className="w-4 h-4 mr-2" />
+              Confirmar com Ressalvas
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Dialog de Confirmação - Devolver para Correção */}
+      <Dialog open={showDevolverDialog} onOpenChange={setShowDevolverDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <XCircle className="w-5 h-5 text-red-600" />
+              Confirmar Devolução para Correção
+            </DialogTitle>
+            <DialogDescription>
+              Tem certeza que deseja devolver para correção? Esta ação irá:
+              <ul className="list-disc list-inside mt-2 space-y-1">
+                <li>Registrar a análise jurídica com justificativa</li>
+                <li>Criar automaticamente o card "Cumprimento de Ressalvas pós Análise Jurídica Prévia"</li>
+                <li>Encaminhar o fluxo para correção</li>
+              </ul>
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="justificativa-devolucao" className="text-sm font-medium">
+                Justificativa da Devolução *
+              </Label>
+              <Textarea
+                id="justificativa-devolucao"
+                value={justificativa}
+                onChange={(e) => setJustificativa(e.target.value)}
+                placeholder="Descreva os motivos da devolução..."
+                className="min-h-[100px] mt-2 resize-none"
+              />
+            </div>
+          </div>
+          <div className="flex gap-3">
+            <Button variant="outline" onClick={() => setShowDevolverDialog(false)}>
+              Cancelar
+            </Button>
+            <Button onClick={confirmarDevolverCorrecao} className="bg-red-600 hover:bg-red-700">
+              <XCircle className="w-4 h-4 mr-2" />
+              Confirmar Devolução
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Dialog de Confirmação - Análise Favorável */}
+      <Dialog open={showAnaliseFavoravelDialog} onOpenChange={setShowAnaliseFavoravelDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <CheckCircle className="w-5 h-5 text-green-600" />
+              Confirmar Análise Favorável
+            </DialogTitle>
+            <DialogDescription>
+              Tem certeza que deseja aprovar integralmente? Esta ação irá:
+              <ul className="list-disc list-inside mt-2 space-y-1">
+                <li>Registrar a análise jurídica como favorável</li>
+                <li>Liberar automaticamente a próxima etapa no fluxo</li>
+                <li>Salvar a análise jurídica preliminar</li>
+              </ul>
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex gap-3">
+            <Button variant="outline" onClick={() => setShowAnaliseFavoravelDialog(false)}>
+              Cancelar
+            </Button>
+            <Button onClick={confirmarAnaliseFavoravel} className="bg-green-600 hover:bg-green-700">
+              <CheckCircle className="w-4 h-4 mr-2" />
+              Confirmar Análise Favorável
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+}

@@ -103,6 +103,12 @@ export function usePermissoes() {
     return user.gerencia === GSP_GERENCIA || user.gerencia === 'SE - Secretaria Executiva';
   };
 
+  // Verificar se é NAJ (Núcleo de Assessoria Jurídica)
+  const isNAJ = () => {
+    if (!user) return false;
+    return user.gerencia === 'NAJ - Assessoria Jurídica';
+  };
+
   return {
     podeEditarFluxo,
     podeEditarProcesso,
@@ -114,6 +120,7 @@ export function usePermissoes() {
     isGSP,
     isGerenciaPaiSistema,
     temPermissaoModelosFluxo,
-    isGSPouSE
+    isGSPouSE,
+    isNAJ
   };
 } 

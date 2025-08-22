@@ -52,6 +52,7 @@ import DFDFormSection from './DFDFormSection';
 import DFDAprovacaoSection from './DFDAprovacaoSection';
 import DFDAssinaturaSection from './DFDAssinaturaSection';
 import DFDDespachoSection from './DFDDespachoSection';
+import DFDAnaliseJuridicaSection from './DFDAnaliseJuridicaSection';
 import ConsolidacaoDemandaSection from './ConsolidacaoDemandaSection';
 import ETPElaboracaoSection from './ETPElaboracaoSection';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogClose } from './ui/dialog';
@@ -108,7 +109,7 @@ const etapasPadrao: Etapa[] = [
   { id: 12, nome: "Elaboração do Termo de Referência (TR)", nomeCompleto: "Elaboração do Termo de Referência (TR)", status: "pendente", prazoPrevisao: "10 dias úteis", responsavel: "Andressa Sterfany Santos da Silva", cargo: "Assessora Técnica de Saúde", gerencia: "GUE - Gerência de Urgência e Emergência" },
   { id: 13, nome: "Assinatura do TR", nomeCompleto: "Assinatura do TR", status: "pendente", prazoPrevisao: "5 dias úteis", responsavel: "Leticia Bonfim Guilherme", cargo: "Gerente de Licitações e Contratos", gerencia: "GLC - Gerência de Licitações e Contratos" },
   { id: 14, nome: "Elaboração do Edital", nomeCompleto: "Elaboração do Edital", status: "pendente", prazoPrevisao: "3 dias úteis", responsavel: "Dallas Kelson Francisco de Souza", cargo: "Gerente Financeiro", gerencia: "GFC - Gerência Financeira e Contábil" },
-  { id: 15, nome: "Análise Jurídica Prévia", nomeCompleto: "Análise Jurídica Prévia", status: "pendente", prazoPrevisao: "20 dias úteis", responsavel: "Georgia Guimaraes Pereira", cargo: "Controladora Interna", gerencia: "OUV - Ouvidoria" },
+  { id: 15, nome: "Análise Jurídica Prévia", nomeCompleto: "Análise Jurídica Prévia", status: "pendente", prazoPrevisao: "5 dias úteis", responsavel: "Gabriel Radamesis Gomes Nascimento", cargo: "Assessor Jurídico", gerencia: "NAJ - Assessoria Jurídica" },
   { id: 16, nome: "Cumprimento de Ressalvas pós Análise Jurídica Prévia", nomeCompleto: "Cumprimento de Ressalvas pós Análise Jurídica Prévia", status: "pendente", prazoPrevisao: "10 dias úteis", responsavel: "Gabriel Radamesis Gomes Nascimento", cargo: "Assessor Jurídico", gerencia: "NAJ - Assessoria Jurídica" },
   { id: 17, nome: "Elaboração do Parecer Jurídico", nomeCompleto: "Elaboração do Parecer Jurídico", status: "pendente", prazoPrevisao: "1 dia útil", responsavel: "Yasmin Pissolati Mattos Bretz", cargo: "Gerente de Soluções e Projetos", gerencia: "GSP - Gerência de Soluções e Projetos" },
   { id: 18, nome: "Cumprimento de Ressalvas pós Parecer Jurídico", nomeCompleto: "Cumprimento de Ressalvas pós Parecer Jurídico", status: "pendente", prazoPrevisao: "1 dia útil", responsavel: "Yasmin Pissolati Mattos Bretz", cargo: "Gerente de Soluções e Projetos", gerencia: "GSP - Gerência de Soluções e Projetos" },
@@ -269,6 +270,18 @@ export default function FluxoProcessoCompleto({ etapas = etapasPadrao, onEtapaCl
             <Badge key="status" className="bg-gray-100 text-gray-800 px-3 py-1">
               <DollarSign className="w-4 h-4 mr-2" />
               <span>Não Iniciado</span>
+            </Badge>
+          ]
+        };
+      case 15: // Análise Jurídica Prévia
+        return {
+          title: "Análise Jurídica Prévia",
+          subtitle: "Análise Preliminar da Assessoria Jurídica (NAJ)",
+          icon: <Scale className="w-6 h-6 text-blue-600" />,
+          statusBadges: [
+            <Badge key="status" className="bg-blue-100 text-blue-800 px-3 py-1">
+              <Scale className="w-4 h-4 mr-2" />
+              <span>Aguardando Análise</span>
             </Badge>
           ]
         };
@@ -460,6 +473,10 @@ export default function FluxoProcessoCompleto({ etapas = etapasPadrao, onEtapaCl
       // Card "Elaboração do ETP"
       setCurrentEtapa(etapa);
       setShowETPModal(true);
+    } else if (etapa.id === 15) {
+      // Card "Análise Jurídica Prévia"
+      setCurrentEtapa(etapa);
+      setShowDFDModal(true);
     } else if (etapa.nome === 'Consolidação da Demanda') {
       // Card "Consolidação da Demanda"
       setCurrentEtapa(etapa);
@@ -1146,6 +1163,14 @@ export default function FluxoProcessoCompleto({ etapas = etapasPadrao, onEtapaCl
                   canEdit={canManageEtapa(currentEtapa)}
                   gerenciaCriadora={gerenciaCriadora}
                   initialData={dfdData}
+                />
+              ) : currentEtapa?.id === 15 ? (
+                <DFDAnaliseJuridicaSection
+                  processoId="1"
+                  etapaId={currentEtapa.id}
+                  onComplete={handleDFDComplete}
+                  onSave={handleDFDSave}
+                  canEdit={canManageEtapa(currentEtapa)}
                 />
               ) : null}
             </div>
