@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Separator } from '@/components/ui/separator';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
@@ -48,7 +48,8 @@ import {
   GripVertical,
   FileCheck,
   Printer,
-  Shield
+  Shield,
+  Settings
 } from 'lucide-react';
 import { useUser } from '@/contexts/UserContext';
 import { usePermissoes } from '@/hooks/usePermissoes';
@@ -212,7 +213,7 @@ export default function DFDDespachoSection({
   gerenciaCriadora
 }: DFDDespachoSectionProps) {
   const { user } = useUser();
-  const { podeEditarCard, isGSP } = usePermissoes();
+  const { podeEditarCard, isGSP, isGSPouSE } = usePermissoes();
   const { toast } = useToast();
   
   // Estados principais
@@ -233,6 +234,38 @@ export default function DFDDespachoSection({
   const [showSubstituirConfirmacao, setShowSubstituirConfirmacao] = useState(false);
   const [arquivoParaSubstituir, setArquivoParaSubstituir] = useState<File | null>(null);
   const despachoFileInputRef = useRef<HTMLInputElement>(null);
+
+  // Estados para gerenciamento de assinaturas
+  const [assinantes, setAssinantes] = useState<{
+    id: string;
+    nome: string;
+    cargo: string;
+    email: string;
+    status: 'PENDENTE' | 'ASSINADO' | 'CANCELADO';
+    assinadoEm?: string;
+  }[]>([]);
+  const [assinanteSelecionado, setAssinanteSelecionado] = useState<{
+    id: string;
+    nome: string;
+    cargo: string;
+    email: string;
+    status: 'PENDENTE' | 'ASSINADO' | 'CANCELADO';
+    assinadoEm?: string;
+  } | null>(null);
+  const [showCancelarModal, setShowCancelarModal] = useState(false);
+  const [showAdicionarAssinante, setShowAdicionarAssinante] = useState(false);
+
+  // SLA
+  const sla = {
+    prazoDiasUteis: 3,
+    decorridosDiasUteis: 0,
+    badge: 'Em Dia'
+  };
+
+  // Progresso das assinaturas
+  const totalAssinaturas = assinantes.length;
+  const assinaturasConcluidas = assinantes.filter(a => a.status === 'ASSINADO').length;
+  const progresso = totalAssinaturas > 0 ? (assinaturasConcluidas / totalAssinaturas) * 100 : 0;
 
   // Verificar permissões
   const podeEditar = (user?.gerencia && (
@@ -603,6 +636,84 @@ export default function DFDDespachoSection({
     }
   };
 
+  const handleAdicionarAssinantes = async () => {
+    if (usuariosSelecionados.length === 0) return;
+
+    setIsLoading(true);
+    
+    try {
+      // Simular chamada para API
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      const novosAssinantes = usuariosSelecionados.map(userId => {
+        const usuario = mockUsuariosDisponiveis.find(u => u.id === userId);
+        return {
+          id: `assinante-${Date.now()}-${userId}`,
+          nome: usuario?.nome || '',
+          cargo: usuario?.cargo || '',
+          email: usuario?.email || '',
+          status: 'PENDENTE' as 'PENDENTE' | 'ASSINADO' | 'CANCELADO'
+        };
+      });
+
+      setAssinantes(prev => [...prev, ...novosAssinantes]);
+      
+      setShowAdicionarAssinante(false);
+      setUsuariosSelecionados([]);
+      
+      toast({
+        title: "Assinantes adicionados",
+        description: `${novosAssinantes.length} assinante(s) adicionado(s) com sucesso.`
+      });
+
+    } catch (error) {
+      toast({
+        title: "Erro ao adicionar",
+        description: "Não foi possível adicionar os assinantes.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleRemoverAssinante = (assinanteId: string) => {
+    setAssinantes(prev => prev.filter(a => a.id !== assinanteId));
+    toast({
+      title: "Assinante removido",
+      description: "O assinante foi removido com sucesso.",
+    });
+  };
+
+  const handleCancelarAssinatura = async () => {
+    if (!assinanteSelecionado) return;
+
+    setIsLoading(true);
+    try {
+      // Simular chamada para API de cancelamento
+      await new Promise(resolve => setTimeout(resolve, 1000));
+
+      setAssinantes(prev => prev.map(a => 
+        a.id === assinanteSelecionado.id ? { ...a, status: 'CANCELADO' } : a
+      ));
+      setAssinanteSelecionado(null);
+      setShowCancelarModal(false);
+
+      toast({
+        title: "Assinatura cancelada",
+        description: `A assinatura de ${assinanteSelecionado.nome} foi cancelada.`,
+      });
+    } catch (error) {
+      toast({
+        title: "Erro ao cancelar assinatura",
+        description: "Não foi possível cancelar a assinatura.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const formatDate = (dateString: string): string => {
     return new Date(dateString).toLocaleDateString('pt-BR', {
       day: '2-digit',
@@ -633,6 +744,56 @@ export default function DFDDespachoSection({
         return { label: 'Despacho Cancelado', color: 'bg-red-100 text-red-800', icon: <XCircle className="w-3 h-3" /> };
       default:
         return { label: 'Desconhecido', color: 'bg-gray-100 text-gray-800', icon: <AlertCircle className="w-3 h-3" /> };
+    }
+  };
+
+  const getAssinaturaStatusConfig = (status: 'PENDENTE' | 'ASSINADO' | 'CANCELADO') => {
+    switch (status) {
+      case 'PENDENTE':
+        return { 
+          label: 'Pendente', 
+          icon: <Clock className="w-3 h-3 mr-1" />, 
+          bgColor: 'bg-yellow-100', 
+          textColor: 'text-yellow-800', 
+          borderColor: 'border-yellow-200' 
+        };
+      case 'ASSINADO':
+        return { 
+          label: 'Assinado', 
+          icon: <CheckCircle className="w-3 h-3 mr-1" />, 
+          bgColor: 'bg-green-100', 
+          textColor: 'text-green-800', 
+          borderColor: 'border-green-200' 
+        };
+      case 'CANCELADO':
+        return { 
+          label: 'Cancelado', 
+          icon: <XCircle className="w-3 h-3 mr-1" />, 
+          bgColor: 'bg-red-100', 
+          textColor: 'text-red-800', 
+          borderColor: 'border-red-200' 
+        };
+      default:
+        return { 
+          label: 'Desconhecido', 
+          icon: <AlertCircle className="w-3 h-3 mr-1" />, 
+          bgColor: 'bg-gray-100', 
+          textColor: 'text-gray-800', 
+          borderColor: 'border-gray-200' 
+        };
+    }
+  };
+
+  const getSLABadgeConfig = (badge: string) => {
+    switch (badge) {
+      case 'Em Dia':
+        return { label: 'Em Dia', className: 'bg-green-100 text-green-800 border-green-200' };
+      case 'Atrasado':
+        return { label: 'Atrasado', className: 'bg-red-100 text-red-800 border-red-200' };
+      case 'Próximo ao Prazo':
+        return { label: 'Próximo ao Prazo', className: 'bg-yellow-100 text-yellow-800 border-yellow-200' };
+      default:
+        return { label: 'Desconhecido', className: 'bg-gray-100 text-gray-800 border-gray-200' };
     }
   };
 
@@ -787,54 +948,153 @@ export default function DFDDespachoSection({
             </div>
           </section>
 
-          {/* DIREITA: Visualização do DFD Assinado (4 colunas) */}
-          <aside id="visualizacao-dfd-assinado" className="col-span-12 lg:col-span-4 w-full flex flex-col">
-            
-            {/* Card de Visualização */}
+          {/* DIREITA: Gerenciamento (4 colunas) */}
+          <aside id="gerenciamento" className="col-span-12 lg:col-span-4 w-full flex flex-col">
             <div className="rounded-2xl border shadow-sm overflow-hidden bg-white flex-1 flex flex-col">
-              <header className="bg-indigo-100 px-4 py-3 rounded-t-2xl font-semibold text-slate-900">
+              <header className="bg-purple-50 px-4 py-3 rounded-t-2xl font-semibold text-slate-900">
                 <div className="flex items-center gap-3">
-                  <FileText className="w-5 h-5 text-indigo-600" />
-                  DFD Assinado
+                  <Settings className="w-5 h-5 text-purple-600" />
+                  Gerenciamento
                 </div>
               </header>
-              <div className="p-4 md:p-6 flex-1 flex flex-col">
+              <div className="p-4 md:p-6 space-y-4 flex-1 flex flex-col">
                 
-                {/* Metadados do documento */}
-                <div className="mb-4 p-4 bg-gray-50 rounded-lg flex-shrink-0">
-                  <div className="grid grid-cols-1 gap-2 text-sm">
-                    <div>
-                      <span className="font-semibold text-gray-700">Versão:</span>
-                      <span className="ml-2 text-gray-600">Final</span>
-                    </div>
-                    <div>
-                      <span className="font-semibold text-gray-700">Autor:</span>
-                      <span className="ml-2 text-gray-600">{initialData?.responsavelElaboracao || 'Yasmin Pissolati Mattos Bretz'} - {initialData?.areaSetorDemandante?.split(' - ')[0] || 'GSP'}</span>
-                    </div>
-                    <div>
-                      <span className="font-semibold text-gray-700">Data de Aprovação:</span>
-                      <span className="ml-2 text-gray-600">{initialData?.aprovadoData ? formatDate(initialData.aprovadoData) : '15/01/2025'}</span>
-                    </div>
-                    <div>
-                      <span className="font-semibold text-gray-700">Status:</span>
-                      <span className="ml-2 text-gray-600">Aprovado por {initialData?.aprovadoPor || 'Yasmin Pissolati Mattos Bretz'}</span>
-                    </div>
+                {/* Responsável pela etapa */}
+                <div className="p-3 bg-blue-50 rounded-lg">
+                  <Label className="text-sm font-semibold text-gray-700 mb-2 block">
+                    Responsável pela Etapa
+                  </Label>
+                  <div className="text-sm text-gray-600">
+                    <div className="font-medium">Diran Rodrigues de Souza Filho</div>
+                    <div className="text-xs text-gray-500">Secretário Executivo</div>
                   </div>
                 </div>
 
-                {/* Visualização do PDF - Ocupa todo o espaço restante */}
-                <div className="flex-1 rounded-lg border border-gray-200 bg-gray-50 flex items-center justify-center min-h-0">
-                  <div className="text-center text-gray-500 p-4">
-                    <FileText className="w-12 h-12 mx-auto mb-3 text-gray-300" />
-                    <p className="text-sm font-medium">Visualização do DFD</p>
-                    <p className="text-xs">Documento final aprovado por {initialData?.aprovadoPor || 'Yasmin Pissolati Mattos Bretz'}</p>
-                    <p className="text-xs mt-1">(Bloqueado para edição)</p>
+                {/* Seleção de assinantes (GSP ou SE) */}
+                {isGSPouSE && (
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <Label className="text-sm font-semibold text-gray-700">
+                        Seleção de Assinantes
+                      </Label>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => setShowAdicionarAssinante(true)}
+                        className="h-8 px-3"
+                      >
+                        <UserPlus className="w-4 h-4 mr-1" />
+                        Adicionar
+                      </Button>
+                    </div>
+                  </div>
+                )}
+
+                {/* Lista de assinantes */}
+                <div className="space-y-3">
+                  <Label className="text-sm font-semibold text-gray-700">
+                    Assinantes Selecionados
+                  </Label>
+                  
+                  {assinantes.length === 0 ? (
+                    <div className="text-center py-6 text-gray-500">
+                      <Users className="w-8 h-8 mx-auto mb-2 text-gray-300" />
+                      <p className="text-sm">Nenhum assinante selecionado</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-2">
+                      {assinantes.map((assinante) => {
+                        const statusConfig = getAssinaturaStatusConfig(assinante.status);
+                        return (
+                          <div key={assinante.id} className="p-3 border rounded-lg bg-gray-50">
+                            <div className="flex items-start justify-between">
+                              <div className="flex-1">
+                                <div className="flex items-center gap-2 mb-1">
+                                  <span className="font-medium text-sm">{assinante.nome}</span>
+                                  <Badge className={`${statusConfig.bgColor} ${statusConfig.textColor} ${statusConfig.borderColor} text-xs`}>
+                                    {statusConfig.icon}
+                                    <span className="ml-1">{statusConfig.label}</span>
+                                  </Badge>
+                                </div>
+                                <div className="text-xs text-gray-600 mb-1">{assinante.cargo}</div>
+                                <div className="text-xs text-gray-500">{assinante.email}</div>
+                                {assinante.assinadoEm && (
+                                  <div className="text-xs text-green-600 mt-1">
+                                    Assinado em {new Date(assinante.assinadoEm).toLocaleString('pt-BR')}
+                                  </div>
+                                )}
+                              </div>
+                              
+                              {/* Ações */}
+                              <div className="flex items-center gap-1">
+                                {isGSPouSE && assinante.status === 'PENDENTE' && (
+                                  <Button
+                                    size="sm"
+                                    variant="ghost"
+                                    onClick={() => handleRemoverAssinante(assinante.id)}
+                                    className="h-6 w-6 p-0 text-red-600 hover:text-red-700"
+                                  >
+                                    <UserMinus className="w-3 h-3" />
+                                  </Button>
+                                )}
+                                
+                                {assinante.status === 'PENDENTE' && 
+                                 (assinante.email === user?.email || isGSPouSE) && (
+                                  <Button
+                                    size="sm"
+                                    variant="ghost"
+                                    onClick={() => {
+                                      setAssinanteSelecionado(assinante);
+                                      setShowCancelarModal(true);
+                                    }}
+                                    className="h-6 w-6 p-0 text-orange-600 hover:text-orange-700"
+                                  >
+                                    <XCircle className="w-3 h-3" />
+                                  </Button>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+
+                {/* Progresso das assinaturas */}
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <Label className="text-sm font-semibold text-gray-700">
+                      Progresso
+                    </Label>
+                    <span className="text-sm text-gray-600">
+                      {assinaturasConcluidas}/{totalAssinaturas}
+                    </span>
+                  </div>
+                  <Progress value={progresso} className="h-2" />
+                  <div className="text-xs text-gray-500">
+                    {progresso === 100 ? 'Todas as assinaturas concluídas' : 'Aguardando assinaturas'}
+                  </div>
+                </div>
+
+                {/* SLA */}
+                <div className="p-3 bg-yellow-50 rounded-lg">
+                  <div className="flex items-center justify-between mb-2">
+                    <Label className="text-sm font-semibold text-gray-700">
+                      SLA
+                    </Label>
+                    <Badge className={getSLABadgeConfig(sla.badge).className}>
+                      {getSLABadgeConfig(sla.badge).label}
+                    </Badge>
+                  </div>
+                  <div className="text-sm text-gray-600">
+                    <div>Prazo: {sla.prazoDiasUteis} dia útil</div>
+                    <div>Decorridos: {sla.decorridosDiasUteis} dias úteis</div>
                   </div>
                 </div>
 
               </div>
             </div>
-
           </aside>
         </div>
 
@@ -1240,6 +1500,126 @@ export default function DFDDespachoSection({
                   <>
                     <Upload className="w-4 h-4 mr-2" />
                     Substituir Documento
+                  </>
+                )}
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        {/* Modal de Adicionar Assinantes (GSP ou SE) */}
+        <Dialog open={showAdicionarAssinante} onOpenChange={setShowAdicionarAssinante}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <UserPlus className="w-5 h-5 text-purple-600" />
+                Adicionar Assinantes
+              </DialogTitle>
+              <DialogDescription>
+                Selecione os usuários que devem assinar o documento.
+              </DialogDescription>
+            </DialogHeader>
+            
+            <div className="space-y-4 py-4">
+              <div className="space-y-2">
+                <Label className="text-sm font-medium">
+                  Usuários Disponíveis
+                </Label>
+                <div className="max-h-60 overflow-y-auto space-y-2">
+                  {mockUsuariosDisponiveis
+                    .filter(usuario => !assinantes.some(a => a.email === usuario.email))
+                    .map((usuario) => (
+                      <div key={usuario.id} className="flex items-center space-x-2 p-2 border rounded">
+                        <Checkbox
+                          id={usuario.id}
+                          checked={usuariosSelecionados.includes(usuario.id)}
+                          onCheckedChange={(checked) => {
+                            if (checked) {
+                              setUsuariosSelecionados([...usuariosSelecionados, usuario.id]);
+                            } else {
+                              setUsuariosSelecionados(usuariosSelecionados.filter(id => id !== usuario.id));
+                            }
+                          }}
+                        />
+                        <Label htmlFor={usuario.id} className="text-sm flex-1 cursor-pointer">
+                          <div className="font-medium">{usuario.nome}</div>
+                          <div className="text-xs text-gray-500">{usuario.cargo}</div>
+                        </Label>
+                      </div>
+                    ))}
+                </div>
+              </div>
+            </div>
+
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setShowAdicionarAssinante(false)}>
+                Cancelar
+              </Button>
+              <Button 
+                onClick={handleAdicionarAssinantes}
+                disabled={isLoading || usuariosSelecionados.length === 0}
+                className="bg-purple-600 hover:bg-purple-700"
+              >
+                {isLoading ? (
+                  <>
+                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
+                    Adicionando...
+                  </>
+                ) : (
+                  <>
+                    <UserPlus className="w-4 h-4 mr-2" />
+                    Adicionar ({usuariosSelecionados.length})
+                  </>
+                )}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Modal de Cancelar Assinatura */}
+        <Dialog open={showCancelarModal} onOpenChange={setShowCancelarModal}>
+          <DialogContent className="sm:max-w-[400px]">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <XCircle className="w-5 h-5 text-red-600" />
+                Cancelar Assinatura
+              </DialogTitle>
+              <DialogDescription>
+                Deseja cancelar a assinatura de {assinanteSelecionado?.nome}?
+              </DialogDescription>
+            </DialogHeader>
+            
+            <div className="space-y-4">
+              <Alert>
+                <AlertTriangle className="h-4 w-4" />
+                <AlertDescription>
+                  <strong>Atenção:</strong> Ao cancelar a assinatura, a etapa será marcada como concluída, mas a assinatura será removida.
+                </AlertDescription>
+              </Alert>
+            </div>
+
+            <div className="flex justify-end gap-3 pt-4 pb-2">
+              <Button
+                variant="outline"
+                onClick={() => setShowCancelarModal(false)}
+                disabled={isLoading}
+              >
+                Cancelar
+              </Button>
+              <Button
+                onClick={handleCancelarAssinatura}
+                disabled={isLoading}
+                className="bg-red-600 hover:bg-red-700"
+              >
+                {isLoading ? (
+                  <>
+                    <RotateCcw className="w-4 h-4 mr-2 animate-spin" />
+                    Cancelando...
+                  </>
+                ) : (
+                  <>
+                    <XCircle className="w-4 h-4 mr-2" />
+                    Cancelar Assinatura
                   </>
                 )}
               </Button>

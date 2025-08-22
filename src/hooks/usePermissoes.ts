@@ -97,6 +97,12 @@ export function usePermissoes() {
     return gerenciasAutorizadas.some(g => user.gerencia.includes(g));
   };
 
+  // Verificar se é GSP ou SE (pode gerenciar assinaturas)
+  const isGSPouSE = () => {
+    if (!user) return false;
+    return user.gerencia === GSP_GERENCIA || user.gerencia === 'SE - Secretaria Executiva';
+  };
+
   return {
     podeEditarFluxo,
     podeEditarProcesso,
@@ -107,6 +113,7 @@ export function usePermissoes() {
     isGerenciaPai: podeEditarFluxo(),
     isGSP,
     isGerenciaPaiSistema,
-    temPermissaoModelosFluxo
+    temPermissaoModelosFluxo,
+    isGSPouSE
   };
 } 
