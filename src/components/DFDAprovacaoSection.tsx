@@ -36,13 +36,14 @@ import {
   CalendarDays,
   Users,
   CheckSquare,
-  Square
+  Square,
+  Settings
 } from 'lucide-react';
 import { useUser } from '@/contexts/UserContext';
 import { usePermissoes } from '@/hooks/usePermissoes';
 import { useToast } from '@/hooks/use-toast';
 import TextareaWithMentions from './TextareaWithMentions';
-import StandardCommentsSection from './StandardCommentsSection';
+import CommentsSection from './CommentsSection';
 import { useDFD, DFDData, DFDVersion, DFDVersionStatus, DFDAnnex } from '@/hooks/useDFD';
 
 // Tipos para o novo sistema
@@ -320,7 +321,7 @@ export default function DFDAprovacaoSection({
   return (
     <div className="bg-white">
       {/* Container central ocupando toda a área */}
-      <div className="w-full">
+      <div className="w-full px-2">
         
         {/* Grid principal 12 colunas */}
         <div className="grid grid-cols-12 gap-4">
@@ -411,28 +412,28 @@ export default function DFDAprovacaoSection({
           </section>
 
           {/* DIREITA: Gerenciamento (4 colunas) */}
-          <aside id="gerenciamento" className="col-span-12 lg:col-span-4 w-full">
-            <div className="rounded-2xl border shadow-sm overflow-hidden bg-white">
-              <header className="bg-slate-50 px-4 py-3 rounded-t-2xl font-semibold text-slate-900">
-                <div className="flex items-center gap-3 text-lg">
-                  <History className="w-5 h-5 text-slate-600" />
+          <aside id="gerenciamento" className="col-span-12 lg:col-span-4 w-full flex flex-col">
+            <div className="rounded-2xl border shadow-sm overflow-hidden bg-white flex-1 flex flex-col">
+              <header className="bg-purple-50 px-4 py-3 rounded-t-2xl font-semibold text-slate-900">
+                <div className="flex items-center gap-3">
+                  <Settings className="w-5 h-5 text-purple-600" />
                   Gerenciamento
                 </div>
               </header>
-              <div className="p-4 md:p-6">
+              <div className="p-4 md:p-6 flex-1 flex flex-col">
                 <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
                   <TabsList className="grid w-full grid-cols-2">
                     <TabsTrigger value="versoes">Versões</TabsTrigger>
                     <TabsTrigger value="anexos">Anexos</TabsTrigger>
                   </TabsList>
                   
-                  <TabsContent value="versoes" className="mt-4">
+                  <TabsContent value="versoes" className="mt-0 p-4">
                     {dfdData.versions.length === 0 ? (
-                      <div className="text-center py-6">
-                        <div className="p-3 bg-gray-100 rounded-full w-12 h-12 mx-auto mb-3 flex items-center justify-center">
-                          <History className="w-6 h-6 text-gray-400" />
+                      <div className="text-center py-8 w-full">
+                        <div className="p-4 bg-gray-100 rounded-full w-16 h-16 mx-auto mb-4 flex items-center justify-center">
+                          <History className="w-8 h-8 text-gray-400" />
                         </div>
-                        <p className="text-gray-500 text-sm">Nenhuma versão disponível</p>
+                        <p className="text-gray-500 font-medium">Nenhuma versão disponível</p>
                       </div>
                     ) : (
                       <div className="space-y-3 max-h-60 overflow-y-auto">
@@ -488,13 +489,13 @@ export default function DFDAprovacaoSection({
                     )}
                   </TabsContent>
                   
-                  <TabsContent value="anexos" className="mt-4">
+                  <TabsContent value="anexos" className="mt-0 p-4">
                     {dfdData.annexes.length === 0 ? (
-                      <div className="text-center py-6">
-                        <div className="p-3 bg-gray-100 rounded-full w-12 h-12 mx-auto mb-3 flex items-center justify-center">
-                          <Upload className="w-6 h-6 text-gray-400" />
+                      <div className="text-center py-8 w-full">
+                        <div className="p-4 bg-gray-100 rounded-full w-16 h-16 mx-auto mb-4 flex items-center justify-center">
+                          <Upload className="w-8 h-8 text-gray-400" />
                         </div>
-                        <p className="text-gray-500 text-sm">Nenhum anexo adicionado</p>
+                        <p className="text-gray-500 font-medium">Nenhum anexo adicionado</p>
                       </div>
                     ) : (
                       <div className="space-y-3 max-h-60 overflow-y-auto">
@@ -569,12 +570,11 @@ export default function DFDAprovacaoSection({
 
           {/* FULL: Comentários */}
           <section id="comentarios" className="col-span-12 w-full">
-            <StandardCommentsSection
+            <CommentsSection
               processoId={processoId}
               etapaId={etapaId}
               cardId="comentarios-aprovacao"
               title="Comentários"
-              canAddComment={true}
             />
           </section>
 

@@ -42,7 +42,7 @@ import {
 } from "lucide-react";
 import { useUser } from "@/contexts/UserContext";
 import { toast } from "@/components/ui/use-toast";
-import StandardCommentsSection from './StandardCommentsSection';
+import CommentsSection from './CommentsSection';
 
 // Interfaces
 interface ETPElaboracaoSectionProps {
@@ -382,7 +382,7 @@ export default function ETPElaboracaoSection({
   return (
     <div className="min-h-screen bg-white">
       {/* Container central ocupando toda a área */}
-      <div className="w-full">
+      <div className="w-full px-2">
         {/* Grid principal 12 colunas */}
         <div className="grid grid-cols-12 gap-4">
           
@@ -526,15 +526,15 @@ export default function ETPElaboracaoSection({
            </section>
 
                                            {/* DIREITA: Gerenciamento */}
-            <aside className="col-span-12 lg:col-span-4 w-full">
-             <div className="rounded-2xl border shadow-sm overflow-hidden bg-white">
+            <aside className="col-span-12 lg:col-span-4 w-full flex flex-col">
+             <div className="rounded-2xl border shadow-sm overflow-hidden bg-white flex-1 flex flex-col">
                <header className="bg-purple-50 px-4 py-3 rounded-t-2xl font-semibold text-slate-900">
                  <div className="flex items-center gap-3">
                    <Settings className="w-5 h-5 text-purple-600" />
                    Gerenciamento
                  </div>
                </header>
-               <div className="p-4 md:p-6 space-y-0">
+               <div className="p-4 md:p-6 space-y-0 flex-1 flex flex-col">
                   
                   {/* Resumo do ETP */}
                   <div className="w-full p-4">
@@ -608,12 +608,11 @@ export default function ETPElaboracaoSection({
 
                  {/* Comentários (full-width) */}
          <section className="mt-4">
-          <StandardCommentsSection
+          <CommentsSection
             processoId={processoId}
             etapaId={etapaId}
             cardId="comentarios-etp"
             title="Comentários"
-            canAddComment={true}
           />
         </section>
 

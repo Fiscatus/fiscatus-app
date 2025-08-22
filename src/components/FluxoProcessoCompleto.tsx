@@ -166,6 +166,10 @@ export default function FluxoProcessoCompleto({ etapas = etapasPadrao, onEtapaCl
             <Badge key="assinado" className="bg-green-100 text-green-800 border-green-300 px-3 py-1">
               <CheckCircle className="w-4 h-4 mr-2" />
               Assinado (2/3)
+            </Badge>,
+            <Badge key="status" className="bg-orange-100 text-orange-800 px-3 py-1">
+              <Clock className="w-4 h-4 mr-2" />
+              <span>Pendente de Assinatura</span>
             </Badge>
           ]
         };

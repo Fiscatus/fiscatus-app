@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -41,13 +41,15 @@ import {
   Square,
   Hash,
   ChevronDown,
-  Flag
+  Flag,
+  Settings
 } from 'lucide-react';
 import { useUser } from '@/contexts/UserContext';
 import { usePermissoes } from '@/hooks/usePermissoes';
 import { useToast } from '@/hooks/use-toast';
 import { DatePicker } from '@/components/date';
-import StandardCommentsSection from './StandardCommentsSection';
+import CommentsSection from './CommentsSection';
+import ResponsavelSelector from './ResponsavelSelector';
 
 // Tipos TypeScript conforme especificação
 type DFDVersionStatus = 'rascunho' | 'finalizada' | 'enviada_para_analise' | 'aprovada' | 'reprovada';
@@ -68,8 +70,12 @@ interface DFDVersion {
   payload: {
     objeto: string;
     areaSetorDemandante: string;
-    responsavelId: string;
-    responsavelNome: string;
+    responsaveis: {
+      id: string;
+      nome: string;
+      cargo: string;
+      gerencia: string;
+    }[];
     dataElaboracao: string;
     numeroDFD: string;
     prioridade: 'ALTO' | 'MEDIO' | 'BAIXO';
@@ -161,8 +167,14 @@ const mockVersions: DFDVersion[] = [
     payload: {
       objeto: '',
       areaSetorDemandante: 'GSP - Gerência de Soluções e Projetos',
-      responsavelId: 'user1',
-      responsavelNome: 'João Silva',
+      responsaveis: [
+        {
+          id: 'user1',
+          nome: 'João Silva',
+          cargo: 'Analista de Projetos',
+          gerencia: 'GSP - Gerência de Soluções e Projetos'
+        }
+      ],
       dataElaboracao: '2024-01-15',
       numeroDFD: 'DFD-2024-001',
       prioridade: 'MEDIO'
@@ -203,6 +215,26 @@ export default function DFDFormSection({
   const [currentVersion, setCurrentVersion] = useState<DFDVersion>(mockVersions[0]);
   const [formData, setFormData] = useState(currentVersion.payload);
   const [anexos, setAnexos] = useState<Anexo[]>(mockAnexos);
+
+
+
+  // Função para salvar alterações nos responsáveis
+  const salvarResponsaveis = useCallback((novosResponsaveis: any[]) => {
+    console.log('Salvando responsáveis:', novosResponsaveis);
+    
+    // Atualizar apenas o formData
+    setFormData(prev => {
+      console.log('Atualizando formData:', {
+        prev: prev.responsaveis,
+        novos: novosResponsaveis
+      });
+      return {
+        ...prev,
+        responsaveis: novosResponsaveis
+      };
+    });
+    
+  }, []);
 
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -276,7 +308,7 @@ export default function DFDFormSection({
   function canSendToAnalysis(): boolean {
     return formData.objeto.trim() !== '' && 
            formData.areaSetorDemandante.trim() !== '' && 
-           formData.responsavelNome.trim() !== '' && 
+           formData.responsaveis && formData.responsaveis.length > 0 && 
            formData.prioridade !== undefined;
   }
 
@@ -601,7 +633,7 @@ export default function DFDFormSection({
   return (
     <div className="bg-white">
       {/* Container central ocupando toda a área */}
-      <div className="w-full">
+      <div className="w-full px-2">
         {/* Grid principal 12 colunas */}
         <div className="grid grid-cols-12 gap-4">
           
@@ -610,7 +642,7 @@ export default function DFDFormSection({
             
             {/* Card do Formulário */}
             <div className="rounded-2xl border shadow-sm overflow-hidden bg-white">
-              <header className="bg-indigo-50 px-4 py-3 rounded-t-2xl font-semibold text-slate-900">
+              <header className="bg-indigo-100 px-4 py-3 rounded-t-2xl font-semibold text-slate-900">
                 <div className="flex items-center gap-3">
                   <FileText className="w-5 h-5 text-indigo-600" />
                   Formulário do DFD
@@ -648,21 +680,18 @@ export default function DFDFormSection({
                   />
                 </div>
 
-                {/* Responsável pela Elaboração */}
-                <div className="w-full p-4 border-b border-gray-100">
-                  <Label htmlFor="responsavel" className="text-sm font-semibold text-gray-700 flex items-center gap-2 mb-2">
-                    <User className="w-4 h-4" />
-                    Responsável pela Elaboração *
-                  </Label>
-                  <Input
-                    id="responsavel"
-                    value={formData.responsavelNome}
-                    onChange={(e) => setFormData({...formData, responsavelNome: e.target.value})}
-                    placeholder="Nome do responsável"
-                    disabled={!permissoes.podeEditar || currentVersion.status !== 'rascunho'}
-                    className="w-full border-gray-200 focus:border-blue-300 focus:ring-blue-300"
-                  />
-                </div>
+                {/* Responsáveis pela Elaboração */}
+                <ResponsavelSelector
+                  value={formData.responsaveis || []}
+                  onChange={(responsaveis) => {
+                    salvarResponsaveis(responsaveis || []);
+                  }}
+                  disabled={!permissoes.podeEditar || currentVersion.status !== 'rascunho'}
+                  canEdit={permissoes.podeEditar}
+                  processoId={processoId}
+                  className="w-full border-b border-gray-100"
+                  maxResponsaveis={5}
+                />
 
                 {/* Data da Elaboração */}
                 <div className="w-full p-4 border-b border-gray-100">
@@ -723,17 +752,17 @@ export default function DFDFormSection({
           </section>
 
           {/* DIREITA: Gerenciamento (Versões/Anexos) */}
-          <aside id="gerenciamento" className="col-span-12 lg:col-span-4 w-full">
+          <aside id="gerenciamento" className="col-span-12 lg:col-span-4 w-full flex flex-col">
             
             {/* Card com Abas */}
-            <div className="rounded-2xl border shadow-sm overflow-hidden bg-white">
-              <header className="bg-indigo-50 px-4 py-3 rounded-t-2xl font-semibold text-slate-900">
+            <div className="rounded-2xl border shadow-sm overflow-hidden bg-white flex-1 flex flex-col">
+              <header className="bg-purple-50 px-4 py-3 rounded-t-2xl font-semibold text-slate-900">
                 <div className="flex items-center gap-3">
-                  <History className="w-5 h-5 text-indigo-600" />
+                  <Settings className="w-5 h-5 text-purple-600" />
                   Gerenciamento
                 </div>
               </header>
-              <div className="p-4 md:p-6">
+              <div className="p-4 md:p-6 flex-1 flex flex-col">
                 <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
                   <TabsList className="grid w-full grid-cols-2 rounded-none">
                     <TabsTrigger value="versoes">Versões</TabsTrigger>
@@ -741,8 +770,8 @@ export default function DFDFormSection({
                   </TabsList>
                   
                   {/* Aba Versões */}
-                  <TabsContent value="versoes" className="mt-0 p-4">
-                    <div className="space-y-4 w-full">
+                  <TabsContent value="versoes" className="mt-0 p-4 flex-1 flex flex-col">
+                    <div className="space-y-4 w-full flex-1 flex flex-col">
                       {/* Botão Criar Nova Versão */}
                       {permissoes.podeCriarNovaVersao && (
                         <Button
@@ -764,7 +793,7 @@ export default function DFDFormSection({
                           <p className="text-gray-500 font-medium">Ainda não há versões criadas</p>
                         </div>
                       ) : (
-                        <div className="space-y-3 max-h-80 overflow-y-auto w-full">
+                        <div className="space-y-3 flex-1 overflow-y-auto w-full">
                           {versions.map((version) => {
                             const statusConfig = getStatusConfig(version.status);
                             const slaBadge = getSLABadge(version.prazoDiasUteis || 0, version.numeroVersao);
@@ -843,14 +872,16 @@ export default function DFDFormSection({
 
                       {/* Lista de Anexos */}
                       {anexos.length === 0 ? (
-                        <div className="text-center py-8 w-full">
-                          <div className="p-4 bg-gray-100 rounded-full w-16 h-16 mx-auto mb-4 flex items-center justify-center">
-                            <Upload className="w-8 h-8 text-gray-400" />
+                        <div className="pt-4">
+                          <div className="text-center">
+                            <div className="p-4 bg-gray-100 rounded-full w-16 h-16 mx-auto mb-4 flex items-center justify-center">
+                              <Upload className="w-8 h-8 text-gray-400" />
+                            </div>
+                            <p className="text-gray-500 font-medium">Nenhum anexo enviado</p>
                           </div>
-                          <p className="text-gray-500 font-medium">Nenhum anexo enviado</p>
                         </div>
                       ) : (
-                        <div className="space-y-3 max-h-80 overflow-y-auto w-full">
+                        <div className="space-y-3 w-full flex-shrink-0">
                           {anexos.map((anexo) => (
                             <div key={anexo.id} className="flex items-center justify-between p-3 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors w-full">
                               <div className="flex items-center gap-3 min-w-0 flex-1">
@@ -892,17 +923,16 @@ export default function DFDFormSection({
 
           {/* FULL: Comentários */}
           <section id="comentarios" className="col-span-12 w-full">
-            <StandardCommentsSection
+            <CommentsSection
               processoId={processoId}
               etapaId={etapaId}
               cardId="dfd-form"
               title="Comentários"
-              canAddComment={true}
             />
           </section>
 
           {/* FULL: Ações (rodapé não fixo) */}
-          <section id="acoes" className="col-span-12 w-full mt-6 pb-6">
+          <section id="acoes" className="col-span-12 w-full mt-4 pb-2">
             <div className="flex w-full items-center justify-end gap-3">
                 <div className="flex flex-col sm:flex-row gap-3">
                   {/* Botão Salvar Versão */}

@@ -54,7 +54,7 @@ import { useUser } from '@/contexts/UserContext';
 import { usePermissoes } from '@/hooks/usePermissoes';
 import { useToast } from '@/hooks/use-toast';
 import TextareaWithMentions from './TextareaWithMentions';
-import StandardCommentsSection from './StandardCommentsSection';
+import CommentsSection from './CommentsSection';
 
 // Tipos TypeScript conforme especificação
 type DespachoStatus = 'PENDENTE' | 'GERADO' | 'ASSINADO' | 'CANCELADO';
@@ -534,7 +534,7 @@ export default function DFDDespachoSection({
   return (
     <div className="min-h-screen bg-white">
       {/* Container central ocupando toda a área */}
-      <div className="w-full">
+      <div className="w-full px-2">
         {/* Grid principal 12 colunas */}
         <div className="grid grid-cols-12 gap-4">
           
@@ -543,7 +543,7 @@ export default function DFDDespachoSection({
             
             {/* Card do Formulário */}
             <div className="rounded-2xl border shadow-sm overflow-hidden bg-white">
-              <header className="bg-indigo-50 px-4 py-3 rounded-t-2xl font-semibold text-slate-900">
+              <header className="bg-indigo-100 px-4 py-3 rounded-t-2xl font-semibold text-slate-900">
                 <div className="flex items-center gap-3">
                   <FileCheck className="w-5 h-5 text-indigo-600" />
                   Formulário do Despacho
@@ -681,17 +681,17 @@ export default function DFDDespachoSection({
           </section>
 
           {/* DIREITA: Visualização do DFD Assinado (4 colunas) */}
-          <aside id="visualizacao-dfd-assinado" className="col-span-12 lg:col-span-4 w-full">
+          <aside id="visualizacao-dfd-assinado" className="col-span-12 lg:col-span-4 w-full flex flex-col">
             
             {/* Card de Visualização */}
-            <div className="rounded-2xl border shadow-sm overflow-hidden bg-white">
-              <header className="bg-indigo-50 px-4 py-3 rounded-t-2xl font-semibold text-slate-900">
+            <div className="rounded-2xl border shadow-sm overflow-hidden bg-white flex-1 flex flex-col">
+              <header className="bg-indigo-100 px-4 py-3 rounded-t-2xl font-semibold text-slate-900">
                 <div className="flex items-center gap-3">
                   <FileText className="w-5 h-5 text-indigo-600" />
                   DFD Assinado
                 </div>
               </header>
-              <div className="p-4 md:p-6">
+              <div className="p-4 md:p-6 flex-1 flex flex-col">
                 
                 {/* Metadados do documento */}
                 <div className="mb-4 p-4 bg-gray-50 rounded-lg">
@@ -733,23 +733,17 @@ export default function DFDDespachoSection({
 
         {/* FULL: Comentários */}
         <section id="comentarios" className="col-span-12 w-full mt-6">
-          <StandardCommentsSection
+          <CommentsSection
             processoId={processoId}
             etapaId={etapaId}
             cardId="comentarios-despacho"
             title="Comentários"
-            canAddComment={true}
           />
         </section>
 
         {/* Rodapé com botões */}
-        <div className="mt-6 p-4 bg-gray-50 rounded-lg border">
-          <div className="flex flex-wrap items-center justify-between gap-4">
-            <div className="flex items-center gap-2 text-sm text-gray-600">
-              <Shield className="w-4 h-4" />
-              <span>Assinatura obrigatória pela Secretaria Executiva</span>
-            </div>
-            
+        <div className="mt-6 p-4">
+          <div className="flex flex-wrap items-center justify-end gap-4">
             <div className="flex items-center gap-3">
               {/* Botão Salvar */}
               {podeEditar && despachoData.status === 'PENDENTE' && (

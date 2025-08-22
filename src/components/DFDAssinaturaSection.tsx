@@ -45,13 +45,14 @@ import {
   Users,
   UserPlus,
   UserMinus,
-  GripVertical
+  GripVertical,
+  Settings
 } from 'lucide-react';
 import { useUser } from '@/contexts/UserContext';
 import { usePermissoes } from '@/hooks/usePermissoes';
 import { useToast } from '@/hooks/use-toast';
 import TextareaWithMentions from './TextareaWithMentions';
-import StandardCommentsSection from './StandardCommentsSection';
+import CommentsSection from './CommentsSection';
 
 // Tipos TypeScript conforme especificação
 type AssinaturaStatus = 'PENDENTE' | 'ASSINADO' | 'CANCELADO';
@@ -498,7 +499,7 @@ export default function DFDAssinaturaSection({
   return (
     <div className="min-h-screen bg-white">
       {/* Container central ocupando toda a área */}
-      <div className="w-full">
+      <div className="w-full px-2">
         {/* Grid principal 12 colunas */}
         <div className="grid grid-cols-12 gap-4">
           
@@ -550,15 +551,15 @@ export default function DFDAssinaturaSection({
           </section>
 
           {/* DIREITA: Gerenciamento de Assinaturas (4 colunas) */}
-          <aside id="gerenciamento-assinaturas" className="col-span-12 lg:col-span-4 w-full">
-            <div className="rounded-2xl border shadow-sm overflow-hidden bg-white">
+          <aside id="gerenciamento-assinaturas" className="col-span-12 lg:col-span-4 w-full flex flex-col">
+            <div className="rounded-2xl border shadow-sm overflow-hidden bg-white flex-1 flex flex-col">
               <header className="bg-purple-50 px-4 py-3 rounded-t-2xl font-semibold text-slate-900">
                 <div className="flex items-center gap-3">
-                  <Users className="w-5 h-5 text-purple-600" />
-                  Gerenciamento de Assinaturas
+                  <Settings className="w-5 h-5 text-purple-600" />
+                  Gerenciamento
                 </div>
               </header>
-              <div className="p-4 md:p-6 space-y-4">
+              <div className="p-4 md:p-6 space-y-4 flex-1 flex flex-col">
                 
                 {/* Responsável pela etapa */}
                 <div className="p-3 bg-blue-50 rounded-lg">
@@ -728,12 +729,11 @@ export default function DFDAssinaturaSection({
 
         {/* Comentários (FULL WIDTH) */}
         <section className="mt-6">
-          <StandardCommentsSection
+          <CommentsSection
             processoId={processoId}
             etapaId={etapaId}
             cardId="comentarios-assinatura"
             title="Comentários"
-            canAddComment={true}
           />
         </section>
 
@@ -742,20 +742,8 @@ export default function DFDAssinaturaSection({
           <CardContent className="p-4">
             <div className="flex flex-col sm:flex-row gap-4 justify-between items-center w-full">
               
-              {/* Lado esquerdo - Status */}
-              <div className="flex items-center gap-3">
-                <div className="text-sm text-gray-600">
-                  Status: <span className="font-medium">
-                    {cardData.statusEtapa === 'ASSINADO_N_N' 
-                      ? `Assinado (${assinaturasConcluidas}/${totalAssinaturas})`
-                      : 'Pendente de Assinatura'
-                    }
-                  </span>
-                </div>
-              </div>
-
               {/* Lado direito - Ações */}
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-3 ml-auto">
                 
                 {/* Cancelar Assinatura (para assinante pendente ou GSP) */}
                 {isAssinantePendente && (
