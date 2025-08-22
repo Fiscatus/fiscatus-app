@@ -46,7 +46,8 @@ import {
   UserPlus,
   UserMinus,
   GripVertical,
-  Settings
+  Settings,
+  Info
 } from 'lucide-react';
 import { useUser } from '@/contexts/UserContext';
 import { usePermissoes } from '@/hooks/usePermissoes';
@@ -56,7 +57,7 @@ import CommentsSection from './CommentsSection';
 
 // Tipos TypeScript conforme especificação
 type AssinaturaStatus = 'PENDENTE' | 'ASSINADO' | 'CANCELADO';
-type EtapaAssinaturaStatus = 'PENDENTE_ASSINATURA' | 'ASSINADO_N_N';
+type EtapaAssinaturaStatus = 'PENDENTE_ASSINATURA' | 'ASSINADO_N_N' | 'CONCLUIDO';
 
 interface Assinante {
   id: string;
@@ -203,6 +204,12 @@ export default function DFDAssinaturaSection({
   const [showAdicionarAssinante, setShowAdicionarAssinante] = useState(false);
   const [usuariosSelecionados, setUsuariosSelecionados] = useState<string[]>([]);
 
+  // Estados para o botão Concluir
+  const [showConcluirModal, setShowConcluirModal] = useState(false);
+  const [observacaoConclusao, setObservacaoConclusao] = useState('');
+  const [notificarPartes, setNotificarPartes] = useState(true);
+  const [isConcluindo, setIsConcluindo] = useState(false);
+
   // Verificar se é GSP ou SE (pode gerenciar assinaturas)
   const isGSPouSE = user?.gerencia?.includes('GSP') || user?.gerencia?.includes('SE') || false;
   
@@ -217,6 +224,24 @@ export default function DFDAssinaturaSection({
     etapaId,
     gerenciaCriadora
   );
+
+  // Verificar se pode concluir a etapa (Gerência responsável ou GSP)
+  const podeConcluir = () => {
+    if (!user) return false;
+    
+    // Gerência responsável da etapa (SE - Secretaria Executiva)
+    const ehGerenciaResponsavel = user.gerencia?.includes('SE') || user.gerencia?.includes('Secretaria Executiva');
+    
+    // Gerência de Soluções e Projetos (GSP)
+    const ehGSP = user.gerencia?.includes('GSP') || user.gerencia?.includes('Gerência de Soluções e Projetos');
+    
+    const resultado = ehGerenciaResponsavel || ehGSP;
+    
+    return resultado;
+  };
+
+  // Verificar se todas as assinaturas foram concluídas
+  const todasAssinaturasConcluidas = cardData.assinantes.every(assinante => assinante.status === 'ASSINADO');
 
   // Calcular progresso das assinaturas
   const assinaturasConcluidas = cardData.assinantes.filter(a => a.status === 'ASSINADO').length;
@@ -415,6 +440,65 @@ export default function DFDAssinaturaSection({
       });
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  // Função para concluir etapa com modal de confirmação
+  const handleConcluirEtapa = async () => {
+    setIsConcluindo(true);
+    
+    try {
+      // Simular chamada para API conforme especificação
+      const response = await fetch(`/processos/${processoId}/etapas/assinatura-dfd/concluir`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          observacao: observacaoConclusao.trim() || undefined,
+          notificar: notificarPartes
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error('Erro ao concluir etapa');
+      }
+
+      // Atualizar status do card para concluído
+      setCardData({
+        ...cardData,
+        statusEtapa: 'CONCLUIDO'
+      });
+      
+      setShowConcluirModal(false);
+      setObservacaoConclusao('');
+      setNotificarPartes(true);
+      
+      // Chamar callback para avançar para próxima etapa
+      if (onComplete) {
+        onComplete({
+          etapa: 'despacho-dfd',
+          assinaturas: cardData.assinantes,
+          concluidoPor: user?.nome || 'Usuário',
+          concluidoEm: new Date().toISOString(),
+          observacao: observacaoConclusao.trim() || undefined,
+          notificar: notificarPartes
+        });
+      }
+      
+      toast({
+        title: "Etapa concluída",
+        description: "Etapa concluída. Próxima etapa liberada."
+      });
+
+    } catch (error) {
+      toast({
+        title: "Erro ao concluir",
+        description: "Não foi possível concluir a etapa. Tente novamente.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsConcluindo(false);
     }
   };
 
@@ -737,57 +821,107 @@ export default function DFDAssinaturaSection({
           />
         </section>
 
-        {/* Barra de Ações (rodapé não fixo) */}
-        <Card className="w-full shadow-lg border-0 bg-white/80 backdrop-blur-sm mt-6 mb-6">
-          <CardContent className="p-4">
-            <div className="flex flex-col sm:flex-row gap-4 justify-between items-center w-full">
-              
-              {/* Lado direito - Ações */}
-              <div className="flex items-center gap-3 ml-auto">
-                
-                {/* Cancelar Assinatura (para assinante pendente ou GSP) */}
-                {isAssinantePendente && (
-                  <Button
-                    variant="outline"
-                    onClick={() => {
-                      const meuAssinante = cardData.assinantes.find(
-                        a => a.email === user?.email && a.status === 'PENDENTE'
-                      );
-                      if (meuAssinante) {
-                        setAssinanteSelecionado(meuAssinante);
-                        setShowCancelarModal(true);
-                      }
-                    }}
-                    className="text-orange-600 border-orange-300 hover:bg-orange-50"
-                  >
-                    <XCircle className="w-4 h-4 mr-2" />
-                    Cancelar Assinatura
-                  </Button>
-                )}
+        {/* Seção de Ações - Rodapé não fixo */}
+        <section id="acoes" className="col-span-12 w-full mt-6">
+          <div className="flex w-full items-center justify-end gap-3">
+            
+            {/* Salvar (para GSP ou SE) */}
+            {isGSPouSE && (
+              <Button
+                variant="outline"
+                onClick={() => {
+                  if (onSave) {
+                    onSave(cardData);
+                  }
+                }}
+                className="text-blue-600 border-blue-300 hover:bg-blue-50"
+              >
+                <Save className="w-4 h-4 mr-2" />
+                Salvar
+              </Button>
+            )}
 
-                {/* Assinar Documento (para assinante pendente) */}
-                {isAssinantePendente && (
-                  <Button
-                    onClick={() => {
-                      const meuAssinante = cardData.assinantes.find(
-                        a => a.email === user?.email && a.status === 'PENDENTE'
-                      );
-                      if (meuAssinante) {
-                        setAssinanteSelecionado(meuAssinante);
-                        setShowAssinarModal(true);
-                      }
-                    }}
-                    className="bg-purple-600 hover:bg-purple-700"
-                  >
-                    <PenTool className="w-4 h-4 mr-2" />
-                    Assinar Documento
-                  </Button>
-                )}
+            {/* Botão Concluir - conforme especificação */}
+            {(podeConcluir()) && (
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <div>
+                      <Button
+                        id="btn-concluir-card3"
+                        data-testid="btn-concluir-card3"
+                        onClick={() => setShowConcluirModal(true)}
+                        disabled={!podeConcluir() || isConcluindo || !todasAssinaturasConcluidas || cardData.statusEtapa === 'CONCLUIDO'}
+                        className="inline-flex items-center rounded-xl px-4 py-2 text-sm font-medium bg-indigo-600 text-white hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        {isConcluindo ? (
+                          <>
+                            <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
+                            Concluindo...
+                          </>
+                        ) : (
+                          <>
+                            <CheckCircle className="w-4 h-4 mr-2" />
+                            Concluir
+                          </>
+                        )}
+                      </Button>
+                    </div>
+                  </TooltipTrigger>
+                  {(!todasAssinaturasConcluidas || cardData.statusEtapa === 'CONCLUIDO') && (
+                    <TooltipContent>
+                      <p>
+                        {!todasAssinaturasConcluidas 
+                          ? "Aguarde todas as assinaturas para concluir." 
+                          : "Etapa já concluída"}
+                      </p>
+                    </TooltipContent>
+                  )}
+                </Tooltip>
+              </TooltipProvider>
+            )}
 
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+            {/* Cancelar Assinatura (para assinante pendente ou GSP) */}
+            {isAssinantePendente && (
+              <Button
+                variant="outline"
+                onClick={() => {
+                  const meuAssinante = cardData.assinantes.find(
+                    a => a.email === user?.email && a.status === 'PENDENTE'
+                  );
+                  if (meuAssinante) {
+                    setAssinanteSelecionado(meuAssinante);
+                    setShowCancelarModal(true);
+                  }
+                }}
+                className="text-orange-600 border-orange-300 hover:bg-orange-50"
+              >
+                <XCircle className="w-4 h-4 mr-2" />
+                Cancelar Assinatura
+              </Button>
+            )}
+
+            {/* Assinar Documento (para assinante pendente) */}
+            {isAssinantePendente && (
+              <Button
+                onClick={() => {
+                  const meuAssinante = cardData.assinantes.find(
+                    a => a.email === user?.email && a.status === 'PENDENTE'
+                  );
+                  if (meuAssinante) {
+                    setAssinanteSelecionado(meuAssinante);
+                    setShowAssinarModal(true);
+                  }
+                }}
+                className="bg-purple-600 hover:bg-purple-700"
+              >
+                <PenTool className="w-4 h-4 mr-2" />
+                Assinar Documento
+              </Button>
+            )}
+
+          </div>
+        </section>
       </div>
 
       {/* Modal de Assinatura */}
@@ -977,6 +1111,96 @@ export default function DFDAssinaturaSection({
                 <>
                   <UserPlus className="w-4 h-4 mr-2" />
                   Adicionar ({usuariosSelecionados.length})
+                </>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Modal de Confirmação para Concluir Etapa */}
+      <Dialog open={showConcluirModal} onOpenChange={setShowConcluirModal}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <CheckCircle className="w-5 h-5 text-indigo-600" />
+              Concluir etapa – Assinatura do DFD
+            </DialogTitle>
+            <DialogDescription>
+              Deseja concluir esta etapa? Isso avançará o processo para a próxima fase.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4 py-4">
+            {/* Resumo da etapa */}
+            <div className="bg-gray-50 p-3 rounded-lg">
+              <p className="text-sm text-gray-600">
+                <strong>Etapa 3:</strong> Assinatura do DFD
+              </p>
+              <p className="text-xs text-gray-500 mt-1">
+                Gerência responsável: Secretaria Executiva (SE)
+              </p>
+              <p className="text-xs text-gray-500">
+                Assinaturas: {assinaturasConcluidas}/{totalAssinaturas} concluídas
+              </p>
+            </div>
+
+            {/* Observações */}
+            <div className="space-y-2">
+              <Label htmlFor="observacao-conclusao">Observações de conclusão (opcional)</Label>
+              <Textarea
+                id="observacao-conclusao"
+                value={observacaoConclusao}
+                onChange={(e) => setObservacaoConclusao(e.target.value)}
+                placeholder="Adicione observações sobre a conclusão desta etapa..."
+                rows={3}
+                maxLength={500}
+              />
+            </div>
+
+            {/* Checkbox notificar */}
+            <div className="flex items-center space-x-2">
+              <Checkbox
+                id="notificar-partes"
+                checked={notificarPartes}
+                onCheckedChange={(checked) => setNotificarPartes(!!checked)}
+              />
+              <Label htmlFor="notificar-partes" className="text-sm">
+                Notificar partes interessadas
+              </Label>
+            </div>
+
+            {/* Alerta de confirmação */}
+            <Alert>
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription>
+                <strong>Atenção:</strong> Ao concluir esta etapa, o card será bloqueado para edição e a próxima etapa do fluxo será habilitada.
+              </AlertDescription>
+            </Alert>
+          </div>
+
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setShowConcluirModal(false)}
+              disabled={isConcluindo}
+            >
+              Cancelar
+            </Button>
+            <Button
+              onClick={handleConcluirEtapa}
+              disabled={isConcluindo}
+              className="bg-green-600 hover:bg-green-700"
+            >
+              {isConcluindo ? (
+                <>
+                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
+                  Concluindo...
+                </>
+              ) : (
+                <>
+                  <CheckCircle className="w-4 h-4 mr-2" />
+                  Concluir Etapa
                 </>
               )}
             </Button>
