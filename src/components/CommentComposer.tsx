@@ -31,10 +31,10 @@ interface CommentComposerProps {
 const mockUsers: User[] = [
   {
     id: '1',
-    nome: 'João Silva',
-    cargo: 'Analista Técnico',
-    gerencia: 'GSP - Gerência de Soluções e Projetos',
-    email: 'joao.silva@hospital.gov.br'
+    nome: 'Lucas Moreira Brito',
+    cargo: 'Gerente de Recursos Humanos',
+    gerencia: 'GRH - Gerência de Recursos Humanos',
+    email: 'lucas.brito@hospital.gov.br'
   },
   {
     id: '2',

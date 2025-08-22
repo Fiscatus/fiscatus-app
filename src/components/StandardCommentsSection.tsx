@@ -8,6 +8,7 @@ import { MessageCircle, Plus, Clock, ArrowUpDown } from 'lucide-react';
 import { useUser } from '@/contexts/UserContext';
 import TextareaWithMentions from './TextareaWithMentions';
 import MentionRenderer from './MentionRenderer';
+import { formatDateTimeBR } from '@/lib/utils';
 
 interface Comment {
   id: string;
@@ -39,8 +40,8 @@ const mockComments: Comment[] = [
   {
     id: '1',
     autorId: '1',
-    autorNome: 'João Silva',
-    autorCargo: 'Analista Técnico',
+    autorNome: 'Lucas Moreira Brito',
+    autorCargo: 'Gerente de Recursos Humanos',
     criadoEm: '2024-01-15T07:00:00Z',
     texto: 'DFD enviado para análise técnica da GSP.'
   },
@@ -77,17 +78,8 @@ export default function StandardCommentsSection({
   const [sortOrder, setSortOrder] = useState<'newest' | 'oldest'>('newest');
   const { user } = useUser();
 
-  // Formatar data
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('pt-BR', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
-  };
+  // Usar a função padronizada do utils
+  const formatDate = formatDateTimeBR;
 
   // Obter iniciais do usuário
   const getUserInitials = (name: string) => {

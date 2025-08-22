@@ -1,8 +1,82 @@
-import { clsx, type ClassValue } from "clsx"
+import { type ClassValue, clsx } from "clsx"
 import { twMerge } from "tailwind-merge"
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
+}
+
+/**
+ * Formata uma data para o padrão DD/MM/AAAA
+ * @param dateString - Data em formato ISO ou string
+ * @returns Data formatada como DD/MM/AAAA
+ */
+export function formatDateBR(dateString: string | Date): string {
+  if (!dateString) return '';
+  
+  try {
+    const date = new Date(dateString);
+    if (isNaN(date.getTime())) return '';
+    
+    return date.toLocaleDateString('pt-BR', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric'
+    });
+  } catch (error) {
+    console.error('Erro ao formatar data:', error);
+    return '';
+  }
+}
+
+/**
+ * Formata uma data e hora para o padrão DD/MM/AAAA HH:MM
+ * @param dateString - Data em formato ISO ou string
+ * @returns Data e hora formatada como DD/MM/AAAA HH:MM
+ */
+export function formatDateTimeBR(dateString: string | Date): string {
+  if (!dateString) return '';
+  
+  try {
+    const date = new Date(dateString);
+    if (isNaN(date.getTime())) return '';
+    
+    return date.toLocaleString('pt-BR', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  } catch (error) {
+    console.error('Erro ao formatar data e hora:', error);
+    return '';
+  }
+}
+
+/**
+ * Formata uma data para o padrão DD/MM/AAAA HH:MM:SS
+ * @param dateString - Data em formato ISO ou string
+ * @returns Data e hora formatada como DD/MM/AAAA HH:MM:SS
+ */
+export function formatDateTimeFullBR(dateString: string | Date): string {
+  if (!dateString) return '';
+  
+  try {
+    const date = new Date(dateString);
+    if (isNaN(date.getTime())) return '';
+    
+    return date.toLocaleString('pt-BR', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit'
+    });
+  } catch (error) {
+    console.error('Erro ao formatar data e hora completa:', error);
+    return '';
+  }
 }
 
 // Função para calcular dias úteis entre duas datas

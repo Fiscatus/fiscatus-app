@@ -31,9 +31,9 @@ interface CommentsSectionProps {
 const mockComments: CommentItem[] = [
   {
     id: '1',
-    initials: 'JS',
-    name: 'João Silva',
-    role: 'Analista Técnico',
+    initials: 'LM',
+    name: 'Lucas Moreira Brito',
+    role: 'Gerente de Recursos Humanos',
     message: 'DFD enviado para análise técnica da GSP.',
     datetime: '2024-01-15T07:00:00Z'
   },

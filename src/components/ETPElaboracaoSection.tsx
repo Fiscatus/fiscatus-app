@@ -43,6 +43,7 @@ import {
 import { useUser } from "@/contexts/UserContext";
 import { toast } from "@/components/ui/use-toast";
 import CommentsSection from './CommentsSection';
+import { formatDateBR, formatDateTimeBR } from '@/lib/utils';
 
 // Interfaces
 interface ETPElaboracaoSectionProps {
@@ -138,12 +139,12 @@ const mockETPData: ETPData = {
       id: '1',
       autor: 'Yasmin Pissolati Mattos Bretz',
       avatar: 'YP',
-      data: '2025-01-16 09:30',
+      data: '16/01/2025 09:30',
       texto: 'Iniciando elaboração do ETP conforme demanda aprovada.',
       marcacoes: []
     }
   ],
-  dataCriacao: '2025-01-16',
+  dataCriacao: '16/01/2025',
   autor: 'Yasmin Pissolati Mattos Bretz',
   tempoPermanencia: 1
 };
@@ -156,7 +157,7 @@ const mockAnexos: Anexo[] = [
     tipo: 'PDF',
     tamanho: '2.5 MB',
     autor: 'Yasmin Pissolati Mattos Bretz',
-    dataUpload: '2025-01-16 10:15',
+    dataUpload: '16/01/2025',
     url: '/docs/especificacoes.pdf'
   },
   {
@@ -165,7 +166,7 @@ const mockAnexos: Anexo[] = [
     tipo: 'Excel',
     tamanho: '1.8 MB',
     autor: 'Yasmin Pissolati Mattos Bretz',
-    dataUpload: '2025-01-16 11:30',
+    dataUpload: '16/01/2025',
     url: '/docs/analise_custos.xlsx'
   }
 ];
@@ -317,7 +318,7 @@ export default function ETPElaboracaoSection({
       id: Date.now().toString(),
       autor: user?.nome || 'Usuário',
       avatar: user?.nome?.substring(0, 2).toUpperCase() || 'US',
-      data: new Date().toLocaleString('pt-BR'),
+      data: formatDateTimeBR(new Date()),
       texto: novoComentario,
       marcacoes
     };
@@ -341,7 +342,7 @@ export default function ETPElaboracaoSection({
       tipo: file.name.split('.').pop()?.toUpperCase() || 'PDF',
       tamanho: `${(file.size / 1024 / 1024).toFixed(1)} MB`,
       autor: user?.nome || 'Usuário',
-      dataUpload: new Date().toLocaleString('pt-BR'),
+      dataUpload: formatDateBR(new Date()),
       url: URL.createObjectURL(file)
     };
 
@@ -397,18 +398,6 @@ export default function ETPElaboracaoSection({
                </header>
                <div className="p-4 md:p-6 space-y-0">
                  
-                 {/* Status do ETP */}
-                 <div className="w-full p-4 border-b border-gray-100">
-                   <div className="flex items-center justify-between">
-                     <div className="flex items-center gap-3">
-                       <Badge className={`${etpData.status === 'finalizado' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}`}>
-                         {etpData.status === 'finalizado' ? 'Finalizado para Assinatura' : 'Rascunho'}
-                       </Badge>
-                       {getSLABadge(etpData.cronograma.sla, etpData.tempoPermanencia)}
-                     </div>
-                   </div>
-                 </div>
-
                  {/* Área de Upload */}
                  <div className="w-full p-4 border-b border-gray-100">
                    <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
@@ -422,9 +411,6 @@ export default function ETPElaboracaoSection({
                        <Label htmlFor="etp-upload" className="cursor-pointer text-blue-600 hover:text-blue-700 font-medium">
                          Clique para fazer upload do documento ETP
                        </Label>
-                       <p className="text-sm text-gray-500 mt-2">
-                         Aceita PDF, Word e Excel (máx. 10MB)
-                       </p>
                        <Input
                          id="etp-upload"
                          type="file"
@@ -555,7 +541,7 @@ export default function ETPElaboracaoSection({
                         <Calendar className="w-4 h-4 text-gray-500" />
                         <div className="flex-1">
                           <p className="text-xs text-gray-500">Data de Criação</p>
-                          <p className="text-sm font-medium">{etpData.dataCriacao}</p>
+                          <p className="text-sm font-medium">{formatDateBR(etpData.dataCriacao)}</p>
                         </div>
                       </div>
 
@@ -626,7 +612,7 @@ export default function ETPElaboracaoSection({
                 <div className="flex items-center gap-2">
                   <Clock className="w-4 h-4 text-gray-500" />
                   <span className="text-sm text-gray-600">
-                    {etpData.tempoPermanencia} dias no card
+                    1 dia no card
                   </span>
                 </div>
                 <div className="flex items-center gap-2">

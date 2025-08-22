@@ -87,7 +87,7 @@ const mockNotifications: Notification[] = [
     id: "3",
     type: "process",
     title: "Processo atualizado",
-    description: "ETP 011/2025 foi movido para 'Em andamento' pelo usuário João Silva",
+    description: "ETP 011/2025 foi movido para 'Em andamento' pelo usuário Lucas Moreira Brito",
     timestamp: "há 5 horas",
     isRead: false,
     link: "/processos/11",

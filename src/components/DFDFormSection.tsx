@@ -22,6 +22,7 @@ import {
   Upload,
   Plus,
   Download,
+  Info,
   Trash2,
   Save,
   MessageCircle,
@@ -50,6 +51,7 @@ import { useToast } from '@/hooks/use-toast';
 import { DatePicker } from '@/components/date';
 import CommentsSection from './CommentsSection';
 import ResponsavelSelector from './ResponsavelSelector';
+import { formatDateBR, formatDateTimeBR } from '@/lib/utils';
 
 // Tipos TypeScript conforme especificação
 type DFDVersionStatus = 'rascunho' | 'finalizada' | 'enviada_para_analise' | 'aprovada' | 'reprovada';
@@ -158,21 +160,21 @@ const mockVersions: DFDVersion[] = [
     numeroVersao: 1,
     status: 'rascunho',
     autorId: 'user1',
-    autorNome: 'João Silva',
+    autorNome: 'Lucas Moreira Brito',
     criadoEm: '2024-01-15T10:00:00Z',
     atualizadoEm: '2024-01-15T10:00:00Z',
     prazoDiasUteis: 0,
     documentoUrl: '#',
-    documentoNome: 'DFD_V1_JoaoSilva.pdf',
+    documentoNome: 'DFD_V1_LucasMoreiraBrito.pdf',
     payload: {
       objeto: '',
-      areaSetorDemandante: 'GSP - Gerência de Soluções e Projetos',
+      areaSetorDemandante: 'GRH - Gerência de Recursos Humanos',
       responsaveis: [
         {
           id: 'user1',
-          nome: 'João Silva',
-          cargo: 'Analista de Projetos',
-          gerencia: 'GSP - Gerência de Soluções e Projetos'
+          nome: 'Lucas Moreira Brito',
+          cargo: 'Gerente de Recursos Humanos',
+          gerencia: 'GRH - Gerência de Recursos Humanos'
         }
       ],
       dataElaboracao: '2024-01-15',
@@ -190,7 +192,7 @@ const mockAnexos: Anexo[] = [
     mimeType: 'application/pdf',
     criadoEm: '2024-01-15T10:30:00Z',
     autorId: 'user1',
-    autorNome: 'João Silva',
+    autorNome: 'Lucas Moreira Brito',
     versaoId: 'v1',
     urlDownload: '#'
   }
@@ -576,23 +578,9 @@ export default function DFDFormSection({
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
   };
 
-  const formatDate = (dateString: string): string => {
-    return new Date(dateString).toLocaleDateString('pt-BR', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric'
-    });
-  };
-
-  const formatDateTime = (dateString: string): string => {
-    return new Date(dateString).toLocaleString('pt-BR', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
-  };
+  // Usar as funções padronizadas do utils
+  const formatDate = formatDateBR;
+  const formatDateTime = formatDateTimeBR;
 
   // Formata o número do DFD para o padrão "DFD 006/2025" apenas para exibição
   const formatNumeroDFD = (value: string): string => {
@@ -933,8 +921,29 @@ export default function DFDFormSection({
 
           {/* FULL: Ações (rodapé não fixo) */}
           <section id="acoes" className="col-span-12 w-full mt-4 pb-2">
-            <div className="flex w-full items-center justify-end gap-3">
-                <div className="flex flex-col sm:flex-row gap-3">
+            {/* Rodapé com Botões de Ação */}
+            <Card className="w-full shadow-lg border-0 bg-white/80 backdrop-blur-sm">
+              <CardContent className="p-4">
+                <div className="flex flex-col sm:flex-row gap-4 justify-between items-center w-full">
+                  
+                  {/* Lado esquerdo - Status e informações */}
+                  <div className="flex items-center gap-4">
+                    <div className="flex items-center gap-2">
+                      <Clock className="w-4 h-4 text-gray-500" />
+                      <span className="text-sm text-gray-600">
+                        1 dia no card
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <User className="w-4 h-4 text-gray-500" />
+                      <span className="text-sm text-gray-600">
+                        {currentVersion.autorNome || 'Sem responsável definido'}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Lado direito - Botões de ação */}
+                  <div className="flex items-center gap-2">
                   {/* Botão Salvar Versão */}
                   {permissoes.podeEditar && currentVersion.status === 'rascunho' && !etapaConcluida && (
                     <Button 
@@ -997,24 +1006,35 @@ export default function DFDFormSection({
                       </Tooltip>
                     </TooltipProvider>
                   )}
+                  
+                  {!permissoes.podeEditar && (
+                    <div className="flex items-center gap-2 text-sm text-gray-500">
+                      <Info className="w-4 h-4" />
+                      Somente visualização
+                    </div>
+                  )}
                 </div>
                 
                 {/* Informações de Status */}
-                <div className="text-sm text-gray-500">
-                  {currentVersion.status === 'enviada_para_analise' && (
-                    <span className="flex items-center gap-2">
-                      <Clock className="w-4 h-4" />
-                      Enviado para análise em {formatDate(currentVersion.enviadoParaAnaliseEm || '')}
-                    </span>
-                  )}
-                  {etapaConcluida && (
-                    <span className="flex items-center gap-2 text-green-600">
-                      <CheckCircle2 className="w-4 h-4" />
-                      Concluída em {formatDate(etapaConcluida.dataConclusao)} por {etapaConcluida.usuarioNome}
-                    </span>
-                  )}
+                {(currentVersion.status === 'enviada_para_analise' || etapaConcluida) && (
+                  <div className="text-sm text-gray-500 mt-2">
+                    {currentVersion.status === 'enviada_para_analise' && (
+                      <span className="flex items-center gap-2">
+                        <Clock className="w-4 h-4" />
+                        Enviado para análise em {formatDate(currentVersion.enviadoParaAnaliseEm || '')}
+                      </span>
+                    )}
+                    {etapaConcluida && (
+                      <span className="flex items-center gap-2 text-green-600">
+                        <CheckCircle2 className="w-4 h-4" />
+                        Concluída em {formatDate(etapaConcluida.dataConclusao)} por {etapaConcluida.usuarioNome}
+                      </span>
+                    )}
+                  </div>
+                )}
                 </div>
-            </div>
+              </CardContent>
+            </Card>
           </section>
         </div>
 

@@ -34,6 +34,7 @@ import { formatarNumeroProcesso } from "@/lib/processoUtils";
 import { useUser } from "@/contexts/UserContext";
 import { usePermissoes } from "@/hooks/usePermissoes";
 import { GerenciaMultiSelect } from "@/components/GerenciaMultiSelect";
+import { formatDateBR, formatDateTimeBR } from '@/lib/utils';
 
 // Dados mockados do processo
 const processoMock = {
@@ -283,7 +284,7 @@ export default function ProcessoDetalhes() {
     status: "em_andamento" as const,
     prazoFinal: "",
     gerenciaResponsavel: "GRH - Gerência de Recursos Humanos",
-    dataCriacao: new Date().toLocaleDateString('pt-BR'),
+    dataCriacao: formatDateBR(new Date()),
     criador: "Usuário Atual",
     situacaoAtual: "Em construção",
     etapaAtual: "Aguardando Elaboração do DFD",
@@ -413,7 +414,7 @@ export default function ProcessoDetalhes() {
         tipo: "edicao",
         descricao: "Informações do processo editadas",
         usuario: "Usuário Atual",
-        data: new Date().toLocaleString('pt-BR'),
+        data: formatDateTimeBR(new Date()),
         detalhes: {
           camposAlterados,
           timestamp: new Date().toISOString()

@@ -56,6 +56,7 @@ import { usePermissoes } from '@/hooks/usePermissoes';
 import { useToast } from '@/hooks/use-toast';
 import TextareaWithMentions from './TextareaWithMentions';
 import CommentsSection from './CommentsSection';
+import { formatDateBR, formatDateTimeBR } from '@/lib/utils';
 
 // Tipos TypeScript conforme especificação
 type DespachoStatus = 'PENDENTE' | 'GERADO' | 'ASSINADO' | 'CANCELADO';
@@ -714,23 +715,9 @@ export default function DFDDespachoSection({
     }
   };
 
-  const formatDate = (dateString: string): string => {
-    return new Date(dateString).toLocaleDateString('pt-BR', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric'
-    });
-  };
-
-  const formatDateTime = (dateString: string): string => {
-    return new Date(dateString).toLocaleString('pt-BR', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
-  };
+  // Usar as funções padronizadas do utils
+  const formatDate = formatDateBR;
+  const formatDateTime = formatDateTimeBR;
 
   const getStatusConfig = (status: DespachoStatus) => {
     switch (status) {
@@ -1020,7 +1007,7 @@ export default function DFDDespachoSection({
                                 <div className="text-xs text-gray-500">{assinante.email}</div>
                                 {assinante.assinadoEm && (
                                   <div className="text-xs text-green-600 mt-1">
-                                    Assinado em {new Date(assinante.assinadoEm).toLocaleString('pt-BR')}
+                                    Assinado em {formatDateTimeBR(new Date(assinante.assinadoEm))}
                                   </div>
                                 )}
                               </div>
@@ -1141,7 +1128,7 @@ export default function DFDDespachoSection({
                       <div className="min-w-0 flex-1">
                         <p className="text-sm font-medium text-gray-900 truncate">{despachoArquivo.name}</p>
                         <p className="text-xs text-gray-500">
-                          {despachoArquivo.size} • {new Date(despachoArquivo.uploadedAt).toLocaleString('pt-BR')}
+                          {despachoArquivo.size} • {formatDateTimeBR(new Date(despachoArquivo.uploadedAt))}
                         </p>
                       </div>
                     </div>
@@ -1228,9 +1215,30 @@ export default function DFDDespachoSection({
         </section>
 
         {/* Rodapé com botões */}
-        <div className="mt-6 p-4">
-          <div className="flex flex-wrap items-center justify-end gap-4">
-            <div className="flex items-center gap-3">
+        <div className="mt-6">
+          {/* Rodapé com Botões de Ação */}
+          <Card className="w-full shadow-lg border-0 bg-white/80 backdrop-blur-sm">
+            <CardContent className="p-4">
+              <div className="flex flex-col sm:flex-row gap-4 justify-between items-center w-full">
+                
+                {/* Lado esquerdo - Status e informações */}
+                <div className="flex items-center gap-4">
+                  <div className="flex items-center gap-2">
+                    <Clock className="w-4 h-4 text-gray-500" />
+                    <span className="text-sm text-gray-600">
+                      1 dia no card
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <User className="w-4 h-4 text-gray-500" />
+                    <span className="text-sm text-gray-600">
+                      {despachoData.responsaveis[0]?.nome || 'Sem responsável definido'}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Lado direito - Botões de ação */}
+                <div className="flex items-center gap-2">
               {/* Botão Salvar */}
               {podeEditar && despachoData.status === 'PENDENTE' && (
                 <Button
@@ -1308,8 +1316,10 @@ export default function DFDDespachoSection({
                   Concluir Etapa
                 </Button>
               )}
-            </div>
-          </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
         </div>
 
         {/* Modal para adicionar responsáveis */}

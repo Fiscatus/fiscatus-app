@@ -29,9 +29,9 @@ describe('Serviço de Gerências', () => {
         tipo: 'gerencia' as const,
         responsavel: {
           id: '1',
-          nome: 'João Silva',
-          cargo: 'Gerente',
-          email: 'joao@example.com'
+          nome: 'Lucas Moreira Brito',
+          cargo: 'Gerente de Recursos Humanos',
+          email: 'lucas.brito@hospital.gov.br'
         },
         createdAt: '2024-01-01T00:00:00Z',
         updatedAt: '2024-01-01T00:00:00Z'
@@ -58,9 +58,9 @@ describe('Serviço de Gerências', () => {
         tipo: 'gerencia' as const,
         responsavel: {
           id: '1',
-          nome: 'João Silva',
-          cargo: 'Gerente',
-          email: 'joao@example.com'
+          nome: 'Lucas Moreira Brito',
+          cargo: 'Gerente de Recursos Humanos',
+          email: 'lucas.brito@hospital.gov.br'
         },
         createdAt: '2024-01-01T00:00:00Z',
         updatedAt: '2024-01-01T00:00:00Z'

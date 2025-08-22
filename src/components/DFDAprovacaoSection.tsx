@@ -45,6 +45,7 @@ import { useToast } from '@/hooks/use-toast';
 import TextareaWithMentions from './TextareaWithMentions';
 import CommentsSection from './CommentsSection';
 import { useDFD, DFDData, DFDVersion, DFDVersionStatus, DFDAnnex } from '@/hooks/useDFD';
+import { formatDateBR, formatDateTimeBR } from '@/lib/utils';
 
 // Tipos para o novo sistema
 type AnaliseStatus = 'AGUARDANDO_ANALISE' | 'APROVADA' | 'REPROVADA_NOVA_VERSAO';
@@ -544,19 +545,9 @@ export default function DFDAprovacaoSection({
     return { statusConfig, actionInfo };
   };
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleString('pt-BR');
-  };
-
-  const formatDateTime = (dateString: string) => {
-    return new Date(dateString).toLocaleString('pt-BR', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
-  };
+  // Usar as funções padronizadas do utils
+  const formatDate = formatDateBR;
+  const formatDateTime = formatDateTimeBR;
 
   // Obter versão enviada para análise (última)
   const versaoEnviada = dfdData.versions.find(v => v.status === 'enviado_analise' && v.isFinal);
@@ -579,7 +570,7 @@ export default function DFDAprovacaoSection({
             <div className="rounded-2xl border shadow-sm overflow-hidden bg-white">
               <header className="bg-indigo-50 px-4 py-3 rounded-t-2xl font-semibold text-slate-900">
                 <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3 text-lg">
+                <div className="flex items-center gap-3 text-lg">
                     <Search className="w-5 h-5 text-indigo-600" />
                     Parecer Técnico da GSP
                   </div>
@@ -650,11 +641,11 @@ export default function DFDAprovacaoSection({
                 </div>
               </header>
               <div className="p-4 md:p-6">
-                <div className="space-y-4">
-                  <div>
+                    <div className="space-y-4">
+                      <div>
                     <Label htmlFor="parecer-tecnico-textarea" className="text-sm font-semibold text-gray-700">
                       Parecer Técnico *
-                    </Label>
+                        </Label>
                     <Textarea
                       id="parecer-tecnico-textarea"
                       value={parecerTecnico}
@@ -666,10 +657,10 @@ export default function DFDAprovacaoSection({
                     {validationErrors.includes('Parecer Técnico é obrigatório') && (
                       <p className="text-red-500 text-sm mt-1">Parecer Técnico é obrigatório</p>
                     )}
-                  </div>
-                  
+                      </div>
+                      
                   {dataAnalise && (
-                    <div>
+                      <div>
                       <Label className="text-sm font-semibold text-gray-700">Data da Análise</Label>
                       <div className="mt-2 p-3 bg-gray-50 rounded-lg border border-gray-200">
                         <p className="text-gray-800">{formatDate(dataAnalise)}</p>
@@ -699,7 +690,7 @@ export default function DFDAprovacaoSection({
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-3">
                           <FileText className="w-5 h-5 text-blue-600" />
-                          <div>
+                        <div>
                             <p className="text-sm font-medium text-blue-900">{dfdArquivo.name}</p>
                             <p className="text-xs text-blue-600">{dfdArquivo.size} • {formatDate(dfdArquivo.uploadedAt)}</p>
                           </div>
@@ -723,7 +714,7 @@ export default function DFDAprovacaoSection({
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-3">
                           <FileText className="w-5 h-5 text-green-600" />
-                          <div>
+                        <div>
                             <p className="text-sm font-medium text-green-900">{parecerArquivo.name}</p>
                             <p className="text-xs text-green-600">{parecerArquivo.size} • {formatDate(parecerArquivo.uploadedAt)}</p>
                           </div>
@@ -741,7 +732,7 @@ export default function DFDAprovacaoSection({
                       </div>
                     </div>
                   )}
-                </div>
+                  </div>
               </div>
             </div>
           </section>
@@ -914,25 +905,50 @@ export default function DFDAprovacaoSection({
           {/* FULL: Ações (rodapé não fixo) */}
           {isGSPUser() && (
             <section id="acoes" className="col-span-12 w-full mt-6 pb-6">
-              <div className="flex w-full items-center justify-end gap-3">
-                <Button 
-                  onClick={handleSolicitarCorrecao}
-                  variant="outline" 
-                  disabled={!canSolicitarCorrecaoUser()}
-                  className="border-red-200 text-red-700 hover:bg-red-50"
-                >
-                  <XCircle className="w-4 h-4 mr-2" />
-                  Solicitar Correção
-                </Button>
-                <Button 
-                  onClick={handleAprovar}
-                  disabled={!canApproveUser()}
-                  className="bg-green-600 hover:bg-green-700 text-white px-8 py-3 shadow-lg"
-                >
-                  <CheckCircle className="w-4 h-4 mr-2" />
-                  Aprovar DFD
-                </Button>
-              </div>
+              {/* Rodapé com Botões de Ação */}
+              <Card className="w-full shadow-lg border-0 bg-white/80 backdrop-blur-sm">
+                <CardContent className="p-4">
+                  <div className="flex flex-col sm:flex-row gap-4 justify-between items-center w-full">
+                    
+                    {/* Lado esquerdo - Status e informações */}
+                    <div className="flex items-center gap-4">
+                      <div className="flex items-center gap-2">
+                        <Clock className="w-4 h-4 text-gray-500" />
+                        <span className="text-sm text-gray-600">
+                          1 dia no card
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <User className="w-4 h-4 text-gray-500" />
+                        <span className="text-sm text-gray-600">
+                          {dfdData.enviadoPor || 'Sem responsável definido'}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Lado direito - Botões de ação */}
+                    <div className="flex items-center gap-2">
+                  <Button 
+                    onClick={handleSolicitarCorrecao}
+                    variant="outline" 
+                    disabled={!canSolicitarCorrecaoUser()}
+                    className="border-red-200 text-red-700 hover:bg-red-50"
+                  >
+                    <XCircle className="w-4 h-4 mr-2" />
+                    Solicitar Correção
+                  </Button>
+                  <Button 
+                    onClick={handleAprovar}
+                    disabled={!canApproveUser()}
+                    className="bg-green-600 hover:bg-green-700 text-white px-8 py-3 shadow-lg"
+                  >
+                    <CheckCircle className="w-4 h-4 mr-2" />
+                    Aprovar DFD
+                  </Button>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
             </section>
           )}
         </div>
@@ -1011,4 +1027,4 @@ export default function DFDAprovacaoSection({
       </Dialog>
     </div>
   );
-}
+} 

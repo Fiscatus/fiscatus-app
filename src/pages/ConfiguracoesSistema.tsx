@@ -102,9 +102,9 @@ export default function ConfiguracoesSistema() {
 
   // Estados para Perfil do Usuário
   const [perfilUsuario, setPerfilUsuario] = useState({
-    nomeCompleto: "João Silva Santos",
-    cargo: "Fiscal de Contratos",
-    email: "joao.silva@prefeitura.sp.gov.br",
+    nomeCompleto: "Lucas Moreira Brito",
+    cargo: "Gerente de Recursos Humanos",
+    email: "lucas.brito@hospital.gov.br",
     senhaAtual: "",
     novaSenha: "",
     confirmarSenha: "",

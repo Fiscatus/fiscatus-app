@@ -19,6 +19,7 @@ import {
   Calendar
 } from "lucide-react";
 import { useUser } from "@/contexts/UserContext";
+import { formatDateTimeBR } from '@/lib/utils';
 
 const uploadSchema = z.object({
   arquivo: z.any().refine((files) => files?.length === 1, "Arquivo é obrigatório"),
@@ -114,7 +115,7 @@ export default function EtapaUploadForm({
     
     const submissionData = {
       ...data,
-      dataEnvio: new Date().toLocaleString('pt-BR'),
+      dataEnvio: formatDateTimeBR(new Date()),
       enviadoPor: user.nome
     };
     

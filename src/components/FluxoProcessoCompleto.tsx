@@ -194,6 +194,9 @@ export default function FluxoProcessoCompleto({ etapas = etapasPadrao, onEtapaCl
             <Badge key="status" className="bg-yellow-100 text-yellow-800 px-3 py-1">
               <ClipboardList className="w-4 h-4 mr-2" />
               Rascunho
+            </Badge>,
+            <Badge key="sla" className="bg-green-100 text-green-800 px-3 py-1">
+              Dentro do Prazo
             </Badge>
           ]
         };

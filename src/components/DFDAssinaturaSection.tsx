@@ -54,6 +54,7 @@ import { usePermissoes } from '@/hooks/usePermissoes';
 import { useToast } from '@/hooks/use-toast';
 import TextareaWithMentions from './TextareaWithMentions';
 import CommentsSection from './CommentsSection';
+import { formatDateBR, formatDateTimeBR } from '@/lib/utils';
 
 // Tipos TypeScript conforme especificação
 type AssinaturaStatus = 'PENDENTE' | 'ASSINADO' | 'CANCELADO';
@@ -320,7 +321,7 @@ export default function DFDAssinaturaSection({
       id: Date.now().toString(),
       autor: user?.nome || 'Usuário',
       cargo: user?.cargo || 'Cargo não informado',
-      data: new Date().toLocaleString('pt-BR'),
+      data: formatDateTimeBR(new Date()),
       texto: novoComentario.trim()
     };
 
@@ -706,7 +707,7 @@ export default function DFDAssinaturaSection({
                                 <div className="text-xs text-gray-500">{assinante.email}</div>
                                 {assinante.assinadoEm && (
                                   <div className="text-xs text-green-600 mt-1">
-                                    Assinado em {new Date(assinante.assinadoEm).toLocaleString('pt-BR')}
+                                    Assinado em {formatDateTimeBR(new Date(assinante.assinadoEm))}
                                   </div>
                                 )}
                               </div>
@@ -823,7 +824,29 @@ export default function DFDAssinaturaSection({
 
         {/* Seção de Ações - Rodapé não fixo */}
         <section id="acoes" className="col-span-12 w-full mt-6">
-          <div className="flex w-full items-center justify-end gap-3">
+          {/* Rodapé com Botões de Ação */}
+          <Card className="w-full shadow-lg border-0 bg-white/80 backdrop-blur-sm">
+            <CardContent className="p-4">
+              <div className="flex flex-col sm:flex-row gap-4 justify-between items-center w-full">
+                
+                {/* Lado esquerdo - Status e informações */}
+                <div className="flex items-center gap-4">
+                  <div className="flex items-center gap-2">
+                    <Clock className="w-4 h-4 text-gray-500" />
+                    <span className="text-sm text-gray-600">
+                      1 dia no card
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <User className="w-4 h-4 text-gray-500" />
+                    <span className="text-sm text-gray-600">
+                      {cardData.responsavelEtapa.nome || 'Sem responsável definido'}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Lado direito - Botões de ação */}
+                <div className="flex items-center gap-2">
             
             {/* Salvar (para GSP ou SE) */}
             {isGSPouSE && (
@@ -920,7 +943,10 @@ export default function DFDAssinaturaSection({
               </Button>
             )}
 
-          </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
         </section>
       </div>
 
@@ -958,7 +984,7 @@ export default function DFDAssinaturaSection({
             <div className="p-3 bg-gray-50 rounded-lg">
               <div className="text-sm">
                 <div className="font-medium">Data/Hora:</div>
-                <div className="text-gray-600">{new Date().toLocaleString('pt-BR')}</div>
+                <div className="text-gray-600">{formatDateTimeBR(new Date())}</div>
               </div>
             </div>
           </div>

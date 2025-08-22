@@ -3,6 +3,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { MessageCircle, Clock } from 'lucide-react';
 import MentionRenderer from './MentionRenderer';
+import { formatDateBR } from '@/lib/utils';
 
 interface User {
   id: string;

@@ -49,6 +49,7 @@ import { Alert, AlertDescription } from './ui/alert';
 import { useUser } from '@/contexts/UserContext';
 import { usePermissoes } from '@/hooks/usePermissoes';
 import { useToast } from '@/hooks/use-toast';
+import { formatDateBR } from '@/lib/utils';
 
 interface SetorNotificado {
   id: string;
@@ -220,7 +221,7 @@ export default function ConsolidacaoDemandaSection({
         numero: `DFD-${String(dfdsVinculados.length + 1).padStart(3, '0')}-${new Date().getFullYear()}`,
         setorCriador: user.gerencia,
         status: 'em_elaboracao',
-        dataCriacao: new Date().toLocaleDateString('pt-BR'),
+        dataCriacao: formatDateBR(new Date()),
         responsavel: user.nome
       };
 

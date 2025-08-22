@@ -80,8 +80,8 @@ const userGSP = {
 
 // Usuário de outra gerência - NÃO deve ver o botão
 const userOutro = {
-  nome: "João Silva",
-  gerencia: "GSL - Gerência de Suprimentos e Logística"
+  nome: "Lucas Moreira Brito",
+  gerencia: "GRH - Gerência de Recursos Humanos"
 };
 ```
 

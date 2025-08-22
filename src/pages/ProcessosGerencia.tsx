@@ -53,6 +53,7 @@ import { usePastasOrganizacionais } from "@/hooks/usePastasOrganizacionais";
 import { formatarNumeroProcesso } from "@/lib/processoUtils";
 import { GerenciaSelect } from "@/components/GerenciaSelect";
 import { GerenciaMultiSelect } from "@/components/GerenciaMultiSelect";
+import { formatDateBR } from '@/lib/utils';
 
 // Tipos
 type ProcessStatus = "em_andamento" | "pendente" | "atrasado" | "concluido" | "cancelado";
@@ -899,7 +900,7 @@ function CreateProcessModal() {
       status: "em_andamento" as const,
       prazoFinal: "",
       gerenciaResponsavel: "GRH - Gerência de Recursos Humanos",
-      dataCriacao: new Date().toLocaleDateString('pt-BR'),
+      dataCriacao: formatDateBR(new Date()),
       criador: "Usuário Atual",
       situacaoAtual: "Em construção",
       etapaAtual: "Aguardando Elaboração do DFD",
