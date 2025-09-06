@@ -59,6 +59,7 @@ import DFDCumprimentoRessalvasSection from './DFDCumprimentoRessalvasSection';
 import DFDPublicacaoSection from './DFDPublicacaoSection';
 import ConsolidacaoDemandaSection from './ConsolidacaoDemandaSection';
 import ETPElaboracaoSection from './ETPElaboracaoSection';
+import ETPSignatureSection from './ETPSignatureSection';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogClose } from './ui/dialog';
 import * as DialogPrimitive from '@radix-ui/react-dialog';
 
@@ -499,6 +500,10 @@ export default function FluxoProcessoCompleto({ etapas = etapasPadrao, onEtapaCl
       setShowDFDModal(true);
     } else if (etapa.id === 5) {
       // Card "Elaboração do ETP"
+      setCurrentEtapa(etapa);
+      setShowETPModal(true);
+    } else if (etapa.id === 6) {
+      // Card "Assinatura do ETP"
       setCurrentEtapa(etapa);
       setShowETPModal(true);
     } else if (etapa.id === 15) {
@@ -1283,6 +1288,16 @@ export default function FluxoProcessoCompleto({ etapas = etapasPadrao, onEtapaCl
                 <ETPElaboracaoSection
                   processoId="1"
                   etapaId={currentEtapa.id.toString()}
+                  onComplete={handleETPComplete}
+                  onSave={handleETPSave}
+                  canEdit={canManageEtapa(currentEtapa)}
+                  gerenciaCriadora={gerenciaCriadora}
+                />
+              )}
+              {currentEtapa?.id === 6 && (
+                <ETPSignatureSection
+                  processoId="1"
+                  etapaId={currentEtapa.id}
                   onComplete={handleETPComplete}
                   onSave={handleETPSave}
                   canEdit={canManageEtapa(currentEtapa)}
