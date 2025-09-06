@@ -249,7 +249,7 @@ export default function DFDAprovacaoSection({
     if (!justificativaCorrecao.trim()) {
       toast({
         title: "Erro",
-        description: "A justificativa da correção é obrigatória.",
+        description: "A justificativa das ressalvas é obrigatória.",
         variant: "destructive"
       });
       return;
@@ -281,8 +281,8 @@ export default function DFDAprovacaoSection({
     onSave(dfdData);
     
     toast({
-      title: "Correção Solicitada",
-      description: "O DFD foi devolvido para correção."
+      title: "Encaminhamento Realizado",
+      description: "O DFD foi encaminhado para cumprimento de ressalvas."
     });
     
     setShowCorrecaoDialog(false);
@@ -935,7 +935,7 @@ export default function DFDAprovacaoSection({
                     className="border-red-200 text-red-700 hover:bg-red-50"
                   >
                     <XCircle className="w-4 h-4 mr-2" />
-                    Solicitar Correção
+                    Encaminhar para Cumprimento de Ressalvas
                   </Button>
                   <Button 
                     onClick={handleAprovar}
@@ -943,7 +943,7 @@ export default function DFDAprovacaoSection({
                     className="bg-green-600 hover:bg-green-700 text-white px-8 py-3 shadow-lg"
                   >
                     <CheckCircle className="w-4 h-4 mr-2" />
-                    Aprovar DFD
+                    Aprovação
                   </Button>
                     </div>
                   </div>
@@ -989,10 +989,10 @@ export default function DFDAprovacaoSection({
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <XCircle className="w-5 h-5 text-red-600" />
-              Confirmar Solicitação de Correção
+              Confirmar Encaminhamento para Cumprimento de Ressalvas
             </DialogTitle>
             <DialogDescription>
-              Tem certeza que deseja solicitar correção? Esta ação irá:
+              Tem certeza que deseja encaminhar para cumprimento de ressalvas? Esta ação irá:
               <ul className="list-disc list-inside mt-2 space-y-1">
                 <li>Marcar a versão como Reprovada</li>
                 <li>Devolver o DFD para o Card 1 para nova versão</li>
@@ -1003,13 +1003,13 @@ export default function DFDAprovacaoSection({
           <div className="space-y-4">
             <div>
               <Label htmlFor="justificativa" className="text-sm font-medium">
-                Justificativa da Correção *
+                Justificativa das Ressalvas *
               </Label>
               <Textarea
                 id="justificativa"
                 value={justificativaCorrecao}
                 onChange={(e) => setJustificativaCorrecao(e.target.value)}
-                placeholder="Descreva os motivos da correção..."
+                placeholder="Descreva as ressalvas que devem ser cumpridas..."
                 className="min-h-[100px] mt-2 resize-none"
               />
             </div>
@@ -1020,7 +1020,7 @@ export default function DFDAprovacaoSection({
             </Button>
             <Button onClick={confirmarSolicitarCorrecao} className="bg-red-600 hover:bg-red-700">
               <XCircle className="w-4 h-4 mr-2" />
-              Confirmar Correção
+              Confirmar Encaminhamento
             </Button>
           </div>
         </DialogContent>

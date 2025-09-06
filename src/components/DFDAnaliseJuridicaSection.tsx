@@ -114,7 +114,6 @@ export default function DFDAnaliseJuridicaSection({
   const [analiseJuridica, setAnaliseJuridica] = useState('');
   const [dataAnalise, setDataAnalise] = useState<string>('');
   const [validationErrors, setValidationErrors] = useState<string[]>([]);
-  const [showAprovarRessalvasDialog, setShowAprovarRessalvasDialog] = useState(false);
   const [showDevolverDialog, setShowDevolverDialog] = useState(false);
   const [showAnaliseFavoravelDialog, setShowAnaliseFavoravelDialog] = useState(false);
   const [justificativa, setJustificativa] = useState('');
@@ -208,73 +207,6 @@ export default function DFDAnaliseJuridicaSection({
     return errors.length === 0;
   };
 
-  const handleAprovarComRessalvas = () => {
-    if (!validateForm()) {
-      toast({
-        title: "Erro de Validação",
-        description: "Por favor, preencha a Análise Jurídica Preliminar.",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    setShowAprovarRessalvasDialog(true);
-  };
-
-  const confirmarAprovarComRessalvas = () => {
-    if (!justificativa.trim()) {
-      toast({
-        title: "Erro",
-        description: "A justificativa é obrigatória para aprovação com ressalvas.",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    const dataAnaliseAtual = new Date().toISOString();
-    setDataAnalise(dataAnaliseAtual);
-    
-    // Salvar análise jurídica
-    const analiseData: AnaliseJuridica = {
-      texto: analiseJuridica,
-      analisadoEm: dataAnaliseAtual,
-      analisadoPor: {
-        id: user?.id || '',
-        nome: user?.nome || 'Usuário',
-        cargo: user?.cargo || ''
-      },
-      justificativa: justificativa,
-      status: 'APROVADA_COM_RESSALVAS'
-    };
-    
-    // Mock: salvar no localStorage
-    localStorage.setItem(`analise-juridica-${processoId}`, JSON.stringify(analiseData));
-    setAnaliseExiste(true);
-    
-    // Adicionar interação
-    const novaInteracao: InteracaoAnalise = {
-      id: `interacao-${Date.now()}`,
-      setor: 'NAJ - Assessoria Jurídica',
-      responsavel: user?.nome || 'Usuário',
-      dataHora: dataAnaliseAtual,
-      resultado: 'APROVADA_COM_RESSALVAS',
-      justificativa: justificativa,
-      parecer: analiseJuridica
-    };
-    
-    setInteracoes(prev => [...prev, novaInteracao]);
-    localStorage.setItem(`interacoes-analise-juridica-${processoId}`, JSON.stringify([...interacoes, novaInteracao]));
-    
-    onComplete(dfdData);
-    
-    toast({
-      title: "Análise Aprovada com Ressalvas",
-      description: "A análise jurídica foi aprovada com ressalvas e a próxima etapa foi liberada."
-    });
-    
-    setShowAprovarRessalvasDialog(false);
-    setJustificativa('');
-  };
 
   const handleDevolverCorrecao = () => {
     if (!validateForm()) {
@@ -293,7 +225,7 @@ export default function DFDAnaliseJuridicaSection({
     if (!justificativa.trim()) {
       toast({
         title: "Erro",
-        description: "A justificativa é obrigatória para devolução.",
+        description: "A justificativa das ressalvas é obrigatória.",
         variant: "destructive"
       });
       return;
@@ -336,8 +268,8 @@ export default function DFDAnaliseJuridicaSection({
     onSave(dfdData);
     
     toast({
-      title: "Devolução para Correção",
-      description: "O edital foi devolvido para correção e o card 'Cumprimento de Ressalvas pós Análise Jurídica Prévia' foi criado."
+      title: "Encaminhamento Realizado",
+      description: "O edital foi encaminhado para cumprimento de ressalvas e o card 'Cumprimento de Ressalvas pós Análise Jurídica Prévia' foi criado."
     });
     
     setShowDevolverDialog(false);
@@ -393,7 +325,7 @@ export default function DFDAnaliseJuridicaSection({
     onComplete(dfdData);
     
     toast({
-      title: "Análise Favorável",
+      title: "Aprovação Realizada",
       description: "A análise jurídica foi aprovada integralmente e a próxima etapa foi liberada."
     });
     
@@ -898,22 +830,14 @@ export default function DFDAnaliseJuridicaSection({
                         className="border-red-200 text-red-700 hover:bg-red-50"
                       >
                         <XCircle className="w-4 h-4 mr-2" />
-                        Devolver para Correção
-                      </Button>
-                      <Button 
-                        onClick={handleAprovarComRessalvas}
-                        variant="outline"
-                        className="border-yellow-200 text-yellow-700 hover:bg-yellow-50"
-                      >
-                        <AlertTriangle className="w-4 h-4 mr-2" />
-                        Aprovar com Ressalvas
+                        Encaminhar para Cumprimento de Ressalvas
                       </Button>
                       <Button 
                         onClick={handleAnaliseFavoravel}
                         className="bg-green-600 hover:bg-green-700 text-white px-8 py-3 shadow-lg"
                       >
                         <CheckCircle className="w-4 h-4 mr-2" />
-                        Análise Favorável
+                        Aprovação
                       </Button>
                     </div>
                   </div>
@@ -924,48 +848,6 @@ export default function DFDAnaliseJuridicaSection({
         </div>
       </div>
 
-      {/* Dialog de Confirmação - Aprovar com Ressalvas */}
-      <Dialog open={showAprovarRessalvasDialog} onOpenChange={setShowAprovarRessalvasDialog}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <AlertTriangle className="w-5 h-5 text-yellow-600" />
-              Confirmar Aprovação com Ressalvas
-            </DialogTitle>
-            <DialogDescription>
-              Tem certeza que deseja aprovar com ressalvas? Esta ação irá:
-              <ul className="list-disc list-inside mt-2 space-y-1">
-                <li>Registrar a análise jurídica com ressalvas</li>
-                <li>Liberar a próxima etapa no fluxo</li>
-                <li>Salvar a justificativa obrigatória</li>
-              </ul>
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div>
-              <Label htmlFor="justificativa-ressalvas" className="text-sm font-medium">
-                Justificativa das Ressalvas *
-              </Label>
-              <Textarea
-                id="justificativa-ressalvas"
-                value={justificativa}
-                onChange={(e) => setJustificativa(e.target.value)}
-                placeholder="Descreva as ressalvas identificadas..."
-                className="min-h-[100px] mt-2 resize-none"
-              />
-            </div>
-          </div>
-          <div className="flex gap-3">
-            <Button variant="outline" onClick={() => setShowAprovarRessalvasDialog(false)}>
-              Cancelar
-            </Button>
-            <Button onClick={confirmarAprovarComRessalvas} className="bg-yellow-600 hover:bg-yellow-700">
-              <AlertTriangle className="w-4 h-4 mr-2" />
-              Confirmar com Ressalvas
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
 
       {/* Dialog de Confirmação - Devolver para Correção */}
       <Dialog open={showDevolverDialog} onOpenChange={setShowDevolverDialog}>
@@ -973,27 +855,27 @@ export default function DFDAnaliseJuridicaSection({
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <XCircle className="w-5 h-5 text-red-600" />
-              Confirmar Devolução para Correção
+              Confirmar Encaminhamento para Cumprimento de Ressalvas
             </DialogTitle>
             <DialogDescription>
-              Tem certeza que deseja devolver para correção? Esta ação irá:
+              Tem certeza que deseja encaminhar para cumprimento de ressalvas? Esta ação irá:
               <ul className="list-disc list-inside mt-2 space-y-1">
                 <li>Registrar a análise jurídica com justificativa</li>
                 <li>Criar automaticamente o card "Cumprimento de Ressalvas pós Análise Jurídica Prévia"</li>
-                <li>Encaminhar o fluxo para correção</li>
+                <li>Encaminhar o fluxo para cumprimento de ressalvas</li>
               </ul>
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             <div>
               <Label htmlFor="justificativa-devolucao" className="text-sm font-medium">
-                Justificativa da Devolução *
+                Justificativa das Ressalvas *
               </Label>
               <Textarea
                 id="justificativa-devolucao"
                 value={justificativa}
                 onChange={(e) => setJustificativa(e.target.value)}
-                placeholder="Descreva os motivos da devolução..."
+                placeholder="Descreva as ressalvas que devem ser cumpridas..."
                 className="min-h-[100px] mt-2 resize-none"
               />
             </div>
@@ -1004,7 +886,7 @@ export default function DFDAnaliseJuridicaSection({
             </Button>
             <Button onClick={confirmarDevolverCorrecao} className="bg-red-600 hover:bg-red-700">
               <XCircle className="w-4 h-4 mr-2" />
-              Confirmar Devolução
+              Confirmar Encaminhamento
             </Button>
           </div>
         </DialogContent>
@@ -1016,12 +898,12 @@ export default function DFDAnaliseJuridicaSection({
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <CheckCircle className="w-5 h-5 text-green-600" />
-              Confirmar Análise Favorável
+              Confirmar Aprovação
             </DialogTitle>
             <DialogDescription>
               Tem certeza que deseja aprovar integralmente? Esta ação irá:
               <ul className="list-disc list-inside mt-2 space-y-1">
-                <li>Registrar a análise jurídica como favorável</li>
+                <li>Registrar a análise jurídica como aprovada</li>
                 <li>Liberar automaticamente a próxima etapa no fluxo</li>
                 <li>Salvar a análise jurídica preliminar</li>
               </ul>
@@ -1033,7 +915,7 @@ export default function DFDAnaliseJuridicaSection({
             </Button>
             <Button onClick={confirmarAnaliseFavoravel} className="bg-green-600 hover:bg-green-700">
               <CheckCircle className="w-4 h-4 mr-2" />
-              Confirmar Análise Favorável
+              Confirmar Aprovação
             </Button>
           </div>
         </DialogContent>
