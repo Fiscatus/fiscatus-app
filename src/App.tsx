@@ -16,6 +16,10 @@ import ModelosFluxo from "./pages/ModelosFluxo";
 import ConfiguracoesSistema from "./pages/ConfiguracoesSistema";
 import Notificacoes from "./pages/Notificacoes";
 import TubelightDemo from "./pages/TubelightDemo";
+import Administracao from "./pages/Administracao";
+import AceitarConvite from "./pages/AceitarConvite";
+import VerificarConvite from "./pages/VerificarConvite";
+import UserRedirect from "./components/UserRedirect";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import { Toaster } from "@/components/ui/toaster";
@@ -35,10 +39,10 @@ const App = () => (
             <Sonner />
             <BrowserRouter basename="/fiscatus-app/">
             <Routes>
-              <Route path="/" element={<Dashboard />} />
-              <Route path="/dashboard" element={<Dashboard />} />
+              <Route path="/" element={<UserRedirect><Dashboard /></UserRedirect>} />
+              <Route path="/dashboard" element={<UserRedirect><Dashboard /></UserRedirect>} />
               <Route path="/login" element={<Auth />} />
-              <Route path="/home" element={<Home />} />
+              <Route path="/home" element={<UserRedirect><Home /></UserRedirect>} />
               <Route path="/dfd" element={<Navigate to="/planejamento-da-contratacao" replace />} />
               <Route path="/dfd/novo" element={<Navigate to="/planejamento-da-contratacao" replace />} />
               <Route path="/planejamento-da-contratacao" element={<PlanejamentoContratacao />} />
@@ -54,6 +58,9 @@ const App = () => (
               <Route path="/configuracoes" element={<ConfiguracoesSistema />} />
               <Route path="/notificacoes" element={<Notificacoes />} />
               <Route path="/tubelight-demo" element={<TubelightDemo />} />
+              <Route path="/administracao" element={<UserRedirect><Administracao /></UserRedirect>} />
+              <Route path="/invite/:token" element={<AceitarConvite />} />
+              <Route path="/verificar-convite" element={<VerificarConvite />} />
               
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />

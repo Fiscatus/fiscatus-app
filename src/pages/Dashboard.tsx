@@ -28,6 +28,7 @@ import { useUser } from "@/contexts/UserContext";
 import { useToast } from "@/components/ui/use-toast";
 import Sidebar from "@/components/Sidebar";
 import NotificationDropdown, { NotificationBell } from "@/components/NotificationDropdown";
+import GlobalLoading from "@/components/GlobalLoading";
 import logo from "@/assets/logo_fiscatus.png";
 
 // Componente Topbar simplificado para o Dashboard
@@ -147,6 +148,23 @@ function DashboardTopbar() {
 
 export default function Dashboard() {
   const navigate = useNavigate();
+  const { user } = useUser();
+  const [isLoading, setIsLoading] = React.useState(true);
+
+  console.log('Dashboard: Rendering with user:', user?.email);
+
+  // Simular carregamento inicial do dashboard
+  React.useEffect(() => {
+    const timer = setTimeout(() => {
+      setIsLoading(false);
+    }, 1500); // 1.5 segundos de loading
+
+    return () => clearTimeout(timer);
+  }, []);
+
+  if (isLoading) {
+    return <GlobalLoading message="Carregando dashboard..." />;
+  }
 
   // Dados globais do sistema com foco institucional
   const dadosGlobais = [

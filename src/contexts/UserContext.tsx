@@ -1,94 +1,305 @@
 import React, { createContext, useContext, useState, ReactNode } from 'react';
 
+interface Role {
+  _id: string;
+  name: string;
+  permissions: string[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+interface UserOrg {
+  role: string;
+  isOrgAdmin: boolean;
+  orgId: string;
+  orgName: string;
+}
+
 interface User {
-  id: string;
-  nome: string;
-  cargo: string;
-  gerencia: string;
+  _id: string;
   email: string;
+  password: string;
+  orgs: UserOrg[];
+  isActive: boolean;
+  isPlatformAdmin: boolean;
+  nome?: string;
+  cargo?: string;
+  gerencia?: string;
+}
+
+interface Invite {
+  _id: string;
+  token: string;
+  role: string;
+  email?: string;
+  used: boolean;
+  createdBy: string;
+  acceptedBy?: string;
+  createdAt: string;
+  expiresAt: string;
 }
 
 interface UserContextType {
   user: User | null;
   setUser: (user: User | null) => void;
   isAuthenticated: boolean;
+  acceptInvite: (token: string, userData: any) => Promise<boolean>;
 }
 
 const UserContext = createContext<UserContextType | undefined>(undefined);
+
+// Mock de roles com permissões
+const mockRoles: Role[] = [
+  {
+    _id: '1',
+    name: 'Administrador da Plataforma',
+    permissions: [
+      'platform.admin',
+      'users.manage',
+      'roles.manage',
+      'invites.manage',
+      'organizations.manage',
+      'processes.manage',
+      'reports.view'
+    ],
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
+  },
+  {
+    _id: '2',
+    name: 'Administrador da Organização',
+    permissions: [
+      'org.admin',
+      'users.manage',
+      'roles.manage',
+      'invites.create',
+      'processes.manage',
+      'reports.view'
+    ],
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
+  },
+  {
+    _id: '3',
+    name: 'Gerente de Processos',
+    permissions: [
+      'processes.create',
+      'processes.edit',
+      'processes.view',
+      'reports.view'
+    ],
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
+  },
+  {
+    _id: '4',
+    name: 'Analista',
+    permissions: [
+      'processes.view',
+      'processes.edit',
+      'reports.view'
+    ],
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
+  },
+  {
+    _id: '5',
+    name: 'Visualizador',
+    permissions: [
+      'processes.view',
+      'reports.view'
+    ],
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
+  }
+];
 
 // Mock de usuários para teste - correspondendo às gerências das etapas do fluxo
 const mockUsers: User[] = [
   // GERÊNCIAS-PAI (com permissão de editar fluxo)
   {
-    id: '1',
+    _id: '1',
+    email: 'lara.fraguas@hospital.gov.br',
+    password: 'hashed_password',
+    orgs: [{
+      role: '2',
+      isOrgAdmin: true,
+      orgId: 'org1',
+      orgName: 'Hospital Governo'
+    }],
+    isActive: true,
+    isPlatformAdmin: false,
     nome: 'Lara Rubia Vaz Diniz Fraguas',
     cargo: 'Supervisão contratual',
-    gerencia: 'Comissão de Implantação',
-    email: 'lara.fraguas@hospital.gov.br'
+    gerencia: 'Comissão de Implantação'
   },
   {
-    id: '2',
+    _id: '2',
+    email: 'diran.rodrigues@hospital.gov.br',
+    password: 'hashed_password',
+    orgs: [{
+      role: '2',
+      isOrgAdmin: true,
+      orgId: 'org1',
+      orgName: 'Hospital Governo'
+    }],
+    isActive: true,
+    isPlatformAdmin: false,
     nome: 'Diran Rodrigues de Souza Filho',
     cargo: 'Secretário Executivo',
-    gerencia: 'SE - Secretaria Executiva',
-    email: 'diran.rodrigues@hospital.gov.br'
+    gerencia: 'SE - Secretaria Executiva'
   },
   {
-    id: '3',
+    _id: '3',
+    email: 'georgia.guimaraes@hospital.gov.br',
+    password: 'hashed_password',
+    orgs: [{
+      role: '2',
+      isOrgAdmin: true,
+      orgId: 'org1',
+      orgName: 'Hospital Governo'
+    }],
+    isActive: true,
+    isPlatformAdmin: false,
     nome: 'Georgia Guimaraes Pereira',
     cargo: 'Controladora Interna',
-    gerencia: 'OUV - Ouvidoria',
-    email: 'georgia.guimaraes@hospital.gov.br'
+    gerencia: 'OUV - Ouvidoria'
   },
   {
-    id: '4',
+    _id: '4',
+    email: 'yasmin.pissolati@hospital.gov.br',
+    password: 'hashed_password',
+    orgs: [{
+      role: '1',
+      isOrgAdmin: false,
+      orgId: 'org1',
+      orgName: 'Hospital Governo'
+    }],
+    isActive: true,
+    isPlatformAdmin: true,
     nome: 'Yasmin Pissolati Mattos Bretz',
     cargo: 'Gerente de Soluções e Projetos',
-    gerencia: 'GSP - Gerência de Soluções e Projetos',
-    email: 'yasmin.pissolati@hospital.gov.br'
+    gerencia: 'GSP - Gerência de Soluções e Projetos'
   },
   // OUTRAS GERÊNCIAS (sem permissão de editar fluxo)
   {
-    id: '5',
+    _id: '5',
+    email: 'guilherme.carvalho@hospital.gov.br',
+    password: 'hashed_password',
+    orgs: [{
+      role: '3',
+      isOrgAdmin: false,
+      orgId: 'org1',
+      orgName: 'Hospital Governo'
+    }],
+    isActive: true,
+    isPlatformAdmin: false,
     nome: 'Guilherme de Carvalho Silva',
     cargo: 'Gerente Suprimentos e Logistica',
-    gerencia: 'GSL - Gerência de Suprimentos e Logística',
-    email: 'guilherme.carvalho@hospital.gov.br'
+    gerencia: 'GSL - Gerência de Suprimentos e Logística'
   },
   {
-    id: '6',
+    _id: '6',
+    email: 'lucas.moreira@hospital.gov.br',
+    password: 'hashed_password',
+    orgs: [{
+      role: '3',
+      isOrgAdmin: false,
+      orgId: 'org1',
+      orgName: 'Hospital Governo'
+    }],
+    isActive: true,
+    isPlatformAdmin: false,
     nome: 'Lucas Moreira Brito',
     cargo: 'GERENTE DE RH',
-    gerencia: 'GRH - Gerência de Recursos Humanos',
-    email: 'lucas.moreira@hospital.gov.br'
+    gerencia: 'GRH - Gerência de Recursos Humanos'
   },
   {
-    id: '7',
+    _id: '7',
+    email: 'andressa.sterfany@hospital.gov.br',
+    password: 'hashed_password',
+    orgs: [{
+      role: '4',
+      isOrgAdmin: false,
+      orgId: 'org1',
+      orgName: 'Hospital Governo'
+    }],
+    isActive: true,
+    isPlatformAdmin: false,
     nome: 'Andressa Sterfany Santos da Silva',
     cargo: 'Assessora Técnica de Saúde',
-    gerencia: 'GUE - Gerência de Urgência e Emergência',
-    email: 'andressa.sterfany@hospital.gov.br'
+    gerencia: 'GUE - Gerência de Urgência e Emergência'
   },
   {
-    id: '8',
+    _id: '8',
+    email: 'leticia.bonfim@hospital.gov.br',
+    password: 'hashed_password',
+    orgs: [{
+      role: '4',
+      isOrgAdmin: false,
+      orgId: 'org1',
+      orgName: 'Hospital Governo'
+    }],
+    isActive: true,
+    isPlatformAdmin: false,
     nome: 'Leticia Bonfim Guilherme',
     cargo: 'Gerente de Licitações e Contratos',
-    gerencia: 'GLC - Gerência de Licitações e Contratos',
-    email: 'leticia.bonfim@hospital.gov.br'
+    gerencia: 'GLC - Gerência de Licitações e Contratos'
   },
   {
-    id: '9',
+    _id: '9',
+    email: 'dallas.kelson@hospital.gov.br',
+    password: 'hashed_password',
+    orgs: [{
+      role: '4',
+      isOrgAdmin: false,
+      orgId: 'org1',
+      orgName: 'Hospital Governo'
+    }],
+    isActive: true,
+    isPlatformAdmin: false,
     nome: 'Dallas Kelson Francisco de Souza',
     cargo: 'Gerente Financeiro',
-    gerencia: 'GFC - Gerência Financeira e Contábil',
-    email: 'dallas.kelson@hospital.gov.br'
+    gerencia: 'GFC - Gerência Financeira e Contábil'
   },
   {
-    id: '10',
+    _id: '10',
+    email: 'gabriel.radamesis@hospital.gov.br',
+    password: 'hashed_password',
+    orgs: [{
+      role: '4',
+      isOrgAdmin: false,
+      orgId: 'org1',
+      orgName: 'Hospital Governo'
+    }],
+    isActive: true,
+    isPlatformAdmin: false,
     nome: 'Gabriel Radamesis Gomes Nascimento',
     cargo: 'Assessor Jurídico',
-    gerencia: 'NAJ - Assessoria Jurídica',
-    email: 'gabriel.radamesis@hospital.gov.br'
+    gerencia: 'NAJ - Assessoria Jurídica'
+  },
+  // Usuários sem organização para teste
+  {
+    _id: '11',
+    email: 'usuario.sem.org@hospital.gov.br',
+    password: 'hashed_password',
+    orgs: [],
+    isActive: true,
+    isPlatformAdmin: false,
+    nome: 'Usuário Sem Organização',
+    cargo: 'Analista',
+    gerencia: undefined
+  },
+  {
+    _id: '12',
+    email: 'novo.usuario@hospital.gov.br',
+    password: 'hashed_password',
+    orgs: [],
+    isActive: true,
+    isPlatformAdmin: false,
+    nome: 'Novo Usuário',
+    cargo: 'Consultor',
+    gerencia: undefined
   }
 ];
 
@@ -98,12 +309,72 @@ interface UserProviderProps {
 
 export function UserProvider({ children }: UserProviderProps) {
   // Simular usuário logado - em produção viria de autenticação real
-  const [user, setUser] = useState<User | null>(mockUsers[0]); // Dir. Carlos Superintendente (Comissão de Implantação) por padrão
+  const [user, setUser] = useState<User | null>(mockUsers[3]); // Yasmin (GSP - Platform Admin) por padrão
+
+  const acceptInvite = async (token: string, userData: any): Promise<boolean> => {
+    try {
+      // Simular chamada para API
+      await new Promise(resolve => setTimeout(resolve, 1000));
+
+      // Encontrar o convite pelo token
+      const mockInvites: Invite[] = [
+        {
+          _id: '1',
+          token: 'inv_abc123def456',
+          role: '3',
+          email: 'novo.usuario@hospital.gov.br',
+          used: false,
+          createdBy: '4',
+          acceptedBy: undefined,
+          createdAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
+          expiresAt: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000).toISOString()
+        }
+      ];
+
+      const invite = mockInvites.find(inv => inv.token === token);
+      if (!invite) {
+        return false;
+      }
+
+      // Encontrar a role
+      const role = mockRoles.find(r => r._id === invite.role);
+      if (!role) {
+        return false;
+      }
+
+      // Atualizar o usuário atual com a nova organização
+      if (user) {
+        const updatedUser: User = {
+          ...user,
+          nome: userData.nome || user.nome,
+          email: userData.email || user.email,
+          cargo: userData.cargo || user.cargo,
+          gerencia: userData.gerencia || user.gerencia,
+          orgs: [
+            ...user.orgs,
+            {
+              role: invite.role,
+              isOrgAdmin: false,
+              orgId: 'org1',
+              orgName: 'Hospital Governo'
+            }
+          ]
+        };
+        setUser(updatedUser);
+      }
+
+      return true;
+    } catch (error) {
+      console.error('Erro ao aceitar convite:', error);
+      return false;
+    }
+  };
 
   const value: UserContextType = {
     user,
     setUser,
-    isAuthenticated: !!user
+    isAuthenticated: !!user,
+    acceptInvite
   };
 
   return (
@@ -121,5 +392,5 @@ export function useUser(): UserContextType {
   return context;
 }
 
-export { mockUsers };
-export type { User }; 
+export { mockUsers, mockRoles };
+export type { User, Role, UserOrg, Invite }; 

@@ -1,6 +1,7 @@
 import React from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { toast } from "@/components/ui/use-toast";
+import { useUser } from "@/contexts/UserContext";
 import { 
   X, 
   FolderOpen,
@@ -9,7 +10,8 @@ import {
   Gavel,
   BarChart3,
   Settings,
-  Users
+  Users,
+  Shield
 } from "lucide-react";
 
 const dashboard = {
@@ -66,6 +68,7 @@ const modules = [
 export default function Sidebar({ open, onClose }: { open: boolean; onClose: () => void }) {
   const navigate = useNavigate();
   const location = useLocation();
+  const { user } = useUser();
 
   React.useEffect(() => {
     function handleEsc(e: KeyboardEvent) {
@@ -97,7 +100,8 @@ export default function Sidebar({ open, onClose }: { open: boolean; onClose: () 
   const isActiveModule = (modulePath: string) => {
     return location.pathname === modulePath || 
            (modulePath === "/" && location.pathname === "/") ||
-           (modulePath === "/planejamento-da-contratacao" && location.pathname === "/planejamento-da-contratacao");
+           (modulePath === "/planejamento-da-contratacao" && location.pathname === "/planejamento-da-contratacao") ||
+           (modulePath === "/administracao" && location.pathname === "/administracao");
   };
 
   const isActiveDashboard = (dashboardPath: string) => {
@@ -193,6 +197,44 @@ export default function Sidebar({ open, onClose }: { open: boolean; onClose: () 
           ))}
         </nav>
         
+        {/* Acesso Rápido para Comissão de Implantação */}
+        {user?.gerencia === 'Comissão de Implantação' && (
+          <div className="border-t border-gray-200 p-4">
+            <div className="mb-3">
+              <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">
+                Acesso Rápido
+              </h3>
+            </div>
+            
+            <button
+              onClick={() => handleModuleClick({
+                label: "Administração",
+                icon: <Shield className="w-4 h-4" />,
+                path: "/administracao",
+                description: "Painel de administração"
+              })}
+              className={`w-full flex items-center gap-3 px-4 py-3 text-left transition-all duration-200 group rounded-lg ${
+                isActiveModule("/administracao")
+                  ? "bg-blue-50 border border-blue-200 text-blue-700"
+                  : "text-gray-600 hover:bg-gray-50 border border-transparent hover:border-gray-200"
+              } cursor-pointer`}
+              tabIndex={0}
+            >
+              <div className={`${isActiveModule("/administracao") ? "text-blue-600" : "text-gray-500 group-hover:text-gray-700"}`}>
+                <Shield className="w-4 h-4" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <span className="block font-medium text-sm">
+                  Administração
+                </span>
+                <span className="block text-xs text-gray-500 truncate">
+                  Painel de administração
+                </span>
+              </div>
+            </button>
+          </div>
+        )}
+
         {/* Footer */}
         <div className="border-t border-gray-200 p-4">
           <div className="text-xs text-gray-500 text-center">
