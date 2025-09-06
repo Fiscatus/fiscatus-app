@@ -6,7 +6,6 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { CheckCircle, XCircle, UserPlus, Shield, Mail, Clock } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
-import GlobalLoading from '@/components/GlobalLoading';
 
 // Mock de convites pendentes para o usuário atual
 const mockPendingInvites: Invite[] = [
@@ -30,21 +29,13 @@ export default function VerificarConvite() {
 
   useEffect(() => {
     // Simular busca de convites pendentes para o usuário
-    const timer = setTimeout(() => {
-      const userInvites = mockPendingInvites.filter(invite => 
-        invite.email === user?.email && !invite.used
-      );
-      
-      setPendingInvites(userInvites);
-      setLoading(false);
-    }, 1000); // 1 segundo de loading
-
-    return () => clearTimeout(timer);
+    const userInvites = mockPendingInvites.filter(invite => 
+      invite.email === user?.email && !invite.used
+    );
+    
+    setPendingInvites(userInvites);
+    setLoading(false);
   }, [user]);
-
-  if (loading) {
-    return <GlobalLoading message="Verificando convites pendentes..." />;
-  }
 
   const handleAcceptInvite = (inviteId: string) => {
     // Simular aceitação do convite

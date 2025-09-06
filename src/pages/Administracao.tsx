@@ -15,7 +15,6 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Users, Shield, UserPlus, Settings, Eye, EyeOff, Edit, Trash2, Copy, CheckCircle, XCircle, ArrowLeft } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
-import GlobalLoading from '@/components/GlobalLoading';
 
 // Mock de convites
 const mockInvites: Invite[] = [
@@ -51,20 +50,6 @@ export default function Administracao() {
   const [roles, setRoles] = useState<Role[]>(mockRoles);
   const [invites, setInvites] = useState<Invite[]>(mockInvites);
   const [activeTab, setActiveTab] = useState('users');
-  const [isLoading, setIsLoading] = useState(true);
-
-  // Simular carregamento inicial
-  React.useEffect(() => {
-    const timer = setTimeout(() => {
-      setIsLoading(false);
-    }, 1000);
-
-    return () => clearTimeout(timer);
-  }, []);
-
-  if (isLoading) {
-    return <GlobalLoading message="Carregando painel de administração..." />;
-  }
 
   // Estados para modais
   const [isCreateRoleOpen, setIsCreateRoleOpen] = useState(false);

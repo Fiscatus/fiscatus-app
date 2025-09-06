@@ -9,7 +9,6 @@ import { Badge } from '@/components/ui/badge';
 import { CheckCircle, XCircle, UserPlus, Shield } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { mockRoles, type Role, type Invite, useUser } from '@/contexts/UserContext';
-import GlobalLoading from '@/components/GlobalLoading';
 
 // Mock de convites (em produção viria da API)
 const mockInvites: Invite[] = [
@@ -57,17 +56,13 @@ export default function AceitarConvite() {
   useEffect(() => {
     if (token) {
       // Simular busca do convite na API
-      const timer = setTimeout(() => {
-        const foundInvite = mockInvites.find(inv => inv.token === token);
-        if (foundInvite) {
-          setInvite(foundInvite);
-          const foundRole = mockRoles.find(r => r._id === foundInvite.role);
-          setRole(foundRole || null);
-        }
-        setLoading(false);
-      }, 1200); // 1.2 segundos de loading
-
-      return () => clearTimeout(timer);
+      const foundInvite = mockInvites.find(inv => inv.token === token);
+      if (foundInvite) {
+        setInvite(foundInvite);
+        const foundRole = mockRoles.find(r => r._id === foundInvite.role);
+        setRole(foundRole || null);
+      }
+      setLoading(false);
     }
   }, [token]);
 
@@ -168,7 +163,16 @@ export default function AceitarConvite() {
   };
 
   if (loading) {
-    return <GlobalLoading message="Carregando convite..." />;
+    return (
+      <div className="container mx-auto p-6">
+        <div className="flex items-center justify-center min-h-[400px]">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+            <p>Carregando convite...</p>
+          </div>
+        </div>
+      </div>
+    );
   }
 
   if (!invite) {
