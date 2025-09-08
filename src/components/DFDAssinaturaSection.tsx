@@ -592,8 +592,11 @@ export default function DFDAssinaturaSection({
           <section id="visualizacao-dfd" className="col-span-12 lg:col-span-8 w-full">
             <div className="rounded-2xl border shadow-sm overflow-hidden bg-white">
               <header className="bg-indigo-50 px-4 py-3 rounded-t-2xl font-semibold text-slate-900">
-                <div className="flex items-center gap-3">
-                  <PenTool className="w-5 h-5 text-indigo-600" />
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <PenTool className="w-5 h-5 text-indigo-600" />
+                    <span className="text-lg">Visualização do DFD</span>
+                  </div>
                 </div>
               </header>
               <div className="p-4 md:p-6">

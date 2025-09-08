@@ -465,19 +465,9 @@ export default function EditalSignatureSection({
             <div className="rounded-2xl border shadow-sm overflow-hidden bg-white">
               <header className="bg-purple-50 px-4 py-3 rounded-t-2xl font-semibold text-slate-900">
                 <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3 text-lg">
+                  <div className="flex items-center gap-3">
                     <PenTool className="w-5 h-5 text-purple-600" />
-                    <Badge variant="outline" className="text-xs">
-                      Versão Final
-                    </Badge>
-                    <Badge className={`text-xs ${
-                      cardData.statusEtapa === 'CONCLUIDO' ? 'bg-green-100 text-green-800' :
-                      cardData.statusEtapa === 'ASSINADO_N_N' ? 'bg-blue-100 text-blue-800' :
-                      'bg-yellow-100 text-yellow-800'
-                    }`}>
-                      {cardData.statusEtapa === 'CONCLUIDO' ? 'Concluído' :
-                       cardData.statusEtapa === 'ASSINADO_N_N' ? 'Assinado' : 'Pendente'}
-                    </Badge>
+                    <span className="text-lg">Visualização do Edital</span>
                   </div>
                   <div className="flex items-center gap-2">
                     <Button

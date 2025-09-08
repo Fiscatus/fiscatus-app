@@ -215,9 +215,13 @@ export default function FluxoProcessoCompleto({ etapas = etapasPadrao, onEtapaCl
           subtitle: "Assinatura Digital do ETP",
           icon: <FileSignature className="w-6 h-6 text-indigo-600" />,
           statusBadges: [
-            <Badge key="status" className="bg-purple-100 text-purple-800 px-3 py-1">
-              <FileSignature className="w-4 h-4 mr-2" />
-              <span>Aguardando Assinatura</span>
+            <Badge key="versao" className="bg-purple-100 text-purple-800 px-3 py-1">
+              <PenTool className="w-4 h-4 mr-2" />
+              <span>Versão Final</span>
+            </Badge>,
+            <Badge key="status" className="bg-orange-100 text-orange-800 px-3 py-1">
+              <Clock className="w-4 h-4 mr-2" />
+              <span>Pendente de Assinatura</span>
             </Badge>
           ]
         };
@@ -263,9 +267,13 @@ export default function FluxoProcessoCompleto({ etapas = etapasPadrao, onEtapaCl
           subtitle: "Assinatura da Avaliação de Riscos",
           icon: <FileSignature className="w-6 h-6 text-indigo-600" />,
           statusBadges: [
-            <Badge key="status" className="bg-gray-100 text-gray-800 px-3 py-1">
-              <FileSignature className="w-4 h-4 mr-2" />
-              <span>Não Iniciado</span>
+            <Badge key="versao" className="bg-purple-100 text-purple-800 px-3 py-1">
+              <PenTool className="w-4 h-4 mr-2" />
+              <span>Versão Final</span>
+            </Badge>,
+            <Badge key="status" className="bg-orange-100 text-orange-800 px-3 py-1">
+              <Clock className="w-4 h-4 mr-2" />
+              <span>Pendente de Assinatura</span>
             </Badge>
           ]
         };
@@ -302,6 +310,38 @@ export default function FluxoProcessoCompleto({ etapas = etapasPadrao, onEtapaCl
             <Badge key="status" className="bg-orange-100 text-orange-800 px-3 py-1">
               <RotateCcw className="w-4 h-4 mr-2" />
               <span>Em Correção</span>
+            </Badge>
+          ]
+        };
+      case 13: // Assinatura do TR
+        return {
+          title: "Assinatura do TR",
+          subtitle: "Assinatura Digital do Termo de Referência",
+          icon: <FileSignature className="w-6 h-6 text-indigo-600" />,
+          statusBadges: [
+            <Badge key="versao" className="bg-purple-100 text-purple-800 px-3 py-1">
+              <PenTool className="w-4 h-4 mr-2" />
+              <span>Versão Final</span>
+            </Badge>,
+            <Badge key="status" className="bg-orange-100 text-orange-800 px-3 py-1">
+              <Clock className="w-4 h-4 mr-2" />
+              <span>Pendente de Assinatura</span>
+            </Badge>
+          ]
+        };
+      case 20: // Assinatura do Edital
+        return {
+          title: "Assinatura do Edital",
+          subtitle: "Assinatura Digital do Edital",
+          icon: <FileSignature className="w-6 h-6 text-indigo-600" />,
+          statusBadges: [
+            <Badge key="versao" className="bg-purple-100 text-purple-800 px-3 py-1">
+              <PenTool className="w-4 h-4 mr-2" />
+              <span>Versão Final</span>
+            </Badge>,
+            <Badge key="status" className="bg-orange-100 text-orange-800 px-3 py-1">
+              <Clock className="w-4 h-4 mr-2" />
+              <span>Pendente de Assinatura</span>
             </Badge>
           ]
         };
