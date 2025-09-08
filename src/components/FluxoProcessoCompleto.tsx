@@ -60,6 +60,7 @@ import DFDPublicacaoSection from './DFDPublicacaoSection';
 import ConsolidacaoDemandaSection from './ConsolidacaoDemandaSection';
 import ETPElaboracaoSection from './ETPElaboracaoSection';
 import ETPSignatureSection from './ETPSignatureSection';
+import MatrizRiscoSignatureSection from './MatrizRiscoSignatureSection';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogClose } from './ui/dialog';
 import * as DialogPrimitive from '@radix-ui/react-dialog';
 
@@ -506,6 +507,10 @@ export default function FluxoProcessoCompleto({ etapas = etapasPadrao, onEtapaCl
       // Card "Assinatura do ETP"
       setCurrentEtapa(etapa);
       setShowETPModal(true);
+    } else if (etapa.id === 10) {
+      // Card "Assinatura da Matriz de Risco"
+      setCurrentEtapa(etapa);
+      setShowETPModal(true);
     } else if (etapa.id === 15) {
       // Card "Análise Jurídica Prévia"
       setCurrentEtapa(etapa);
@@ -846,6 +851,37 @@ export default function FluxoProcessoCompleto({ etapas = etapasPadrao, onEtapaCl
     toast({
       title: "ETP Salvo",
       description: "O rascunho do ETP foi salvo com sucesso."
+    });
+  };
+
+  const handleMatrizRiscoComplete = (data: any) => {
+    console.log('Matriz de Risco concluída:', data);
+    
+    // Atualizar status das etapas
+    const etapasAtualizadas = etapasEditadas.map(etapa => {
+      if (etapa.id === 9) {
+        return { ...etapa, status: 'concluido' as const };
+      } else if (etapa.id === 10) {
+        return { ...etapa, status: 'concluido' as const };
+      } else if (etapa.id === 11) {
+        return { ...etapa, status: 'andamento' as const };
+      }
+      return etapa;
+    });
+    setEtapasEditadas(etapasAtualizadas);
+    
+    toast({
+      title: "Matriz de Risco Concluída",
+      description: "A assinatura da Matriz de Risco foi finalizada com sucesso."
+    });
+  };
+
+  const handleMatrizRiscoSave = (data: any) => {
+    console.log('Salvar Matriz de Risco:', data);
+    // Implementar lógica de salvamento da Matriz de Risco
+    toast({
+      title: "Matriz de Risco Salva",
+      description: "O rascunho da Matriz de Risco foi salvo com sucesso."
     });
   };
 
@@ -1300,6 +1336,16 @@ export default function FluxoProcessoCompleto({ etapas = etapasPadrao, onEtapaCl
                   etapaId={currentEtapa.id}
                   onComplete={handleETPComplete}
                   onSave={handleETPSave}
+                  canEdit={canManageEtapa(currentEtapa)}
+                  gerenciaCriadora={gerenciaCriadora}
+                />
+              )}
+              {currentEtapa?.id === 10 && (
+                <MatrizRiscoSignatureSection
+                  processoId="1"
+                  etapaId={currentEtapa.id}
+                  onComplete={handleMatrizRiscoComplete}
+                  onSave={handleMatrizRiscoSave}
                   canEdit={canManageEtapa(currentEtapa)}
                   gerenciaCriadora={gerenciaCriadora}
                 />

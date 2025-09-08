@@ -56,7 +56,7 @@ import TextareaWithMentions from './TextareaWithMentions';
 import CommentsSection from './CommentsSection';
 import { formatDateBR, formatDateTimeBR } from '@/lib/utils';
 
-// Tipos TypeScript para Assinatura do ETP
+// Tipos TypeScript para Assinatura da Matriz de Risco
 type AssinaturaStatus = 'PENDENTE' | 'ASSINADO' | 'CANCELADO';
 type EtapaAssinaturaStatus = 'PENDENTE_ASSINATURA' | 'ASSINADO_N_N' | 'CONCLUIDO';
 
@@ -73,9 +73,9 @@ interface Assinante {
   observacoes?: string;
 }
 
-interface CardAssinaturaETP {
+interface CardAssinaturaMatrizRisco {
   processoId: string;
-  versaoFinalId: string;  // versão aprovada do ETP
+  versaoFinalId: string;  // versão aprovada da Matriz de Risco
   statusEtapa: EtapaAssinaturaStatus;
   responsavelEtapa: { id: string; nome: string; cargo: string };
   assinantes: Assinante[];
@@ -85,7 +85,7 @@ interface CardAssinaturaETP {
     decorridosDiasUteis: number;
     badge: 'ok' | 'risco' | 'estourado';
   };
-  documentoETP?: {
+  documentoMatrizRisco?: {
     nome: string;
     url: string;
     mimeType: string;
@@ -104,7 +104,7 @@ interface Comentario {
   avatar?: string;
 }
 
-interface ETPSignatureSectionProps {
+interface MatrizRiscoSignatureSectionProps {
   processoId: string;
   etapaId: number;
   onComplete?: (data: any) => void;
@@ -115,7 +115,7 @@ interface ETPSignatureSectionProps {
 }
 
 // Mock data usando usuários reais do sistema
-const mockCardAssinaturaETP: CardAssinaturaETP = {
+const mockCardAssinaturaMatrizRisco: CardAssinaturaMatrizRisco = {
   processoId: "1",
   versaoFinalId: "v1",
   statusEtapa: "PENDENTE_ASSINATURA",
@@ -150,11 +150,11 @@ const mockCardAssinaturaETP: CardAssinaturaETP = {
     decorridosDiasUteis: 0,
     badge: "ok"
   },
-  documentoETP: {
-    nome: "ETP_Versao_Final.pdf",
-    url: "mock-url-etp-final",
+  documentoMatrizRisco: {
+    nome: "Matriz_Risco_Versao_Final.pdf",
+    url: "mock-url-matriz-risco-final",
     mimeType: "application/pdf",
-    tamanho: "2.5 MB",
+    tamanho: "1.8 MB",
     uploadedAt: "2025-01-15T09:30:00Z",
     uploadedBy: "Yasmin Pissolati Mattos Bretz"
   }
@@ -166,7 +166,7 @@ const mockComentarios: Comentario[] = [
     autor: "Yasmin Pissolati Mattos Bretz",
     cargo: "Gerente de Soluções e Projetos",
     data: "15/01/2025 10:30",
-    texto: "ETP aprovado e enviado para assinatura. Aguardando assinaturas dos responsáveis."
+    texto: "Matriz de Risco aprovada e enviada para assinatura. Aguardando assinaturas dos responsáveis."
   },
   {
     id: "2",
@@ -191,7 +191,7 @@ const mockUsuariosDisponiveis = [
   { id: "10", nome: "Gabriel Radamesis Gomes Nascimento", cargo: "Assessor Jurídico", email: "gabriel.radamesis@hospital.gov.br" }
 ];
 
-export default function ETPSignatureSection({
+export default function MatrizRiscoSignatureSection({
   processoId,
   etapaId,
   onComplete,
@@ -199,13 +199,13 @@ export default function ETPSignatureSection({
   initialData,
   canEdit = true,
   gerenciaCriadora
-}: ETPSignatureSectionProps) {
+}: MatrizRiscoSignatureSectionProps) {
   const { user } = useUser();
   const { toast } = useToast();
   const { podeEditarCard } = usePermissoes();
   
   // Estados principais
-  const [cardData, setCardData] = useState<CardAssinaturaETP>(mockCardAssinaturaETP);
+  const [cardData, setCardData] = useState<CardAssinaturaMatrizRisco>(mockCardAssinaturaMatrizRisco);
   const [comentarios, setComentarios] = useState<Comentario[]>(mockComentarios);
   const [novoComentario, setNovoComentario] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -396,7 +396,7 @@ export default function ETPSignatureSection({
 
       toast({
         title: "Etapa Concluída",
-        description: "A assinatura do ETP foi concluída com sucesso.",
+        description: "A assinatura da Matriz de Risco foi concluída com sucesso.",
       });
 
       if (onComplete) {
@@ -416,12 +416,12 @@ export default function ETPSignatureSection({
     }
   };
 
-  // Função para download do documento ETP
-  const handleDownloadETP = () => {
-    if (!cardData.documentoETP) {
+  // Função para download do documento Matriz de Risco
+  const handleDownloadMatrizRisco = () => {
+    if (!cardData.documentoMatrizRisco) {
       toast({
         title: "Nenhum documento",
-        description: "Nenhum documento ETP foi enviado ainda.",
+        description: "Nenhum documento de Matriz de Risco foi enviado ainda.",
         variant: "destructive"
       });
       return;
@@ -430,16 +430,16 @@ export default function ETPSignatureSection({
     // Mock: simular download
     toast({
       title: "Download Iniciado",
-      description: `O arquivo ${cardData.documentoETP.nome} está sendo baixado.`
+      description: `O arquivo ${cardData.documentoMatrizRisco.nome} está sendo baixado.`
     });
   };
 
-  // Função para visualizar o documento ETP
-  const handleVisualizarETP = () => {
-    if (!cardData.documentoETP) {
+  // Função para visualizar o documento Matriz de Risco
+  const handleVisualizarMatrizRisco = () => {
+    if (!cardData.documentoMatrizRisco) {
       toast({
         title: "Nenhum documento",
-        description: "Nenhum documento ETP foi enviado ainda.",
+        description: "Nenhum documento de Matriz de Risco foi enviado ainda.",
         variant: "destructive"
       });
       return;
@@ -448,7 +448,7 @@ export default function ETPSignatureSection({
     // Mock: simular visualização
     toast({
       title: "Visualização",
-      description: `Abrindo ${cardData.documentoETP.nome} para visualização.`
+      description: `Abrindo ${cardData.documentoMatrizRisco.nome} para visualização.`
     });
   };
 
@@ -460,14 +460,14 @@ export default function ETPSignatureSection({
         {/* Grid principal 12 colunas */}
         <div className="grid grid-cols-12 gap-4">
           
-          {/* ESQUERDA: Visualização do ETP (8 colunas) */}
-          <section id="visualizacao-etp" className="col-span-12 lg:col-span-8 w-full">
+          {/* ESQUERDA: Visualização da Matriz de Risco (8 colunas) */}
+          <section id="visualizacao-matriz-risco" className="col-span-12 lg:col-span-8 w-full">
             <div className="rounded-2xl border shadow-sm overflow-hidden bg-white">
               <header className="bg-purple-50 px-4 py-3 rounded-t-2xl font-semibold text-slate-900">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3 text-lg">
                     <PenTool className="w-5 h-5 text-purple-600" />
-                    Assinatura do ETP
+                    Assinatura da Matriz de Risco
                     <Badge variant="outline" className="text-xs">
                       Versão Final
                     </Badge>
@@ -484,8 +484,8 @@ export default function ETPSignatureSection({
                     <Button
                       size="sm"
                       variant="outline"
-                      onClick={handleVisualizarETP}
-                      disabled={!cardData.documentoETP}
+                      onClick={handleVisualizarMatrizRisco}
+                      disabled={!cardData.documentoMatrizRisco}
                       className="text-xs"
                     >
                       <Eye className="w-3 h-3 mr-1" />
@@ -494,8 +494,8 @@ export default function ETPSignatureSection({
                     <Button
                       size="sm"
                       variant="outline"
-                      onClick={handleDownloadETP}
-                      disabled={!cardData.documentoETP}
+                      onClick={handleDownloadMatrizRisco}
+                      disabled={!cardData.documentoMatrizRisco}
                       className="text-xs"
                     >
                       <Download className="w-3 h-3 mr-1" />
@@ -508,24 +508,24 @@ export default function ETPSignatureSection({
                 <div className="space-y-4">
                   
                   {/* Informações do Documento */}
-                  {cardData.documentoETP && (
+                  {cardData.documentoMatrizRisco && (
                     <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-3">
                           <FileText className="w-5 h-5 text-blue-600" />
                           <div>
-                            <p className="text-sm font-medium text-blue-900">{cardData.documentoETP.nome}</p>
+                            <p className="text-sm font-medium text-blue-900">{cardData.documentoMatrizRisco.nome}</p>
                             <p className="text-xs text-blue-600">
-                              {cardData.documentoETP.tamanho} • {formatDateBR(cardData.documentoETP.uploadedAt)} • 
-                              Enviado por: {cardData.documentoETP.uploadedBy}
+                              {cardData.documentoMatrizRisco.tamanho} • {formatDateBR(cardData.documentoMatrizRisco.uploadedAt)} • 
+                              Enviado por: {cardData.documentoMatrizRisco.uploadedBy}
                             </p>
                           </div>
                         </div>
                         <div className="flex items-center gap-1">
-                          <Button size="sm" variant="outline" onClick={handleVisualizarETP} className="h-6 w-6 p-0">
+                          <Button size="sm" variant="outline" onClick={handleVisualizarMatrizRisco} className="h-6 w-6 p-0">
                             <Eye className="w-3 h-3" />
                           </Button>
-                          <Button size="sm" variant="outline" onClick={handleDownloadETP} className="h-6 w-6 p-0">
+                          <Button size="sm" variant="outline" onClick={handleDownloadMatrizRisco} className="h-6 w-6 p-0">
                             <Download className="w-3 h-3" />
                           </Button>
                         </div>
@@ -537,9 +537,9 @@ export default function ETPSignatureSection({
                   <div className="w-full min-h-[520px] border-2 border-dashed border-gray-300 rounded-lg flex items-center justify-center bg-gray-50">
                     <div className="text-center">
                       <FileText className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-                      <p className="text-gray-500 font-medium">Visualização do ETP</p>
+                      <p className="text-gray-500 font-medium">Visualização da Matriz de Risco</p>
                       <p className="text-sm text-gray-400 mt-1">
-                        {cardData.documentoETP ? 'Clique em "Visualizar" para abrir o documento' : 'Nenhum documento disponível'}
+                        {cardData.documentoMatrizRisco ? 'Clique em "Visualizar" para abrir o documento' : 'Nenhum documento disponível'}
                       </p>
                     </div>
                   </div>
@@ -686,7 +686,7 @@ export default function ETPSignatureSection({
             <CommentsSection
               processoId={processoId}
               etapaId={etapaId.toString()}
-              cardId="comentarios-assinatura-etp"
+              cardId="comentarios-assinatura-matriz-risco"
               title="Comentários"
             />
           </section>
@@ -829,7 +829,7 @@ export default function ETPSignatureSection({
               Confirmar Assinatura
             </DialogTitle>
             <DialogDescription>
-              Confirme os dados da sua assinatura digital no documento ETP.
+              Confirme os dados da sua assinatura digital no documento da Matriz de Risco.
             </DialogDescription>
           </DialogHeader>
           
@@ -845,7 +845,7 @@ export default function ETPSignatureSection({
             <div className="p-3 bg-gray-50 rounded-lg">
               <div className="text-sm">
                 <div className="font-medium">Documento:</div>
-                <div className="text-gray-600">ETP - Versão Final (V{cardData.versaoFinalId})</div>
+                <div className="text-gray-600">Matriz de Risco - Versão Final (V{cardData.versaoFinalId})</div>
                 <div className="text-gray-500 text-xs">Aprovado por: Yasmin Pissolati Mattos Bretz</div>
                 <div className="text-gray-500 text-xs">Hash: {Math.random().toString(36).substring(2, 15)}</div>
               </div>
@@ -924,7 +924,7 @@ export default function ETPSignatureSection({
               Adicionar Assinantes
             </DialogTitle>
             <DialogDescription>
-              Selecione os usuários que devem assinar o ETP.
+              Selecione os usuários que devem assinar a Matriz de Risco.
             </DialogDescription>
           </DialogHeader>
           
@@ -970,10 +970,10 @@ export default function ETPSignatureSection({
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <CheckCircle className="w-5 h-5 text-green-600" />
-              Concluir Assinatura do ETP
+              Concluir Assinatura da Matriz de Risco
             </DialogTitle>
             <DialogDescription>
-              Confirme a conclusão da etapa de assinatura do ETP.
+              Confirme a conclusão da etapa de assinatura da Matriz de Risco.
             </DialogDescription>
           </DialogHeader>
           
