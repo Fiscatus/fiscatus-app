@@ -61,6 +61,8 @@ import ConsolidacaoDemandaSection from './ConsolidacaoDemandaSection';
 import ETPElaboracaoSection from './ETPElaboracaoSection';
 import ETPSignatureSection from './ETPSignatureSection';
 import MatrizRiscoSignatureSection from './MatrizRiscoSignatureSection';
+import TRSignatureSection from './TRSignatureSection';
+import EditalSignatureSection from './EditalSignatureSection';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogClose } from './ui/dialog';
 import * as DialogPrimitive from '@radix-ui/react-dialog';
 
@@ -511,6 +513,14 @@ export default function FluxoProcessoCompleto({ etapas = etapasPadrao, onEtapaCl
       // Card "Assinatura da Matriz de Risco"
       setCurrentEtapa(etapa);
       setShowETPModal(true);
+    } else if (etapa.id === 13) {
+      // Card "Assinatura do TR"
+      setCurrentEtapa(etapa);
+      setShowETPModal(true);
+    } else if (etapa.id === 20) {
+      // Card "Assinatura do Edital"
+      setCurrentEtapa(etapa);
+      setShowETPModal(true);
     } else if (etapa.id === 15) {
       // Card "Análise Jurídica Prévia"
       setCurrentEtapa(etapa);
@@ -882,6 +892,68 @@ export default function FluxoProcessoCompleto({ etapas = etapasPadrao, onEtapaCl
     toast({
       title: "Matriz de Risco Salva",
       description: "O rascunho da Matriz de Risco foi salvo com sucesso."
+    });
+  };
+
+  const handleTRComplete = (data: any) => {
+    console.log('TR concluído:', data);
+    
+    // Atualizar status das etapas
+    const etapasAtualizadas = etapasEditadas.map(etapa => {
+      if (etapa.id === 12) {
+        return { ...etapa, status: 'concluido' as const };
+      } else if (etapa.id === 13) {
+        return { ...etapa, status: 'concluido' as const };
+      } else if (etapa.id === 14) {
+        return { ...etapa, status: 'andamento' as const };
+      }
+      return etapa;
+    });
+    setEtapasEditadas(etapasAtualizadas);
+    
+    toast({
+      title: "TR Concluído",
+      description: "A assinatura do Termo de Referência foi finalizada com sucesso."
+    });
+  };
+
+  const handleTRSave = (data: any) => {
+    console.log('Salvar TR:', data);
+    // Implementar lógica de salvamento do TR
+    toast({
+      title: "TR Salvo",
+      description: "O rascunho do Termo de Referência foi salvo com sucesso."
+    });
+  };
+
+  const handleEditalComplete = (data: any) => {
+    console.log('Edital concluído:', data);
+    
+    // Atualizar status das etapas
+    const etapasAtualizadas = etapasEditadas.map(etapa => {
+      if (etapa.id === 19) {
+        return { ...etapa, status: 'concluido' as const };
+      } else if (etapa.id === 20) {
+        return { ...etapa, status: 'concluido' as const };
+      } else if (etapa.id === 21) {
+        return { ...etapa, status: 'andamento' as const };
+      }
+      return etapa;
+    });
+    setEtapasEditadas(etapasAtualizadas);
+    
+    toast({
+      title: "Edital Concluído",
+      description: "A assinatura do Edital foi finalizada com sucesso."
+    });
+  };
+
+  const handleEditalSave = (data: any) => {
+    console.log('Salvar Edital:', data);
+    // Implementar lógica de salvamento do Edital
+    toast({
+      title: "Edital Salvo",
+      description: "O rascunho do Edital foi salvo com sucesso."
     });
   };
 
@@ -1346,6 +1418,26 @@ export default function FluxoProcessoCompleto({ etapas = etapasPadrao, onEtapaCl
                   etapaId={currentEtapa.id}
                   onComplete={handleMatrizRiscoComplete}
                   onSave={handleMatrizRiscoSave}
+                  canEdit={canManageEtapa(currentEtapa)}
+                  gerenciaCriadora={gerenciaCriadora}
+                />
+              )}
+              {currentEtapa?.id === 13 && (
+                <TRSignatureSection
+                  processoId="1"
+                  etapaId={currentEtapa.id}
+                  onComplete={handleTRComplete}
+                  onSave={handleTRSave}
+                  canEdit={canManageEtapa(currentEtapa)}
+                  gerenciaCriadora={gerenciaCriadora}
+                />
+              )}
+              {currentEtapa?.id === 20 && (
+                <EditalSignatureSection
+                  processoId="1"
+                  etapaId={currentEtapa.id}
+                  onComplete={handleEditalComplete}
+                  onSave={handleEditalSave}
                   canEdit={canManageEtapa(currentEtapa)}
                   gerenciaCriadora={gerenciaCriadora}
                 />
