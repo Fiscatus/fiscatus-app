@@ -597,6 +597,36 @@ export default function DFDAssinaturaSection({
                     <PenTool className="w-5 h-5 text-indigo-600" />
                     <span className="text-lg">Visualização do DFD</span>
                   </div>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => {
+                        toast({
+                          title: "Visualização",
+                          description: "Abrindo DFD para visualização."
+                        });
+                      }}
+                      className="text-xs"
+                    >
+                      <Eye className="w-3 h-3 mr-1" />
+                      Visualizar
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => {
+                        toast({
+                          title: "Download Iniciado",
+                          description: "O arquivo DFD está sendo baixado."
+                        });
+                      }}
+                      className="text-xs"
+                    >
+                      <Download className="w-3 h-3 mr-1" />
+                      Baixar
+                    </Button>
+                  </div>
                 </div>
               </header>
               <div className="p-4 md:p-6">
@@ -648,16 +678,6 @@ export default function DFDAssinaturaSection({
               </header>
               <div className="p-4 md:p-6 space-y-4 flex-1 flex flex-col">
                 
-                {/* Responsável pela etapa */}
-                <div className="p-3 bg-blue-50 rounded-lg">
-                  <Label className="text-sm font-semibold text-gray-700 mb-2 block">
-                    Responsável pela Etapa
-                  </Label>
-                  <div className="text-sm text-gray-600">
-                    <div className="font-medium">{cardData.responsavelEtapa.nome}</div>
-                    <div className="text-xs text-gray-500">{cardData.responsavelEtapa.cargo}</div>
-                  </div>
-                </div>
 
                 {/* Seleção de assinantes (GSP ou SE) */}
                 {isGSPouSE && (

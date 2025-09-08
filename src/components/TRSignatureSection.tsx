@@ -252,6 +252,44 @@ export default function TRSignatureSection({
     ? (cardData.assinantes.filter(a => a.status === 'ASSINADO').length / cardData.assinantes.length) * 100 
     : 0;
 
+  // Função para obter configuração do status da assinatura
+  const getAssinaturaStatusConfig = (status: AssinaturaStatus) => {
+    switch (status) {
+      case 'ASSINADO':
+        return {
+          icon: <CheckCircle className="w-4 h-4 text-green-600" />,
+          label: 'Assinado',
+          bgColor: 'bg-green-100',
+          textColor: 'text-green-700',
+          borderColor: 'border-green-200'
+        };
+      case 'PENDENTE':
+        return {
+          icon: <Clock className="w-4 h-4 text-yellow-600" />,
+          label: 'Pendente',
+          bgColor: 'bg-yellow-100',
+          textColor: 'text-yellow-700',
+          borderColor: 'border-yellow-200'
+        };
+      case 'CANCELADO':
+        return {
+          icon: <XCircle className="w-4 h-4 text-red-600" />,
+          label: 'Cancelado',
+          bgColor: 'bg-red-100',
+          textColor: 'text-red-700',
+          borderColor: 'border-red-200'
+        };
+      default:
+        return {
+          icon: <Clock className="w-4 h-4 text-gray-600" />,
+          label: 'Pendente',
+          bgColor: 'bg-gray-100',
+          textColor: 'text-gray-700',
+          borderColor: 'border-gray-200'
+        };
+    }
+  };
+
   // Funções de assinatura
   const handleAssinar = (assinante: Assinante) => {
     setAssinanteSelecionado(assinante);
@@ -510,14 +548,6 @@ export default function TRSignatureSection({
                             </p>
                           </div>
                         </div>
-                        <div className="flex items-center gap-1">
-                          <Button size="sm" variant="outline" onClick={handleVisualizarTR} className="h-6 w-6 p-0">
-                            <Eye className="w-3 h-3" />
-                          </Button>
-                          <Button size="sm" variant="outline" onClick={handleDownloadTR} className="h-6 w-6 p-0">
-                            <Download className="w-3 h-3" />
-                          </Button>
-                        </div>
                       </div>
                     </div>
                   )}
@@ -542,36 +572,127 @@ export default function TRSignatureSection({
           <aside id="gerenciamento-assinaturas" className="col-span-12 lg:col-span-4 w-full flex flex-col">
             <div className="rounded-2xl border shadow-sm overflow-hidden bg-white flex-1 flex flex-col">
               <header className="bg-purple-50 px-4 py-3 rounded-t-2xl font-semibold text-slate-900">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <Settings className="w-5 h-5 text-purple-600" />
-                    Gerenciamento
-                  </div>
-                  {isGSP && (
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => setShowAdicionarAssinante(true)}
-                      className="text-xs"
-                    >
-                      <UserPlus className="w-3 h-3 mr-1" />
-                      Adicionar
-                    </Button>
-                  )}
+                <div className="flex items-center gap-3">
+                  <Settings className="w-5 h-5 text-purple-600" />
+                  Gerenciamento
                 </div>
               </header>
-              <div className="p-4 md:p-6 flex-1 flex flex-col">
+              <div className="p-4 md:p-6 space-y-4 flex-1 flex flex-col">
                 
-                {/* Progresso das Assinaturas */}
-                <div className="mb-6">
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-sm font-medium text-gray-700">Progresso das Assinaturas</span>
-                    <span className="text-sm text-gray-500">
-                      {cardData.assinantes.filter(a => a.status === 'ASSINADO').length} / {cardData.assinantes.length}
+
+                {/* Seleção de assinantes (GSP) */}
+                {isGSP && (
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <Label className="text-sm font-semibold text-gray-700">
+                        Seleção de Assinantes
+                      </Label>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => setShowAdicionarAssinante(true)}
+                        className="h-8 px-3"
+                      >
+                        <UserPlus className="w-4 h-4 mr-1" />
+                        Adicionar
+                      </Button>
+                    </div>
+                  </div>
+                )}
+
+                {/* Lista de assinantes */}
+                <div className="space-y-3">
+                  <Label className="text-sm font-semibold text-gray-700">
+                    Assinantes Selecionados
+                  </Label>
+                  
+                  {cardData.assinantes.length === 0 ? (
+                    <div className="text-center py-6 text-gray-500">
+                      <Users className="w-8 h-8 mx-auto mb-2 text-gray-300" />
+                      <p className="text-sm">Nenhum assinante selecionado</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-2">
+                      {cardData.assinantes.map((assinante) => {
+                        const statusConfig = getAssinaturaStatusConfig(assinante.status);
+                        return (
+                          <div key={assinante.id} className="p-3 border rounded-lg bg-gray-50">
+                            <div className="flex items-start justify-between">
+                              <div className="flex-1">
+                                <div className="flex items-center gap-2 mb-1">
+                                  <span className="font-medium text-sm">{assinante.nome}</span>
+                                  <Badge className={`${statusConfig.bgColor} ${statusConfig.textColor} ${statusConfig.borderColor} text-xs`}>
+                                    {statusConfig.icon}
+                                    <span className="ml-1">{statusConfig.label}</span>
+                                  </Badge>
+                                </div>
+                                <div className="text-xs text-gray-600 mb-1">{assinante.cargo}</div>
+                                <div className="text-xs text-gray-500">{assinante.email}</div>
+                                {assinante.assinadoEm && (
+                                  <div className="text-xs text-green-600 mt-1">
+                                    Assinado em {formatDateTimeBR(new Date(assinante.assinadoEm))}
+                                  </div>
+                                )}
+                              </div>
+                              
+                              {/* Ações */}
+                              <div className="flex items-center gap-1">
+                                {isGSP && assinante.status === 'PENDENTE' && (
+                                  <Button
+                                    size="sm"
+                                    variant="ghost"
+                                    onClick={() => handleRemoverAssinante(assinante.id)}
+                                    className="h-6 w-6 p-0 text-red-600 hover:text-red-700"
+                                  >
+                                    <UserMinus className="w-3 h-3" />
+                                  </Button>
+                                )}
+                                
+                                {assinante.status === 'PENDENTE' && 
+                                 (assinante.email === user?.email || isGSP) && (
+                                  <Button
+                                    size="sm"
+                                    variant="ghost"
+                                    onClick={() => {
+                                      setAssinanteSelecionado(assinante);
+                                      setShowCancelarModal(true);
+                                    }}
+                                    className="h-6 w-6 p-0 text-orange-600 hover:text-orange-700"
+                                  >
+                                    <XCircle className="w-3 h-3" />
+                                  </Button>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+
+                {/* Progresso das assinaturas */}
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <Label className="text-sm font-semibold text-gray-700">
+                      Progresso
+                    </Label>
+                    <span className="text-sm text-gray-600">
+                      {cardData.assinantes.filter(a => a.status === 'ASSINADO').length}/{cardData.assinantes.length}
                     </span>
                   </div>
                   <Progress value={progressoAssinaturas} className="h-2" />
-                  <div className="flex items-center justify-between mt-2">
+                  <div className="text-xs text-gray-500">
+                    {progressoAssinaturas === 100 ? 'Todas as assinaturas concluídas' : 'Aguardando assinaturas'}
+                  </div>
+                </div>
+
+                {/* SLA */}
+                <div className="p-3 bg-yellow-50 rounded-lg">
+                  <div className="flex items-center justify-between mb-2">
+                    <Label className="text-sm font-semibold text-gray-700">
+                      SLA
+                    </Label>
                     <Badge className={`text-xs ${
                       cardData.sla.badge === 'ok' ? 'bg-green-100 text-green-800' :
                       cardData.sla.badge === 'risco' ? 'bg-yellow-100 text-yellow-800' :
@@ -580,92 +701,13 @@ export default function TRSignatureSection({
                       {cardData.sla.badge === 'ok' ? 'Dentro do Prazo' :
                        cardData.sla.badge === 'risco' ? 'Em Risco' : 'Estourado'}
                     </Badge>
-                    <span className="text-xs text-gray-500">
-                      {cardData.sla.decorridosDiasUteis} / {cardData.sla.prazoDiasUteis} dias úteis
-                    </span>
+                  </div>
+                  <div className="text-sm text-gray-600">
+                    <div>Prazo: {cardData.sla.prazoDiasUteis} dias úteis</div>
+                    <div>Decorridos: {cardData.sla.decorridosDiasUteis} dias úteis</div>
                   </div>
                 </div>
 
-                {/* Lista de Assinantes */}
-                <div className="flex-1">
-                  <h4 className="text-sm font-semibold text-gray-700 mb-3">Assinantes Designados</h4>
-                  {cardData.assinantes.length === 0 ? (
-                    <div className="text-center py-8">
-                      <div className="p-4 bg-gray-100 rounded-full w-16 h-16 mx-auto mb-4 flex items-center justify-center">
-                        <Users className="w-8 h-8 text-gray-400" />
-                      </div>
-                      <p className="text-gray-500 font-medium">Nenhum assinante designado</p>
-                      {isGSP && (
-                        <p className="text-sm text-gray-400 mt-1">
-                          Clique em "Adicionar" para designar assinantes
-                        </p>
-                      )}
-                    </div>
-                  ) : (
-                    <div className="space-y-3 max-h-80 overflow-y-auto">
-                      {cardData.assinantes.map((assinante) => (
-                        <div key={assinante.id} className="border border-gray-200 rounded-lg p-3 hover:bg-gray-50 transition-colors">
-                          <div className="flex items-center justify-between mb-2">
-                            <div className="flex items-center gap-2">
-                              <Badge className={`text-xs ${
-                                assinante.status === 'ASSINADO' ? 'bg-green-100 text-green-800' :
-                                assinante.status === 'CANCELADO' ? 'bg-red-100 text-red-800' :
-                                'bg-yellow-100 text-yellow-800'
-                              }`}>
-                                {assinante.status === 'ASSINADO' ? 'Assinado' :
-                                 assinante.status === 'CANCELADO' ? 'Cancelado' : 'Pendente'}
-                              </Badge>
-                            </div>
-                            {isGSP && assinante.status === 'PENDENTE' && (
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={() => handleRemoverAssinante(assinante.id)}
-                                className="h-6 w-6 p-0 text-red-600 hover:text-red-700"
-                              >
-                                <UserMinus className="w-3 h-3" />
-                              </Button>
-                            )}
-                          </div>
-                          <div className="text-xs text-gray-600 space-y-1">
-                            <p><strong>Nome:</strong> {assinante.nome}</p>
-                            <p><strong>Cargo:</strong> {assinante.cargo}</p>
-                            {assinante.assinadoEm && (
-                              <p><strong>Assinado em:</strong> {formatDateTimeBR(assinante.assinadoEm)}</p>
-                            )}
-                            {assinante.canceladoEm && (
-                              <p><strong>Cancelado em:</strong> {formatDateTimeBR(assinante.canceladoEm)}</p>
-                            )}
-                            {assinante.observacoes && (
-                              <p><strong>Observações:</strong> {assinante.observacoes}</p>
-                            )}
-                          </div>
-                          {assinante.status === 'PENDENTE' && assinante.email === user?.email && (
-                            <div className="flex gap-2 mt-3">
-                              <Button
-                                size="sm"
-                                onClick={() => handleAssinar(assinante)}
-                                className="bg-green-600 hover:bg-green-700 text-white text-xs"
-                              >
-                                <PenTool className="w-3 h-3 mr-1" />
-                                Assinar
-                              </Button>
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={() => handleCancelarAssinatura(assinante)}
-                                className="text-red-600 hover:text-red-700 text-xs"
-                              >
-                                <XCircle className="w-3 h-3 mr-1" />
-                                Cancelar
-                              </Button>
-                            </div>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
               </div>
             </div>
           </aside>
