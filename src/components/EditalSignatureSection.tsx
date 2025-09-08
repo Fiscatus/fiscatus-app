@@ -453,9 +453,9 @@ export default function EditalSignatureSection({
   };
 
   return (
-    <div className="bg-white">
+    <div className="min-h-screen bg-white">
       {/* Container central ocupando toda a área */}
-      <div className="mx-auto w-full max-w-[1400px] px-4 md:px-6 lg:px-8">
+      <div className="w-full px-2">
         
         {/* Grid principal 12 colunas */}
         <div className="grid grid-cols-12 gap-4">
@@ -467,7 +467,6 @@ export default function EditalSignatureSection({
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3 text-lg">
                     <PenTool className="w-5 h-5 text-purple-600" />
-                    Assinatura do Edital
                     <Badge variant="outline" className="text-xs">
                       Versão Final
                     </Badge>
