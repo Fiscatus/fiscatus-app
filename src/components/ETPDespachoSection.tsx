@@ -62,15 +62,17 @@ import { formatDateBR, formatDateTimeBR } from '@/lib/utils';
 type DespachoStatus = 'PENDENTE' | 'GERADO' | 'ASSINADO' | 'CANCELADO';
 
 interface DespachoData {
-  numeroProcesso: string;
+  numeroETP: string;
+  objeto: string;
+  regimeTramitacao: 'ORDINARIO' | 'URGENCIA';
   observacoes: string;
   cidadeDataEmissao: string;
-  responsavel: {
+  responsaveis: {
     id: string;
     nome: string;
     cargo: string;
     gerencia: string;
-  };
+  }[];
   documentoUrl?: string;
   documentoNome?: string;
   assinadoPor?: {
@@ -82,15 +84,6 @@ interface DespachoData {
   status: DespachoStatus;
   criadoEm: string;
   atualizadoEm: string;
-}
-
-interface Comentario {
-  id: string;
-  autor: string;
-  cargo: string;
-  data: string;
-  texto: string;
-  avatar?: string;
 }
 
 interface ETPDespachoSectionProps {
@@ -154,19 +147,23 @@ export default function ETPDespachoSection({
   const { user } = useUser();
   const { isSE, isGSP, isGSPouSE } = usePermissoes();
   const { toast } = useToast();
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const despachoFileInputRef = useRef<HTMLInputElement>(null);
 
   // Estado do despacho
   const [despachoData, setDespachoData] = useState<DespachoData>({
-    numeroProcesso: 'ETP-012-2025',
+    numeroETP: 'ETP-012-2025',
+    objeto: 'Contratação de Serviços de Limpeza Hospitalar',
+    regimeTramitacao: 'URGENCIA',
     observacoes: '',
     cidadeDataEmissao: `Brasília, ${formatDateBR(new Date())}`,
-    responsavel: {
-      id: '2',
-      nome: 'Diran Rodrigues de Souza Filho',
-      cargo: 'Secretário Executivo',
-      gerencia: 'SE - Secretaria Executiva'
-    },
+    responsaveis: [
+      {
+        id: '2',
+        nome: 'Diran Rodrigues de Souza Filho',
+        cargo: 'Secretário Executivo',
+        gerencia: 'SE - Secretaria Executiva'
+      }
+    ],
     status: 'PENDENTE',
     criadoEm: new Date().toISOString(),
     atualizadoEm: new Date().toISOString()
@@ -183,18 +180,22 @@ export default function ETPDespachoSection({
     dataAssinatura?: string;
   }>>([]);
 
-  // Estado dos comentários
-  const [comentarios, setComentarios] = useState<Comentario[]>([]);
-  const [novoComentario, setNovoComentario] = useState('');
-
   // Estado dos modais
-  const [showConfirmModal, setShowConfirmModal] = useState(false);
-  const [showSubstituirModal, setShowSubstituirModal] = useState(false);
-  const [actionToConfirm, setActionToConfirm] = useState<string | null>(null);
+  const [showAdicionarResponsavel, setShowAdicionarResponsavel] = useState(false);
+  const [showAdicionarAssinante, setShowAdicionarAssinante] = useState(false);
+  const [showConcluirModal, setShowConcluirModal] = useState(false);
+  const [showCancelarModal, setShowCancelarModal] = useState(false);
+  const [assinanteSelecionado, setAssinanteSelecionado] = useState<any>(null);
+  const [usuariosSelecionados, setUsuariosSelecionados] = useState<string[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
 
-  // Estado do arquivo
-  const [arquivoDespacho, setArquivoDespacho] = useState<File | null>(null);
-  const [arquivoNome, setArquivoNome] = useState<string>('');
+  // Estado do arquivo do despacho
+  const [despachoArquivo, setDespachoArquivo] = useState<{
+    name: string;
+    size: number;
+    uploadedAt: string;
+    file: File;
+  } | null>(null);
 
   // Carregar dados iniciais
   useEffect(() => {
@@ -204,63 +205,157 @@ export default function ETPDespachoSection({
   }, [initialData]);
 
   // Função para obter configuração do status
-  const getStatusConfig = (status: DespachoStatus) => {
+  const getStatusConfig = (status: 'PENDENTE' | 'ASSINADO' | 'CANCELADO') => {
     switch (status) {
       case 'PENDENTE':
         return {
           label: 'Pendente',
-          color: 'bg-yellow-100 text-yellow-800',
-          icon: Clock
-        };
-      case 'GERADO':
-        return {
-          label: 'Gerado',
-          color: 'bg-blue-100 text-blue-800',
-          icon: FileCheck
+          bgColor: 'bg-yellow-50',
+          textColor: 'text-yellow-800',
+          borderColor: 'border-yellow-200',
+          icon: <Clock className="w-3 h-3" />
         };
       case 'ASSINADO':
         return {
           label: 'Assinado',
-          color: 'bg-green-100 text-green-800',
-          icon: CheckCircle
+          bgColor: 'bg-green-50',
+          textColor: 'text-green-800',
+          borderColor: 'border-green-200',
+          icon: <CheckCircle className="w-3 h-3" />
         };
       case 'CANCELADO':
         return {
           label: 'Cancelado',
-          color: 'bg-red-100 text-red-800',
-          icon: XCircle
+          bgColor: 'bg-red-50',
+          textColor: 'text-red-800',
+          borderColor: 'border-red-200',
+          icon: <XCircle className="w-3 h-3" />
         };
       default:
         return {
           label: 'Desconhecido',
-          color: 'bg-gray-100 text-gray-800',
-          icon: AlertCircle
+          bgColor: 'bg-gray-50',
+          textColor: 'text-gray-800',
+          borderColor: 'border-gray-200',
+          icon: <AlertCircle className="w-3 h-3" />
         };
     }
   };
 
-  // Função para adicionar assinante
-  const adicionarAssinante = () => {
-    if (user && isSE) {
-      const novoAssinante = {
-        id: user.id,
-        nome: user.nome,
-        cargo: user.cargo,
-        gerencia: user.gerencia,
-        email: user.email,
-        status: 'PENDENTE' as const
-      };
-      
-      setAssinantes(prev => [...prev, novoAssinante]);
-      toast({
-        title: "Assinante adicionado",
-        description: "Você foi adicionado como assinante do despacho.",
-      });
+  // Função para obter configuração do SLA
+  const getSLABadgeConfig = (badge: string) => {
+    switch (badge) {
+      case 'no-prazo':
+        return { label: 'No Prazo', className: 'bg-green-100 text-green-800' };
+      case 'atencao':
+        return { label: 'Atenção', className: 'bg-yellow-100 text-yellow-800' };
+      case 'atrasado':
+        return { label: 'Atrasado', className: 'bg-red-100 text-red-800' };
+      default:
+        return { label: 'No Prazo', className: 'bg-green-100 text-green-800' };
     }
   };
 
+  // Dados do SLA (simulados)
+  const sla = {
+    prazoDiasUteis: 1,
+    decorridosDiasUteis: 0,
+    badge: 'no-prazo'
+  };
+
+  // Cálculos de progresso
+  const totalAssinaturas = assinantes.length;
+  const assinaturasConcluidas = assinantes.filter(a => a.status === 'ASSINADO').length;
+  const progresso = totalAssinaturas > 0 ? (assinaturasConcluidas / totalAssinaturas) * 100 : 0;
+
+  // Verificar permissões
+  const podeEditar = (user?.gerencia && (
+    user.gerencia.includes('GSP') || 
+    user.gerencia.includes('SE')
+  )) && canEdit;
+  const podeAssinar = canEdit && isSE && despachoData.status === 'GERADO';
+
+  // Função para adicionar responsável
+  const handleAdicionarResponsavel = () => {
+    if (usuariosSelecionados.length === 0) {
+      toast({
+        title: "Erro",
+        description: "Selecione pelo menos um usuário para adicionar como responsável.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const novosResponsaveis = usuariosSelecionados.map(usuarioId => {
+      const usuario = mockUsuariosDisponiveis.find(u => u.id === usuarioId);
+      return {
+        id: usuario!.id,
+        nome: usuario!.nome,
+        cargo: usuario!.cargo,
+        gerencia: usuario!.gerencia
+      };
+    });
+
+    setDespachoData(prev => ({
+      ...prev,
+      responsaveis: [...prev.responsaveis, ...novosResponsaveis]
+    }));
+    setUsuariosSelecionados([]);
+    setShowAdicionarResponsavel(false);
+    
+    toast({
+      title: "Responsáveis adicionados",
+      description: `${novosResponsaveis.length} responsável(is) adicionado(s) com sucesso.`,
+    });
+  };
+
+  // Função para remover responsável
+  const handleRemoverResponsavel = (responsavelId: string) => {
+    setDespachoData(prev => ({
+      ...prev,
+      responsaveis: prev.responsaveis.filter(r => r.id !== responsavelId)
+    }));
+    toast({
+      title: "Responsável removido",
+      description: "Responsável removido com sucesso.",
+    });
+  };
+
+  // Função para adicionar assinante
+  const handleAdicionarAssinante = () => {
+    if (usuariosSelecionados.length === 0) {
+      toast({
+        title: "Erro",
+        description: "Selecione pelo menos um usuário para adicionar como assinante.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const novosAssinantes = usuariosSelecionados.map(usuarioId => {
+      const usuario = mockUsuariosDisponiveis.find(u => u.id === usuarioId);
+      return {
+        id: usuario!.id,
+        nome: usuario!.nome,
+        cargo: usuario!.cargo,
+        gerencia: usuario!.gerencia,
+        email: usuario!.email,
+        status: 'PENDENTE' as const
+      };
+    });
+
+    setAssinantes(prev => [...prev, ...novosAssinantes]);
+    setUsuariosSelecionados([]);
+    setShowAdicionarAssinante(false);
+    
+    toast({
+      title: "Assinantes adicionados",
+      description: `${novosAssinantes.length} assinante(s) adicionado(s) com sucesso.`,
+    });
+  };
+
   // Função para remover assinante
-  const removerAssinante = (assinanteId: string) => {
+  const handleRemoverAssinante = (assinanteId: string) => {
     setAssinantes(prev => prev.filter(a => a.id !== assinanteId));
     toast({
       title: "Assinante removido",
@@ -269,140 +364,34 @@ export default function ETPDespachoSection({
   };
 
   // Função para cancelar assinatura
-  const cancelarAssinatura = (assinanteId: string) => {
-    setAssinantes(prev => prev.map(a => 
-      a.id === assinanteId 
-        ? { ...a, status: 'CANCELADO' as const }
-        : a
-    ));
-    toast({
-      title: "Assinatura cancelada",
-      description: "Assinatura cancelada com sucesso.",
-    });
-  };
-
-  // Função para gerar despacho
-  const gerarDespacho = () => {
-    if (!despachoData.observacoes.trim()) {
-      toast({
-        title: "Erro",
-        description: "Observações são obrigatórias para gerar o despacho.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    setDespachoData(prev => ({
-      ...prev,
-      status: 'GERADO',
-      atualizadoEm: new Date().toISOString()
-    }));
-
-    toast({
-      title: "Despacho gerado",
-      description: "O despacho do ETP foi gerado com sucesso.",
-    });
-  };
-
-  // Função para assinar despacho
-  const assinarDespacho = () => {
-    if (despachoData.status !== 'GERADO') {
-      toast({
-        title: "Erro",
-        description: "O despacho deve estar gerado para ser assinado.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    setDespachoData(prev => ({
-      ...prev,
-      status: 'ASSINADO',
-      assinadoPor: {
-        id: user?.id || '',
-        nome: user?.nome || '',
-        cargo: user?.cargo || '',
-        dataAssinatura: new Date().toISOString()
-      },
-      atualizadoEm: new Date().toISOString()
-    }));
-
-    toast({
-      title: "Despacho assinado",
-      description: "O despacho foi assinado com sucesso.",
-    });
-  };
-
-  // Função para fazer download do despacho
-  const downloadDespacho = () => {
-    if (despachoData.status === 'ASSINADO') {
-      toast({
-        title: "Download iniciado",
-        description: "O download do despacho foi iniciado.",
-      });
-    } else {
-      toast({
-        title: "Erro",
-        description: "O despacho deve estar assinado para download.",
-        variant: "destructive",
-      });
-    }
-  };
-
-  // Função para salvar alterações
-  const salvarAlteracoes = () => {
-    onSave(despachoData);
-    toast({
-      title: "Alterações salvas",
-      description: "As alterações foram salvas com sucesso.",
-    });
-  };
-
-  // Função para concluir etapa
-  const concluirEtapa = () => {
-    if (despachoData.status === 'ASSINADO') {
-      onComplete(despachoData);
-      toast({
-        title: "Etapa concluída",
-        description: "A etapa de despacho do ETP foi concluída.",
-      });
-    } else {
-      toast({
-        title: "Erro",
-        description: "O despacho deve estar assinado para concluir a etapa.",
-        variant: "destructive",
-      });
-    }
-  };
-
-  // Função para adicionar comentário
-  const adicionarComentario = () => {
-    if (novoComentario.trim() && user) {
-      const comentario: Comentario = {
-        id: Date.now().toString(),
-        autor: user.nome,
-        cargo: user.cargo,
-        data: new Date().toISOString(),
-        texto: novoComentario.trim()
-      };
-      
-      setComentarios(prev => [...prev, comentario]);
-      setNovoComentario('');
+  const handleCancelarAssinatura = () => {
+    if (assinanteSelecionado) {
+      setAssinantes(prev => prev.map(a => 
+        a.id === assinanteSelecionado.id 
+          ? { ...a, status: 'CANCELADO' as const }
+          : a
+      ));
+      setShowCancelarModal(false);
+      setAssinanteSelecionado(null);
       
       toast({
-        title: "Comentário adicionado",
-        description: "Seu comentário foi adicionado com sucesso.",
+        title: "Assinatura cancelada",
+        description: "Assinatura cancelada com sucesso.",
       });
     }
   };
 
-  // Função para upload de arquivo
-  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+  // Função para upload do arquivo do despacho
+  const handleDespachoFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
       if (file.type === 'application/pdf' || file.type === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document') {
-        setArquivoDespacho(file);
-        setArquivoNome(file.name);
+        setDespachoArquivo({
+          name: file.name,
+          size: file.size,
+          uploadedAt: new Date().toISOString(),
+          file: file
+        });
         toast({
           title: "Arquivo carregado",
           description: "O arquivo foi carregado com sucesso.",
@@ -417,17 +406,152 @@ export default function ETPDespachoSection({
     }
   };
 
-  // Função para remover arquivo
-  const removerArquivo = () => {
-    setArquivoDespacho(null);
-    setArquivoNome('');
+  // Função para iniciar upload
+  const handleUploadDespacho = () => {
+    despachoFileInputRef.current?.click();
+  };
+
+  // Função para baixar despacho
+  const handleBaixarDespacho = () => {
+    if (despachoArquivo) {
+      const url = URL.createObjectURL(despachoArquivo.file);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = despachoArquivo.name;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }
+  };
+
+  // Função para editar despacho
+  const handleEditarDespacho = () => {
+    despachoFileInputRef.current?.click();
+  };
+
+  // Função para excluir despacho
+  const handleExcluirDespacho = () => {
+    setDespachoArquivo(null);
     toast({
       title: "Arquivo removido",
       description: "O arquivo foi removido com sucesso.",
     });
   };
 
-  const statusConfig = getStatusConfig(despachoData.status);
+  // Função para salvar despacho
+  const handleSaveDespacho = async () => {
+    setIsLoading(true);
+    try {
+      await onSave(despachoData);
+      toast({
+        title: "Despacho salvo",
+        description: "As alterações foram salvas com sucesso.",
+      });
+    } catch (error) {
+      toast({
+        title: "Erro",
+        description: "Erro ao salvar o despacho.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Função para gerar despacho
+  const handleGerarDespacho = async () => {
+    if (!despachoData.observacoes.trim()) {
+      toast({
+        title: "Erro",
+        description: "Observações são obrigatórias para gerar o despacho.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      setDespachoData(prev => ({
+        ...prev,
+        status: 'GERADO',
+        atualizadoEm: new Date().toISOString()
+      }));
+      
+      toast({
+        title: "Despacho gerado",
+        description: "O despacho do ETP foi gerado com sucesso.",
+      });
+    } catch (error) {
+      toast({
+        title: "Erro",
+        description: "Erro ao gerar o despacho.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Função para assinar despacho
+  const handleAssinarDespacho = async () => {
+    setIsLoading(true);
+    try {
+      setDespachoData(prev => ({
+        ...prev,
+        status: 'ASSINADO',
+        assinadoPor: {
+          id: user?.id || '',
+          nome: user?.nome || '',
+          cargo: user?.cargo || '',
+          dataAssinatura: new Date().toISOString()
+        },
+        atualizadoEm: new Date().toISOString()
+      }));
+      
+      toast({
+        title: "Despacho assinado",
+        description: "O despacho foi assinado com sucesso.",
+      });
+    } catch (error) {
+      toast({
+        title: "Erro",
+        description: "Erro ao assinar o despacho.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Função para download do PDF
+  const handleDownloadPDF = () => {
+    toast({
+      title: "Download iniciado",
+      description: "O download do despacho foi iniciado.",
+    });
+  };
+
+  // Função para concluir etapa
+  const handleConcluirEtapa = async () => {
+    setIsLoading(true);
+    try {
+      await onComplete(despachoData);
+      setShowConcluirModal(false);
+      toast({
+        title: "Etapa concluída",
+        description: "A etapa de despacho do ETP foi concluída.",
+      });
+    } catch (error) {
+      toast({
+        title: "Erro",
+        description: "Erro ao concluir a etapa.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-white">
@@ -449,216 +573,265 @@ export default function ETPDespachoSection({
               </header>
               <div className="p-4 md:p-6 space-y-0">
                 
-                {/* Número do Processo Administrativo */}
-                <div className="space-y-2 mb-6">
-                  <Label htmlFor="numeroProcesso" className="text-sm font-medium text-gray-700">
-                    Número do Processo Administrativo
+                {/* Número do ETP */}
+                <div className="w-full p-4 border-b border-gray-100">
+                  <Label htmlFor="numeroETP" className="text-sm font-semibold text-gray-700 flex items-center gap-2 mb-2">
+                    <Hash className="w-4 h-4" />
+                    Número do ETP
                   </Label>
                   <Input
-                    id="numeroProcesso"
-                    value={despachoData.numeroProcesso}
-                    onChange={(e) => setDespachoData(prev => ({ ...prev, numeroProcesso: e.target.value }))}
-                    className="w-full"
-                    disabled={!canEdit}
-                    placeholder="Número do processo"
+                    id="numeroETP"
+                    value={despachoData.numeroETP}
+                    readOnly
+                    className="w-full bg-gray-50 border-gray-200 text-gray-600"
+                  />
+                </div>
+
+                {/* Objeto */}
+                <div className="w-full p-4 border-b border-gray-100">
+                  <Label htmlFor="objeto" className="text-sm font-semibold text-gray-700 flex items-center gap-2 mb-2">
+                    <Building2 className="w-4 h-4" />
+                    Objeto
+                  </Label>
+                  <Textarea
+                    id="objeto"
+                    value={despachoData.objeto}
+                    readOnly
+                    className="w-full min-h-[80px] resize-none bg-gray-50 border-gray-200 text-gray-600"
+                  />
+                </div>
+
+                {/* Regime de Tramitação */}
+                <div className="w-full p-4 border-b border-gray-100">
+                  <Label htmlFor="regimeTramitacao" className="text-sm font-semibold text-gray-700 flex items-center gap-2 mb-2">
+                    <Clock className="w-4 h-4" />
+                    Regime de Tramitação
+                  </Label>
+                  <Input
+                    id="regimeTramitacao"
+                    value={despachoData.regimeTramitacao === 'URGENCIA' ? 'Urgência' : 'Ordinário'}
+                    readOnly
+                    className="w-full bg-gray-50 border-gray-200 text-gray-600"
                   />
                 </div>
 
                 {/* Observações */}
-                <div className="space-y-2 mb-6">
-                  <Label htmlFor="observacoes" className="text-sm font-medium text-gray-700">
-                    Observações <span className="text-red-500">*</span>
+                <div className="w-full p-4 border-b border-gray-100">
+                  <Label htmlFor="observacoes" className="text-sm font-semibold text-gray-700 flex items-center gap-2 mb-2">
+                    <MessageCircle className="w-4 h-4" />
+                    Observações *
                   </Label>
-                  <Textarea
-                    id="observacoes"
+                  <TextareaWithMentions
                     value={despachoData.observacoes}
-                    onChange={(e) => setDespachoData(prev => ({ ...prev, observacoes: e.target.value }))}
-                    className="w-full min-h-[100px]"
-                    disabled={!canEdit}
-                    placeholder="Digite as observações do despacho..."
+                    onChange={(value) => setDespachoData({...despachoData, observacoes: value})}
+                    placeholder="Descreva as observações do despacho..."
+                    disabled={!podeEditar || despachoData.status !== 'PENDENTE'}
+                    className="min-h-[100px] resize-none border-gray-200 focus:border-blue-300 focus:ring-blue-300"
+                    minHeight="100px"
+                    processoId={processoId}
+                    etapaId={etapaId.toString()}
+                    cardId="observacoes-despacho-etp"
                   />
                 </div>
 
-                {/* Cidade/Data de Emissão */}
-                <div className="space-y-2 mb-6">
-                  <Label htmlFor="cidadeData" className="text-sm font-medium text-gray-700">
-                    Cidade/Data de Emissão
+                {/* Cidade/Data de emissão */}
+                <div className="w-full p-4 border-b border-gray-100">
+                  <Label htmlFor="cidadeDataEmissao" className="text-sm font-semibold text-gray-700 flex items-center gap-2 mb-2">
+                    <Calendar className="w-4 h-4" />
+                    Cidade/Data de emissão
                   </Label>
                   <Input
-                    id="cidadeData"
+                    id="cidadeDataEmissao"
                     value={despachoData.cidadeDataEmissao}
-                    onChange={(e) => setDespachoData(prev => ({ ...prev, cidadeDataEmissao: e.target.value }))}
-                    className="w-full"
-                    disabled={!canEdit}
-                    placeholder="Cidade, data de emissão"
+                    onChange={(e) => setDespachoData({...despachoData, cidadeDataEmissao: e.target.value})}
+                    placeholder="Ex: Brasília, 15 de janeiro de 2025"
+                    disabled={!podeEditar || despachoData.status !== 'PENDENTE'}
+                    className="w-full border-gray-200 focus:border-blue-300 focus:ring-blue-300"
                   />
                 </div>
 
-                {/* Nome e Cargo do Responsável */}
-                <div className="space-y-2 mb-6">
-                  <Label htmlFor="responsavel" className="text-sm font-medium text-gray-700">
-                    Nome e Cargo do Responsável
+                {/* Nome e Cargo dos Responsáveis */}
+                <div className="w-full p-4">
+                  <Label className="text-sm font-semibold text-gray-700 flex items-center gap-2 mb-2">
+                    <Users className="w-4 h-4" />
+                    Nome e Cargo dos Responsáveis *
                   </Label>
-                  <div className="flex items-center gap-2">
-                    <Input
-                      id="responsavel"
-                      value={`${despachoData.responsavel.nome} - ${despachoData.responsavel.cargo}`}
+                  
+                  {/* Lista de responsáveis */}
+                  {despachoData.responsaveis.length > 0 ? (
+                    <div className="space-y-2 mb-3">
+                      {despachoData.responsaveis.map((responsavel) => (
+                        <div key={responsavel.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border">
+                          <div>
+                            <div className="font-medium text-gray-900">{responsavel.nome}</div>
+                            <div className="text-sm text-gray-600">{responsavel.cargo} - {responsavel.gerencia}</div>
+                          </div>
+                          {podeEditar && despachoData.status === 'PENDENTE' && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleRemoverResponsavel(responsavel.id)}
+                              className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                            >
+                              <UserMinus className="w-4 h-4" />
+                            </Button>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="p-4 bg-gray-50 rounded-lg border border-gray-200 text-center text-gray-500">
+                      Nenhum responsável selecionado
+                    </div>
+                  )}
+
+                  {/* Botão para adicionar responsáveis */}
+                  {podeEditar && despachoData.status === 'PENDENTE' && (
+                    <Button
+                      variant="outline"
+                      onClick={() => setShowAdicionarResponsavel(true)}
                       className="w-full"
-                      disabled
-                      placeholder="Responsável pela etapa"
-                    />
-                    <Badge className="bg-blue-100 text-blue-800 px-3 py-1">
-                      <User className="w-4 h-4 mr-1" />
-                      SE
-                    </Badge>
-                  </div>
-                </div>
-
-                {/* Visualização do ETP assinado */}
-                <div className="space-y-2">
-                  <Label className="text-sm font-medium text-gray-700">
-                    ETP Assinado
-                  </Label>
-                  <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
-                    <FileText className="w-12 h-12 text-gray-400 mx-auto mb-2" />
-                    <p className="text-sm text-gray-500 mb-2">ETP_012_2025_v1.pdf</p>
-                    <Button variant="outline" size="sm">
-                      <Eye className="w-4 h-4 mr-2" />
-                      Visualizar ETP
+                    >
+                      <UserPlus className="w-4 h-4 mr-2" />
+                      Adicionar Responsáveis
                     </Button>
-                  </div>
+                  )}
                 </div>
-
               </div>
             </div>
           </section>
 
           {/* DIREITA: Gerenciamento (4 colunas) */}
-          <aside id="gerenciamento" className="col-span-12 lg:col-span-4 w-full">
-            
-            {/* Card de Gerenciamento */}
-            <div className="rounded-2xl border shadow-sm overflow-hidden bg-white">
+          <aside id="gerenciamento" className="col-span-12 lg:col-span-4 w-full flex flex-col">
+            <div className="rounded-2xl border shadow-sm overflow-hidden bg-white flex-1 flex flex-col">
               <header className="bg-purple-50 px-4 py-3 rounded-t-2xl font-semibold text-slate-900">
                 <div className="flex items-center gap-3">
                   <Settings className="w-5 h-5 text-purple-600" />
                   Gerenciamento
                 </div>
               </header>
-              <div className="p-4 md:p-6 space-y-4">
+              <div className="p-4 md:p-6 space-y-4 flex-1 flex flex-col">
                 
-                {/* Responsável pela Etapa */}
-                <div className="space-y-2">
-                  <Label className="text-sm font-medium text-gray-700">
-                    Responsável pela Etapa
-                  </Label>
-                  <div className="bg-blue-50 p-3 rounded-lg">
-                    <div className="flex items-center gap-2">
-                      <User className="w-4 h-4 text-blue-600" />
-                      <div>
-                        <p className="text-sm font-medium text-blue-900">
-                          {despachoData.responsavel.nome}
-                        </p>
-                        <p className="text-xs text-blue-700">
-                          {despachoData.responsavel.cargo}
-                        </p>
-                        <p className="text-xs text-blue-600">
-                          {despachoData.responsavel.gerencia}
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Seleção de Assinantes */}
+                {/* Seleção de assinantes (SE) */}
                 {isSE && (
-                  <div className="space-y-2">
-                    <Label className="text-sm font-medium text-gray-700">
-                      Assinantes
-                    </Label>
-                    <Button
-                      onClick={adicionarAssinante}
-                      variant="outline"
-                      size="sm"
-                      className="w-full"
-                    >
-                      <UserPlus className="w-4 h-4 mr-2" />
-                      Adicionar Assinante
-                    </Button>
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <Label className="text-sm font-semibold text-gray-700">
+                        Seleção de Assinantes
+                      </Label>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => setShowAdicionarAssinante(true)}
+                        className="h-8 px-3"
+                      >
+                        <UserPlus className="w-4 h-4 mr-1" />
+                        Adicionar
+                      </Button>
+                    </div>
                   </div>
                 )}
 
-                {/* Lista de Assinantes */}
-                <div className="space-y-2">
-                  <Label className="text-sm font-medium text-gray-700">
+                {/* Lista de assinantes */}
+                <div className="space-y-3">
+                  <Label className="text-sm font-semibold text-gray-700">
                     Assinantes Selecionados
                   </Label>
-                  {assinantes.length > 0 ? (
-                    <div className="space-y-2">
-                      {assinantes.map((assinante) => (
-                        <div key={assinante.id} className="bg-gray-50 p-3 rounded-lg">
-                          <div className="flex items-center justify-between">
-                            <div>
-                              <p className="text-sm font-medium text-gray-900">
-                                {assinante.nome}
-                              </p>
-                              <p className="text-xs text-gray-600">
-                                {assinante.cargo}
-                              </p>
-                              <Badge 
-                                className={`text-xs ${
-                                  assinante.status === 'PENDENTE' 
-                                    ? 'bg-yellow-100 text-yellow-800'
-                                    : assinante.status === 'ASSINADO'
-                                    ? 'bg-green-100 text-green-800'
-                                    : 'bg-red-100 text-red-800'
-                                }`}
-                              >
-                                {assinante.status === 'PENDENTE' ? 'Pendente' :
-                                 assinante.status === 'ASSINADO' ? 'Assinado' : 'Cancelado'}
-                              </Badge>
-                            </div>
-                            {isSE && assinante.status === 'PENDENTE' && (
-                              <Button
-                                onClick={() => removerAssinante(assinante.id)}
-                                variant="ghost"
-                                size="sm"
-                              >
-                                <UserMinus className="w-4 h-4" />
-                              </Button>
-                            )}
-                          </div>
-                        </div>
-                      ))}
+                  
+                  {assinantes.length === 0 ? (
+                    <div className="text-center py-6 text-gray-500">
+                      <Users className="w-8 h-8 mx-auto mb-2 text-gray-300" />
+                      <p className="text-sm">Nenhum assinante selecionado</p>
                     </div>
                   ) : (
-                    <p className="text-sm text-gray-500 text-center py-4">
-                      Nenhum assinante selecionado
-                    </p>
+                    <div className="space-y-2">
+                      {assinantes.map((assinante) => {
+                        const statusConfig = getStatusConfig(assinante.status);
+                        return (
+                          <div key={assinante.id} className="p-3 bg-gray-50 rounded-lg border">
+                            <div className="flex items-start justify-between">
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center gap-2 mb-1">
+                                  <span className="font-medium text-sm">{assinante.nome}</span>
+                                  <Badge className={`${statusConfig.bgColor} ${statusConfig.textColor} ${statusConfig.borderColor} text-xs`}>
+                                    {statusConfig.icon}
+                                    <span className="ml-1">{statusConfig.label}</span>
+                                  </Badge>
+                                </div>
+                                <div className="text-xs text-gray-600 mb-1">{assinante.cargo}</div>
+                                <div className="text-xs text-gray-500">{assinante.email}</div>
+                                {assinante.dataAssinatura && (
+                                  <div className="text-xs text-green-600 mt-1">
+                                    Assinado em {formatDateTimeBR(new Date(assinante.dataAssinatura))}
+                                  </div>
+                                )}
+                              </div>
+                              
+                              {/* Ações */}
+                              <div className="flex items-center gap-1">
+                                {isSE && assinante.status === 'PENDENTE' && (
+                                  <Button
+                                    size="sm"
+                                    variant="ghost"
+                                    onClick={() => handleRemoverAssinante(assinante.id)}
+                                    className="h-6 w-6 p-0 text-red-600 hover:text-red-700"
+                                  >
+                                    <UserMinus className="w-3 h-3" />
+                                  </Button>
+                                )}
+                                
+                                {assinante.status === 'PENDENTE' && 
+                                 (assinante.email === user?.email || isSE) && (
+                                  <Button
+                                    size="sm"
+                                    variant="ghost"
+                                    onClick={() => {
+                                      setAssinanteSelecionado(assinante);
+                                      setShowCancelarModal(true);
+                                    }}
+                                    className="h-6 w-6 p-0 text-orange-600 hover:text-orange-700"
+                                  >
+                                    <XCircle className="w-3 h-3" />
+                                  </Button>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
                   )}
                 </div>
 
-                {/* Barra de Progresso */}
+                {/* Progresso das assinaturas */}
                 <div className="space-y-2">
-                  <Label className="text-sm font-medium text-gray-700">
-                    Progresso da Execução
-                  </Label>
-                  <div className="space-y-2">
-                    <div className="flex justify-between text-xs text-gray-600">
-                      <span>Progresso</span>
-                      <span>
-                        {despachoData.status === 'PENDENTE' ? '0%' :
-                         despachoData.status === 'GERADO' ? '50%' :
-                         despachoData.status === 'ASSINADO' ? '100%' : '0%'}
-                      </span>
-                    </div>
-                    <Progress 
-                      value={
-                        despachoData.status === 'PENDENTE' ? 0 :
-                        despachoData.status === 'GERADO' ? 50 :
-                        despachoData.status === 'ASSINADO' ? 100 : 0
-                      } 
-                      className="h-2"
-                    />
+                  <div className="flex items-center justify-between">
+                    <Label className="text-sm font-semibold text-gray-700">
+                      Progresso
+                    </Label>
+                    <span className="text-sm text-gray-600">
+                      {assinaturasConcluidas}/{totalAssinaturas}
+                    </span>
+                  </div>
+                  <Progress value={progresso} className="h-2" />
+                  <div className="text-xs text-gray-500">
+                    {progresso === 100 ? 'Todas as assinaturas concluídas' : 'Aguardando assinaturas'}
+                  </div>
+                </div>
+
+                {/* SLA */}
+                <div className="p-3 bg-yellow-50 rounded-lg">
+                  <div className="flex items-center justify-between mb-2">
+                    <Label className="text-sm font-semibold text-gray-700">
+                      SLA
+                    </Label>
+                    <Badge className={getSLABadgeConfig(sla.badge).className}>
+                      {getSLABadgeConfig(sla.badge).label}
+                    </Badge>
+                  </div>
+                  <div className="text-sm text-gray-600">
+                    <div>Prazo: {sla.prazoDiasUteis} dia útil</div>
+                    <div>Decorridos: {sla.decorridosDiasUteis} dias úteis</div>
                   </div>
                 </div>
 
@@ -667,141 +840,133 @@ export default function ETPDespachoSection({
           </aside>
         </div>
 
-        {/* FULL: Documento do Despacho + Comentários */}
-        <section id="documento-comentarios" className="col-span-12 w-full mt-6">
-          
-          {/* Card do Documento */}
-          <div className="rounded-2xl border shadow-sm overflow-hidden bg-white mb-6">
-            <header className="bg-orange-50 px-4 py-3 rounded-t-2xl font-semibold text-slate-900">
-              <div className="flex items-center gap-3">
-                <FileText className="w-5 h-5 text-orange-600" />
-                Documento do Despacho
-              </div>
-            </header>
-            <div className="p-4 md:p-6 space-y-4">
-              
-              {/* Botões de Ação */}
-              <div className="flex flex-wrap gap-2">
-                <Button
-                  onClick={gerarDespacho}
-                  disabled={!isSE || despachoData.status === 'GERADO' || despachoData.status === 'ASSINADO'}
-                  className="bg-blue-600 hover:bg-blue-700"
-                >
-                  <FileCheck className="w-4 h-4 mr-2" />
-                  Gerar Despacho do ETP
-                </Button>
-                
-                <Button
-                  onClick={assinarDespacho}
-                  disabled={!isSE || despachoData.status !== 'GERADO'}
-                  variant="outline"
-                >
-                  <PenTool className="w-4 h-4 mr-2" />
-                  Assinar Despacho
-                </Button>
-                
-                <Button
-                  onClick={downloadDespacho}
-                  disabled={despachoData.status !== 'ASSINADO'}
-                  variant="outline"
-                >
-                  <Download className="w-4 h-4 mr-2" />
-                  Download PDF do Despacho
-                </Button>
-              </div>
-
-              {/* Visualização do Despacho */}
-              {despachoData.status === 'GERADO' || despachoData.status === 'ASSINADO' ? (
-                <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
-                  <FileText className="w-12 h-12 text-gray-400 mx-auto mb-2" />
-                  <p className="text-sm text-gray-500 mb-2">
-                    Despacho_ETP_{despachoData.numeroProcesso}.pdf
-                  </p>
-                  <Button variant="outline" size="sm">
-                    <Eye className="w-4 h-4 mr-2" />
-                    Visualizar Despacho
-                  </Button>
-                </div>
-              ) : (
-                <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
-                  <FileText className="w-12 h-12 text-gray-400 mx-auto mb-2" />
-                  <p className="text-sm text-gray-500">
-                    O despacho será exibido aqui após ser gerado
-                  </p>
-                </div>
-              )}
-
-            </div>
-          </div>
-
-          {/* Comentários */}
+        {/* FULL: Despacho do ETP */}
+        <section id="despacho-etp" className="col-span-12 w-full mt-6">
           <div className="rounded-2xl border shadow-sm overflow-hidden bg-white">
             <header className="bg-indigo-50 px-4 py-3 rounded-t-2xl font-semibold text-slate-900">
               <div className="flex items-center gap-3">
-                <MessageCircle className="w-5 h-5 text-indigo-600" />
-                Comentários
+                <FileText className="w-5 h-5 text-indigo-600" />
+                Despacho do ETP
               </div>
             </header>
-            <div className="p-4 md:p-6 space-y-4">
+            <div className="p-4 md:p-6 flex flex-col gap-4">
               
-              {/* Área de novo comentário */}
-              <div className="space-y-2">
-                <TextareaWithMentions
-                  value={novoComentario}
-                  onChange={setNovoComentario}
-                  placeholder="Adicione um comentário... (use @ para mencionar usuários)"
-                  className="min-h-[80px]"
-                  disabled={!canEdit}
-                />
-                <div className="flex justify-end">
-                  <Button
-                    onClick={adicionarComentario}
-                    disabled={!novoComentario.trim() || !canEdit}
-                    size="sm"
-                  >
-                    <MessageCircle className="w-4 h-4 mr-2" />
-                    Adicionar Comentário
-                  </Button>
-                </div>
+              {/* Input oculto para upload de arquivo */}
+              <input
+                ref={despachoFileInputRef}
+                type="file"
+                onChange={handleDespachoFileUpload}
+                accept=".pdf,.docx"
+                className="hidden"
+              />
+
+              {/* Botão Adicionar Documento */}
+              <div className="flex justify-center">
+                <Button
+                  onClick={handleUploadDespacho}
+                  variant="outline"
+                  className="border-dashed border-2 border-gray-300 hover:border-indigo-400 hover:bg-indigo-50 transition-colors"
+                >
+                  <Upload className="w-4 h-4 mr-2" />
+                  Adicionar Documento
+                </Button>
               </div>
 
-              {/* Lista de comentários */}
-              <div className="space-y-3">
-                {comentarios.length > 0 ? (
-                  comentarios.map((comentario) => (
-                    <div key={comentario.id} className="bg-gray-50 p-3 rounded-lg">
-                      <div className="flex items-start gap-3">
-                        <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
-                          <User className="w-4 h-4 text-blue-600" />
-                        </div>
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2 mb-1">
-                            <span className="text-sm font-medium text-gray-900">
-                              {comentario.autor}
-                            </span>
-                            <span className="text-xs text-gray-500">
-                              {comentario.cargo}
-                            </span>
-                            <span className="text-xs text-gray-400">
-                              {formatDateTimeBR(new Date(comentario.data))}
-                            </span>
-                          </div>
-                          <p className="text-sm text-gray-700">
-                            {comentario.texto}
-                          </p>
-                        </div>
+              {/* Lista de arquivos */}
+              {despachoArquivo ? (
+                <div className="border border-gray-200 rounded-lg p-4 bg-gray-50">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3 min-w-0 flex-1">
+                      <div className="p-2 bg-indigo-100 rounded-lg">
+                        <FileText className="w-4 h-4 text-indigo-600" />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="text-sm font-medium text-gray-900 truncate">{despachoArquivo.name}</p>
+                        <p className="text-xs text-gray-500">
+                          {despachoArquivo.size} • {formatDateTimeBR(new Date(despachoArquivo.uploadedAt))}
+                        </p>
                       </div>
                     </div>
-                  ))
-                ) : (
-                  <p className="text-sm text-gray-500 text-center py-4">
-                    Nenhum comentário ainda
-                  </p>
-                )}
-              </div>
+                    <div className="flex items-center gap-1 flex-shrink-0">
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button 
+                              size="sm" 
+                              variant="outline" 
+                              onClick={handleBaixarDespacho}
+                              className="h-8 w-8 p-0"
+                            >
+                              <Download className="w-3 h-3" />
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>Baixar arquivo</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
 
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button 
+                              size="sm" 
+                              variant="outline" 
+                              onClick={handleEditarDespacho}
+                              className="h-8 w-8 p-0"
+                            >
+                              <Edit3 className="w-3 h-3" />
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>Editar/Substituir arquivo</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button 
+                              size="sm" 
+                              variant="outline" 
+                              onClick={handleExcluirDespacho}
+                              className="h-8 w-8 p-0 text-red-600 hover:text-red-700"
+                            >
+                              <Trash2 className="w-3 h-3" />
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>Excluir arquivo</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div className="text-center py-8">
+                  <div className="p-4 bg-gray-100 rounded-full w-16 h-16 mx-auto mb-4 flex items-center justify-center">
+                    <FileText className="w-8 h-8 text-gray-400" />
+                  </div>
+                  <p className="text-gray-500 font-medium">Nenhum documento de despacho enviado ainda.</p>
+                  <p className="text-sm text-gray-400 mt-1">
+                    Clique em "Adicionar Documento" para enviar um arquivo PDF ou DOCX
+                  </p>
+                </div>
+              )}
             </div>
           </div>
+        </section>
+
+        {/* FULL: Comentários */}
+        <section id="comentarios" className="col-span-12 w-full mt-6">
+          <CommentsSection
+            processoId={processoId}
+            etapaId={etapaId.toString()}
+            cardId="comentarios-despacho-etp"
+            title="Comentários"
+          />
         </section>
 
         {/* Rodapé com botões */}
@@ -822,7 +987,7 @@ export default function ETPDespachoSection({
                   <div className="flex items-center gap-2">
                     <User className="w-4 h-4 text-gray-500" />
                     <span className="text-sm text-gray-600">
-                      {despachoData.responsavel.nome || 'Sem responsável definido'}
+                      {despachoData.responsaveis[0]?.nome || 'Sem responsável definido'}
                     </span>
                   </div>
                 </div>
@@ -830,25 +995,79 @@ export default function ETPDespachoSection({
                 {/* Lado direito - Botões de ação */}
                 <div className="flex items-center gap-2">
               {/* Botão Salvar */}
-              {canEdit && (
+              {podeEditar && (
                 <Button
-                  onClick={salvarAlteracoes}
                   variant="outline"
-                  size="sm"
+                  onClick={handleSaveDespacho}
+                  disabled={isLoading}
                 >
                   <Save className="w-4 h-4 mr-2" />
                   Salvar
                 </Button>
               )}
 
-              {/* Botão Concluir */}
-              {canEdit && despachoData.status === 'ASSINADO' && (
+              {/* Botão Gerar Despacho */}
+              {podeEditar && (
                 <Button
-                  onClick={concluirEtapa}
-                  className="bg-green-600 hover:bg-green-700"
-                  size="sm"
+                  onClick={handleGerarDespacho}
+                  disabled={isLoading || !despachoData.observacoes.trim() || despachoData.responsaveis.length === 0}
+                  className="bg-blue-600 hover:bg-blue-700"
                 >
-                  <CheckCircle2 className="w-4 h-4 mr-2" />
+                  {isLoading ? (
+                    <>
+                      <RotateCcw className="w-4 h-4 mr-2 animate-spin" />
+                      Gerando...
+                    </>
+                  ) : (
+                    <>
+                      <FileCheck className="w-4 h-4 mr-2" />
+                      Gerar Despacho
+                    </>
+                  )}
+                </Button>
+              )}
+
+              {/* Botão Assinar Despacho */}
+              {podeAssinar && (
+                <Button
+                  onClick={handleAssinarDespacho}
+                  disabled={isLoading}
+                  className="bg-green-600 hover:bg-green-700"
+                >
+                  {isLoading ? (
+                    <>
+                      <RotateCcw className="w-4 h-4 mr-2 animate-spin" />
+                      Assinando...
+                    </>
+                  ) : (
+                    <>
+                      <PenTool className="w-4 h-4 mr-2" />
+                      Assinar Despacho
+                    </>
+                  )}
+                </Button>
+              )}
+
+              {/* Botão Download PDF */}
+              {despachoData.status !== 'PENDENTE' && (
+                <Button
+                  variant="outline"
+                  onClick={handleDownloadPDF}
+                  disabled={isLoading}
+                >
+                  <Download className="w-4 h-4 mr-2" />
+                  Download PDF
+                </Button>
+              )}
+
+              {/* Botão Concluir Etapa */}
+              {despachoData.status === 'ASSINADO' && (
+                <Button
+                  onClick={() => setShowConcluirModal(true)}
+                  disabled={isLoading}
+                  className="bg-green-600 hover:bg-green-700"
+                >
+                  <Flag className="w-4 h-4 mr-2" />
                   Concluir Etapa
                 </Button>
               )}
@@ -857,6 +1076,222 @@ export default function ETPDespachoSection({
             </CardContent>
           </Card>
         </div>
+
+        {/* Modal para adicionar responsáveis */}
+        <Dialog open={showAdicionarResponsavel} onOpenChange={setShowAdicionarResponsavel}>
+          <DialogContent className="sm:max-w-[500px]">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <UserPlus className="w-5 h-5 text-blue-600" />
+                Adicionar Responsáveis
+              </DialogTitle>
+              <DialogDescription>
+                Selecione os usuários responsáveis pelo despacho (GSP e SE).
+              </DialogDescription>
+            </DialogHeader>
+            
+            <div className="space-y-4">
+              <div className="space-y-2">
+                {mockUsuariosDisponiveis.map((usuario) => (
+                  <div key={usuario.id} className="flex items-center space-x-2">
+                    <Checkbox
+                      id={usuario.id}
+                      checked={usuariosSelecionados.includes(usuario.id)}
+                      onCheckedChange={(checked) => {
+                        if (checked) {
+                          setUsuariosSelecionados([...usuariosSelecionados, usuario.id]);
+                        } else {
+                          setUsuariosSelecionados(usuariosSelecionados.filter(id => id !== usuario.id));
+                        }
+                      }}
+                    />
+                    <Label htmlFor={usuario.id} className="text-sm">
+                      <div className="font-medium">{usuario.nome}</div>
+                      <div className="text-gray-600">{usuario.cargo} - {usuario.gerencia}</div>
+                    </Label>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="flex justify-end gap-3 pt-4 pb-2">
+              <Button
+                variant="outline"
+                onClick={() => setShowAdicionarResponsavel(false)}
+                disabled={isLoading}
+              >
+                Cancelar
+              </Button>
+              <Button
+                onClick={handleAdicionarResponsavel}
+                disabled={isLoading || usuariosSelecionados.length === 0}
+                className="bg-blue-600 hover:bg-blue-700"
+              >
+                {isLoading ? (
+                  <>
+                    <RotateCcw className="w-4 h-4 mr-2 animate-spin" />
+                    Adicionando...
+                  </>
+                ) : (
+                  <>
+                    <UserPlus className="w-4 h-4 mr-2" />
+                    Adicionar Responsáveis
+                  </>
+                )}
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        {/* Modal para adicionar assinantes */}
+        <Dialog open={showAdicionarAssinante} onOpenChange={setShowAdicionarAssinante}>
+          <DialogContent className="sm:max-w-[500px]">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <UserPlus className="w-5 h-5 text-blue-600" />
+                Adicionar Assinantes
+              </DialogTitle>
+              <DialogDescription>
+                Selecione os usuários que devem assinar o despacho do ETP.
+              </DialogDescription>
+            </DialogHeader>
+            
+            <div className="space-y-4">
+              <div className="space-y-2">
+                {mockUsuariosDisponiveis.map((usuario) => (
+                  <div key={usuario.id} className="flex items-center space-x-2">
+                    <Checkbox
+                      id={usuario.id}
+                      checked={usuariosSelecionados.includes(usuario.id)}
+                      onCheckedChange={(checked) => {
+                        if (checked) {
+                          setUsuariosSelecionados([...usuariosSelecionados, usuario.id]);
+                        } else {
+                          setUsuariosSelecionados(usuariosSelecionados.filter(id => id !== usuario.id));
+                        }
+                      }}
+                    />
+                    <Label htmlFor={usuario.id} className="text-sm">
+                      <div className="font-medium">{usuario.nome}</div>
+                      <div className="text-gray-600">{usuario.cargo} - {usuario.gerencia}</div>
+                    </Label>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="flex justify-end gap-3 pt-4 pb-2">
+              <Button
+                variant="outline"
+                onClick={() => setShowAdicionarAssinante(false)}
+                disabled={isLoading}
+              >
+                Cancelar
+              </Button>
+              <Button
+                onClick={handleAdicionarAssinante}
+                disabled={isLoading || usuariosSelecionados.length === 0}
+                className="bg-blue-600 hover:bg-blue-700"
+              >
+                {isLoading ? (
+                  <>
+                    <RotateCcw className="w-4 h-4 mr-2 animate-spin" />
+                    Adicionando...
+                  </>
+                ) : (
+                  <>
+                    <UserPlus className="w-4 h-4 mr-2" />
+                    Adicionar Assinantes
+                  </>
+                )}
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        {/* Modal de Confirmação de Conclusão */}
+        <Dialog open={showConcluirModal} onOpenChange={setShowConcluirModal}>
+          <DialogContent className="sm:max-w-[500px]">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <Flag className="w-5 h-5 text-green-600" />
+                Concluir Etapa
+              </DialogTitle>
+              <DialogDescription>
+                Tem certeza que deseja concluir a etapa de Despacho do ETP? Esta ação não pode ser desfeita.
+              </DialogDescription>
+            </DialogHeader>
+
+            <div className="flex justify-end gap-3 pt-4 pb-2">
+              <Button
+                variant="outline"
+                onClick={() => setShowConcluirModal(false)}
+                disabled={isLoading}
+              >
+                Cancelar
+              </Button>
+              <Button
+                onClick={handleConcluirEtapa}
+                disabled={isLoading}
+                className="bg-green-600 hover:bg-green-700"
+              >
+                {isLoading ? (
+                  <>
+                    <RotateCcw className="w-4 h-4 mr-2 animate-spin" />
+                    Concluindo...
+                  </>
+                ) : (
+                  <>
+                    <Flag className="w-4 h-4 mr-2" />
+                    Concluir Etapa
+                  </>
+                )}
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        {/* Modal de Cancelamento de Assinatura */}
+        <Dialog open={showCancelarModal} onOpenChange={setShowCancelarModal}>
+          <DialogContent className="sm:max-w-[500px]">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <XCircle className="w-5 h-5 text-orange-600" />
+                Cancelar Assinatura
+              </DialogTitle>
+              <DialogDescription>
+                Tem certeza que deseja cancelar a assinatura de {assinanteSelecionado?.nome}? Esta ação não pode ser desfeita.
+              </DialogDescription>
+            </DialogHeader>
+
+            <div className="flex justify-end gap-3 pt-4 pb-2">
+              <Button
+                variant="outline"
+                onClick={() => setShowCancelarModal(false)}
+                disabled={isLoading}
+              >
+                Cancelar
+              </Button>
+              <Button
+                onClick={handleCancelarAssinatura}
+                disabled={isLoading}
+                className="bg-orange-600 hover:bg-orange-700"
+              >
+                {isLoading ? (
+                  <>
+                    <RotateCcw className="w-4 h-4 mr-2 animate-spin" />
+                    Cancelando...
+                  </>
+                ) : (
+                  <>
+                    <XCircle className="w-4 h-4 mr-2" />
+                    Cancelar Assinatura
+                  </>
+                )}
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
     </div>
   );

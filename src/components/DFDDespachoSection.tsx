@@ -481,7 +481,7 @@ export default function DFDDespachoSection({
         ...despachoData,
         status: 'ASSINADO' as DespachoStatus,
         assinadoPor: {
-          id: user?.id || '',
+          id: user?.email || '',
           nome: user?.nome || '',
           cargo: user?.cargo || '',
           dataAssinatura: new Date().toISOString()
@@ -861,7 +861,6 @@ export default function DFDDespachoSection({
                     disabled={!podeEditar || despachoData.status !== 'PENDENTE'}
                     className="min-h-[100px] resize-none border-gray-200 focus:border-blue-300 focus:ring-blue-300"
                     minHeight="100px"
-                    maxLength={1000}
                     processoId={processoId}
                     etapaId={etapaId.toString()}
                     cardId="observacoes-despacho"
@@ -946,17 +945,6 @@ export default function DFDDespachoSection({
               </header>
               <div className="p-4 md:p-6 space-y-4 flex-1 flex flex-col">
                 
-                {/* Responsável pela etapa */}
-                <div className="p-3 bg-blue-50 rounded-lg">
-                  <Label className="text-sm font-semibold text-gray-700 mb-2 block">
-                    Responsável pela Etapa
-                  </Label>
-                  <div className="text-sm text-gray-600">
-                    <div className="font-medium">Diran Rodrigues de Souza Filho</div>
-                    <div className="text-xs text-gray-500">Secretário Executivo</div>
-                  </div>
-                </div>
-
                 {/* Seleção de assinantes (GSP ou SE) */}
                 {isGSPouSE && (
                   <div className="space-y-3">
