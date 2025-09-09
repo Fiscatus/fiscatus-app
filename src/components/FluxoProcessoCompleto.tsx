@@ -60,6 +60,7 @@ import DFDPublicacaoSection from './DFDPublicacaoSection';
 import ConsolidacaoDemandaSection from './ConsolidacaoDemandaSection';
 import ETPElaboracaoSection from './ETPElaboracaoSection';
 import ETPSignatureSection from './ETPSignatureSection';
+import ETPDespachoSection from './ETPDespachoSection';
 import MatrizRiscoSignatureSection from './MatrizRiscoSignatureSection';
 import TRSignatureSection from './TRSignatureSection';
 import EditalSignatureSection from './EditalSignatureSection';
@@ -547,6 +548,10 @@ export default function FluxoProcessoCompleto({ etapas = etapasPadrao, onEtapaCl
       setShowETPModal(true);
     } else if (etapa.id === 6) {
       // Card "Assinatura do ETP"
+      setCurrentEtapa(etapa);
+      setShowETPModal(true);
+    } else if (etapa.id === 7) {
+      // Card "Despacho do ETP"
       setCurrentEtapa(etapa);
       setShowETPModal(true);
     } else if (etapa.id === 10) {
@@ -1444,6 +1449,16 @@ export default function FluxoProcessoCompleto({ etapas = etapasPadrao, onEtapaCl
               )}
               {currentEtapa?.id === 6 && (
                 <ETPSignatureSection
+                  processoId="1"
+                  etapaId={currentEtapa.id}
+                  onComplete={handleETPComplete}
+                  onSave={handleETPSave}
+                  canEdit={canManageEtapa(currentEtapa)}
+                  gerenciaCriadora={gerenciaCriadora}
+                />
+              )}
+              {currentEtapa?.id === 7 && (
+                <ETPDespachoSection
                   processoId="1"
                   etapaId={currentEtapa.id}
                   onComplete={handleETPComplete}
