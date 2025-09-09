@@ -712,8 +712,8 @@ export default function ETPDespachoSection({
               </header>
               <div className="p-4 md:p-6 space-y-4 flex-1 flex flex-col">
                 
-                {/* Seleção de assinantes (SE) */}
-                {isSE && (
+                {/* Seleção de assinantes (GSP ou SE) */}
+                {isGSPouSE && (
                   <div className="space-y-3">
                     <div className="flex items-center justify-between">
                       <Label className="text-sm font-semibold text-gray-700">
