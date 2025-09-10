@@ -24,21 +24,21 @@ export default function TruncatedCard({
 
   const cardContent = (
     <motion.div 
-      className={`bg-gray-50 rounded-xl p-6 border border-gray-200 hover:border-gray-300 transition-all duration-200 ${className}`}
+      className={`rounded-2xl p-4 md:p-5 bg-white/80 backdrop-blur-sm ring-1 ring-gray-200 hover:ring-blue-200 shadow-sm hover:shadow-md transition-all duration-200 ${className}`}
       whileHover={{ scale: 1.02, y: -2 }}
       transition={{ type: "spring", stiffness: 300 }}
     >
       <div className="flex items-center gap-4 justify-center">
-        <div className={`p-2 rounded-lg ${iconBgColor}`}>
+        <div className={`p-2.5 rounded-xl ring-1 ring-black/5 ${iconBgColor}`}>
           <div className={`w-6 h-6 ${iconColor}`}>
             {icon}
           </div>
         </div>
         <div className="flex-1 min-w-0 text-center">
-          <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">{label}</p>
+          <p className="text-[11px] md:text-xs font-medium text-gray-500 uppercase tracking-wide">{label}</p>
           <p 
             ref={elementRef}
-            className="text-sm font-semibold text-gray-900 truncate"
+            className="text-base md:text-lg font-semibold text-gray-900 truncate"
           >
             {value}
           </p>

@@ -552,118 +552,118 @@ export default function ProcessoDetalhes() {
 
                              {/* Informações Principais */}
                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 w-full">
-                                 <motion.div 
-                   className="bg-gray-50 rounded-xl p-4 border border-gray-200 hover:border-gray-300 transition-all duration-200"
+                 <motion.div 
+                  className="rounded-2xl p-4 md:p-5 bg-white/80 backdrop-blur-sm ring-1 ring-gray-200 hover:ring-blue-200 shadow-sm hover:shadow-md transition-all duration-200"
                    whileHover={{ scale: 1.02, y: -2 }}
                    transition={{ type: "spring", stiffness: 300 }}
                  >
                    <div className="flex items-center gap-3 justify-center text-center">
-                     <div className="p-1.5 bg-blue-100 rounded-lg">
+                    <div className="p-1.5 bg-blue-100 rounded-xl ring-1 ring-black/5">
                        <Calendar className="w-5 h-5 text-blue-600" />
                      </div>
                      <div className="flex-1 min-w-0">
-                       <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">Prazo Final</p>
-                       <p className="text-sm font-semibold text-gray-900 truncate">{processoAtual.prazoFinal || "Não definido"}</p>
+                      <p className="text-[11px] md:text-xs font-medium text-gray-500 uppercase tracking-wide">Prazo Final</p>
+                      <p className="text-base md:text-lg font-semibold text-gray-900 truncate">{processoAtual.prazoFinal || "Não definido"}</p>
                      </div>
                    </div>
                  </motion.div>
-
-                <TruncatedCard
-                  icon={<Building2 />}
-                  label="Gerência"
-                  value={processoAtual.gerenciaResponsavel}
-                  iconBgColor="bg-green-100"
-                  iconColor="text-green-600"
-                />
-
-                                 <motion.div 
-                   className="bg-gray-50 rounded-xl p-4 border border-gray-200 hover:border-gray-300 transition-all duration-200"
+ 
+                 <TruncatedCard
+                   icon={<Building2 />}
+                   label="Gerência"
+                   value={processoAtual.gerenciaResponsavel}
+                   iconBgColor="bg-green-100"
+                   iconColor="text-green-600"
+                 />
+ 
+                 <motion.div 
+                  className="rounded-2xl p-4 md:p-5 bg-white/80 backdrop-blur-sm ring-1 ring-gray-200 hover:ring-blue-200 shadow-sm hover:shadow-md transition-all duration-200"
                    whileHover={{ scale: 1.02, y: -2 }}
                    transition={{ type: "spring", stiffness: 300 }}
                  >
                    <div className="flex items-center gap-3 justify-center text-center">
-                     <div className="p-1.5 bg-purple-100 rounded-lg">
+                    <div className="p-1.5 bg-purple-100 rounded-xl ring-1 ring-black/5">
                        <User className="w-5 h-5 text-purple-600" />
                      </div>
                      <div className="flex-1 min-w-0">
-                       <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">Criador</p>
-                       <p className="text-sm font-semibold text-gray-900 truncate">{processoAtual.criador}</p>
+                      <p className="text-[11px] md:text-xs font-medium text-gray-500 uppercase tracking-wide">Criador</p>
+                      <p className="text-base md:text-lg font-semibold text-gray-900 truncate">{processoAtual.criador}</p>
                      </div>
                    </div>
                  </motion.div>
-
-                <TruncatedCard
-                  icon={<FileText />}
-                  label="Etapa Atual"
-                  value={processoAtual.etapaAtual}
-                  iconBgColor="bg-orange-100"
-                  iconColor="text-orange-600"
-                />
-
-                                 <motion.div 
-                   className="bg-gray-50 rounded-xl p-4 border border-gray-200 hover:border-gray-300 transition-all duration-200"
+ 
+                 <TruncatedCard
+                   icon={<FileText />}
+                   label="Etapa Atual"
+                   value={processoAtual.etapaAtual}
+                   iconBgColor="bg-orange-100"
+                   iconColor="text-orange-600"
+                 />
+ 
+                 <motion.div 
+                  className="rounded-2xl p-4 md:p-5 bg-white/80 backdrop-blur-sm ring-1 ring-gray-200 hover:ring-blue-200 shadow-sm hover:shadow-md transition-all duration-200"
                    whileHover={{ scale: 1.02, y: -2 }}
                    transition={{ type: "spring", stiffness: 300 }}
                  >
                    <div className="flex items-center gap-3 justify-center text-center">
-                     <div className="p-1.5 bg-red-100 rounded-lg">
+                    <div className="p-1.5 bg-red-100 rounded-xl ring-1 ring-black/5">
                        <Clock className="w-5 h-5 text-red-600" />
                      </div>
                      <div className="flex-1 min-w-0">
-                       <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">Dias Úteis</p>
-                       <p className="text-sm font-semibold text-gray-900 truncate">{processoAtual.diasUteisConsumidos} dias</p>
+                      <p className="text-[11px] md:text-xs font-medium text-gray-500 uppercase tracking-wide">Dias Úteis</p>
+                      <p className="text-base md:text-lg font-semibold text-gray-900 truncate">{processoAtual.diasUteisConsumidos} dias</p>
                      </div>
                    </div>
                  </motion.div>
-
-                                 <motion.div 
-                   className="bg-gray-50 rounded-xl p-4 border border-gray-200 hover:border-gray-300 transition-all duration-200"
+ 
+                 <motion.div 
+                  className="rounded-2xl p-4 md:p-5 bg-white/80 backdrop-blur-sm ring-1 ring-gray-200 hover:ring-blue-200 shadow-sm hover:shadow-md transition-all duration-200"
                    whileHover={{ scale: 1.02, y: -2 }}
                    transition={{ type: "spring", stiffness: 300 }}
                  >
                    <div className="flex items-center gap-3 justify-center text-center">
-                     <div className="p-1.5 bg-indigo-100 rounded-lg">
+                    <div className="p-1.5 bg-indigo-100 rounded-xl ring-1 ring-black/5">
                        <AlertTriangle className="w-5 h-5 text-indigo-600" />
                      </div>
                      <div className="flex-1 min-w-0">
-                       <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">Regime</p>
-                       <p className="text-sm font-semibold text-gray-900 truncate">{processoAtual.regimeTramitacao}</p>
+                      <p className="text-[11px] md:text-xs font-medium text-gray-500 uppercase tracking-wide">Regime</p>
+                      <p className="text-base md:text-lg font-semibold text-gray-900 truncate">{processoAtual.regimeTramitacao}</p>
                      </div>
                    </div>
                  </motion.div>
-
-                                 <motion.div 
-                   className="bg-gray-50 rounded-xl p-4 border border-gray-200 hover:border-gray-300 transition-all duration-200"
+ 
+                 <motion.div 
+                  className="rounded-2xl p-4 md:p-5 bg-white/80 backdrop-blur-sm ring-1 ring-gray-200 hover:ring-blue-200 shadow-sm hover:shadow-md transition-all duration-200"
                    whileHover={{ scale: 1.02, y: -2 }}
                    transition={{ type: "spring", stiffness: 300 }}
                  >
                    <div className="flex items-center gap-3 justify-center text-center">
-                     <div className="p-1.5 bg-gray-100 rounded-lg">
+                    <div className="p-1.5 bg-gray-100 rounded-xl ring-1 ring-black/5">
                        <Calendar className="w-5 h-5 text-gray-600" />
                      </div>
                      <div className="flex-1 min-w-0">
-                       <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">Data Criação</p>
-                       <p className="text-sm font-semibold text-gray-900 truncate">{processoAtual.dataCriacao}</p>
+                      <p className="text-[11px] md:text-xs font-medium text-gray-500 uppercase tracking-wide">Data Criação</p>
+                      <p className="text-base md:text-lg font-semibold text-gray-900 truncate">{processoAtual.dataCriacao}</p>
                      </div>
                    </div>
                  </motion.div>
-                {/** Prioridade **/}
-                <motion.div 
-                  className="bg-gray-50 rounded-xl p-4 border border-gray-200 hover:border-gray-300 transition-all duration-200"
-                  whileHover={{ scale: 1.02, y: -2 }}
-                  transition={{ type: "spring", stiffness: 300 }}
-                >
-                  <div className="flex items-center gap-3 justify-center text-center">
-                    <div className="p-1.5 bg-yellow-100 rounded-lg">
-                      <AlertTriangle className="w-5 h-5 text-yellow-600" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">Prioridade</p>
-                      <p className="text-sm font-semibold text-gray-900 truncate">{(processoAtual as any).prioridade || "Não definido"}</p>
-                    </div>
-                  </div>
-                </motion.div>
-              </div>
+                 {/** Prioridade **/}
+                 <motion.div 
+                  className="rounded-2xl p-4 md:p-5 bg-white/80 backdrop-blur-sm ring-1 ring-gray-200 hover:ring-blue-200 shadow-sm hover:shadow-md transition-all duration-200"
+                   whileHover={{ scale: 1.02, y: -2 }}
+                   transition={{ type: "spring", stiffness: 300 }}
+                 >
+                   <div className="flex items-center gap-3 justify-center text-center">
+                    <div className="p-1.5 bg-yellow-100 rounded-xl ring-1 ring-black/5">
+                       <AlertTriangle className="w-5 h-5 text-yellow-600" />
+                     </div>
+                     <div className="flex-1 min-w-0">
+                      <p className="text-[11px] md:text-xs font-medium text-gray-500 uppercase tracking-wide">Prioridade</p>
+                      <p className="text-base md:text-lg font-semibold text-gray-900 truncate">{(processoAtual as any).prioridade || "Não definido"}</p>
+                     </div>
+                   </div>
+                 </motion.div>
+               </div>
             </motion.div>
           </div>
         </motion.div>
