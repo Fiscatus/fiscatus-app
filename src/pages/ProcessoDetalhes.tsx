@@ -237,7 +237,8 @@ export default function ProcessoDetalhes() {
     diasUteisConsumidos: 0,
     status: "",
     gerenciasEnvolvidas: [] as string[],
-    regimeTramitacao: ""
+    regimeTramitacao: "",
+    prioridade: ""
   });
   const [originalFormData, setOriginalFormData] = useState({});
   const [isSaving, setIsSaving] = useState(false);
@@ -310,7 +311,8 @@ export default function ProcessoDetalhes() {
       diasUteisConsumidos: processoAtual.diasUteisConsumidos,
       status: processoAtual.status || "em_andamento",
       gerenciasEnvolvidas: processoAtual.gerenciasEnvolvidas || [],
-      regimeTramitacao: processoAtual.regimeTramitacao || ""
+      regimeTramitacao: processoAtual.regimeTramitacao || "",
+      prioridade: (processoAtual as any).prioridade || ""
     };
     setEditFormData(initialData);
     setOriginalFormData(initialData);
@@ -544,6 +546,8 @@ export default function ProcessoDetalhes() {
                     <span className="ml-2">{statusConfig.label}</span>
                   </Badge>
                 </div>
+
+                
               </div>
 
                              {/* Informações Principais */}
@@ -553,7 +557,7 @@ export default function ProcessoDetalhes() {
                    whileHover={{ scale: 1.02, y: -2 }}
                    transition={{ type: "spring", stiffness: 300 }}
                  >
-                   <div className="flex items-center gap-3">
+                   <div className="flex items-center gap-3 justify-center text-center">
                      <div className="p-1.5 bg-blue-100 rounded-lg">
                        <Calendar className="w-5 h-5 text-blue-600" />
                      </div>
@@ -577,7 +581,7 @@ export default function ProcessoDetalhes() {
                    whileHover={{ scale: 1.02, y: -2 }}
                    transition={{ type: "spring", stiffness: 300 }}
                  >
-                   <div className="flex items-center gap-3">
+                   <div className="flex items-center gap-3 justify-center text-center">
                      <div className="p-1.5 bg-purple-100 rounded-lg">
                        <User className="w-5 h-5 text-purple-600" />
                      </div>
@@ -601,7 +605,7 @@ export default function ProcessoDetalhes() {
                    whileHover={{ scale: 1.02, y: -2 }}
                    transition={{ type: "spring", stiffness: 300 }}
                  >
-                   <div className="flex items-center gap-3">
+                   <div className="flex items-center gap-3 justify-center text-center">
                      <div className="p-1.5 bg-red-100 rounded-lg">
                        <Clock className="w-5 h-5 text-red-600" />
                      </div>
@@ -617,7 +621,7 @@ export default function ProcessoDetalhes() {
                    whileHover={{ scale: 1.02, y: -2 }}
                    transition={{ type: "spring", stiffness: 300 }}
                  >
-                   <div className="flex items-center gap-3">
+                   <div className="flex items-center gap-3 justify-center text-center">
                      <div className="p-1.5 bg-indigo-100 rounded-lg">
                        <AlertTriangle className="w-5 h-5 text-indigo-600" />
                      </div>
@@ -633,7 +637,7 @@ export default function ProcessoDetalhes() {
                    whileHover={{ scale: 1.02, y: -2 }}
                    transition={{ type: "spring", stiffness: 300 }}
                  >
-                   <div className="flex items-center gap-3">
+                   <div className="flex items-center gap-3 justify-center text-center">
                      <div className="p-1.5 bg-gray-100 rounded-lg">
                        <Calendar className="w-5 h-5 text-gray-600" />
                      </div>
@@ -643,6 +647,22 @@ export default function ProcessoDetalhes() {
                      </div>
                    </div>
                  </motion.div>
+                {/** Prioridade **/}
+                <motion.div 
+                  className="bg-gray-50 rounded-xl p-4 border border-gray-200 hover:border-gray-300 transition-all duration-200"
+                  whileHover={{ scale: 1.02, y: -2 }}
+                  transition={{ type: "spring", stiffness: 300 }}
+                >
+                  <div className="flex items-center gap-3 justify-center text-center">
+                    <div className="p-1.5 bg-yellow-100 rounded-lg">
+                      <AlertTriangle className="w-5 h-5 text-yellow-600" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">Prioridade</p>
+                      <p className="text-sm font-semibold text-gray-900 truncate">{(processoAtual as any).prioridade || "Não definido"}</p>
+                    </div>
+                  </div>
+                </motion.div>
               </div>
             </motion.div>
           </div>
@@ -906,6 +926,26 @@ export default function ProcessoDetalhes() {
                   <p className="text-xs text-gray-500">
                     Define o status atual do processo
                   </p>
+                </div>
+
+                {/* Grau de Prioridade (dentro do modal) */}
+                <div className="space-y-2">
+                  <Label htmlFor="prioridade" className="text-base font-semibold text-gray-900">
+                    Grau de Prioridade
+                  </Label>
+                  <Select
+                    value={editFormData.prioridade}
+                    onValueChange={(value) => handleEditFormChange('prioridade', value)}
+                  >
+                    <SelectTrigger className="h-10 border-2 border-gray-300 focus:border-blue-500 focus:ring-blue-200">
+                      <SelectValue placeholder="Selecione a prioridade" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="ALTO">Alto</SelectItem>
+                      <SelectItem value="MEDIO">Médio</SelectItem>
+                      <SelectItem value="BAIXO">Baixo</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
               </div>
             </div>

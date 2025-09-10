@@ -28,13 +28,13 @@ export default function TruncatedCard({
       whileHover={{ scale: 1.02, y: -2 }}
       transition={{ type: "spring", stiffness: 300 }}
     >
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-4 justify-center">
         <div className={`p-2 rounded-lg ${iconBgColor}`}>
           <div className={`w-6 h-6 ${iconColor}`}>
             {icon}
           </div>
         </div>
-        <div className="flex-1 min-w-0">
+        <div className="flex-1 min-w-0 text-center">
           <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">{label}</p>
           <p 
             ref={elementRef}
