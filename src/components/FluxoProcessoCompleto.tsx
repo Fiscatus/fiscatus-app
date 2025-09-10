@@ -112,7 +112,7 @@ const etapasPadrao: Etapa[] = [
   { id: 5, nome: "Elaboração do ETP", nomeCompleto: "Elaboração do ETP", status: "andamento", prazoPrevisao: "10 dias úteis", responsavel: "Leticia Bonfim Guilherme", cargo: "Gerente de Licitações e Contratos", gerencia: "GLC - Gerência de Licitações e Contratos", dataInicio: "16/01/2025", documento: "ETP_012_2025_v1.pdf", documentoUrl: "/docs/etp.pdf" },
   { id: 6, nome: "Assinatura do ETP", nomeCompleto: "Assinatura do ETP", status: "pendente", prazoPrevisao: "2 dias úteis", responsavel: "Dallas Kelson Francisco de Souza", cargo: "Gerente Financeiro", gerencia: "GFC - Gerência Financeira e Contábil" },
   { id: 7, nome: "Despacho do ETP", nomeCompleto: "Despacho do ETP", status: "pendente", prazoPrevisao: "5 dias úteis", responsavel: "Georgia Guimaraes Pereira", cargo: "Controladora Interna", gerencia: "OUV - Ouvidoria" },
-  { id: 8, nome: "Elaboração/Análise da Matriz de Risco", nomeCompleto: "Elaboração/Análise da Matriz de Risco", status: "pendente", prazoPrevisao: "7 dias úteis", responsavel: "Diran Rodrigues de Souza Filho", cargo: "Secretário Executivo", gerencia: "SE - Secretaria Executiva" },
+  { id: 8, nome: "Elaboração da Matriz de Risco", nomeCompleto: "Elaboração da Matriz de Risco", status: "pendente", prazoPrevisao: "7 dias úteis", responsavel: "Diran Rodrigues de Souza Filho", cargo: "Secretário Executivo", gerencia: "SE - Secretaria Executiva" },
   { id: 9, nome: "Aprovação da Matriz de Risco", nomeCompleto: "Aprovação da Matriz de Risco", status: "pendente", prazoPrevisao: "2 dias úteis", responsavel: "Yasmin Pissolati Mattos Bretz", cargo: "Gerente de Soluções e Projetos", gerencia: "GSP - Gerência de Soluções e Projetos" },
   { id: 10, nome: "Assinatura da Matriz de Risco", nomeCompleto: "Assinatura da Matriz de Risco", status: "pendente", prazoPrevisao: "15 dias úteis", responsavel: "Guilherme de Carvalho Silva", cargo: "Gerente Suprimentos e Logistica", gerencia: "GSL - Gerência de Suprimentos e Logística" },
   { id: 11, nome: "Cotação", nomeCompleto: "Cotação", status: "pendente", prazoPrevisao: "2 dias úteis", responsavel: "Lucas Moreira Brito", cargo: "GERENTE DE RH", gerencia: "GRH - Gerência de Recursos Humanos" },
@@ -239,9 +239,9 @@ export default function FluxoProcessoCompleto({ etapas = etapasPadrao, onEtapaCl
             </Badge>
           ]
         };
-      case 8: // Elaboração/Análise da Matriz de Risco
+      case 8: // Elaboração da Matriz de Risco
         return {
-          title: "Elaboração/Análise da Matriz de Risco",
+          title: "Elaboração da Matriz de Risco",
           subtitle: "Avaliação de Riscos do Projeto",
           icon: <AlertTriangle className="w-6 h-6 text-indigo-600" />,
           statusBadges: [
@@ -556,7 +556,7 @@ export default function FluxoProcessoCompleto({ etapas = etapasPadrao, onEtapaCl
       setCurrentEtapa(etapa);
       setShowETPModal(true);
     } else if (etapa.id === 8) {
-      // Card "Elaboração/Análise da Matriz de Risco"
+      // Card "Elaboração da Matriz de Risco"
       setCurrentEtapa(etapa);
       setShowETPModal(true);
     } else if (etapa.id === 10) {

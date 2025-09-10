@@ -258,7 +258,7 @@ const modelosIniciais: ModeloFluxo[] = [
       {
         id: "sist-e8",
         numeroEtapa: 8,
-        nomeEtapa: "Elaboração/Análise da Matriz de Risco",
+        nomeEtapa: "Elaboração da Matriz de Risco",
         descricao: "Elaboração e análise da Matriz de Gerenciamento de Riscos",
         prazoPadrao: 7,
         gerenciaResponsavel: "GSL - Gerência de Suprimentos e Logística",

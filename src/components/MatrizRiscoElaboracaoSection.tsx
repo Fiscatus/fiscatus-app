@@ -9,6 +9,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import {
   Shield,
   CheckCircle,
@@ -32,8 +33,11 @@ import {
   RotateCcw,
   Flag,
   Settings,
-  Info
+  Info,
+  Hash
 } from 'lucide-react';
+// Ícones adicionais para alinhar com o DFD
+import { FileText } from 'lucide-react';
 import { useUser } from '@/contexts/UserContext';
 import { useToast } from '@/hooks/use-toast';
 import CommentsSection from './CommentsSection';
@@ -66,6 +70,10 @@ interface MatrizRiscoVersion {
   documentoUrl?: string;
   documentoNome?: string;
   payload: {
+    objetoETP: string;
+    areaSetorDemandante: string;
+    numeroETP: string;
+    dataElaboracao: string;
     riscos: RiscoItem[];
     justificativasGerais: string;
     observacoesComplementares: string;
@@ -102,6 +110,10 @@ const mockVersions: MatrizRiscoVersion[] = [
     documentoUrl: '#',
     documentoNome: 'MatrizRisco_V1_GuilhermeCarvalho.pdf',
     payload: {
+      objetoETP: 'Aquisição de equipamentos para ampliação da capacidade de atendimento',
+      areaSetorDemandante: 'GSL - Gerência de Suprimentos e Logística',
+      numeroETP: 'ETP 006/2025',
+      dataElaboracao: '2025-01-15',
       riscos: [
         {
           id: 'r1',
@@ -456,6 +468,35 @@ export default function MatrizRiscoElaboracaoSection({
     }
   };
 
+  // Formata o número do ETP para o padrão "ETP 006/2025" para exibição
+  const formatNumeroETP = (value: string): string => {
+    if (!value) return '';
+    const desired = /^ETP\s+\d{3}\/\d{4}$/i;
+    if (desired.test(value)) {
+      return value.replace(/\s+/, ' ').toUpperCase();
+    }
+    let match = /ETP[-_\s]?(\d{4})[-_\s]?(\d{1,4})/i.exec(value);
+    if (match) {
+      const year = match[1];
+      const num = match[2].padStart(3, '0');
+      return `ETP ${num}/${year}`;
+    }
+    match = /(?:ETP)?\s*(\d{1,4})\/(\d{4})/i.exec(value);
+    if (match) {
+      const num = match[1].padStart(3, '0');
+      const year = match[2];
+      return `ETP ${num}/${year}`;
+    }
+    const yearOnly = /(\d{4})/.exec(value);
+    const lastNum = /(\d{1,4})(?!.*\d)/.exec(value);
+    if (yearOnly && lastNum) {
+      const year = yearOnly[1];
+      const num = lastNum[1].padStart(3, '0');
+      return `ETP ${num}/${year}`;
+    }
+    return value;
+  };
+
   return (
     <div className="bg-white">
       {/* Container central ocupando toda a área */}
@@ -468,164 +509,87 @@ export default function MatrizRiscoElaboracaoSection({
             
             {/* Card do Formulário */}
             <div className="rounded-2xl border shadow-sm overflow-hidden bg-white">
-              <header className="bg-red-50 px-4 py-3 rounded-t-2xl font-semibold text-slate-900">
+              <header className="bg-indigo-100 px-4 py-3 rounded-t-2xl font-semibold text-slate-900">
                 <div className="flex items-center gap-3">
-                  <Shield className="w-5 h-5 text-red-600" />
+                  <FileText className="w-5 h-5 text-indigo-600" />
                   Formulário da Matriz de Risco
                 </div>
               </header>
               <div className="p-4 md:p-6 space-y-0">
-                
-                {/* Tabela de Riscos */}
+                {/* 1 - Número do ETP */}
                 <div className="w-full p-4 border-b border-gray-100">
-                  <div className="flex items-center justify-between mb-4">
-                    <Label className="text-sm font-semibold text-gray-700 flex items-center gap-2">
-                      <AlertTriangle className="w-4 h-4" />
-                      Matriz de Riscos *
-                    </Label>
-                    {permissoes.podeEditar && currentVersion.status === 'rascunho' && (
-                      <Button
-                        onClick={handleAddRisco}
-                        variant="outline"
-                        size="sm"
-                        className="border-dashed border-2 border-gray-300 hover:border-red-400 hover:bg-red-50"
-                      >
-                        <Plus className="w-4 h-4 mr-2" />
-                        Adicionar Risco
-                      </Button>
-                    )}
-                  </div>
-                  
-                  <div className="space-y-4">
-                    {formData.riscos.length === 0 ? (
-                      <div className="text-center py-8 text-gray-500">
-                        <Shield className="w-8 h-8 mx-auto mb-2 text-gray-300" />
-                        <p className="text-sm">Nenhum risco identificado ainda</p>
-                      </div>
-                    ) : (
-                      formData.riscos.map((risco, index) => (
-                        <div key={risco.id} className="p-4 border border-gray-200 rounded-lg bg-gray-50">
-                          <div className="flex items-center justify-between mb-3">
-                            <span className="text-sm font-medium text-gray-700">Risco #{index + 1}</span>
-                            {permissoes.podeEditar && currentVersion.status === 'rascunho' && (
-                              <Button
-                                onClick={() => handleRemoveRisco(risco.id)}
-                                variant="ghost"
-                                size="sm"
-                                className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                              >
-                                <Trash2 className="w-4 h-4" />
-                              </Button>
-                            )}
-                          </div>
-                          
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                            <div>
-                              <Label className="text-xs text-gray-600 mb-1 block">Risco Identificado *</Label>
-                              <Textarea
-                                value={risco.riscoIdentificado}
-                                onChange={(e) => handleUpdateRisco(risco.id, 'riscoIdentificado', e.target.value)}
-                                placeholder="Descreva o risco identificado..."
-                                disabled={!permissoes.podeEditar || currentVersion.status !== 'rascunho'}
-                                className="w-full min-h-[80px] resize-none text-sm"
-                              />
-                            </div>
-                            
-                            <div>
-                              <Label className="text-xs text-gray-600 mb-1 block">Causa do Risco *</Label>
-                              <Textarea
-                                value={risco.causaRisco}
-                                onChange={(e) => handleUpdateRisco(risco.id, 'causaRisco', e.target.value)}
-                                placeholder="Descreva a causa do risco..."
-                                disabled={!permissoes.podeEditar || currentVersion.status !== 'rascunho'}
-                                className="w-full min-h-[80px] resize-none text-sm"
-                              />
-                            </div>
-                            
-                            <div>
-                              <Label className="text-xs text-gray-600 mb-1 block">Consequência (Impacto)</Label>
-                              <Textarea
-                                value={risco.consequenciaImpacto}
-                                onChange={(e) => handleUpdateRisco(risco.id, 'consequenciaImpacto', e.target.value)}
-                                placeholder="Descreva as consequências..."
-                                disabled={!permissoes.podeEditar || currentVersion.status !== 'rascunho'}
-                                className="w-full min-h-[80px] resize-none text-sm"
-                              />
-                            </div>
-                            
-                            <div>
-                              <Label className="text-xs text-gray-600 mb-1 block">Nível de Risco</Label>
-                              <select
-                                value={risco.nivelRisco}
-                                onChange={(e) => handleUpdateRisco(risco.id, 'nivelRisco', e.target.value)}
-                                disabled={!permissoes.podeEditar || currentVersion.status !== 'rascunho'}
-                                className="w-full p-2 border border-gray-200 rounded-md text-sm focus:border-blue-300 focus:ring-blue-300"
-                              >
-                                <option value="BAIXO">Baixo</option>
-                                <option value="MEDIO">Médio</option>
-                                <option value="ALTO">Alto</option>
-                              </select>
-                            </div>
-                            
-                            <div className="md:col-span-2">
-                              <Label className="text-xs text-gray-600 mb-1 block">Medidas Mitigadoras</Label>
-                              <Textarea
-                                value={risco.medidasMitigadoras}
-                                onChange={(e) => handleUpdateRisco(risco.id, 'medidasMitigadoras', e.target.value)}
-                                placeholder="Descreva as medidas mitigadoras..."
-                                disabled={!permissoes.podeEditar || currentVersion.status !== 'rascunho'}
-                                className="w-full min-h-[80px] resize-none text-sm"
-                              />
-                            </div>
-                          </div>
-                        </div>
-                      ))
-                    )}
-                  </div>
+                  <Label htmlFor="numeroETP" className="text-sm font-semibold text-gray-700 flex items-center gap-2 mb-2">
+                    <Hash className="w-4 h-4" />
+                    Número do ETP
+                  </Label>
+                  <Input
+                    id="numeroETP"
+                    value={formatNumeroETP(formData.numeroETP)}
+                    readOnly
+                    className="w-full bg-gray-50 border-gray-200 text-gray-600"
+                  />
                 </div>
 
-                {/* Justificativas Gerais */}
+                {/* 2 - Data da Elaboração */}
                 <div className="w-full p-4 border-b border-gray-100">
-                  <Label htmlFor="justificativas" className="text-sm font-semibold text-gray-700 flex items-center gap-2 mb-2">
+                  <Label htmlFor="dataElaboracao" className="text-sm font-semibold text-gray-700 flex items-center gap-2 mb-2">
+                    <Calendar className="w-4 h-4" />
+                    Data da Elaboração
+                  </Label>
+                  <Input
+                    id="dataElaboracao"
+                    value={formatDateBR(formData.dataElaboracao)}
+                    readOnly
+                    className="w-full bg-gray-50 border-gray-200 text-gray-600"
+                  />
+                </div>
+
+                {/* 3 - Objeto do ETP */}
+                <div className="w-full p-4 border-b border-gray-100">
+                  <Label htmlFor="objetoETP" className="text-sm font-semibold text-gray-700 flex items-center gap-2 mb-2">
                     <Building2 className="w-4 h-4" />
-                    Justificativas Gerais da Matriz
+                    Objeto do ETP
                   </Label>
                   <Textarea
-                    id="justificativas"
-                    value={formData.justificativasGerais}
-                    onChange={(e) => setFormData({...formData, justificativasGerais: e.target.value})}
-                    placeholder="Descreva as justificativas gerais para a matriz de risco..."
-                    disabled={!permissoes.podeEditar || currentVersion.status !== 'rascunho'}
+                    id="objetoETP"
+                    value={formData.objetoETP}
+                    onChange={(e) => setFormData({ ...formData, objetoETP: e.target.value })}
+                    placeholder="Descreva o objeto do ETP..."
+                    disabled
                     className="w-full min-h-[100px] resize-none border-gray-200 focus:border-blue-300 focus:ring-blue-300"
                   />
                 </div>
 
-                {/* Observações Complementares */}
+                {/* 4 - Área/Setor Demandante */}
                 <div className="w-full p-4 border-b border-gray-100">
-                  <Label htmlFor="observacoes" className="text-sm font-semibold text-gray-700 flex items-center gap-2 mb-2">
-                    <Info className="w-4 h-4" />
-                    Observações Complementares
+                  <Label htmlFor="areaSetorDemandante" className="text-sm font-semibold text-gray-700 flex items-center gap-2 mb-2">
+                    <Building2 className="w-4 h-4" />
+                    Área/Setor Demandante
                   </Label>
-                  <Textarea
-                    id="observacoes"
-                    value={formData.observacoesComplementares}
-                    onChange={(e) => setFormData({...formData, observacoesComplementares: e.target.value})}
-                    placeholder="Adicione observações complementares..."
-                    disabled={!permissoes.podeEditar || currentVersion.status !== 'rascunho'}
-                    className="w-full min-h-[100px] resize-none border-gray-200 focus:border-blue-300 focus:ring-blue-300"
+                  <Input
+                    id="areaSetorDemandante"
+                    value={formData.areaSetorDemandante}
+                    readOnly
+                    className="w-full bg-gray-50 border-gray-200 text-gray-600"
                   />
                 </div>
 
-                {/* Responsáveis pela Elaboração */}
-                <ResponsavelSelector
-                  value={formData.responsaveis || []}
-                  onChange={salvarResponsaveis}
-                  disabled={!permissoes.podeEditar || currentVersion.status !== 'rascunho'}
-                  canEdit={permissoes.podeEditar}
-                  processoId={processoId}
-                  className="w-full"
-                  maxResponsaveis={5}
-                />
+                {/* 5 - Responsáveis pela Elaboração */}
+                <div className="w-full p-4 border-b border-gray-100">
+                  <ResponsavelSelector
+                    value={formData.responsaveis || []}
+                    onChange={salvarResponsaveis}
+                    disabled={!permissoes.podeEditar || currentVersion.status !== 'rascunho'}
+                    canEdit={permissoes.podeEditar}
+                    processoId={processoId}
+                    className="w-full"
+                    maxResponsaveis={5}
+                  />
+                </div>
+                
+                {/* Seções removidas conforme solicitado: Matriz de Riscos, Justificativas e Observações */}
+
+                
 
               </div>
             </div>
@@ -644,10 +608,9 @@ export default function MatrizRiscoElaboracaoSection({
               </header>
               <div className="p-4 md:p-6 flex-1 flex flex-col">
                 <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-                  <TabsList className="grid w-full grid-cols-3 rounded-none">
+                  <TabsList className="grid w-full grid-cols-2 rounded-none">
                     <TabsTrigger value="versoes">Versões</TabsTrigger>
                     <TabsTrigger value="anexos">Anexos</TabsTrigger>
-                    <TabsTrigger value="historico">Histórico</TabsTrigger>
                   </TabsList>
                   
                   {/* Aba Versões */}
@@ -798,15 +761,7 @@ export default function MatrizRiscoElaboracaoSection({
                     </div>
                   </TabsContent>
                   
-                  {/* Aba Histórico */}
-                  <TabsContent value="historico" className="mt-0 p-4">
-                    <div className="space-y-4 w-full">
-                      <div className="text-center py-6 text-gray-500">
-                        <History className="w-8 h-8 mx-auto mb-2 text-gray-300" />
-                        <p className="text-sm">Histórico de versões aparecerá aqui</p>
-                      </div>
-                    </div>
-                  </TabsContent>
+                  
                 </Tabs>
               </div>
             </div>
@@ -860,28 +815,54 @@ export default function MatrizRiscoElaboracaoSection({
                       </Button>
                     )}
                     
-                    {/* Botão Enviar para Aprovação */}
-                    <Button 
-                      onClick={handleSendToApproval} 
-                      variant="outline" 
-                      disabled={!canSendToApproval() || isLoading || !permissoes.podeEditar || currentVersion.status !== 'rascunho' || !!etapaConcluida}
-                      className="border-blue-200 text-blue-700 hover:bg-blue-50"
-                    >
-                      <Send className="w-4 h-4 mr-2" />
-                      Enviar para Aprovação
-                    </Button>
+                    {/* Botão Enviar para Aprovação com tooltip */}
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <div>
+                            <Button 
+                              onClick={handleSendToApproval} 
+                              variant="outline" 
+                              disabled={!canSendToApproval() || isLoading || !permissoes.podeEditar || currentVersion.status !== 'rascunho' || !!etapaConcluida}
+                              className="border-blue-200 text-blue-700 hover:bg-blue-50"
+                            >
+                              <Send className="w-4 h-4 mr-2" />
+                              Enviar para Aprovação
+                            </Button>
+                          </div>
+                        </TooltipTrigger>
+                        {!canSendToApproval() && (
+                          <TooltipContent>
+                            <p>Preencha os campos obrigatórios</p>
+                          </TooltipContent>
+                        )}
+                      </Tooltip>
+                    </TooltipProvider>
 
-                    {/* Botão Concluir Etapa */}
+                    {/* Botão Concluir Etapa com tooltip */}
                     {!etapaConcluida && (
-                      <Button 
-                        onClick={() => setShowConcluirModal(true)} 
-                        variant="default" 
-                        disabled={!permissoes.podeConcluirEtapa || isLoading}
-                        className="bg-green-600 hover:bg-green-700 text-white"
-                      >
-                        <Flag className="w-4 h-4 mr-2" />
-                        Concluir Etapa
-                      </Button>
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <div>
+                              <Button 
+                                onClick={() => setShowConcluirModal(true)} 
+                                variant="default" 
+                                disabled={!canConcluirEtapa() || isLoading}
+                                className="bg-green-600 hover:bg-green-700 text-white"
+                              >
+                                <Flag className="w-4 h-4 mr-2" />
+                                Concluir Etapa
+                              </Button>
+                            </div>
+                          </TooltipTrigger>
+                          {!canConcluirEtapa() && (
+                            <TooltipContent>
+                              <p>É necessário enviar uma versão para aprovação antes de concluir a etapa.</p>
+                            </TooltipContent>
+                          )}
+                        </Tooltip>
+                      </TooltipProvider>
                     )}
                     
                     {!permissoes.podeEditar && (

@@ -107,7 +107,7 @@ const gerarEtapasCompletas = (isNovoProcesso: boolean) => {
     { id: 5, nome: "Elaboração do ETP", nomeCompleto: "Elaboração do ETP", status: "pendente" as const, prazoPrevisao: "10 dias úteis", responsavel: "", cargo: "", gerencia: "" },
     { id: 6, nome: "Assinatura do ETP", nomeCompleto: "Assinatura do ETP", status: "pendente" as const, prazoPrevisao: "2 dias úteis", responsavel: "", cargo: "", gerencia: "" },
     { id: 7, nome: "Despacho do ETP", nomeCompleto: "Despacho do ETP", status: "pendente" as const, prazoPrevisao: "5 dias úteis", responsavel: "", cargo: "", gerencia: "" },
-    { id: 8, nome: "Elaboração/Análise da Matriz de Risco", nomeCompleto: "Elaboração/Análise da Matriz de Risco", status: "pendente" as const, prazoPrevisao: "7 dias úteis", responsavel: "", cargo: "", gerencia: "" },
+    { id: 8, nome: "Elaboração da Matriz de Risco", nomeCompleto: "Elaboração da Matriz de Risco", status: "pendente" as const, prazoPrevisao: "7 dias úteis", responsavel: "", cargo: "", gerencia: "" },
     { id: 9, nome: "Aprovação da Matriz de Risco", nomeCompleto: "Aprovação da Matriz de Risco", status: "pendente" as const, prazoPrevisao: "2 dias úteis", responsavel: "", cargo: "", gerencia: "" },
     { id: 10, nome: "Assinatura da Matriz de Risco", nomeCompleto: "Assinatura da Matriz de Risco", status: "pendente" as const, prazoPrevisao: "15 dias úteis", responsavel: "", cargo: "", gerencia: "" },
     { id: 11, nome: "Cotação", nomeCompleto: "Cotação", status: "pendente" as const, prazoPrevisao: "2 dias úteis", responsavel: "", cargo: "", gerencia: "" },

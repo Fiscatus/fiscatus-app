@@ -7,7 +7,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+// Removido: radio-group não é mais usado aqui
 import { Separator } from '@/components/ui/separator';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -16,7 +16,7 @@ import {
   FileText,
   CheckCircle,
   XCircle,
-  AlertTriangle,
+  // Removido: AlertTriangle não é mais usado
   Eye,
   History,
   Upload,
@@ -310,8 +310,7 @@ export default function DFDFormSection({
   function canSendToAnalysis(): boolean {
     return formData.objeto.trim() !== '' && 
            formData.areaSetorDemandante.trim() !== '' && 
-           formData.responsaveis && formData.responsaveis.length > 0 && 
-           formData.prioridade !== undefined;
+           formData.responsaveis && formData.responsaveis.length > 0;
   }
 
   // Verificar se pode concluir a etapa
@@ -637,8 +636,35 @@ export default function DFDFormSection({
                 </div>
               </header>
               <div className="p-4 md:p-6 space-y-0">
-                
-                {/* Objeto da Contratação */}
+                {/* 1 - Número do DFD */}
+                <div className="w-full p-4 border-b border-gray-100">
+                  <Label htmlFor="numeroDFD" className="text-sm font-semibold text-gray-700 flex items-center gap-2 mb-2">
+                    <Hash className="w-4 h-4" />
+                    Número do DFD
+                  </Label>
+                  <Input
+                    id="numeroDFD"
+                    value={formatNumeroDFD(formData.numeroDFD)}
+                    readOnly
+                    className="w-full bg-gray-50 border-gray-200 text-gray-600"
+                  />
+                </div>
+
+                {/* 2 - Data da Elaboração */}
+                <div className="w-full p-4 border-b border-gray-100">
+                  <Label htmlFor="dataElaboracao" className="text-sm font-semibold text-gray-700 flex items-center gap-2 mb-2">
+                    <Calendar className="w-4 h-4" />
+                    Data da Elaboração
+                  </Label>
+                  <Input
+                    id="dataElaboracao"
+                    value={formatDate(formData.dataElaboracao)}
+                    readOnly
+                    className="w-full bg-gray-50 border-gray-200 text-gray-600"
+                  />
+                </div>
+
+                {/* 3 - Objeto da Contratação */}
                 <div className="w-full p-4 border-b border-gray-100">
                   <Label htmlFor="objeto" className="text-sm font-semibold text-gray-700 flex items-center gap-2 mb-2">
                     <Building2 className="w-4 h-4" />
@@ -654,7 +680,9 @@ export default function DFDFormSection({
                   />
                 </div>
 
-                {/* Área/Setor Demandante */}
+                {/* 4 - (Removido) Grau de Prioridade */}
+
+                {/* 5 - Área/Setor Demandante */}
                 <div className="w-full p-4 border-b border-gray-100">
                   <Label htmlFor="areaSetor" className="text-sm font-semibold text-gray-700 flex items-center gap-2 mb-2">
                     <Building2 className="w-4 h-4" />
@@ -668,7 +696,7 @@ export default function DFDFormSection({
                   />
                 </div>
 
-                {/* Responsáveis pela Elaboração */}
+                {/* 6 - Responsáveis pela Elaboração */}
                 <ResponsavelSelector
                   value={formData.responsaveis || []}
                   onChange={(responsaveis) => {
@@ -680,61 +708,6 @@ export default function DFDFormSection({
                   className="w-full border-b border-gray-100"
                   maxResponsaveis={5}
                 />
-
-                {/* Data da Elaboração */}
-                <div className="w-full p-4 border-b border-gray-100">
-                  <Label htmlFor="dataElaboracao" className="text-sm font-semibold text-gray-700 flex items-center gap-2 mb-2">
-                    <Calendar className="w-4 h-4" />
-                    Data da Elaboração
-                  </Label>
-                  <Input
-                    id="dataElaboracao"
-                    value={formatDate(formData.dataElaboracao)}
-                    readOnly
-                    className="w-full bg-gray-50 border-gray-200 text-gray-600"
-                  />
-                </div>
-
-                {/* Número do DFD */}
-                <div className="w-full p-4 border-b border-gray-100">
-                  <Label htmlFor="numeroDFD" className="text-sm font-semibold text-gray-700 flex items-center gap-2 mb-2">
-                    <Hash className="w-4 h-4" />
-                    Número do DFD
-                  </Label>
-                  <Input
-                    id="numeroDFD"
-                    value={formatNumeroDFD(formData.numeroDFD)}
-                    readOnly
-                    className="w-full bg-gray-50 border-gray-200 text-gray-600"
-                  />
-                </div>
-
-                {/* Grau de Prioridade */}
-                <div className="w-full p-4">
-                  <Label className="text-sm font-semibold text-gray-700 flex items-center gap-2 mb-2">
-                    <AlertTriangle className="w-4 h-4" />
-                    Grau de Prioridade *
-                  </Label>
-                  <RadioGroup
-                    value={formData.prioridade}
-                    onValueChange={(value: 'ALTO' | 'MEDIO' | 'BAIXO') => setFormData({...formData, prioridade: value})}
-                    disabled={!permissoes.podeEditar || currentVersion.status !== 'rascunho'}
-                    className="w-full space-y-2"
-                  >
-                    <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="ALTO" id="prioridade-alto" />
-                      <Label htmlFor="prioridade-alto" className="text-sm">Alto</Label>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="MEDIO" id="prioridade-medio" />
-                      <Label htmlFor="prioridade-medio" className="text-sm">Médio</Label>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="BAIXO" id="prioridade-baixo" />
-                      <Label htmlFor="prioridade-baixo" className="text-sm">Baixo</Label>
-                    </div>
-                  </RadioGroup>
-                </div>
               </div>
             </div>
           </section>
