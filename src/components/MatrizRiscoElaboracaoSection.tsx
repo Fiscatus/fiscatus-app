@@ -44,6 +44,23 @@ import CommentsSection from './CommentsSection';
 import ResponsavelSelector from './ResponsavelSelector';
 import { formatDateBR, formatDateTimeBR } from '@/lib/utils';
 
+// Função para calcular dias úteis entre duas datas
+const calcularDiasUteis = (dataInicio: Date, dataFim: Date): number => {
+  let dias = 0;
+  const dataAtual = new Date(dataInicio);
+  
+  while (dataAtual <= dataFim) {
+    const diaSemana = dataAtual.getDay();
+    // 0 = domingo, 6 = sábado
+    if (diaSemana !== 0 && diaSemana !== 6) {
+      dias++;
+    }
+    dataAtual.setDate(dataAtual.getDate() + 1);
+  }
+  
+  return dias;
+};
+
 // Tipos TypeScript para Matriz de Risco
 type MatrizRiscoVersionStatus = 'rascunho' | 'finalizada' | 'enviada_para_aprovacao' | 'aprovada' | 'reprovada';
 
@@ -62,11 +79,16 @@ interface MatrizRiscoVersion {
   status: MatrizRiscoVersionStatus;
   autorId: string;
   autorNome: string;
+  autorCargo?: string;
+  autorGerencia?: string;
+  autorEmail?: string;
   criadoEm: string;
   atualizadoEm: string;
   enviadoParaAprovacaoEm?: string;
   finalizadoEm?: string;
   prazoDiasUteis?: number;
+  prazoInicialDiasUteis?: number;
+  prazoCumpridoDiasUteis?: number;
   documentoUrl?: string;
   documentoNome?: string;
   payload: {
@@ -101,12 +123,18 @@ const mockVersions: MatrizRiscoVersion[] = [
   {
     id: 'v1',
     numeroVersao: 1,
-    status: 'rascunho',
+    status: 'enviada_para_aprovacao',
     autorId: 'user1',
     autorNome: 'Guilherme de Carvalho Silva',
+    autorCargo: 'Analista de Riscos',
+    autorGerencia: 'GSL - Gerência de Suprimentos e Logística',
+    autorEmail: 'guilherme.silva@hospital.gov.br',
     criadoEm: '2024-01-15T10:00:00Z',
-    atualizadoEm: '2024-01-15T10:00:00Z',
-    prazoDiasUteis: 0,
+    atualizadoEm: '2024-01-18T16:45:00Z',
+    enviadoParaAprovacaoEm: '2024-01-18T16:45:00Z',
+    prazoDiasUteis: 7,
+    prazoInicialDiasUteis: 7,
+    prazoCumpridoDiasUteis: 3,
     documentoUrl: '#',
     documentoNome: 'MatrizRisco_V1_GuilhermeCarvalho.pdf',
     payload: {
@@ -279,11 +307,17 @@ export default function MatrizRiscoElaboracaoSection({
 
     setIsLoading(true);
     try {
+      // Calcular prazo cumprido em dias úteis
+      const dataCriacao = new Date(currentVersion.criadoEm);
+      const dataEnvio = new Date();
+      const prazoCumprido = calcularDiasUteis(dataCriacao, dataEnvio);
+
       const updatedVersion: MatrizRiscoVersion = {
         ...currentVersion,
         status: 'enviada_para_aprovacao',
         enviadoParaAprovacaoEm: new Date().toISOString(),
         atualizadoEm: new Date().toISOString(),
+        prazoCumpridoDiasUteis: prazoCumprido,
         payload: formData
       };
       
@@ -317,9 +351,13 @@ export default function MatrizRiscoElaboracaoSection({
         status: 'rascunho',
         autorId: user?.id || 'user1',
         autorNome: user?.nome || 'Usuário Atual',
+        autorCargo: user?.cargo,
+        autorGerencia: user?.gerencia,
+        autorEmail: user?.email,
         criadoEm: new Date().toISOString(),
         atualizadoEm: new Date().toISOString(),
-        prazoDiasUteis: 0,
+        prazoDiasUteis: 7,
+        prazoInicialDiasUteis: 7,
         payload: {
           ...currentVersion.payload,
           riscos: [],
@@ -456,15 +494,19 @@ export default function MatrizRiscoElaboracaoSection({
     }
   };
 
-  const getSLABadge = (diasUteis: number, numeroVersao: number) => {
-    const slaPadrao = numeroVersao === 1 ? 2 : 1;
+  const getSLABadge = (prazoInicial: number, prazoCumprido: number | undefined) => {
+    // Se não foi enviado ainda, não há como avaliar
+    if (prazoCumprido === undefined) {
+      return { label: 'Não Enviado', color: 'bg-gray-100 text-gray-800' };
+    }
     
-    if (diasUteis <= slaPadrao) {
-      return { label: 'Dentro do Prazo', color: 'bg-green-100 text-green-800' };
-    } else if (diasUteis <= slaPadrao + 1) {
+    // Comparar prazo cumprido com prazo inicial
+    if (prazoCumprido <= prazoInicial) {
+      return { label: 'Prazo Cumprido', color: 'bg-green-100 text-green-800' };
+    } else if (prazoCumprido <= prazoInicial + 1) {
       return { label: 'Em Risco', color: 'bg-yellow-100 text-yellow-800' };
     } else {
-      return { label: 'Estourado', color: 'bg-red-100 text-red-800' };
+      return { label: 'Prazo Não Cumprido', color: 'bg-red-100 text-red-800' };
     }
   };
 
@@ -637,10 +679,10 @@ export default function MatrizRiscoElaboracaoSection({
                           <p className="text-gray-500 font-medium">Ainda não há versões criadas</p>
                         </div>
                       ) : (
-                        <div className="space-y-3 flex-1 overflow-y-auto w-full">
+                        <div className="space-y-3 w-full max-h-full overflow-y-auto">
                           {versions.map((version) => {
                             const statusConfig = getStatusConfig(version.status);
-                            const slaBadge = getSLABadge(version.prazoDiasUteis || 0, version.numeroVersao);
+                            const slaBadge = getSLABadge(version.prazoInicialDiasUteis || 0, version.prazoCumpridoDiasUteis);
                             
                             return (
                               <div key={version.id} className="border border-gray-200 rounded-xl p-4 hover:bg-gray-50 transition-colors w-full">
@@ -661,8 +703,11 @@ export default function MatrizRiscoElaboracaoSection({
                                 
                                 <div className="text-xs text-gray-700 space-y-1 mb-3 w-full">
                                   <p><strong>Autor:</strong> {version.autorNome}</p>
-                                  <p><strong>Criado:</strong> {formatDateBR(version.criadoEm)}</p>
-                                  <p><strong>Prazo:</strong> {version.prazoDiasUteis || 0} dias úteis</p>
+                                  <p><strong>Cargo:</strong> {version.autorCargo || 'Não informado'}</p>
+                                  <p><strong>Gerência:</strong> {version.autorGerencia || 'Não informado'}</p>
+                                  <p><strong>Criado:</strong> {formatDateBR(new Date(version.criadoEm))} às {new Date(version.criadoEm).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}</p>
+                                  <p><strong>Prazo inicial:</strong> {version.prazoInicialDiasUteis || 0} dias úteis</p>
+                                  <p><strong>Prazo cumprido:</strong> {version.prazoCumpridoDiasUteis !== undefined ? `${version.prazoCumpridoDiasUteis} dias úteis` : 'Não enviado'}</p>
                                 </div>
 
                                 {/* Documento Vinculado */}

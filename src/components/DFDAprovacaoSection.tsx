@@ -64,7 +64,7 @@ interface VersaoAnaliseResumo {
   criadoEm: string;
   decididoEm?: string;
   prazoDiasUteis?: number;
-  slaStatus?: 'ok' | 'risco' | 'estourado';
+  slaStatus?: 'ok' | 'risco' | 'nao_cumprido';
   documentoPrincipal?: { nome: string; url: string; mimeType: string };
 }
 
@@ -157,17 +157,20 @@ export default function DFDAprovacaoSection({
   };
 
   // Calcular SLA da análise
-  const calcularSLA = (dataEnvio: string, dataAnalise?: string) => {
-    const inicio = new Date(dataEnvio);
-    const fim = dataAnalise ? new Date(dataAnalise) : new Date();
-    const diasUteis = countBusinessDays(inicio, fim);
+  const calcularSLA = (prazoInicial: number, prazoCumprido: number | undefined) => {
+    // Se não foi enviado ainda, não há como avaliar
+    if (prazoCumprido === undefined) {
+      return { status: 'nao_enviado' as const, dias: 0 };
+    }
     
-    // Regras padrão
-    const prazoMaximo = 2; // 2 dias úteis para 1ª versão
-    
-    if (diasUteis <= prazoMaximo) return { status: 'ok' as const, dias: diasUteis };
-    if (diasUteis <= prazoMaximo + 1) return { status: 'risco' as const, dias: diasUteis };
-    return { status: 'estourado' as const, dias: diasUteis };
+    // Comparar prazo cumprido com prazo inicial
+    if (prazoCumprido <= prazoInicial) {
+      return { status: 'ok' as const, dias: prazoCumprido };
+    } else if (prazoCumprido <= prazoInicial + 1) {
+      return { status: 'risco' as const, dias: prazoCumprido };
+    } else {
+      return { status: 'nao_cumprido' as const, dias: prazoCumprido };
+    }
   };
 
   // Contar dias úteis
@@ -762,7 +765,7 @@ export default function DFDAprovacaoSection({
                       <div className="space-y-3 max-h-60 overflow-y-auto">
                         {dfdData.versions.map((version) => {
                           const statusConfig = getStatusConfig(version.status);
-                          const sla = calcularSLA(version.createdAt, version.aprovadoData);
+                          const sla = calcularSLA(version.prazoInicialDiasUteis || 0, version.prazoCumpridoDiasUteis);
                           
                           return (
                             <div key={version.id} className="border border-gray-200 rounded-lg p-3 hover:bg-gray-50 transition-colors">
@@ -788,7 +791,11 @@ export default function DFDAprovacaoSection({
                               </div>
                               <div className="text-xs text-gray-600 space-y-1">
                                 <p><strong>Autor:</strong> {version.createdBy}</p>
-                                <p><strong>Data:</strong> {formatDate(version.createdAt)}</p>
+                                <p><strong>Cargo:</strong> {version.createdByCargo || 'Não informado'}</p>
+                                <p><strong>Gerência:</strong> {version.createdByGerencia || 'Não informado'}</p>
+                                <p><strong>Criado:</strong> {formatDateTimeBR(new Date(version.createdAt))}</p>
+                                <p><strong>Prazo inicial:</strong> {version.prazoInicialDiasUteis || 0} dias úteis</p>
+                                <p><strong>Prazo cumprido:</strong> {version.prazoCumpridoDiasUteis !== undefined ? `${version.prazoCumpridoDiasUteis} dias úteis` : 'Não enviado'}</p>
                                 {sla && (
                                   <div className="flex items-center gap-2">
                                     <span><strong>SLA:</strong> {sla.dias} dias úteis</span>
@@ -796,11 +803,14 @@ export default function DFDAprovacaoSection({
                                       className={`text-xs ${
                                         sla.status === 'ok' ? 'bg-green-100 text-green-800' :
                                         sla.status === 'risco' ? 'bg-yellow-100 text-yellow-800' :
+                                        sla.status === 'nao_enviado' ? 'bg-gray-100 text-gray-800' :
                                         'bg-red-100 text-red-800'
                                       }`}
                                     >
-                                      {sla.status === 'ok' ? 'Dentro do Prazo' :
-                                       sla.status === 'risco' ? 'Em Risco' : 'Estourado'}
+                                      {sla.status === 'ok' ? 'Prazo Cumprido' :
+                                       sla.status === 'risco' ? 'Em Risco' : 
+                                       sla.status === 'nao_enviado' ? 'Não Enviado' :
+                                       'Prazo Não Cumprido'}
                                     </Badge>
                                   </div>
                                 )}

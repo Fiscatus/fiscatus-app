@@ -1,6 +1,23 @@
 import { useState, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
 
+// Função para calcular dias úteis entre duas datas
+const calcularDiasUteis = (dataInicio: Date, dataFim: Date): number => {
+  let dias = 0;
+  const dataAtual = new Date(dataInicio);
+  
+  while (dataAtual <= dataFim) {
+    const diaSemana = dataAtual.getDay();
+    // 0 = domingo, 6 = sábado
+    if (diaSemana !== 0 && diaSemana !== 6) {
+      dias++;
+    }
+    dataAtual.setDate(dataAtual.getDate() + 1);
+  }
+  
+  return dias;
+};
+
 export type DFDVersionStatus = 'rascunho' | 'enviado_analise' | 'devolvido' | 'aprovado';
 
 export interface DFDVersion {
@@ -9,6 +26,9 @@ export interface DFDVersion {
   content: string;
   createdAt: string;
   createdBy: string;
+  createdByCargo?: string;
+  createdByGerencia?: string;
+  createdByEmail?: string;
   isFinal: boolean;
   status: DFDVersionStatus;
   objetivoContratacao: string;
@@ -16,6 +36,8 @@ export interface DFDVersion {
   unidadeDemandante: string;
   dataElaboracao: string;
   responsavelElaboracao: string;
+  prazoInicialDiasUteis?: number;
+  prazoCumpridoDiasUteis?: number;
   devolucaoJustificativa?: string;
   devolucaoData?: string;
   devolucaoPor?: string;
@@ -76,6 +98,58 @@ export function useDFD(processoId: string) {
       } catch (error) {
         console.error('Erro ao carregar dados do DFD:', error);
       }
+    } else {
+      // Dados iniciais de exemplo se não houver dados salvos
+      const initialData: DFDData = {
+        currentVersion: {
+          id: 'v1',
+          version: 1,
+          content: 'Conteúdo do DFD',
+          createdAt: '2024-01-15T14:30:00Z',
+          createdBy: 'Lucas Moreira Brito',
+          createdByCargo: 'Analista de Projetos',
+          createdByGerencia: 'GSP - Gerência de Soluções e Projetos',
+          createdByEmail: 'lucas.brito@hospital.gov.br',
+          isFinal: true,
+          status: 'enviado_analise',
+          objetivoContratacao: 'Contratação de serviços de limpeza hospitalar',
+          justificativaDemanda: 'Modernização das instalações hospitalares',
+          unidadeDemandante: 'GRH - Gerência de Recursos Humanos',
+          dataElaboracao: '2024-01-15',
+          responsavelElaboracao: 'Lucas Moreira Brito',
+          prazoInicialDiasUteis: 7,
+          prazoCumpridoDiasUteis: 3,
+          enviadoData: '2024-01-18T16:45:00Z',
+          enviadoPor: 'Lucas Moreira Brito'
+        },
+        versions: [{
+          id: 'v1',
+          version: 1,
+          content: 'Conteúdo do DFD',
+          createdAt: '2024-01-15T14:30:00Z',
+          createdBy: 'Lucas Moreira Brito',
+          createdByCargo: 'Analista de Projetos',
+          createdByGerencia: 'GSP - Gerência de Soluções e Projetos',
+          createdByEmail: 'lucas.brito@hospital.gov.br',
+          isFinal: true,
+          status: 'enviado_analise',
+          objetivoContratacao: 'Contratação de serviços de limpeza hospitalar',
+          justificativaDemanda: 'Modernização das instalações hospitalares',
+          unidadeDemandante: 'GRH - Gerência de Recursos Humanos',
+          dataElaboracao: '2024-01-15',
+          responsavelElaboracao: 'Lucas Moreira Brito',
+          prazoInicialDiasUteis: 7,
+          prazoCumpridoDiasUteis: 3,
+          enviadoData: '2024-01-18T16:45:00Z',
+          enviadoPor: 'Lucas Moreira Brito'
+        }],
+        annexes: [],
+        observations: '',
+        isCompleted: false,
+        isDevolvido: false,
+        status: 'enviado_analise'
+      };
+      setDfdData(initialData);
     }
   }, [processoId]);
 
@@ -95,13 +169,20 @@ export function useDFD(processoId: string) {
   };
 
   // Criar versão inicial (V1)
-  const createInitialVersion = (versionData: Omit<DFDVersion, 'id' | 'version' | 'createdAt' | 'createdBy' | 'isFinal' | 'status'>) => {
+  const createInitialVersion = (
+    versionData: Omit<DFDVersion, 'id' | 'version' | 'createdAt' | 'createdBy' | 'createdByCargo' | 'createdByGerencia' | 'createdByEmail' | 'isFinal' | 'status'>,
+    userInfo?: { nome: string; cargo: string; gerencia: string; email: string }
+  ) => {
     const initialVersion: DFDVersion = {
       ...versionData,
       id: 'v1',
       version: 1,
       createdAt: new Date().toISOString(),
-      createdBy: 'Usuário',
+      createdBy: userInfo?.nome || 'Usuário',
+      createdByCargo: userInfo?.cargo,
+      createdByGerencia: userInfo?.gerencia,
+      createdByEmail: userInfo?.email,
+      prazoInicialDiasUteis: 0,
       isFinal: true,
       status: 'rascunho'
     };
@@ -118,14 +199,21 @@ export function useDFD(processoId: string) {
   };
 
   // Adicionar nova versão
-  const addVersion = (versionData: Omit<DFDVersion, 'id' | 'version' | 'createdAt' | 'createdBy' | 'isFinal' | 'status'>) => {
+  const addVersion = (
+    versionData: Omit<DFDVersion, 'id' | 'version' | 'createdAt' | 'createdBy' | 'createdByCargo' | 'createdByGerencia' | 'createdByEmail' | 'isFinal' | 'status'>,
+    userInfo?: { nome: string; cargo: string; gerencia: string; email: string }
+  ) => {
     const newVersionNumber = dfdData.versions.length + 1;
     const newVersion: DFDVersion = {
       ...versionData,
       id: `v${newVersionNumber}`,
       version: newVersionNumber,
       createdAt: new Date().toISOString(),
-      createdBy: 'Usuário',
+      createdBy: userInfo?.nome || 'Usuário',
+      createdByCargo: userInfo?.cargo,
+      createdByGerencia: userInfo?.gerencia,
+      createdByEmail: userInfo?.email,
+      prazoInicialDiasUteis: 0,
       isFinal: false,
       status: 'rascunho'
     };
@@ -149,10 +237,17 @@ export function useDFD(processoId: string) {
   const enviarParaAnalise = (enviadoPor: string) => {
     const latestVersion = dfdData.versions[dfdData.versions.length - 1];
     if (latestVersion) {
+      // Calcular prazo cumprido em dias úteis
+      const dataCriacao = new Date(latestVersion.createdAt);
+      const dataEnvio = new Date();
+      const prazoCumprido = calcularDiasUteis(dataCriacao, dataEnvio);
+
       const updatedVersions = dfdData.versions.map(version => ({
         ...version,
         status: version.id === latestVersion.id ? 'enviado_analise' as DFDVersionStatus : version.status,
-        isFinal: version.id === latestVersion.id
+        isFinal: version.id === latestVersion.id,
+        enviadoData: version.id === latestVersion.id ? new Date().toISOString() : version.enviadoData,
+        prazoCumpridoDiasUteis: version.id === latestVersion.id ? prazoCumprido : version.prazoCumpridoDiasUteis
       }));
 
       const updatedData = {

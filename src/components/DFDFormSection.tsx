@@ -62,11 +62,16 @@ interface DFDVersion {
   status: DFDVersionStatus;
   autorId: string;
   autorNome: string;
+  autorCargo?: string;
+  autorGerencia?: string;
+  autorEmail?: string;
   criadoEm: string;
   atualizadoEm: string;
   enviadoParaAnaliseEm?: string;
   finalizadoEm?: string;
   prazoDiasUteis?: number;
+  prazoInicialDiasUteis?: number;
+  prazoCumpridoDiasUteis?: number;
   documentoUrl?: string;
   documentoNome?: string;
   payload: {
@@ -158,23 +163,29 @@ const mockVersions: DFDVersion[] = [
   {
     id: 'v1',
     numeroVersao: 1,
-    status: 'rascunho',
+    status: 'enviada_para_analise',
     autorId: 'user1',
     autorNome: 'Lucas Moreira Brito',
-    criadoEm: '2024-01-15T10:00:00Z',
-    atualizadoEm: '2024-01-15T10:00:00Z',
-    prazoDiasUteis: 0,
+    autorCargo: 'Analista de Projetos',
+    autorGerencia: 'GSP - Gerência de Soluções e Projetos',
+    autorEmail: 'lucas.brito@hospital.gov.br',
+    criadoEm: '2024-01-15T14:30:00Z',
+    atualizadoEm: '2024-01-18T16:45:00Z',
+    enviadoParaAnaliseEm: '2024-01-18T16:45:00Z',
+    prazoDiasUteis: 7,
+    prazoInicialDiasUteis: 7,
+    prazoCumpridoDiasUteis: 3,
     documentoUrl: '#',
     documentoNome: 'DFD_V1_LucasMoreiraBrito.pdf',
     payload: {
-      objeto: '',
+      objeto: 'Contratação de serviços de limpeza hospitalar para modernização das instalações',
       areaSetorDemandante: 'GRH - Gerência de Recursos Humanos',
       responsaveis: [
         {
           id: 'user1',
           nome: 'Lucas Moreira Brito',
-          cargo: 'Gerente de Recursos Humanos',
-          gerencia: 'GRH - Gerência de Recursos Humanos'
+          cargo: 'Analista de Projetos',
+          gerencia: 'GSP - Gerência de Soluções e Projetos'
         }
       ],
       dataElaboracao: '2024-01-15',
@@ -381,11 +392,17 @@ export default function DFDFormSection({
 
     setIsLoading(true);
     try {
+      // Calcular prazo cumprido em dias úteis
+      const dataCriacao = new Date(currentVersion.criadoEm);
+      const dataEnvio = new Date();
+      const prazoCumprido = countBusinessDays(dataCriacao, dataEnvio);
+
       const updatedVersion: DFDVersion = {
         ...currentVersion,
         status: 'enviada_para_analise',
         enviadoParaAnaliseEm: new Date().toISOString(),
         atualizadoEm: new Date().toISOString(),
+        prazoCumpridoDiasUteis: prazoCumprido,
         payload: formData
       };
       
@@ -419,9 +436,13 @@ export default function DFDFormSection({
         status: 'rascunho',
         autorId: user?.id || 'user1',
         autorNome: user?.nome || 'Usuário Atual',
+        autorCargo: user?.cargo,
+        autorGerencia: user?.gerencia,
+        autorEmail: user?.email,
         criadoEm: new Date().toISOString(),
         atualizadoEm: new Date().toISOString(),
-        prazoDiasUteis: 0,
+        prazoDiasUteis: 7,
+        prazoInicialDiasUteis: 7,
         payload: {
           ...currentVersion.payload,
           objeto: '',
@@ -557,15 +578,19 @@ export default function DFDFormSection({
     }
   };
 
-  const getSLABadge = (diasUteis: number, numeroVersao: number) => {
-    const slaPadrao = numeroVersao === 1 ? 2 : 1; // 1ª versão: 2 dias, demais: 1 dia
+  const getSLABadge = (prazoInicial: number, prazoCumprido: number | undefined) => {
+    // Se não foi enviado ainda, não há como avaliar
+    if (prazoCumprido === undefined) {
+      return { label: 'Não Enviado', color: 'bg-gray-100 text-gray-800' };
+    }
     
-    if (diasUteis <= slaPadrao) {
-      return { label: 'Dentro do Prazo', color: 'bg-green-100 text-green-800' };
-    } else if (diasUteis <= slaPadrao + 1) {
+    // Comparar prazo cumprido com prazo inicial
+    if (prazoCumprido <= prazoInicial) {
+      return { label: 'Prazo Cumprido', color: 'bg-green-100 text-green-800' };
+    } else if (prazoCumprido <= prazoInicial + 1) {
       return { label: 'Em Risco', color: 'bg-yellow-100 text-yellow-800' };
     } else {
-      return { label: 'Estourado', color: 'bg-red-100 text-red-800' };
+      return { label: 'Prazo Não Cumprido', color: 'bg-red-100 text-red-800' };
     }
   };
 
@@ -754,10 +779,10 @@ export default function DFDFormSection({
                           <p className="text-gray-500 font-medium">Ainda não há versões criadas</p>
                         </div>
                       ) : (
-                        <div className="space-y-3 flex-1 overflow-y-auto w-full">
+                        <div className="space-y-3 w-full max-h-full overflow-y-auto">
                           {versions.map((version) => {
                             const statusConfig = getStatusConfig(version.status);
-                            const slaBadge = getSLABadge(version.prazoDiasUteis || 0, version.numeroVersao);
+                            const slaBadge = getSLABadge(version.prazoInicialDiasUteis || 0, version.prazoCumpridoDiasUteis);
                             
                             return (
                               <div key={version.id} className="border border-gray-200 rounded-xl p-4 hover:bg-gray-50 transition-colors w-full">
@@ -778,8 +803,11 @@ export default function DFDFormSection({
                                 
                                 <div className="text-xs text-gray-700 space-y-1 mb-3 w-full">
                                   <p><strong>Autor:</strong> {version.autorNome}</p>
-                                  <p><strong>Criado:</strong> {formatDate(version.criadoEm)}</p>
-                                  <p><strong>Prazo:</strong> {version.prazoDiasUteis || 0} dias úteis</p>
+                                  <p><strong>Cargo:</strong> {version.autorCargo || 'Não informado'}</p>
+                                  <p><strong>Gerência:</strong> {version.autorGerencia || 'Não informado'}</p>
+                                  <p><strong>Criado:</strong> {formatDateTimeBR(new Date(version.criadoEm))}</p>
+                                  <p><strong>Prazo inicial:</strong> {version.prazoInicialDiasUteis || 0} dias úteis</p>
+                                  <p><strong>Prazo cumprido:</strong> {version.prazoCumpridoDiasUteis !== undefined ? `${version.prazoCumpridoDiasUteis} dias úteis` : 'Não enviado'}</p>
                                 </div>
 
                                 {/* Documento Vinculado */}

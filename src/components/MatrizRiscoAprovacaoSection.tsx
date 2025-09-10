@@ -34,6 +34,11 @@ interface MatrizVersion {
   status: MatrizVersionStatus;
   createdAt: string;
   createdBy: string;
+  createdByCargo?: string;
+  createdByGerencia?: string;
+  createdByEmail?: string;
+  prazoInicialDiasUteis?: number;
+  prazoCumpridoDiasUteis?: number;
   aprovadoData?: string;
 }
 
@@ -83,7 +88,12 @@ export default function MatrizRiscoAprovacaoSection({
       isFinal: false,
       status: 'aprovada',
       createdAt: '2025-01-10T09:00:00Z',
-      createdBy: 'Equipe Técnica',
+      createdBy: 'Ana Carolina Silva',
+      createdByCargo: 'Analista de Riscos',
+      createdByGerencia: 'GSP - Gerência de Soluções e Projetos',
+      createdByEmail: 'ana.silva@hospital.gov.br',
+      prazoInicialDiasUteis: 7,
+      prazoCumpridoDiasUteis: 2,
       aprovadoData: '2025-01-12T15:00:00Z'
     },
     {
@@ -91,18 +101,23 @@ export default function MatrizRiscoAprovacaoSection({
       version: 2,
       isFinal: true,
       status: 'enviada',
-      createdAt: '2025-01-15T09:00:00Z',
-      createdBy: 'Equipe Técnica'
+      createdAt: '2025-01-15T14:30:00Z',
+      createdBy: 'Ana Carolina Silva',
+      createdByCargo: 'Analista de Riscos',
+      createdByGerencia: 'GSP - Gerência de Soluções e Projetos',
+      createdByEmail: 'ana.silva@hospital.gov.br',
+      prazoInicialDiasUteis: 7,
+      prazoCumpridoDiasUteis: 3
     }
   ]);
 
   // Carregar documento mock
   useEffect(() => {
     const doc = {
-      name: 'Matriz_Risco_V2.pdf',
+      name: 'Matriz_Risco_V2_AnaCarolinaSilva.pdf',
       size: '1.4 MB',
-      uploadedAt: '2025-01-15T09:10:00Z',
-      uploadedBy: 'Equipe Técnica'
+      uploadedAt: '2025-01-15T14:30:00Z',
+      uploadedBy: 'Ana Carolina Silva'
     } as MatrizDocumentoInfo;
     setMatrizArquivo(doc);
     setMatrizExiste(true);
@@ -174,15 +189,25 @@ export default function MatrizRiscoAprovacaoSection({
     toast({ title: 'Download Iniciado', description: `Baixando ${matrizArquivo.name}...` });
   };
 
-  // SLA simples: ordinário 2 dias p/ primeira, 1 dia p/ seguintes; urgência fixo 1
-  const calcularSLA = (createdAt: string, regime: 'URGENCIA' | 'ORDINARIO') => {
-    const primeira = versions[0]?.version === 1;
-    const prazo = regime === 'URGENCIA' ? 1 : (primeira ? 2 : 1);
-    return { dias: prazo, status: 'ok' as const };
+  // Calcular SLA baseado em prazo inicial vs prazo cumprido
+  const calcularSLA = (prazoInicial: number, prazoCumprido: number | undefined) => {
+    // Se não foi enviado ainda, não há como avaliar
+    if (prazoCumprido === undefined) {
+      return { status: 'nao_enviado' as const, dias: 0 };
+    }
+    
+    // Comparar prazo cumprido com prazo inicial
+    if (prazoCumprido <= prazoInicial) {
+      return { status: 'ok' as const, dias: prazoCumprido };
+    } else if (prazoCumprido <= prazoInicial + 1) {
+      return { status: 'risco' as const, dias: prazoCumprido };
+    } else {
+      return { status: 'nao_cumprido' as const, dias: prazoCumprido };
+    }
   };
 
   const versaoAtual = versions.find(v => v.isFinal) || versions[versions.length - 1];
-  const sla = calcularSLA(versaoAtual?.createdAt || new Date().toISOString(), 'ORDINARIO');
+  const sla = calcularSLA(versaoAtual?.prazoInicialDiasUteis || 0, versaoAtual?.prazoCumpridoDiasUteis);
 
   // Status badge removido no header para ficar idêntico ao Card 2
 
@@ -288,7 +313,7 @@ export default function MatrizRiscoAprovacaoSection({
                         <p className="text-gray-500 font-medium">Nenhuma versão disponível</p>
                       </div>
                     ) : (
-                      <div className="space-y-3 max-h-60 overflow-y-auto">
+                      <div className="space-y-3 max-h-full overflow-y-auto">
                         {versions.map((version) => {
                           const statusConfig = ((): { label: string; color: string; icon: React.ReactNode } => {
                             switch (version.status) {
@@ -328,7 +353,11 @@ export default function MatrizRiscoAprovacaoSection({
                               </div>
                               <div className="text-xs text-gray-600 space-y-1">
                                 <p><strong>Autor:</strong> {version.createdBy}</p>
-                                <p><strong>Data:</strong> {formatDateBR(version.createdAt)}</p>
+                                <p><strong>Cargo:</strong> {version.createdByCargo || 'Não informado'}</p>
+                                <p><strong>Gerência:</strong> {version.createdByGerencia || 'Não informado'}</p>
+                                <p><strong>Criado:</strong> {formatDateBR(new Date(version.createdAt))} às {new Date(version.createdAt).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}</p>
+                                <p><strong>Prazo inicial:</strong> {version.prazoInicialDiasUteis || 0} dias úteis</p>
+                                <p><strong>Prazo cumprido:</strong> {version.prazoCumpridoDiasUteis !== undefined ? `${version.prazoCumpridoDiasUteis} dias úteis` : 'Não enviado'}</p>
                               </div>
                             </div>
                           );
