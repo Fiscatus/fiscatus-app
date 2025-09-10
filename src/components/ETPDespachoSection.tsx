@@ -195,6 +195,10 @@ export default function ETPDespachoSection({
     size: number;
     uploadedAt: string;
     file: File;
+    uploadedBy: string;
+    uploadedByCargo: string;
+    uploadedByGerencia: string;
+    uploadedByEmail: string;
   } | null>(null);
 
   // Carregar dados iniciais
@@ -385,12 +389,25 @@ export default function ETPDespachoSection({
   const handleDespachoFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
+      if (!user) {
+        toast({
+          title: "Erro",
+          description: "Usuário não encontrado. Faça login novamente.",
+          variant: "destructive"
+        });
+        return;
+      }
+
       if (file.type === 'application/pdf' || file.type === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document') {
         setDespachoArquivo({
           name: file.name,
           size: file.size,
           uploadedAt: new Date().toISOString(),
-          file: file
+          file: file,
+          uploadedBy: user.nome,
+          uploadedByCargo: user.cargo,
+          uploadedByGerencia: user.gerencia,
+          uploadedByEmail: user.email
         });
         toast({
           title: "Arquivo carregado",
@@ -409,6 +426,27 @@ export default function ETPDespachoSection({
   // Função para iniciar upload
   const handleUploadDespacho = () => {
     despachoFileInputRef.current?.click();
+  };
+
+  // Função para visualizar documento
+  const handleVisualizarDocumento = () => {
+    if (!despachoArquivo) {
+      toast({
+        title: "Nenhum arquivo",
+        description: "Nenhum arquivo de despacho foi enviado ainda.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    // Mock: simular abertura do documento em nova aba
+    const url = `#documento-despacho-etp-${processoId}`;
+    window.open(url, '_blank');
+    
+    toast({
+      title: "Documento aberto",
+      description: "O documento foi aberto em uma nova aba."
+    });
   };
 
   // Função para baixar despacho
@@ -874,20 +912,70 @@ export default function ETPDespachoSection({
 
               {/* Lista de arquivos */}
               {despachoArquivo ? (
-                <div className="border border-gray-200 rounded-lg p-4 bg-gray-50">
+                <div className="border border-gray-200 rounded-xl p-6 bg-gradient-to-br from-gray-50 to-white shadow-sm hover:shadow-md transition-shadow duration-200">
                   <div className="flex items-center justify-between">
+                    {/* Informações do documento */}
                     <div className="flex items-center gap-3 min-w-0 flex-1">
-                      <div className="p-2 bg-indigo-100 rounded-lg">
+                      <div className="p-2 bg-gradient-to-br from-indigo-100 to-indigo-200 rounded-lg flex-shrink-0">
                         <FileText className="w-4 h-4 text-indigo-600" />
                       </div>
                       <div className="min-w-0 flex-1">
-                        <p className="text-sm font-medium text-gray-900 truncate">{despachoArquivo.name}</p>
-                        <p className="text-xs text-gray-500">
-                          {despachoArquivo.size} • {formatDateTimeBR(new Date(despachoArquivo.uploadedAt))}
+                        <h3 className="text-lg font-semibold text-gray-900 truncate">
+                          {despachoArquivo.name}
+                        </h3>
+                      </div>
+                    </div>
+
+                    {/* Informações do usuário */}
+                    <div className="flex items-center gap-3 min-w-0 flex-1">
+                      <div className="p-2 bg-gradient-to-br from-blue-100 to-blue-200 rounded-lg flex-shrink-0">
+                        <User className="w-4 h-4 text-blue-600" />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="text-sm font-semibold text-gray-900 truncate">
+                          {despachoArquivo.uploadedBy}
+                        </p>
+                        <p className="text-xs text-gray-600 font-medium truncate">
+                          {despachoArquivo.uploadedByCargo}
+                        </p>
+                        <p className="text-xs text-gray-500 truncate">
+                          {despachoArquivo.uploadedByGerencia}
                         </p>
                       </div>
                     </div>
-                    <div className="flex items-center gap-1 flex-shrink-0">
+
+                    {/* Data e horário */}
+                    <div className="flex items-center gap-3 min-w-0 flex-1">
+                      <div className="p-2 bg-gradient-to-br from-green-100 to-green-200 rounded-lg flex-shrink-0">
+                        <Calendar className="w-4 h-4 text-green-600" />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="text-sm font-semibold text-gray-900">
+                          {formatDateBR(new Date(despachoArquivo.uploadedAt))} às {new Date(despachoArquivo.uploadedAt).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+                        </p>
+                      </div>
+                    </div>
+                    
+                    {/* Botões de ação */}
+                    <div className="flex items-center gap-2 flex-shrink-0">
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button 
+                              size="sm" 
+                              variant="outline" 
+                              onClick={handleVisualizarDocumento}
+                              className="h-9 w-9 p-0 text-blue-600 hover:text-blue-700 hover:bg-blue-50 border-blue-200"
+                            >
+                              <Eye className="w-4 h-4" />
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>Visualizar documento em nova aba</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+
                       <TooltipProvider>
                         <Tooltip>
                           <TooltipTrigger asChild>
@@ -895,9 +983,9 @@ export default function ETPDespachoSection({
                               size="sm" 
                               variant="outline" 
                               onClick={handleBaixarDespacho}
-                              className="h-8 w-8 p-0"
+                              className="h-9 w-9 p-0 hover:bg-gray-50"
                             >
-                              <Download className="w-3 h-3" />
+                              <Download className="w-4 h-4" />
                             </Button>
                           </TooltipTrigger>
                           <TooltipContent>
@@ -913,9 +1001,9 @@ export default function ETPDespachoSection({
                               size="sm" 
                               variant="outline" 
                               onClick={handleEditarDespacho}
-                              className="h-8 w-8 p-0"
+                              className="h-9 w-9 p-0 hover:bg-gray-50"
                             >
-                              <Edit3 className="w-3 h-3" />
+                              <Edit3 className="w-4 h-4" />
                             </Button>
                           </TooltipTrigger>
                           <TooltipContent>
@@ -931,9 +1019,9 @@ export default function ETPDespachoSection({
                               size="sm" 
                               variant="outline" 
                               onClick={handleExcluirDespacho}
-                              className="h-8 w-8 p-0 text-red-600 hover:text-red-700"
+                              className="h-9 w-9 p-0 text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200"
                             >
-                              <Trash2 className="w-3 h-3" />
+                              <Trash2 className="w-4 h-4" />
                             </Button>
                           </TooltipTrigger>
                           <TooltipContent>

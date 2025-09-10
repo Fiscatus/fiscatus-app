@@ -572,7 +572,7 @@ export default function DFDAprovacaoSection({
                 <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3 text-lg">
                     <Search className="w-5 h-5 text-indigo-600" />
-                    Parecer Técnico da GSP
+                    Parecer Técnico
                   </div>
                   <div className="flex items-center gap-2">
                     <Button
@@ -643,9 +643,6 @@ export default function DFDAprovacaoSection({
               <div className="p-4 md:p-6">
                     <div className="space-y-4">
                       <div>
-                    <Label htmlFor="parecer-tecnico-textarea" className="text-sm font-semibold text-gray-700">
-                      Parecer Técnico *
-                        </Label>
                     <Textarea
                       id="parecer-tecnico-textarea"
                       value={parecerTecnico}

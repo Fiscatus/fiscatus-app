@@ -62,6 +62,7 @@ import ETPElaboracaoSection from './ETPElaboracaoSection';
 import ETPSignatureSection from './ETPSignatureSection';
 import ETPDespachoSection from './ETPDespachoSection';
 import MatrizRiscoElaboracaoSection from './MatrizRiscoElaboracaoSection';
+import MatrizRiscoAprovacaoSection from './MatrizRiscoAprovacaoSection';
 import MatrizRiscoSignatureSection from './MatrizRiscoSignatureSection';
 import TRSignatureSection from './TRSignatureSection';
 import EditalSignatureSection from './EditalSignatureSection';
@@ -557,6 +558,10 @@ export default function FluxoProcessoCompleto({ etapas = etapasPadrao, onEtapaCl
       setShowETPModal(true);
     } else if (etapa.id === 8) {
       // Card "Elaboração da Matriz de Risco"
+      setCurrentEtapa(etapa);
+      setShowETPModal(true);
+    } else if (etapa.id === 9) {
+      // Card "Aprovação da Matriz de Risco"
       setCurrentEtapa(etapa);
       setShowETPModal(true);
     } else if (etapa.id === 10) {
@@ -1480,6 +1485,15 @@ export default function FluxoProcessoCompleto({ etapas = etapasPadrao, onEtapaCl
                   onSave={handleMatrizRiscoSave}
                   canEdit={canManageEtapa(currentEtapa)}
                   gerenciaCriadora={gerenciaCriadora}
+                />
+              )}
+              {currentEtapa?.id === 9 && (
+                <MatrizRiscoAprovacaoSection
+                  processoId="1"
+                  etapaId={currentEtapa.id}
+                  onComplete={handleMatrizRiscoComplete}
+                  onSave={handleMatrizRiscoSave}
+                  canEdit={canManageEtapa(currentEtapa)}
                 />
               )}
               {currentEtapa?.id === 10 && (
