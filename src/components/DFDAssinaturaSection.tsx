@@ -631,27 +631,7 @@ export default function DFDAssinaturaSection({
               </header>
               <div className="p-4 md:p-6">
                 
-                {/* Metadados do documento */}
-                <div className="mb-4 p-4 bg-gray-50 rounded-lg">
-                  <div className="grid grid-cols-2 gap-4 text-sm">
-                    <div>
-                      <span className="font-semibold text-gray-700">Versão:</span>
-                      <span className="ml-2 text-gray-600">Final (V{cardData.versaoFinalId})</span>
-                    </div>
-                                         <div>
-                       <span className="font-semibold text-gray-700">Autor:</span>
-                       <span className="ml-2 text-gray-600">Yasmin Pissolati Mattos Bretz - GSP</span>
-                     </div>
-                    <div>
-                      <span className="font-semibold text-gray-700">Data de Aprovação:</span>
-                      <span className="ml-2 text-gray-600">15/01/2025</span>
-                    </div>
-                                         <div>
-                       <span className="font-semibold text-gray-700">Status:</span>
-                       <span className="ml-2 text-gray-600">Aprovado por Yasmin Pissolati Mattos Bretz</span>
-                     </div>
-                  </div>
-                </div>
+                {/* Metadados removidos para padronizar com Assinatura do ETP */}
 
                 {/* Visualização do PDF */}
                 <div className="w-full min-h-[520px] rounded-lg border border-gray-200 bg-gray-50 flex items-center justify-center">

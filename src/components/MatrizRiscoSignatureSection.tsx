@@ -534,23 +534,7 @@ export default function MatrizRiscoSignatureSection({
               <div className="p-4 md:p-6">
                 <div className="space-y-4">
                   
-                  {/* Informações do Documento */}
-                  {cardData.documentoMatrizRisco && (
-                    <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-3">
-                          <FileText className="w-5 h-5 text-blue-600" />
-                          <div>
-                            <p className="text-sm font-medium text-blue-900">{cardData.documentoMatrizRisco.nome}</p>
-                            <p className="text-xs text-blue-600">
-                              {cardData.documentoMatrizRisco.tamanho} • {formatDateBR(cardData.documentoMatrizRisco.uploadedAt)} • 
-                              Enviado por: {cardData.documentoMatrizRisco.uploadedBy}
-                            </p>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  )}
+                  {/* Informações do Documento removidas para padronizar (sem bloco acima da visualização) */}
 
                   {/* Área de Visualização do Documento */}
                   <div className="w-full min-h-[520px] border-2 border-dashed border-gray-300 rounded-lg flex items-center justify-center bg-gray-50">

@@ -534,23 +534,7 @@ export default function TRSignatureSection({
               <div className="p-4 md:p-6">
                 <div className="space-y-4">
                   
-                  {/* Informações do Documento */}
-                  {cardData.documentoTR && (
-                    <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-3">
-                          <FileText className="w-5 h-5 text-blue-600" />
-                          <div>
-                            <p className="text-sm font-medium text-blue-900">{cardData.documentoTR.nome}</p>
-                            <p className="text-xs text-blue-600">
-                              {cardData.documentoTR.tamanho} • {formatDateBR(cardData.documentoTR.uploadedAt)} • 
-                              Enviado por: {cardData.documentoTR.uploadedBy}
-                            </p>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  )}
+                  {/* Informações do Documento removidas para padronizar (sem bloco acima da visualização) */}
 
                   {/* Área de Visualização do Documento */}
                   <div className="w-full min-h-[520px] border-2 border-dashed border-gray-300 rounded-lg flex items-center justify-center bg-gray-50">
