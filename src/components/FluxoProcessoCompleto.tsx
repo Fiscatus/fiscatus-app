@@ -133,6 +133,38 @@ export default function FluxoProcessoCompleto({ etapas = etapasPadrao, onEtapaCl
   const [modalEtapa, setModalEtapa] = useState<Etapa | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const { user } = useUser();
+  // Controle de fullscreen (apenas um card por vez)
+  const [fullscreenCardId, setFullscreenCardId] = useState<number | null>(null);
+  const isCard1Fullscreen = fullscreenCardId === 1;
+  // Bloqueia scroll do body quando fullscreen estiver ativo
+  useEffect(() => {
+    if (isCard1Fullscreen) {
+      const originalOverflow = document.body.style.overflow;
+      document.body.dataset.prevOverflow = originalOverflow;
+      document.body.style.overflow = 'hidden';
+    } else {
+      // restaura overflow
+      const prev = document.body.dataset.prevOverflow ?? '';
+      document.body.style.overflow = prev;
+      delete document.body.dataset.prevOverflow;
+    }
+    return () => {
+      // garante restauração ao desmontar
+      const prev = document.body.dataset.prevOverflow ?? '';
+      document.body.style.overflow = prev;
+      delete document.body.dataset.prevOverflow;
+    };
+  }, [isCard1Fullscreen]);
+  // ESC para sair do fullscreen
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && isCard1Fullscreen) {
+        setFullscreenCardId(null);
+      }
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [isCard1Fullscreen]);
   
   // Função para obter informações do header de cada etapa
   const getEtapaHeaderInfo = (etapa: Etapa) => {
@@ -1284,16 +1316,19 @@ export default function FluxoProcessoCompleto({ etapas = etapasPadrao, onEtapaCl
 
       {/* Modal DFD com tamanho responsivo */}
       {showDFDModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-          <div className={`
-            bg-white rounded-lg shadow-xl border overflow-hidden
-            ${isMobile 
-              ? 'w-full max-w-[96vw] max-h-[92vh]' 
-              : isTablet 
-                ? 'w-full max-w-[90vw] max-h-[88vh]' 
-                : 'w-full max-w-[75vw] max-h-[85vh]'
-            }
-          `}>
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          {/* Overlay escuro translúcido - fica sempre atrás */}
+          <div className={`absolute inset-0 transition-colors duration-200 ${isCard1Fullscreen ? 'bg-black/60' : 'bg-black/50'}`}></div>
+          {/* Container do modal/card */}
+          <div className={`relative transition-all duration-200 bg-white rounded-lg shadow-xl border overflow-hidden ${
+              isCard1Fullscreen
+                ? 'w-screen h-screen max-w-none max-h-none'
+                : isMobile
+                  ? 'w-full max-w-[96vw] max-h-[92vh]'
+                  : isTablet
+                    ? 'w-full max-w-[90vw] max-h-[88vh]'
+                    : 'w-full max-w-[75vw] max-h-[85vh]'
+            }`}>
             {/* Header com título, subtítulo e botão X */}
             <div className="flex items-center justify-between p-4 border-b border-gray-200 bg-gray-50">
               <div className="flex items-center gap-3">
@@ -1311,6 +1346,22 @@ export default function FluxoProcessoCompleto({ etapas = etapasPadrao, onEtapaCl
               </div>
               <div className="flex items-center gap-2">
                 {currentEtapa && getEtapaHeaderInfo(currentEtapa).statusBadges}
+                {/* Botão Expandir/Minimizar - apenas para Card 1 */}
+                {currentEtapa?.id === 1 && (
+                  <button
+                    onClick={() => setFullscreenCardId(isCard1Fullscreen ? null : 1)}
+                    title={isCard1Fullscreen ? 'Minimizar' : 'Expandir'}
+                    className="w-7 h-7 rounded-full bg-gray-100/80 border border-gray-200/60 shadow-sm opacity-80 hover:opacity-100 transition-all duration-200 flex items-center justify-center"
+                  >
+                    {isCard1Fullscreen ? (
+                      // minimize icon
+                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-3.5 w-3.5 text-gray-600"><path d="M15 9h6V3"/><path d="M9 15H3v6"/><path d="M21 3l-7 7"/><path d="M3 21l7-7"/></svg>
+                    ) : (
+                      // maximize icon
+                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-3.5 w-3.5 text-gray-600"><path d="M15 3h6v6"/><path d="M9 21H3v-6"/><path d="M21 3l-7 7"/><path d="M3 21l7-7"/></svg>
+                    )}
+                  </button>
+                )}
                 <button 
                   onClick={() => setShowDFDModal(false)}
                   className="w-7 h-7 rounded-full bg-gray-100/80 border border-gray-200/60 shadow-sm opacity-60 hover:opacity-80 transition-all duration-200 flex items-center justify-center"
@@ -1321,15 +1372,15 @@ export default function FluxoProcessoCompleto({ etapas = etapasPadrao, onEtapaCl
             </div>
             
             {/* Conteúdo do modal */}
-            <div className={`
-              overflow-y-auto overflow-x-hidden px-6 py-4
-              ${isMobile 
-                ? 'max-h-[calc(92vh-120px)]' 
-                : isTablet 
-                  ? 'max-h-[calc(88vh-120px)]' 
-                  : 'max-h-[calc(85vh-120px)]'
-              }
-            `}>
+            <div className={`${
+                isCard1Fullscreen
+                  ? 'h-[calc(100vh-72px)]'
+                  : isMobile
+                    ? 'max-h-[calc(92vh-120px)]'
+                    : isTablet
+                      ? 'max-h-[calc(88vh-120px)]'
+                      : 'max-h-[calc(85vh-120px)]'
+              } overflow-y-auto overflow-x-hidden px-6 py-4`}>
               {currentEtapa?.id === 1 ? (
                 <div className="pb-6">
                   <DFDFormSection

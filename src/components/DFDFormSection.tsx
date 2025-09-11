@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect, useCallback } from 'react';
+import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -43,7 +43,10 @@ import {
   Hash,
   ChevronDown,
   Flag,
-  Settings
+  Settings,
+  Edit,
+  MoreHorizontal,
+  ArrowLeftRight
 } from 'lucide-react';
 import { useUser } from '@/contexts/UserContext';
 import { usePermissoes } from '@/hooks/usePermissoes';
@@ -228,6 +231,9 @@ export default function DFDFormSection({
   const [currentVersion, setCurrentVersion] = useState<DFDVersion>(mockVersions[0]);
   const [formData, setFormData] = useState(currentVersion.payload);
   const [anexos, setAnexos] = useState<Anexo[]>(mockAnexos);
+  const [attachmentsSort, setAttachmentsSort] = useState<'desc' | 'asc'>('desc'); // desc = mais recente primeiro
+  const [showAllVersions, setShowAllVersions] = useState(false);
+  const [expandedVersions, setExpandedVersions] = useState<Record<string, boolean>>({});
 
 
 
@@ -395,7 +401,7 @@ export default function DFDFormSection({
       // Calcular prazo cumprido em dias úteis
       const dataCriacao = new Date(currentVersion.criadoEm);
       const dataEnvio = new Date();
-      const prazoCumprido = countBusinessDays(dataCriacao, dataEnvio);
+      const prazoCumprido = countBusinessDays(dataCriacao.toISOString(), dataEnvio.toISOString());
 
       const updatedVersion: DFDVersion = {
         ...currentVersion,
@@ -434,7 +440,7 @@ export default function DFDFormSection({
         id: `v${newVersionNumber}`,
         numeroVersao: newVersionNumber,
         status: 'rascunho',
-        autorId: user?.id || 'user1',
+        autorId: user?._id || 'user1',
         autorNome: user?.nome || 'Usuário Atual',
         autorCargo: user?.cargo,
         autorGerencia: user?.gerencia,
@@ -445,14 +451,14 @@ export default function DFDFormSection({
         prazoInicialDiasUteis: 7,
         payload: {
           ...currentVersion.payload,
-          objeto: '',
-          responsavelNome: user?.nome || 'Usuário Atual'
+          objeto: ''
         }
       };
       
       setVersions(prev => [newVersion, ...prev]);
       setCurrentVersion(newVersion);
       setFormData(newVersion.payload);
+      setExpandedVersions(prev => ({ ...prev, [newVersion.id]: true }));
       
       toast({
         title: "Nova versão criada",
@@ -469,6 +475,33 @@ export default function DFDFormSection({
     }
   };
 
+  // Prazo restante e classes de cor
+  const getDiasRestantes = (version: DFDVersion): number | null => {
+    if (version.prazoInicialDiasUteis === undefined) return null;
+    const cumprido = version.prazoCumpridoDiasUteis ?? 0;
+    return (version.prazoInicialDiasUteis || 0) - cumprido;
+  };
+
+  const getPrazoColorClasses = (diasRestantes: number | null): { text: string; badge: string } => {
+    if (diasRestantes === null) return { text: 'text-gray-600', badge: 'bg-gray-100 text-gray-800' };
+    if (diasRestantes < 0) return { text: 'text-red-600', badge: 'bg-red-100 text-red-800' };
+    if (diasRestantes <= 2) return { text: 'text-orange-600', badge: 'bg-orange-100 text-orange-800' };
+    return { text: 'text-green-600', badge: 'bg-green-100 text-green-800' };
+  };
+
+  // Expandir somente a versão mais recente por padrão
+  useEffect(() => {
+    if (versions.length > 0) {
+      setExpandedVersions(prev => {
+        const next: Record<string, boolean> = { ...prev };
+        versions.forEach((v, idx) => {
+          if (next[v.id] === undefined) next[v.id] = idx === 0;
+        });
+        return next;
+      });
+    }
+  }, [versions]);
+
   // Handler para abrir modal de conclusão
   const handleOpenConcluirModal = () => {
     setShowConcluirModal(true);
@@ -480,7 +513,7 @@ export default function DFDFormSection({
     try {
       // Simular chamada da API
       const conclusaoData: ConclusaoEtapa = {
-        usuarioId: user?.id || 'user1',
+        usuarioId: user?._id || 'user1',
         usuarioNome: user?.nome || 'Usuário Atual',
         observacao: observacaoConclusao.trim() || undefined,
         versaoId: currentVersion.id,
@@ -535,7 +568,7 @@ export default function DFDFormSection({
         tamanhoBytes: file.size,
         mimeType: file.type,
         criadoEm: new Date().toISOString(),
-        autorId: user?.id || '',
+        autorId: user?._id || '',
         autorNome: user?.nome || '',
         versaoId: currentVersion.id,
         urlDownload: '#'
@@ -606,6 +639,39 @@ export default function DFDFormSection({
   const formatDate = formatDateBR;
   const formatDateTime = formatDateTimeBR;
 
+  // Helpers de anexos (UI-only)
+  const getFileIcon = (mime: string) => {
+    const lower = (mime || '').toLowerCase();
+    if (lower.includes('pdf')) return <File className="w-4 h-4 text-red-600" />;
+    if (lower.includes('word') || lower.includes('doc')) return <File className="w-4 h-4 text-blue-600" />;
+    if (lower.includes('excel') || lower.includes('sheet') || lower.includes('xls')) return <File className="w-4 h-4 text-green-600" />;
+    if (lower.startsWith('image/')) return <File className="w-4 h-4 text-pink-600" />;
+    return <File className="w-4 h-4 text-gray-600" />;
+  };
+
+  // Ordenação de anexos por data
+  const anexosOrdenados = useMemo(() => {
+    const arr = [...anexos];
+    arr.sort((a, b) => {
+      const da = new Date(a.criadoEm).getTime();
+      const db = new Date(b.criadoEm).getTime();
+      return attachmentsSort === 'desc' ? db - da : da - db;
+    });
+    return arr;
+  }, [anexos, attachmentsSort]);
+
+  const openInNewTab = (url?: string) => {
+    try {
+      if (!url) throw new Error('missing');
+      const win = window.open(url, '_blank', 'noopener,noreferrer');
+      if (!win) {
+        toast({ title: 'Não foi possível abrir', description: 'Verifique o bloqueador de pop-up.', variant: 'destructive' });
+      }
+    } catch (e) {
+      toast({ title: 'Link expirado', description: 'Atualize a página ou gere um novo link.', variant: 'destructive' });
+    }
+  };
+
   // Formata o número do DFD para o padrão "DFD 006/2025" apenas para exibição
   const formatNumeroDFD = (value: string): string => {
     if (!value) return '';
@@ -661,36 +727,38 @@ export default function DFDFormSection({
                 </div>
               </header>
               <div className="p-4 md:p-6 space-y-0">
-                {/* 1 - Número do DFD */}
-                <div className="w-full p-4 border-b border-gray-100">
-                  <Label htmlFor="numeroDFD" className="text-sm font-semibold text-gray-700 flex items-center gap-2 mb-2">
-                    <Hash className="w-4 h-4" />
-                    Número do DFD
-                  </Label>
-                  <Input
-                    id="numeroDFD"
-                    value={formatNumeroDFD(formData.numeroDFD)}
-                    readOnly
-                    className="w-full bg-gray-50 border-gray-200 text-gray-600"
-                  />
-                </div>
-
-                {/* 2 - Data da Elaboração */}
-                <div className="w-full p-4 border-b border-gray-100">
-                  <Label htmlFor="dataElaboracao" className="text-sm font-semibold text-gray-700 flex items-center gap-2 mb-2">
-                    <Calendar className="w-4 h-4" />
-                    Data da Elaboração
-                  </Label>
-                  <Input
-                    id="dataElaboracao"
-                    value={formatDate(formData.dataElaboracao)}
-                    readOnly
-                    className="w-full bg-gray-50 border-gray-200 text-gray-600"
-                  />
+                {/* Grupo: Número/Data */}
+                <div className="w-full p-4 border-b border-slate-200 my-4">
+                  <div className="grid grid-cols-12 gap-4">
+                    <div className="col-span-12 md:col-span-6">
+                      <Label htmlFor="numeroDFD" className="text-sm font-semibold text-gray-700 flex items-center gap-2 mb-2">
+                        <Hash className="w-4 h-4" />
+                        Número do DFD
+                      </Label>
+                      <Input
+                        id="numeroDFD"
+                        value={formatNumeroDFD(formData.numeroDFD)}
+                        readOnly
+                        className="w-full bg-gray-50 border-gray-200 text-gray-600"
+                      />
+                    </div>
+                    <div className="col-span-12 md:col-span-6">
+                      <Label htmlFor="dataElaboracao" className="text-sm font-semibold text-gray-700 flex items-center gap-2 mb-2">
+                        <Calendar className="w-4 h-4" />
+                        Data da Elaboração
+                      </Label>
+                      <Input
+                        id="dataElaboracao"
+                        value={formatDate(formData.dataElaboracao)}
+                        readOnly
+                        className="w-full bg-gray-50 border-gray-200 text-gray-600"
+                      />
+                    </div>
+                  </div>
                 </div>
 
                 {/* 3 - Objeto da Contratação */}
-                <div className="w-full p-4 border-b border-gray-100">
+                <div className="w-full p-4 border-b border-slate-200 my-4">
                   <Label htmlFor="objeto" className="text-sm font-semibold text-gray-700 flex items-center gap-2 mb-2">
                     <Building2 className="w-4 h-4" />
                     Objeto da Contratação *
@@ -708,7 +776,7 @@ export default function DFDFormSection({
                 {/* 4 - (Removido) Grau de Prioridade */}
 
                 {/* 5 - Área/Setor Demandante */}
-                <div className="w-full p-4 border-b border-gray-100">
+                <div className="w-full p-4 border-b border-slate-200 my-4">
                   <Label htmlFor="areaSetor" className="text-sm font-semibold text-gray-700 flex items-center gap-2 mb-2">
                     <Building2 className="w-4 h-4" />
                     Área/Setor Demandante
@@ -730,7 +798,7 @@ export default function DFDFormSection({
                   disabled={!permissoes.podeEditar || currentVersion.status !== 'rascunho'}
                   canEdit={permissoes.podeEditar}
                   processoId={processoId}
-                  className="w-full border-b border-gray-100"
+                  className="w-full border-b border-slate-200 my-4"
                   maxResponsaveis={5}
                 />
               </div>
@@ -779,13 +847,19 @@ export default function DFDFormSection({
                           <p className="text-gray-500 font-medium">Ainda não há versões criadas</p>
                         </div>
                       ) : (
-                        <div className="space-y-3 w-full max-h-full overflow-y-auto">
-                          {versions.map((version) => {
+                        <div className="space-y-3 w-full overflow-y-auto max-h-[400px]">
+                          {!showAllVersions && (
+                            <div className="text-sm font-semibold text-purple-700">Última versão</div>
+                          )}
+                          {(showAllVersions ? versions : [versions[0]]).map((version, idx, arr) => {
                             const statusConfig = getStatusConfig(version.status);
                             const slaBadge = getSLABadge(version.prazoInicialDiasUteis || 0, version.prazoCumpridoDiasUteis);
+                            const diasRestantes = getDiasRestantes(version);
+                            const prazoClasses = getPrazoColorClasses(diasRestantes);
                             
                             return (
-                              <div key={version.id} className="border border-gray-200 rounded-xl p-4 hover:bg-gray-50 transition-colors w-full">
+                              <React.Fragment key={version.id}>
+                              <div className="border border-gray-200 rounded-xl p-4 hover:bg-gray-50 transition-colors w-full">
                                 <div className="flex items-center justify-between mb-3 w-full">
                                   <div className="flex items-center gap-3">
                                     <Badge variant="outline" className="text-xs font-medium">
@@ -798,46 +872,109 @@ export default function DFDFormSection({
                                     <Badge className={`text-xs font-medium ${slaBadge.color}`}>
                                       {slaBadge.label}
                                     </Badge>
+                                    <Badge className={`text-xs font-medium ${prazoClasses.badge}`}>
+                                      {diasRestantes === null ? 'Sem prazo' : diasRestantes < 0 ? `${Math.abs(diasRestantes)}d atrasado` : `${diasRestantes}d restantes`}
+                                    </Badge>
                                   </div>
-                                </div>
-                                
-                                <div className="text-xs text-gray-700 space-y-1 mb-3 w-full">
-                                  <p><strong>Autor:</strong> {version.autorNome}</p>
-                                  <p><strong>Cargo:</strong> {version.autorCargo || 'Não informado'}</p>
-                                  <p><strong>Gerência:</strong> {version.autorGerencia || 'Não informado'}</p>
-                                  <p><strong>Criado:</strong> {formatDateTimeBR(new Date(version.criadoEm))}</p>
-                                  <p><strong>Prazo inicial:</strong> {version.prazoInicialDiasUteis || 0} dias úteis</p>
-                                  <p><strong>Prazo cumprido:</strong> {version.prazoCumpridoDiasUteis !== undefined ? `${version.prazoCumpridoDiasUteis} dias úteis` : 'Não enviado'}</p>
+                                  <div className="flex items-center gap-2">
+                                    {(showAllVersions || versions[0].id !== version.id) && (
+                                      <Button
+                                        size="sm"
+                                        variant="ghost"
+                                        aria-label={expandedVersions[version.id] ? 'Recolher detalhes' : 'Expandir detalhes'}
+                                        className="h-7 px-2 text-gray-600"
+                                        onClick={() => setExpandedVersions(prev => ({ ...prev, [version.id]: !prev[version.id] }))}
+                                      >
+                                        <ChevronDown className={`w-4 h-4 transition-transform ${expandedVersions[version.id] ? 'rotate-180' : ''}`} />
+                                      </Button>
+                                    )}
+                                  </div>
                                 </div>
 
-                                {/* Documento Vinculado */}
-                                {version.documentoNome && (
-                                  <div className="flex items-center justify-between p-2 bg-blue-50 rounded border border-blue-200 w-full">
-                                    <div className="flex items-center gap-2">
-                                      <File className="w-4 h-4 text-blue-600" />
-                                      <span className="text-sm font-medium text-blue-800">{version.documentoNome}</span>
+                                {(expandedVersions[version.id] ?? true) && (
+                                  <>
+                                    <div className="text-xs text-gray-700 space-y-1 mb-3 w-full">
+                                      <p><strong>Autor:</strong> {version.autorNome}</p>
+                                      <p><strong>Cargo:</strong> {version.autorCargo || 'Não informado'}</p>
+                                      <p><strong>Gerência:</strong> {version.autorGerencia || 'Não informado'}</p>
+                                      <p><strong>Criado:</strong> {formatDateTimeBR(new Date(version.criadoEm))}</p>
+                                      <p><strong>Prazo inicial:</strong> {version.prazoInicialDiasUteis || 0} dias úteis</p>
+                                      <p><strong>Prazo cumprido:</strong> {version.prazoCumpridoDiasUteis !== undefined ? `${version.prazoCumpridoDiasUteis} dias úteis` : 'Não enviado'}</p>
                                     </div>
-                                    <div className="flex items-center gap-1">
-                                      <Button size="sm" variant="outline" className="h-7 w-7 p-0 hover:bg-blue-50">
-                                        <Eye className="w-3 h-3" />
-                                      </Button>
-                                      <Button size="sm" variant="outline" className="h-7 w-7 p-0 hover:bg-green-50">
-                                        <Download className="w-3 h-3" />
-                                      </Button>
-                                    </div>
-                                  </div>
+
+                                    {version.documentoNome && (
+                                      <div className="flex items-center justify-between p-2 bg-blue-50 rounded border border-blue-200 w-full">
+                                        <div className="flex items-center gap-2">
+                                          <File className="w-4 h-4 text-blue-600" />
+                                          <span className="text-sm font-medium text-blue-800">{version.documentoNome}</span>
+                                        </div>
+                                        <div className="flex items-center gap-1">
+                                          <Button size="sm" variant="outline" aria-label="Visualizar documento" className="h-7 w-7 p-0 hover:bg-blue-50">
+                                            <Eye className="w-3 h-3" />
+                                          </Button>
+                                          <Button size="sm" variant="outline" aria-label="Baixar documento" className="h-7 w-7 p-0 hover:bg-green-50">
+                                            <Download className="w-3 h-3" />
+                                          </Button>
+                                        </div>
+                                      </div>
+                                    )}
+                                  </>
                                 )}
                               </div>
+                              {idx < arr.length - 1 && (
+                                <div className="border-b border-slate-200 my-2" />
+                              )}
+                              </React.Fragment>
                             );
                           })}
+                          {versions.length > 1 && (
+                            <div className="pt-2">
+                              <Button
+                                variant="ghost"
+                                aria-label={showAllVersions ? 'Recolher lista de versões' : 'Ver todas as versões'}
+                                className="text-sm text-purple-700 hover:text-purple-800 hover:bg-purple-50"
+                                onClick={() => setShowAllVersions(v => !v)}
+                              >
+                                {showAllVersions ? 'Ocultar versões antigas' : 'Ver todas as versões'}
+                              </Button>
+                            </div>
+                          )}
                         </div>
                       )}
                     </div>
                   </TabsContent>
                   
                   {/* Aba Anexos */}
-                  <TabsContent value="anexos" className="mt-0 p-4">
-                    <div className="space-y-4 w-full">
+                  <TabsContent value="anexos" className="mt-0 p-3">
+                    <div className="space-y-3 w-full">
+                      {/* Filtro de Ordenação */}
+                      <div className="w-full flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2 mb-3">
+                        <div className="flex items-center gap-2">
+                          <h3 className="text-sm font-semibold text-slate-800">Anexos</h3>
+                          <span className="text-xs text-slate-600 bg-slate-200 px-2 py-0.5 rounded-md font-medium">
+                            {anexos.length}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-2 w-full sm:w-auto">
+                          <span className="text-xs text-slate-500 whitespace-nowrap">Ordenar:</span>
+                          <div className="relative flex-1 sm:flex-none">
+                            <select
+                              aria-label="Ordenar anexos"
+                              value={attachmentsSort}
+                              onChange={(e) => setAttachmentsSort(e.target.value as 'desc' | 'asc')}
+                              className="w-full h-7 rounded-md border border-slate-200 bg-white px-2 pr-6 text-xs text-slate-700 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 transition-colors appearance-none cursor-pointer hover:border-slate-300"
+                            >
+                              <option value="desc">Mais recente</option>
+                              <option value="asc">Menos recente</option>
+                            </select>
+                            <div className="absolute inset-y-0 right-0 flex items-center pr-1.5 pointer-events-none">
+                              <svg className="w-3 h-3 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                              </svg>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
                       {/* Upload */}
                       {permissoes.podeUploadAnexo && currentVersion.status === 'rascunho' && (
                         <div className="w-full">
@@ -851,7 +988,8 @@ export default function DFDFormSection({
                           <Button
                             onClick={() => fileInputRef.current?.click()}
                             variant="outline"
-                            className="w-full border-dashed border-2 border-gray-300 hover:border-green-400 hover:bg-green-50 transition-colors"
+                            aria-label="Adicionar anexo"
+                            className="w-full h-9 border-dashed border-2 border-gray-300 hover:border-green-400 hover:bg-green-50 transition-colors text-sm"
                           >
                             <Upload className="w-4 h-4 mr-2" />
                             Adicionar Anexo
@@ -870,36 +1008,74 @@ export default function DFDFormSection({
                           </div>
                         </div>
                       ) : (
-                        <div className="space-y-3 w-full flex-shrink-0">
-                          {anexos.map((anexo) => (
-                            <div key={anexo.id} className="flex items-center justify-between p-3 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors w-full">
-                              <div className="flex items-center gap-3 min-w-0 flex-1">
-                                <div className="p-2 bg-blue-100 rounded-lg">
-                                  <File className="w-4 h-4 text-blue-600" />
+                        <div className={`${anexos.length > 6 ? 'max-h-[280px] overflow-y-auto' : ''} space-y-0 w-full flex-shrink-0`}> 
+                          {anexosOrdenados.map((anexo, idx) => (
+                            <React.Fragment key={anexo.id}>
+                              <div className="flex items-center justify-between p-2.5 border border-gray-200 rounded-lg hover:bg-slate-50 transition-colors w-full">
+                                <div className="flex items-center gap-3 min-w-0 flex-1">
+                                  <div className="p-2 bg-slate-100 rounded-lg">
+                                    {getFileIcon(anexo.mimeType)}
+                                  </div>
+                                  <div className="min-w-0 flex-1">
+                                    <p className="text-sm font-medium truncate" title={anexo.nome}>{anexo.nome}</p>
+                                    <p className="text-xs text-gray-500 hidden sm:block">{anexo.autorNome} • {formatDate(anexo.criadoEm)}</p>
+                                    <p className="text-xs text-gray-500 sm:hidden">{anexo.autorNome} • {formatDate(anexo.criadoEm)}</p>
+                                  </div>
                                 </div>
-                                <div className="min-w-0 flex-1">
-                                  <p className="text-sm font-medium truncate">{anexo.nome}</p>
-                                  <p className="text-xs text-gray-500">
-                                    {formatFileSize(anexo.tamanhoBytes)} • {formatDate(anexo.criadoEm)} • {anexo.autorNome}
-                                  </p>
+                                {/* Ações - desktop */}
+                                <div className="hidden sm:flex items-center gap-2 flex-shrink-0">
+                                  <TooltipProvider><Tooltip><TooltipTrigger asChild>
+                                    <Button size="sm" variant="outline" aria-label="Visualizar" className="h-7 w-7 p-0 hover:bg-blue-50" onClick={() => openInNewTab(anexo.urlDownload)}>
+                                      <Eye className="w-3 h-3" />
+                                    </Button>
+                                  </TooltipTrigger><TooltipContent>Visualizar</TooltipContent></Tooltip></TooltipProvider>
+                                  <TooltipProvider><Tooltip><TooltipTrigger asChild>
+                                    <Button size="sm" variant="outline" aria-label="Baixar" className="h-7 w-7 p-0 hover:bg-green-50">
+                                      <Download className="w-3 h-3" />
+                                    </Button>
+                                  </TooltipTrigger><TooltipContent>Baixar</TooltipContent></Tooltip></TooltipProvider>
+                                  <TooltipProvider><Tooltip><TooltipTrigger asChild>
+                                    <Button size="sm" variant="outline" aria-label="Renomear" className="h-7 w-7 p-0 hover:bg-slate-50">
+                                      <Edit className="w-3 h-3" />
+                                    </Button>
+                                  </TooltipTrigger><TooltipContent>Renomear</TooltipContent></Tooltip></TooltipProvider>
+                                  <TooltipProvider><Tooltip><TooltipTrigger asChild>
+                                    <Button size="sm" variant="outline" aria-label="Substituir" className="h-7 w-7 p-0 hover:bg-slate-50">
+                                      <ArrowLeftRight className="w-3 h-3" />
+                                    </Button>
+                                  </TooltipTrigger><TooltipContent>Substituir</TooltipContent></Tooltip></TooltipProvider>
+                                  {permissoes.podeRemoverAnexo && currentVersion.status === 'rascunho' && (
+                                    <TooltipProvider><Tooltip><TooltipTrigger asChild>
+                                      <Button size="sm" variant="outline" onClick={() => handleDeleteAnexo(anexo.id)} aria-label="Remover" className="h-7 w-7 p-0 text-red-600 hover:text-red-700 hover:bg-red-50">
+                                        <Trash2 className="w-3 h-3" />
+                                      </Button>
+                                    </TooltipTrigger><TooltipContent>Remover</TooltipContent></Tooltip></TooltipProvider>
+                                  )}
+                                </div>
+                                {/* Ações - mobile (menu kebab) */}
+                                <div className="sm:hidden flex items-center flex-shrink-0">
+                                  <div className="relative">
+                                    <Button size="sm" variant="ghost" className="h-7 w-7 p-0">
+                                      <MoreHorizontal className="w-4 h-4" />
+                                    </Button>
+                                    {/* Menu simples inline */}
+                                    <div className="absolute right-0 mt-1 bg-white border rounded shadow-sm p-1 z-20">
+                                      <button className="block px-3 py-1 text-sm hover:bg-slate-50 w-full text-left" onClick={() => openInNewTab(anexo.urlDownload)}>Visualizar</button>
+                                      <button className="block px-3 py-1 text-sm hover:bg-slate-50 w-full text-left">Baixar</button>
+                                      <button className="block px-3 py-1 text-sm hover:bg-slate-50 w-full text-left">Renomear</button>
+                                      <button className="block px-3 py-1 text-sm hover:bg-slate-50 w-full text-left">Substituir</button>
+                                      {permissoes.podeRemoverAnexo && currentVersion.status === 'rascunho' && (
+                                        <button className="block px-3 py-1 text-sm hover:bg-slate-50 w-full text-left text-red-600" onClick={() => handleDeleteAnexo(anexo.id)}>Remover</button>
+                                      )}
+                                    </div>
+                                  </div>
                                 </div>
                               </div>
-                              <div className="flex items-center gap-1 flex-shrink-0">
-                                <Button size="sm" variant="outline" className="h-7 w-7 p-0 hover:bg-green-50">
-                                  <Download className="w-3 h-3" />
-                                </Button>
-                                {permissoes.podeRemoverAnexo && currentVersion.status === 'rascunho' && (
-                                  <Button
-                                    size="sm"
-                                    variant="outline"
-                                    onClick={() => handleDeleteAnexo(anexo.id)}
-                                    className="h-7 w-7 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
-                                  >
-                                    <Trash2 className="w-3 h-3" />
-                                  </Button>
-                                )}
-                              </div>
-                            </div>
+                              {/* Divisor entre linhas */}
+                              {idx < anexosOrdenados.length - 1 && (
+                                <div className="border-b border-slate-200" />
+                              )}
+                            </React.Fragment>
                           ))}
                         </div>
                       )}
@@ -914,7 +1090,7 @@ export default function DFDFormSection({
           <section id="comentarios" className="col-span-12 w-full">
             <CommentsSection
               processoId={processoId}
-              etapaId={etapaId}
+              etapaId={String(etapaId)}
               cardId="dfd-form"
               title="Comentários"
             />
@@ -930,10 +1106,18 @@ export default function DFDFormSection({
                   {/* Lado esquerdo - Status e informações */}
                   <div className="flex items-center gap-4">
                     <div className="flex items-center gap-2">
-                      <Clock className="w-4 h-4 text-gray-500" />
-                      <span className="text-sm text-gray-600">
-                        1 dia no card
-                      </span>
+                      {(() => {
+                        const diasRest = getDiasRestantes(currentVersion);
+                        const prazo = getPrazoColorClasses(diasRest);
+                        return (
+                          <>
+                            <Clock className={`w-4 h-4 ${prazo.text}`} />
+                            <span className={`text-sm ${prazo.text}`}>
+                              {diasRest === null ? 'Sem prazo' : diasRest < 0 ? `${Math.abs(diasRest)} dia(s) atrasado` : `${diasRest} dia(s) restantes`}
+                            </span>
+                          </>
+                        );
+                      })()}
                     </div>
                     <div className="flex items-center gap-2">
                       <User className="w-4 h-4 text-gray-500" />
@@ -951,6 +1135,7 @@ export default function DFDFormSection({
                       onClick={handleSaveVersion} 
                       variant="outline" 
                       disabled={isLoading}
+                      aria-label="Salvar versão"
                       className="border-gray-200 text-gray-700 hover:bg-gray-50"
                     >
                       <Save className="w-4 h-4 mr-2" />
@@ -967,6 +1152,7 @@ export default function DFDFormSection({
                             onClick={handleSendToAnalysis} 
                             variant="outline" 
                             disabled={!canSendToAnalysis() || isLoading || !permissoes.podeEditar || currentVersion.status !== 'rascunho' || !!etapaConcluida}
+                            aria-label="Enviar para análise técnica"
                             className="border-blue-200 text-blue-700 hover:bg-blue-50"
                           >
                             <Send className="w-4 h-4 mr-2" />
@@ -992,6 +1178,7 @@ export default function DFDFormSection({
                               onClick={handleOpenConcluirModal} 
                               variant="default" 
                               disabled={!canConcluirEtapa() || isLoading}
+                              aria-label="Concluir etapa"
                               className="bg-green-600 hover:bg-green-700 text-white"
                             >
                               <Flag className="w-4 h-4 mr-2" />
