@@ -947,6 +947,32 @@ export default function DFDFormSection({
                   {/* Aba Anexos */}
                   <TabsContent value="anexos" className="mt-0 p-3">
                     <div className="space-y-3 w-full">
+                      {/* Upload no topo */}
+                      {(() => {
+                        const canUpload = permissoes.podeUploadAnexo && currentVersion.status === 'rascunho';
+                        return (
+                          <div className="w-full">
+                            <input
+                              ref={fileInputRef}
+                              type="file"
+                              onChange={handleFileUpload}
+                              accept=".pdf,.doc,.docx,.odt,.png,.jpg,.jpeg,.gif,.bmp,.tif,.tiff"
+                              className="hidden"
+                            />
+                            <Button
+                              onClick={() => canUpload && fileInputRef.current?.click()}
+                              variant="outline"
+                              aria-label="Adicionar anexo"
+                              disabled={!canUpload}
+                              title={!canUpload ? 'Disponível apenas em rascunho e com permissão' : undefined}
+                              className="w-full h-9 border-dashed border-2 border-gray-300 hover:border-green-400 hover:bg-green-50 transition-colors text-sm disabled:opacity-60 disabled:hover:bg-white disabled:hover:border-gray-300"
+                            >
+                              <Upload className="w-4 h-4 mr-2" />
+                              Adicionar Anexo
+                            </Button>
+                          </div>
+                        );
+                      })()}
                       {/* Filtro de Ordenação */}
                       <div className="w-full flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2 mb-3">
                         <div className="flex items-center gap-2">
@@ -975,27 +1001,6 @@ export default function DFDFormSection({
                           </div>
                         </div>
                       </div>
-                      {/* Upload */}
-                      {permissoes.podeUploadAnexo && currentVersion.status === 'rascunho' && (
-                        <div className="w-full">
-                          <input
-                            ref={fileInputRef}
-                            type="file"
-                            onChange={handleFileUpload}
-                            accept=".docx,.xlsx,.pdf,.odt,.csv,.png,.jpg,.txt"
-                            className="hidden"
-                          />
-                          <Button
-                            onClick={() => fileInputRef.current?.click()}
-                            variant="outline"
-                            aria-label="Adicionar anexo"
-                            className="w-full h-9 border-dashed border-2 border-gray-300 hover:border-green-400 hover:bg-green-50 transition-colors text-sm"
-                          >
-                            <Upload className="w-4 h-4 mr-2" />
-                            Adicionar Anexo
-                          </Button>
-                        </div>
-                      )}
 
                       {/* Lista de Anexos */}
                       {anexos.length === 0 ? (

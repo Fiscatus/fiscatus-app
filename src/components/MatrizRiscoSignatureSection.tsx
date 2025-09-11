@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -52,6 +52,7 @@ import {
 import { useUser } from '@/contexts/UserContext';
 import { usePermissoes } from '@/hooks/usePermissoes';
 import { useToast } from '@/hooks/use-toast';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import TextareaWithMentions from './TextareaWithMentions';
 import CommentsSection from './CommentsSection';
 import { formatDateBR, formatDateTimeBR } from '@/lib/utils';
@@ -214,6 +215,22 @@ export default function MatrizRiscoSignatureSection({
   const [showAssinarModal, setShowAssinarModal] = useState(false);
   const [showCancelarModal, setShowCancelarModal] = useState(false);
   const [assinanteSelecionado, setAssinanteSelecionado] = useState<Assinante | null>(null);
+
+  // Gerenciamento > Anexos
+  const [annexes, setAnnexes] = useState<Array<{id:string; name:string; uploadedAt:string; uploadedBy:string; url?:string}>>([]);
+  const [attachmentsSort, setAttachmentsSort] = useState<'desc'|'asc'>('desc');
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const anexosOrdenados = useMemo(() => {
+    const arr = [...annexes];
+    arr.sort((a,b)=> new Date(b.uploadedAt).getTime() - new Date(a.uploadedAt).getTime());
+    if (attachmentsSort === 'asc') arr.reverse();
+    return arr;
+  }, [annexes, attachmentsSort]);
+  const openInNewTab = (url?: string) => {
+    if (!url) { toast({ title: 'Link indisponível', description: 'Link expirado, atualize a página ou gere novo link.', variant: 'destructive' }); return; }
+    try { const win = window.open(url, '_blank'); if (!win) throw new Error('Popup bloqueado'); }
+    catch { toast({ title: 'Não foi possível abrir o documento', description: 'Verifique popups ou gere novo link.', variant: 'destructive' }); }
+  };
   const [motivoCancelamento, setMotivoCancelamento] = useState('');
   
   // Estados para seleção de assinantes (GSP)
@@ -562,8 +579,13 @@ export default function MatrizRiscoSignatureSection({
                 </div>
               </header>
               <div className="p-4 md:p-6 space-y-4 flex-1 flex flex-col">
-                
+                <Tabs defaultValue="assinaturas" className="w-full">
+                  <TabsList className="grid w-full grid-cols-2">
+                    <TabsTrigger value="assinaturas">Assinaturas</TabsTrigger>
+                    <TabsTrigger value="anexos">Anexos</TabsTrigger>
+                  </TabsList>
 
+                  <TabsContent value="assinaturas" className="mt-0 pt-2 flex-1 flex flex-col space-y-4">
                 {/* Seleção de assinantes (GSP) */}
                 {isGSP && (
                   <div className="space-y-3">
@@ -691,6 +713,80 @@ export default function MatrizRiscoSignatureSection({
                     <div>Decorridos: {cardData.sla.decorridosDiasUteis} dias úteis</div>
                   </div>
                 </div>
+
+                  </TabsContent>
+
+                  <TabsContent value="anexos" className="mt-0 p-3">
+                    <div className="space-y-3 w-full">
+                      {/* Upload no topo */}
+                      <div className="w-full">
+                        <input ref={fileInputRef} type="file" accept=".pdf,.doc,.docx,.odt,.png,.jpg,.jpeg,.gif,.bmp,.tif,.tiff" className="hidden" onChange={(e)=>{ const f=e.target.files?.[0]; if(!f) return; setAnnexes(prev=>[{id:`a-${Date.now()}`,name:f.name,uploadedAt:new Date().toISOString(),uploadedBy:user?.nome||'Usuário'},...prev]); if(e.target) e.target.value=''; toast({title:'Anexo adicionado', description:`${f.name} foi anexado.`}); }} />
+                        <Button onClick={()=>fileInputRef.current?.click()} variant="outline" className="w-full h-9 border-dashed border-2 border-gray-300 hover:border-green-400 hover:bg-green-50 transition-colors text-sm">
+                          <Upload className="w-4 h-4 mr-2"/>Adicionar Anexo
+                        </Button>
+                      </div>
+                      {/* Header + Filtro */}
+                      <div className="w-full flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2 mb-3">
+                        <div className="flex items-center gap-2">
+                          <h3 className="text-sm font-semibold text-slate-800">Anexos</h3>
+                          <span className="text-xs text-slate-600 bg-slate-200 px-2 py-0.5 rounded-md font-medium">{annexes.length}</span>
+                        </div>
+                        <div className="flex items-center gap-2 w-full sm:w-auto">
+                          <span className="text-xs text-slate-500 whitespace-nowrap">Ordenar:</span>
+                          <div className="relative flex-1 sm:flex-none">
+                            <select aria-label="Ordenar anexos" value={attachmentsSort} onChange={(e)=>setAttachmentsSort(e.target.value as 'desc'|'asc')} className="w-full h-7 rounded-md border border-slate-200 bg-white px-2 pr-6 text-xs text-slate-700 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 transition-colors appearance-none cursor-pointer hover:border-slate-300">
+                              <option value="desc">Mais recente</option>
+                              <option value="asc">Menos recente</option>
+                            </select>
+                            <div className="absolute inset-y-0 right-0 flex items-center pr-1.5 pointer-events-none">
+                              <svg className="w-3 h-3 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7"/></svg>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                      {/* Lista */}
+                      {annexes.length === 0 ? (
+                        <div className="pt-4">
+                          <div className="p-4 bg-gray-100 rounded-full w-16 h-16 mx-auto mb-4 flex items-center justify-center">
+                            <Upload className="w-8 h-8 text-gray-400" />
+                          </div>
+                          <p className="text-center text-gray-500 font-medium">Nenhum anexo adicionado</p>
+                        </div>
+                      ) : (
+                        <div className={`${annexes.length > 6 ? 'max-h-[280px] overflow-y-auto' : ''} space-y-0 w-full`}>
+                          {anexosOrdenados.map((annex, idx)=>(
+                            <React.Fragment key={annex.id}>
+                              <div className="flex items-center justify-between p-2.5 border border-gray-200 rounded-lg hover:bg-slate-50 transition-colors w-full">
+                                <div className="flex items-center gap-3 min-w-0 flex-1">
+                                  <div className="p-2 bg-slate-100 rounded-lg">
+                                    <FileText className="w-4 h-4 text-blue-600" />
+                                  </div>
+                                  <div className="min-w-0 flex-1">
+                                    <p className="text-sm font-medium truncate">{annex.name}</p>
+                                    <p className="text-xs text-gray-500 hidden sm:block">{annex.uploadedBy} • {formatDateBR(annex.uploadedAt)}</p>
+                                    <p className="text-xs text-gray-500 sm:hidden">{annex.uploadedBy} • {formatDateBR(annex.uploadedAt)}</p>
+                                  </div>
+                                </div>
+                                <div className="hidden sm:flex items-center gap-2 flex-shrink-0">
+                                  <Button size="sm" variant="outline" aria-label="Visualizar" className="h-7 w-7 p-0 hover:bg-blue-50" onClick={()=>openInNewTab(annex.url)}>
+                                    <Eye className="w-3 h-3" />
+                                  </Button>
+                                  <Button size="sm" variant="outline" aria-label="Baixar" className="h-7 w-7 p-0 hover:bg-green-50">
+                                    <Download className="w-3 h-3" />
+                                  </Button>
+                                  <Button size="sm" variant="outline" aria-label="Remover" className="h-7 w-7 p-0 text-red-600 hover:text-red-700 hover:bg-red-50" onClick={()=>setAnnexes(prev=>prev.filter(a=>a.id!==annex.id))}>
+                                    <Trash2 className="w-3 h-3" />
+                                  </Button>
+                                </div>
+                              </div>
+                              {idx < anexosOrdenados.length-1 && (<div className="border-b border-slate-200" />)}
+                            </React.Fragment>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </TabsContent>
+                </Tabs>
 
               </div>
             </div>

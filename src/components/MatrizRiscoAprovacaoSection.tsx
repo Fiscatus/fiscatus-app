@@ -417,7 +417,7 @@ export default function MatrizRiscoAprovacaoSection({
                             }
                             if (e.target) e.target.value = '';
                           }}
-                          accept=".docx,.xlsx,.pdf,.odt,.csv,.png,.jpg,.txt"
+                          accept=".pdf,.doc,.docx,.odt,.png,.jpg,.jpeg,.gif,.bmp,.tif,.tiff"
                           className="hidden"
                         />
                         <Button
