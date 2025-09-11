@@ -178,7 +178,7 @@ export default function ETPDespachoSection({
     gerencia: string;
     email: string;
     status: 'PENDENTE' | 'ASSINADO' | 'CANCELADO';
-    dataAssinatura?: string;
+    assinadoEm?: string;
   }>>([]);
 
   // Estado dos modais
@@ -221,7 +221,7 @@ export default function ETPDespachoSection({
   }, [initialData]);
 
   // Função para obter configuração do status
-  const getStatusConfig = (status: 'PENDENTE' | 'ASSINADO' | 'CANCELADO') => {
+  const getAssinaturaStatusConfig = (status: 'PENDENTE' | 'ASSINADO' | 'CANCELADO') => {
     switch (status) {
       case 'PENDENTE':
         return {
@@ -823,11 +823,11 @@ export default function ETPDespachoSection({
                       ) : (
                         <div className="space-y-2">
                           {assinantes.map((assinante) => {
-                            const statusConfig = getStatusConfig(assinante.status);
+                            const statusConfig = getAssinaturaStatusConfig(assinante.status);
                             return (
-                              <div key={assinante.id} className="p-3 bg-gray-50 rounded-lg border">
+                              <div key={assinante.id} className="p-3 border rounded-lg bg-gray-50">
                                 <div className="flex items-start justify-between">
-                                  <div className="flex-1 min-w-0">
+                                  <div className="flex-1">
                                     <div className="flex items-center gap-2 mb-1">
                                       <span className="font-medium text-sm">{assinante.nome}</span>
                                       <Badge className={`${statusConfig.bgColor} ${statusConfig.textColor} ${statusConfig.borderColor} text-xs`}>
@@ -837,16 +837,16 @@ export default function ETPDespachoSection({
                                     </div>
                                     <div className="text-xs text-gray-600 mb-1">{assinante.cargo}</div>
                                     <div className="text-xs text-gray-500">{assinante.email}</div>
-                                    {assinante.dataAssinatura && (
+                                    {assinante.assinadoEm && (
                                       <div className="text-xs text-green-600 mt-1">
-                                        Assinado em {formatDateTimeBR(new Date(assinante.dataAssinatura))}
+                                        Assinado em {formatDateTimeBR(new Date(assinante.assinadoEm))}
                                       </div>
                                     )}
                                   </div>
                                   
                                   {/* Ações */}
                                   <div className="flex items-center gap-1">
-                                    {isSE && assinante.status === 'PENDENTE' && (
+                                    {isGSPouSE && assinante.status === 'PENDENTE' && (
                                       <Button
                                         size="sm"
                                         variant="ghost"
@@ -858,7 +858,7 @@ export default function ETPDespachoSection({
                                     )}
                                     
                                     {assinante.status === 'PENDENTE' && 
-                                     (assinante.email === user?.email || isSE) && (
+                                     (assinante.email === user?.email || isGSPouSE) && (
                                       <Button
                                         size="sm"
                                         variant="ghost"
