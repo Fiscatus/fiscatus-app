@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -98,6 +98,29 @@ export default function DFDAprovacaoSection({
     canApprove,
     canDevolver
   } = useDFD(processoId);
+  // Ordenação e helpers de anexos (padrão Card 1)
+  const [attachmentsSort, setAttachmentsSort] = useState<'desc' | 'asc'>('desc');
+  const openInNewTab = (url?: string) => {
+    if (!url) {
+      toast({ title: 'Link indisponível', description: 'Link expirado, atualize a página ou gere novo link.', variant: 'destructive' });
+      return;
+    }
+    try {
+      const win = window.open(url, '_blank');
+      if (!win) throw new Error('Popup bloqueado');
+    } catch (e) {
+      toast({ title: 'Não foi possível abrir o documento', description: 'Verifique o bloqueador de popups ou gere um novo link.', variant: 'destructive' });
+    }
+  };
+  const anexosOrdenados = useMemo(() => {
+    const arr = [...dfdData.annexes];
+    arr.sort((a, b) => {
+      const da = new Date(a.uploadedAt).getTime();
+      const db = new Date(b.uploadedAt).getTime();
+      return attachmentsSort === 'desc' ? db - da : da - db;
+    });
+    return arr;
+  }, [dfdData.annexes, attachmentsSort]);
   
   // Estados principais
   const [parecerTecnico, setParecerTecnico] = useState('');
@@ -823,6 +846,30 @@ export default function DFDAprovacaoSection({
                   </TabsContent>
                   
                   <TabsContent value="anexos" className="mt-0 p-4">
+                    {/* Header compacto + Filtro ordenação */}
+                    <div className="w-full flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2 mb-3">
+                      <div className="flex items-center gap-2">
+                        <h3 className="text-sm font-semibold text-slate-800">Anexos</h3>
+                        <span className="text-xs text-slate-600 bg-slate-200 px-2 py-0.5 rounded-md font-medium">{dfdData.annexes.length}</span>
+                      </div>
+                      <div className="flex items-center gap-2 w-full sm:w-auto">
+                        <span className="text-xs text-slate-500 whitespace-nowrap">Ordenar:</span>
+                        <div className="relative flex-1 sm:flex-none">
+                          <select
+                            aria-label="Ordenar anexos"
+                            value={attachmentsSort}
+                            onChange={(e) => setAttachmentsSort(e.target.value as 'desc' | 'asc')}
+                            className="w-full h-7 rounded-md border border-slate-200 bg-white px-2 pr-6 text-xs text-slate-700 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 transition-colors appearance-none cursor-pointer hover:border-slate-300"
+                          >
+                            <option value="desc">Mais recente</option>
+                            <option value="asc">Menos recente</option>
+                          </select>
+                          <div className="absolute inset-y-0 right-0 flex items-center pr-1.5 pointer-events-none">
+                            <svg className="w-3 h-3 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
                     {/* Upload de Anexos */}
                     {canEditParecerTecnico() && (
                       <div className="mb-4">
@@ -857,9 +904,10 @@ export default function DFDAprovacaoSection({
                         )}
                       </div>
                     ) : (
-                      <div className="space-y-3 max-h-60 overflow-y-auto">
-                        {dfdData.annexes.map((annex) => (
-                          <div key={annex.id} className="flex items-center justify-between p-3 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
+                      <div className="space-y-0 max-h-60 overflow-y-auto">
+                        {anexosOrdenados.map((annex, idx) => (
+                          <React.Fragment key={annex.id}>
+                          <div className="flex items-center justify-between p-3 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
                             <div className="flex items-center gap-3 min-w-0 flex-1">
                               <div className="p-2 bg-blue-100 rounded-lg">
                                 <FileText className="w-4 h-4 text-blue-600" />
@@ -867,22 +915,22 @@ export default function DFDAprovacaoSection({
                               <div className="min-w-0 flex-1">
                                 <p className="text-sm font-medium truncate">{annex.name}</p>
                                 <p className="text-xs text-gray-500">
-                                  {annex.size} • {formatDate(annex.uploadedAt)}
+                                  {formatDate(annex.uploadedAt)} • {annex.uploadedBy}
                                 </p>
                               </div>
                             </div>
-                            <div className="flex items-center gap-1 flex-shrink-0">
-                              <Button size="sm" variant="outline" className="h-6 w-6 p-0">
+                            <div className="flex items-center gap-1.5 flex-shrink-0">
+                              <Button size="sm" variant="outline" aria-label="Visualizar" className="h-7 w-7 p-0 hover:bg-blue-50" onClick={() => openInNewTab(annex.url)}>
                                 <Eye className="w-3 h-3" />
                               </Button>
-                              <Button size="sm" variant="outline" className="h-6 w-6 p-0">
+                              <Button size="sm" variant="outline" aria-label="Baixar" className="h-7 w-7 p-0 hover:bg-green-50">
                                 <Download className="w-3 h-3" />
                               </Button>
                               {canEditParecerTecnico() && (
                                 <Button 
                                   size="sm" 
                                   variant="outline" 
-                                  className="h-6 w-6 p-0 text-red-600 hover:text-red-700"
+                                  className="h-7 w-7 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
                                   onClick={() => removeAnnex(annex.id)}
                                 >
                                   <Trash2 className="w-3 h-3" />
@@ -890,6 +938,8 @@ export default function DFDAprovacaoSection({
                               )}
                             </div>
                           </div>
+                          {idx < anexosOrdenados.length - 1 && (<div className="border-b border-slate-200" />)}
+                          </React.Fragment>
                         ))}
                       </div>
                     )}

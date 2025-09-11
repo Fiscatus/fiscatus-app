@@ -1,4 +1,4 @@
-import React, { useState, useRef, useCallback } from 'react';
+import React, { useState, useRef, useCallback, useMemo } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -183,6 +183,13 @@ export default function MatrizRiscoElaboracaoSection({
   const [currentVersion, setCurrentVersion] = useState<MatrizRiscoVersion>(mockVersions[0]);
   const [formData, setFormData] = useState(currentVersion.payload);
   const [anexos, setAnexos] = useState<any[]>([]);
+  const [attachmentsSort, setAttachmentsSort] = useState<'desc' | 'asc'>('desc');
+  const anexosOrdenados = useMemo(() => {
+    const arr = [...anexos];
+    arr.sort((a, b) => new Date(b.criadoEm).getTime() - new Date(a.criadoEm).getTime());
+    if (attachmentsSort === 'asc') arr.reverse();
+    return arr;
+  }, [anexos, attachmentsSort]);
   const [isLoading, setIsLoading] = useState(false);
   const [activeTab, setActiveTab] = useState('versoes');
   
@@ -738,6 +745,30 @@ export default function MatrizRiscoElaboracaoSection({
                   {/* Aba Anexos */}
                   <TabsContent value="anexos" className="mt-0 p-4">
                     <div className="space-y-4 w-full">
+                      {/* Header compacto + Filtro ordenação */}
+                      <div className="w-full flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2 mb-3">
+                        <div className="flex items-center gap-2">
+                          <h3 className="text-sm font-semibold text-slate-800">Anexos</h3>
+                          <span className="text-xs text-slate-600 bg-slate-200 px-2 py-0.5 rounded-md font-medium">{anexos.length}</span>
+                        </div>
+                        <div className="flex items-center gap-2 w-full sm:w-auto">
+                          <span className="text-xs text-slate-500 whitespace-nowrap">Ordenar:</span>
+                          <div className="relative flex-1 sm:flex-none">
+                            <select
+                              aria-label="Ordenar anexos"
+                              value={attachmentsSort}
+                              onChange={(e) => setAttachmentsSort(e.target.value as 'desc' | 'asc')}
+                              className="w-full h-7 rounded-md border border-slate-200 bg-white px-2 pr-6 text-xs text-slate-700 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 transition-colors appearance-none cursor-pointer hover:border-slate-300"
+                            >
+                              <option value="desc">Mais recente</option>
+                              <option value="asc">Menos recente</option>
+                            </select>
+                            <div className="absolute inset-y-0 right-0 flex items-center pr-1.5 pointer-events-none">
+                              <svg className="w-3 h-3 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
                       {/* Upload */}
                       {permissoes.podeUploadAnexo && currentVersion.status === 'rascunho' && (
                         <div className="w-full">
@@ -770,9 +801,10 @@ export default function MatrizRiscoElaboracaoSection({
                           </div>
                         </div>
                       ) : (
-                        <div className="space-y-3 w-full flex-shrink-0">
-                          {anexos.map((anexo) => (
-                            <div key={anexo.id} className="flex items-center justify-between p-3 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors w-full">
+                        <div className="space-y-0 w-full flex-shrink-0 max-h-60 overflow-y-auto">
+                          {anexosOrdenados.map((anexo, idx) => (
+                            <React.Fragment key={anexo.id}>
+                            <div className="flex items-center justify-between p-3 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors w-full">
                               <div className="flex items-center gap-3 min-w-0 flex-1">
                                 <div className="p-2 bg-blue-100 rounded-lg">
                                   <File className="w-4 h-4 text-blue-600" />
@@ -780,7 +812,7 @@ export default function MatrizRiscoElaboracaoSection({
                                 <div className="min-w-0 flex-1">
                                   <p className="text-sm font-medium truncate">{anexo.nome}</p>
                                   <p className="text-xs text-gray-500">
-                                    {formatFileSize(anexo.tamanhoBytes)} • {formatDateBR(anexo.criadoEm)} • {anexo.autorNome}
+                                    {anexo.autorNome} • {formatDateBR(anexo.criadoEm)}
                                   </p>
                                 </div>
                               </div>
@@ -800,6 +832,8 @@ export default function MatrizRiscoElaboracaoSection({
                                 )}
                               </div>
                             </div>
+                            {idx < anexosOrdenados.length - 1 && (<div className="border-b border-slate-200" />)}
+                            </React.Fragment>
                           ))}
                         </div>
                       )}
