@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -11,6 +11,7 @@ import { Separator } from '@/components/ui/separator';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Progress } from '@/components/ui/progress';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   FileText,
   CheckCircle,
@@ -200,6 +201,17 @@ export default function ETPDespachoSection({
     uploadedByGerencia: string;
     uploadedByEmail: string;
   } | null>(null);
+
+  // Estado dos anexos
+  const [annexes, setAnnexes] = useState<Array<{
+    id: string;
+    name: string;
+    uploadedAt: string;
+    uploadedBy: string;
+    urlDownload?: string;
+  }>>([]);
+  const [attachmentsSort, setAttachmentsSort] = useState<'newest' | 'oldest'>('newest');
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Carregar dados iniciais
   useEffect(() => {
@@ -591,6 +603,27 @@ export default function ETPDespachoSection({
     }
   };
 
+  // Funções utilitárias para anexos
+  const anexosOrdenados = useMemo(() => {
+    return [...annexes].sort((a, b) => {
+      const dateA = new Date(a.uploadedAt).getTime();
+      const dateB = new Date(b.uploadedAt).getTime();
+      return attachmentsSort === 'newest' ? dateB - dateA : dateA - dateB;
+    });
+  }, [annexes, attachmentsSort]);
+
+  const openInNewTab = (url: string) => {
+    window.open(url, '_blank');
+  };
+
+  const handleDeleteAnexo = (anexoId: string) => {
+    setAnnexes(prev => prev.filter(anexo => anexo.id !== anexoId));
+    toast({
+      title: 'Anexo removido',
+      description: 'O anexo foi removido com sucesso.',
+    });
+  };
+
   return (
     <div className="min-h-screen bg-white">
       {/* Container central ocupando toda a área */}
@@ -748,304 +781,202 @@ export default function ETPDespachoSection({
                   Gerenciamento
                 </div>
               </header>
-              <div className="p-4 md:p-6 space-y-4 flex-1 flex flex-col">
-                
-                {/* Seleção de assinantes (GSP ou SE) */}
-                {isGSPouSE && (
-                  <div className="space-y-3">
-                    <div className="flex items-center justify-between">
-                      <Label className="text-sm font-semibold text-gray-700">
-                        Seleção de Assinantes
-                      </Label>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => setShowAdicionarAssinante(true)}
-                        className="h-8 px-3"
-                      >
-                        <UserPlus className="w-4 h-4 mr-1" />
-                        Adicionar
-                      </Button>
-                    </div>
-                  </div>
-                )}
-
-                {/* Lista de assinantes */}
-                <div className="space-y-3">
-                  <Label className="text-sm font-semibold text-gray-700">
-                    Assinantes Selecionados
-                  </Label>
+              <div className="flex-1 flex flex-col">
+                <Tabs defaultValue="assinaturas" className="flex-1 flex flex-col">
+                  <TabsList className="grid w-full grid-cols-2 mx-4 mt-4">
+                    <TabsTrigger value="assinaturas">Assinaturas</TabsTrigger>
+                    <TabsTrigger value="anexos">Anexos</TabsTrigger>
+                  </TabsList>
                   
-                  {assinantes.length === 0 ? (
-                    <div className="text-center py-6 text-gray-500">
-                      <Users className="w-8 h-8 mx-auto mb-2 text-gray-300" />
-                      <p className="text-sm">Nenhum assinante selecionado</p>
-                    </div>
-                  ) : (
-                    <div className="space-y-2">
-                      {assinantes.map((assinante) => {
-                        const statusConfig = getStatusConfig(assinante.status);
-                        return (
-                          <div key={assinante.id} className="p-3 bg-gray-50 rounded-lg border">
-                            <div className="flex items-start justify-between">
-                              <div className="flex-1 min-w-0">
-                                <div className="flex items-center gap-2 mb-1">
-                                  <span className="font-medium text-sm">{assinante.nome}</span>
-                                  <Badge className={`${statusConfig.bgColor} ${statusConfig.textColor} ${statusConfig.borderColor} text-xs`}>
-                                    {statusConfig.icon}
-                                    <span className="ml-1">{statusConfig.label}</span>
-                                  </Badge>
-                                </div>
-                                <div className="text-xs text-gray-600 mb-1">{assinante.cargo}</div>
-                                <div className="text-xs text-gray-500">{assinante.email}</div>
-                                {assinante.dataAssinatura && (
-                                  <div className="text-xs text-green-600 mt-1">
-                                    Assinado em {formatDateTimeBR(new Date(assinante.dataAssinatura))}
+                  <TabsContent value="assinaturas" className="mt-0 p-4 space-y-4 flex-1">
+                    {/* Seleção de assinantes (GSP ou SE) */}
+                    {isGSPouSE && (
+                      <div className="space-y-3">
+                        <div className="flex items-center justify-between">
+                          <Label className="text-sm font-semibold text-gray-700">
+                            Seleção de Assinantes
+                          </Label>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => setShowAdicionarAssinante(true)}
+                            className="h-8 px-3"
+                          >
+                            <UserPlus className="w-4 h-4 mr-1" />
+                            Adicionar
+                          </Button>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Lista de assinantes */}
+                    <div className="space-y-3">
+                      <Label className="text-sm font-semibold text-gray-700">
+                        Assinantes Selecionados
+                      </Label>
+                      
+                      {assinantes.length === 0 ? (
+                        <div className="text-center py-6 text-gray-500">
+                          <Users className="w-8 h-8 mx-auto mb-2 text-gray-300" />
+                          <p className="text-sm">Nenhum assinante selecionado</p>
+                        </div>
+                      ) : (
+                        <div className="space-y-2">
+                          {assinantes.map((assinante) => {
+                            const statusConfig = getStatusConfig(assinante.status);
+                            return (
+                              <div key={assinante.id} className="p-3 bg-gray-50 rounded-lg border">
+                                <div className="flex items-start justify-between">
+                                  <div className="flex-1 min-w-0">
+                                    <div className="flex items-center gap-2 mb-1">
+                                      <span className="font-medium text-sm">{assinante.nome}</span>
+                                      <Badge className={`${statusConfig.bgColor} ${statusConfig.textColor} ${statusConfig.borderColor} text-xs`}>
+                                        {statusConfig.icon}
+                                        <span className="ml-1">{statusConfig.label}</span>
+                                      </Badge>
+                                    </div>
+                                    <div className="text-xs text-gray-600 mb-1">{assinante.cargo}</div>
+                                    <div className="text-xs text-gray-500">{assinante.email}</div>
+                                    {assinante.dataAssinatura && (
+                                      <div className="text-xs text-green-600 mt-1">
+                                        Assinado em {formatDateTimeBR(new Date(assinante.dataAssinatura))}
+                                      </div>
+                                    )}
                                   </div>
-                                )}
+                                  
+                                  {/* Ações */}
+                                  <div className="flex items-center gap-1">
+                                    {isSE && assinante.status === 'PENDENTE' && (
+                                      <Button
+                                        size="sm"
+                                        variant="ghost"
+                                        onClick={() => handleRemoverAssinante(assinante.id)}
+                                        className="h-6 w-6 p-0 text-red-600 hover:text-red-700"
+                                      >
+                                        <UserMinus className="w-3 h-3" />
+                                      </Button>
+                                    )}
+                                    
+                                    {assinante.status === 'PENDENTE' && 
+                                     (assinante.email === user?.email || isSE) && (
+                                      <Button
+                                        size="sm"
+                                        variant="ghost"
+                                        onClick={() => {
+                                          setAssinanteSelecionado(assinante);
+                                          setShowCancelarModal(true);
+                                        }}
+                                        className="h-6 w-6 p-0 text-orange-600 hover:text-orange-700"
+                                      >
+                                        <XCircle className="w-3 h-3" />
+                                      </Button>
+                                    )}
+                                  </div>
+                                </div>
                               </div>
-                              
-                              {/* Ações */}
-                              <div className="flex items-center gap-1">
-                                {isSE && assinante.status === 'PENDENTE' && (
-                                  <Button
-                                    size="sm"
-                                    variant="ghost"
-                                    onClick={() => handleRemoverAssinante(assinante.id)}
-                                    className="h-6 w-6 p-0 text-red-600 hover:text-red-700"
-                                  >
-                                    <UserMinus className="w-3 h-3" />
-                                  </Button>
-                                )}
-                                
-                                {assinante.status === 'PENDENTE' && 
-                                 (assinante.email === user?.email || isSE) && (
-                                  <Button
-                                    size="sm"
-                                    variant="ghost"
-                                    onClick={() => {
-                                      setAssinanteSelecionado(assinante);
-                                      setShowCancelarModal(true);
-                                    }}
-                                    className="h-6 w-6 p-0 text-orange-600 hover:text-orange-700"
-                                  >
-                                    <XCircle className="w-3 h-3" />
-                                  </Button>
-                                )}
+                            );
+                          })}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Progresso das assinaturas */}
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <Label className="text-sm font-semibold text-gray-700">
+                          Progresso
+                        </Label>
+                        <span className="text-sm text-gray-600">
+                          {assinaturasConcluidas}/{totalAssinaturas}
+                        </span>
+                      </div>
+                      <Progress value={progresso} className="h-2" />
+                      <div className="text-xs text-gray-500">
+                        {progresso === 100 ? 'Todas as assinaturas concluídas' : 'Aguardando assinaturas'}
+                      </div>
+                    </div>
+
+                    {/* SLA */}
+                    <div className="p-3 bg-yellow-50 rounded-lg">
+                      <div className="flex items-center justify-between mb-2">
+                        <Label className="text-sm font-semibold text-gray-700">
+                          SLA
+                        </Label>
+                        <Badge className={getSLABadgeConfig(sla.badge).className}>
+                          {getSLABadgeConfig(sla.badge).label}
+                        </Badge>
+                      </div>
+                      <div className="text-sm text-gray-600">
+                        <div>Prazo: {sla.prazoDiasUteis} dia útil</div>
+                        <div>Decorridos: {sla.decorridosDiasUteis} dias úteis</div>
+                      </div>
+                    </div>
+                  </TabsContent>
+
+                  <TabsContent value="anexos" className="mt-0 p-3">
+                    <div className="space-y-3 w-full">
+                      {/* Upload no topo */}
+                      <div className="w-full">
+                        <input ref={fileInputRef} type="file" accept=".pdf,.doc,.docx,.odt,.png,.jpg,.jpeg,.gif,.bmp,.tif,.tiff" className="hidden" onChange={(e)=>{ const f=e.target.files?.[0]; if(!f) return; setAnnexes(prev=>[{id:`a-${Date.now()}`,name:f.name,uploadedAt:new Date().toISOString(),uploadedBy:user?.nome||'Usuário'},...prev]); if(e.target) e.target.value=''; toast({title:'Anexo adicionado', description:`${f.name} foi anexado.`}); }} />
+                        <Button onClick={()=>fileInputRef.current?.click()} variant="outline" className="w-full h-9 border-dashed border-2 border-gray-300 hover:border-green-400 hover:bg-green-50 transition-colors text-sm">
+                          <Upload className="w-4 h-4 mr-2"/>Adicionar Anexo
+                        </Button>
+                      </div>
+                      {/* Header + Filtro */}
+                      <div className="w-full flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2 mb-3">
+                        <div className="flex items-center gap-2">
+                          <h3 className="text-sm font-semibold text-slate-800">Anexos</h3>
+                          <span className="text-xs text-slate-600 bg-slate-200 px-2 py-0.5 rounded-md font-medium">{annexes.length}</span>
+                        </div>
+                        <select value={attachmentsSort} onChange={(e)=>setAttachmentsSort(e.target.value as 'newest'|'oldest')} className="text-xs border border-slate-300 rounded-md px-2 py-1 bg-white focus:outline-none focus:ring-2 focus:ring-slate-500 focus:border-transparent">
+                          <option value="newest">Mais recente</option>
+                          <option value="oldest">Menos recente</option>
+                        </select>
+                      </div>
+                      {/* Lista */}
+                      {annexes.length === 0 ? (
+                        <div className="text-center py-8">
+                          <div className="p-4 bg-gray-100 rounded-full w-16 h-16 mx-auto mb-4 flex items-center justify-center">
+                            <FileText className="w-8 h-8 text-gray-400" />
+                          </div>
+                          <p className="text-gray-500 font-medium">Nenhum anexo adicionado</p>
+                        </div>
+                      ) : (
+                        <div className="space-y-2">
+                          {anexosOrdenados.map((anexo) => (
+                            <div key={anexo.id} className="flex items-center justify-between p-3 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
+                              <div className="flex items-center gap-3 min-w-0 flex-1">
+                                <div className="p-2 bg-gray-100 rounded-lg flex-shrink-0">
+                                  <FileText className="w-4 h-4 text-gray-600" />
+                                </div>
+                                <div className="min-w-0 flex-1">
+                                  <p className="text-sm font-medium text-gray-900 truncate">{anexo.name}</p>
+                                  <p className="text-xs text-gray-500">por {anexo.uploadedBy} • {formatDateBR(new Date(anexo.uploadedAt))}</p>
+                                </div>
+                              </div>
+                              <div className="hidden sm:flex items-center gap-2 flex-shrink-0">
+                                <Button size="sm" variant="outline" aria-label="Visualizar" className="h-7 w-7 p-0 hover:bg-blue-50" onClick={()=>openInNewTab(anexo.urlDownload||'#')}>
+                                  <Eye className="w-3 h-3" />
+                                </Button>
+                                <Button size="sm" variant="outline" aria-label="Baixar" className="h-7 w-7 p-0 hover:bg-green-50">
+                                  <Download className="w-3 h-3" />
+                                </Button>
+                                <Button size="sm" variant="outline" aria-label="Remover" className="h-7 w-7 p-0 text-red-600 hover:text-red-700 hover:bg-red-50" onClick={()=>handleDeleteAnexo(anexo.id)}>
+                                  <Trash2 className="w-3 h-3" />
+                                </Button>
                               </div>
                             </div>
-                          </div>
-                        );
-                      })}
+                          ))}
+                        </div>
+                      )}
                     </div>
-                  )}
-                </div>
-
-                {/* Progresso das assinaturas */}
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <Label className="text-sm font-semibold text-gray-700">
-                      Progresso
-                    </Label>
-                    <span className="text-sm text-gray-600">
-                      {assinaturasConcluidas}/{totalAssinaturas}
-                    </span>
-                  </div>
-                  <Progress value={progresso} className="h-2" />
-                  <div className="text-xs text-gray-500">
-                    {progresso === 100 ? 'Todas as assinaturas concluídas' : 'Aguardando assinaturas'}
-                  </div>
-                </div>
-
-                {/* SLA */}
-                <div className="p-3 bg-yellow-50 rounded-lg">
-                  <div className="flex items-center justify-between mb-2">
-                    <Label className="text-sm font-semibold text-gray-700">
-                      SLA
-                    </Label>
-                    <Badge className={getSLABadgeConfig(sla.badge).className}>
-                      {getSLABadgeConfig(sla.badge).label}
-                    </Badge>
-                  </div>
-                  <div className="text-sm text-gray-600">
-                    <div>Prazo: {sla.prazoDiasUteis} dia útil</div>
-                    <div>Decorridos: {sla.decorridosDiasUteis} dias úteis</div>
-                  </div>
-                </div>
-
+                  </TabsContent>
+                </Tabs>
               </div>
             </div>
           </aside>
         </div>
 
-        {/* FULL: Despacho do ETP */}
-        <section id="despacho-etp" className="col-span-12 w-full mt-6">
-          <div className="rounded-2xl border shadow-sm overflow-hidden bg-white">
-            <header className="bg-indigo-50 px-4 py-3 rounded-t-2xl font-semibold text-slate-900">
-              <div className="flex items-center gap-3">
-                <FileText className="w-5 h-5 text-indigo-600" />
-                Despacho do ETP
-              </div>
-            </header>
-            <div className="p-4 md:p-6 flex flex-col gap-4">
-              
-              {/* Input oculto para upload de arquivo */}
-              <input
-                ref={despachoFileInputRef}
-                type="file"
-                onChange={handleDespachoFileUpload}
-                accept=".pdf,.docx"
-                className="hidden"
-              />
-
-              {/* Botão Adicionar Documento */}
-              <div className="flex justify-center">
-                <Button
-                  onClick={handleUploadDespacho}
-                  variant="outline"
-                  className="border-dashed border-2 border-gray-300 hover:border-indigo-400 hover:bg-indigo-50 transition-colors"
-                >
-                  <Upload className="w-4 h-4 mr-2" />
-                  Adicionar Documento
-                </Button>
-              </div>
-
-              {/* Lista de arquivos */}
-              {despachoArquivo ? (
-                <div className="border border-gray-200 rounded-xl p-6 bg-gradient-to-br from-gray-50 to-white shadow-sm hover:shadow-md transition-shadow duration-200">
-                  <div className="flex items-center justify-between">
-                    {/* Informações do documento */}
-                    <div className="flex items-center gap-3 min-w-0 flex-1">
-                      <div className="p-2 bg-gradient-to-br from-indigo-100 to-indigo-200 rounded-lg flex-shrink-0">
-                        <FileText className="w-4 h-4 text-indigo-600" />
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <h3 className="text-lg font-semibold text-gray-900 truncate">
-                          {despachoArquivo.name}
-                        </h3>
-                      </div>
-                    </div>
-
-                    {/* Informações do usuário */}
-                    <div className="flex items-center gap-3 min-w-0 flex-1">
-                      <div className="p-2 bg-gradient-to-br from-blue-100 to-blue-200 rounded-lg flex-shrink-0">
-                        <User className="w-4 h-4 text-blue-600" />
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <p className="text-sm font-semibold text-gray-900 truncate">
-                          {despachoArquivo.uploadedBy}
-                        </p>
-                        <p className="text-xs text-gray-600 font-medium truncate">
-                          {despachoArquivo.uploadedByCargo}
-                        </p>
-                        <p className="text-xs text-gray-500 truncate">
-                          {despachoArquivo.uploadedByGerencia}
-                        </p>
-                      </div>
-                    </div>
-
-                    {/* Data e horário */}
-                    <div className="flex items-center gap-3 min-w-0 flex-1">
-                      <div className="p-2 bg-gradient-to-br from-green-100 to-green-200 rounded-lg flex-shrink-0">
-                        <Calendar className="w-4 h-4 text-green-600" />
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <p className="text-sm font-semibold text-gray-900">
-                          {formatDateBR(new Date(despachoArquivo.uploadedAt))} às {new Date(despachoArquivo.uploadedAt).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
-                        </p>
-                      </div>
-                    </div>
-                    
-                    {/* Botões de ação */}
-                    <div className="flex items-center gap-2 flex-shrink-0">
-                      <TooltipProvider>
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <Button 
-                              size="sm" 
-                              variant="outline" 
-                              onClick={handleVisualizarDocumento}
-                              className="h-9 w-9 p-0 text-blue-600 hover:text-blue-700 hover:bg-blue-50 border-blue-200"
-                            >
-                              <Eye className="w-4 h-4" />
-                            </Button>
-                          </TooltipTrigger>
-                          <TooltipContent>
-                            <p>Visualizar documento em nova aba</p>
-                          </TooltipContent>
-                        </Tooltip>
-                      </TooltipProvider>
-
-                      <TooltipProvider>
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <Button 
-                              size="sm" 
-                              variant="outline" 
-                              onClick={handleBaixarDespacho}
-                              className="h-9 w-9 p-0 hover:bg-gray-50"
-                            >
-                              <Download className="w-4 h-4" />
-                            </Button>
-                          </TooltipTrigger>
-                          <TooltipContent>
-                            <p>Baixar arquivo</p>
-                          </TooltipContent>
-                        </Tooltip>
-                      </TooltipProvider>
-
-                      <TooltipProvider>
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <Button 
-                              size="sm" 
-                              variant="outline" 
-                              onClick={handleEditarDespacho}
-                              className="h-9 w-9 p-0 hover:bg-gray-50"
-                            >
-                              <Edit3 className="w-4 h-4" />
-                            </Button>
-                          </TooltipTrigger>
-                          <TooltipContent>
-                            <p>Editar/Substituir arquivo</p>
-                          </TooltipContent>
-                        </Tooltip>
-                      </TooltipProvider>
-
-                      <TooltipProvider>
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <Button 
-                              size="sm" 
-                              variant="outline" 
-                              onClick={handleExcluirDespacho}
-                              className="h-9 w-9 p-0 text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </Button>
-                          </TooltipTrigger>
-                          <TooltipContent>
-                            <p>Excluir arquivo</p>
-                          </TooltipContent>
-                        </Tooltip>
-                      </TooltipProvider>
-                    </div>
-                  </div>
-                </div>
-              ) : (
-                <div className="text-center py-8">
-                  <div className="p-4 bg-gray-100 rounded-full w-16 h-16 mx-auto mb-4 flex items-center justify-center">
-                    <FileText className="w-8 h-8 text-gray-400" />
-                  </div>
-                  <p className="text-gray-500 font-medium">Nenhum documento de despacho enviado ainda.</p>
-                  <p className="text-sm text-gray-400 mt-1">
-                    Clique em "Adicionar Documento" para enviar um arquivo PDF ou DOCX
-                  </p>
-                </div>
-              )}
-            </div>
-          </div>
-        </section>
 
         {/* FULL: Comentários */}
         <section id="comentarios" className="col-span-12 w-full mt-6">

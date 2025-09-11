@@ -948,31 +948,12 @@ export default function DFDFormSection({
                   <TabsContent value="anexos" className="mt-0 p-3">
                     <div className="space-y-3 w-full">
                       {/* Upload no topo */}
-                      {(() => {
-                        const canUpload = permissoes.podeUploadAnexo && currentVersion.status === 'rascunho';
-                        return (
-                          <div className="w-full">
-                            <input
-                              ref={fileInputRef}
-                              type="file"
-                              onChange={handleFileUpload}
-                              accept=".pdf,.doc,.docx,.odt,.png,.jpg,.jpeg,.gif,.bmp,.tif,.tiff"
-                              className="hidden"
-                            />
-                            <Button
-                              onClick={() => canUpload && fileInputRef.current?.click()}
-                              variant="outline"
-                              aria-label="Adicionar anexo"
-                              disabled={!canUpload}
-                              title={!canUpload ? 'Disponível apenas em rascunho e com permissão' : undefined}
-                              className="w-full h-9 border-dashed border-2 border-gray-300 hover:border-green-400 hover:bg-green-50 transition-colors text-sm disabled:opacity-60 disabled:hover:bg-white disabled:hover:border-gray-300"
-                            >
-                              <Upload className="w-4 h-4 mr-2" />
-                              Adicionar Anexo
-                            </Button>
-                          </div>
-                        );
-                      })()}
+                      <div className="w-full">
+                        <input ref={fileInputRef} type="file" accept=".pdf,.doc,.docx,.odt,.png,.jpg,.jpeg,.gif,.bmp,.tif,.tiff" className="hidden" onChange={handleFileUpload} />
+                        <Button onClick={()=>fileInputRef.current?.click()} variant="outline" className="w-full h-9 border-dashed border-2 border-gray-300 hover:border-green-400 hover:bg-green-50 transition-colors text-sm">
+                          <Upload className="w-4 h-4 mr-2"/>Adicionar Anexo
+                        </Button>
+                      </div>
                       {/* Filtro de Ordenação */}
                       <div className="w-full flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2 mb-3">
                         <div className="flex items-center gap-2">
@@ -1002,84 +983,42 @@ export default function DFDFormSection({
                         </div>
                       </div>
 
-                      {/* Lista de Anexos */}
+                      {/* Lista */}
                       {anexos.length === 0 ? (
                         <div className="pt-4">
-                          <div className="text-center">
-                            <div className="p-4 bg-gray-100 rounded-full w-16 h-16 mx-auto mb-4 flex items-center justify-center">
-                              <Upload className="w-8 h-8 text-gray-400" />
-                            </div>
-                            <p className="text-gray-500 font-medium">Nenhum anexo enviado</p>
+                          <div className="p-4 bg-gray-100 rounded-full w-16 h-16 mx-auto mb-4 flex items-center justify-center">
+                            <Upload className="w-8 h-8 text-gray-400" />
                           </div>
+                          <p className="text-center text-gray-500 font-medium">Nenhum anexo adicionado</p>
                         </div>
                       ) : (
-                        <div className={`${anexos.length > 6 ? 'max-h-[280px] overflow-y-auto' : ''} space-y-0 w-full flex-shrink-0`}> 
-                          {anexosOrdenados.map((anexo, idx) => (
+                        <div className={`${anexos.length > 6 ? 'max-h-[280px] overflow-y-auto' : ''} space-y-0 w-full`}>
+                          {anexosOrdenados.map((anexo, idx)=>(
                             <React.Fragment key={anexo.id}>
                               <div className="flex items-center justify-between p-2.5 border border-gray-200 rounded-lg hover:bg-slate-50 transition-colors w-full">
                                 <div className="flex items-center gap-3 min-w-0 flex-1">
                                   <div className="p-2 bg-slate-100 rounded-lg">
-                                    {getFileIcon(anexo.mimeType)}
+                                    <FileText className="w-4 h-4 text-blue-600" />
                                   </div>
                                   <div className="min-w-0 flex-1">
-                                    <p className="text-sm font-medium truncate" title={anexo.nome}>{anexo.nome}</p>
+                                    <p className="text-sm font-medium truncate">{anexo.nome}</p>
                                     <p className="text-xs text-gray-500 hidden sm:block">{anexo.autorNome} • {formatDate(anexo.criadoEm)}</p>
                                     <p className="text-xs text-gray-500 sm:hidden">{anexo.autorNome} • {formatDate(anexo.criadoEm)}</p>
                                   </div>
                                 </div>
-                                {/* Ações - desktop */}
                                 <div className="hidden sm:flex items-center gap-2 flex-shrink-0">
-                                  <TooltipProvider><Tooltip><TooltipTrigger asChild>
-                                    <Button size="sm" variant="outline" aria-label="Visualizar" className="h-7 w-7 p-0 hover:bg-blue-50" onClick={() => openInNewTab(anexo.urlDownload)}>
-                                      <Eye className="w-3 h-3" />
-                                    </Button>
-                                  </TooltipTrigger><TooltipContent>Visualizar</TooltipContent></Tooltip></TooltipProvider>
-                                  <TooltipProvider><Tooltip><TooltipTrigger asChild>
-                                    <Button size="sm" variant="outline" aria-label="Baixar" className="h-7 w-7 p-0 hover:bg-green-50">
-                                      <Download className="w-3 h-3" />
-                                    </Button>
-                                  </TooltipTrigger><TooltipContent>Baixar</TooltipContent></Tooltip></TooltipProvider>
-                                  <TooltipProvider><Tooltip><TooltipTrigger asChild>
-                                    <Button size="sm" variant="outline" aria-label="Renomear" className="h-7 w-7 p-0 hover:bg-slate-50">
-                                      <Edit className="w-3 h-3" />
-                                    </Button>
-                                  </TooltipTrigger><TooltipContent>Renomear</TooltipContent></Tooltip></TooltipProvider>
-                                  <TooltipProvider><Tooltip><TooltipTrigger asChild>
-                                    <Button size="sm" variant="outline" aria-label="Substituir" className="h-7 w-7 p-0 hover:bg-slate-50">
-                                      <ArrowLeftRight className="w-3 h-3" />
-                                    </Button>
-                                  </TooltipTrigger><TooltipContent>Substituir</TooltipContent></Tooltip></TooltipProvider>
-                                  {permissoes.podeRemoverAnexo && currentVersion.status === 'rascunho' && (
-                                    <TooltipProvider><Tooltip><TooltipTrigger asChild>
-                                      <Button size="sm" variant="outline" onClick={() => handleDeleteAnexo(anexo.id)} aria-label="Remover" className="h-7 w-7 p-0 text-red-600 hover:text-red-700 hover:bg-red-50">
-                                        <Trash2 className="w-3 h-3" />
-                                      </Button>
-                                    </TooltipTrigger><TooltipContent>Remover</TooltipContent></Tooltip></TooltipProvider>
-                                  )}
-                                </div>
-                                {/* Ações - mobile (menu kebab) */}
-                                <div className="sm:hidden flex items-center flex-shrink-0">
-                                  <div className="relative">
-                                    <Button size="sm" variant="ghost" className="h-7 w-7 p-0">
-                                      <MoreHorizontal className="w-4 h-4" />
-                                    </Button>
-                                    {/* Menu simples inline */}
-                                    <div className="absolute right-0 mt-1 bg-white border rounded shadow-sm p-1 z-20">
-                                      <button className="block px-3 py-1 text-sm hover:bg-slate-50 w-full text-left" onClick={() => openInNewTab(anexo.urlDownload)}>Visualizar</button>
-                                      <button className="block px-3 py-1 text-sm hover:bg-slate-50 w-full text-left">Baixar</button>
-                                      <button className="block px-3 py-1 text-sm hover:bg-slate-50 w-full text-left">Renomear</button>
-                                      <button className="block px-3 py-1 text-sm hover:bg-slate-50 w-full text-left">Substituir</button>
-                                      {permissoes.podeRemoverAnexo && currentVersion.status === 'rascunho' && (
-                                        <button className="block px-3 py-1 text-sm hover:bg-slate-50 w-full text-left text-red-600" onClick={() => handleDeleteAnexo(anexo.id)}>Remover</button>
-                                      )}
-                                    </div>
-                                  </div>
+                                  <Button size="sm" variant="outline" aria-label="Visualizar" className="h-7 w-7 p-0 hover:bg-blue-50" onClick={()=>openInNewTab(anexo.urlDownload)}>
+                                    <Eye className="w-3 h-3" />
+                                  </Button>
+                                  <Button size="sm" variant="outline" aria-label="Baixar" className="h-7 w-7 p-0 hover:bg-green-50">
+                                    <Download className="w-3 h-3" />
+                                  </Button>
+                                  <Button size="sm" variant="outline" aria-label="Remover" className="h-7 w-7 p-0 text-red-600 hover:text-red-700 hover:bg-red-50" onClick={()=>handleDeleteAnexo(anexo.id)}>
+                                    <Trash2 className="w-3 h-3" />
+                                  </Button>
                                 </div>
                               </div>
-                              {/* Divisor entre linhas */}
-                              {idx < anexosOrdenados.length - 1 && (
-                                <div className="border-b border-slate-200" />
-                              )}
+                              {idx < anexosOrdenados.length-1 && (<div className="border-b border-slate-200" />)}
                             </React.Fragment>
                           ))}
                         </div>
