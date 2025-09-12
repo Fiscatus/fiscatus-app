@@ -1,15 +1,61 @@
 {
   "2025": [
     {
+      "dateISO": "2025-01-01",
+      "label": "Confraternização Universal",
+      "scope": "national"
+    },
+    {
       "dateISO": "2025-02-24",
       "label": "Carnaval (ponto facultativo)",
       "scope": "org",
       "optional": true
     },
     {
+      "dateISO": "2025-02-25",
+      "label": "Carnaval (ponto facultativo)",
+      "scope": "org",
+      "optional": true
+    },
+    {
+      "dateISO": "2025-03-03",
+      "label": "Segunda-feira de Carnaval",
+      "scope": "national"
+    },
+    {
+      "dateISO": "2025-04-18",
+      "label": "Sexta-feira Santa",
+      "scope": "national"
+    },
+    {
+      "dateISO": "2025-04-21",
+      "label": "Tiradentes",
+      "scope": "national"
+    },
+    {
+      "dateISO": "2025-05-01",
+      "label": "Dia do Trabalhador",
+      "scope": "national"
+    },
+    {
+      "dateISO": "2025-09-07",
+      "label": "Independência do Brasil",
+      "scope": "national"
+    },
+    {
       "dateISO": "2025-10-12",
-      "label": "Padroeira Municipal",
-      "scope": "city"
+      "label": "Nossa Senhora Aparecida",
+      "scope": "national"
+    },
+    {
+      "dateISO": "2025-11-02",
+      "label": "Finados",
+      "scope": "national"
+    },
+    {
+      "dateISO": "2025-11-15",
+      "label": "Proclamação da República",
+      "scope": "national"
     },
     {
       "dateISO": "2025-11-20",
@@ -21,6 +67,11 @@
       "label": "Véspera de Natal (ponto facultativo)",
       "scope": "org",
       "optional": true
+    },
+    {
+      "dateISO": "2025-12-25",
+      "label": "Natal",
+      "scope": "national"
     },
     {
       "dateISO": "2025-12-31",

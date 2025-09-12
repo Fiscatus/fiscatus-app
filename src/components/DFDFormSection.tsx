@@ -43,8 +43,21 @@ import {
   Settings,
   Edit,
   MoreHorizontal,
-  ArrowLeftRight
-} from 'lucide-react';
+  ArrowLeftRight,
+  ClipboardCheck,
+  CheckCircle as CheckIcon,
+  XCircle as XIcon,
+  AlertTriangle,
+  ListChecks,
+  Paperclip,
+  CheckCircle2 as CheckCircleIcon,
+  AlertCircle as AlertCircleIcon,
+  MessageSquare,
+    Calendar as CalendarIcon,
+    User as UserIcon,
+    Clock as ClockIcon,
+    Loader2
+  } from 'lucide-react';
 import { useUser } from '@/contexts/UserContext';
 import { usePermissoes } from '@/hooks/usePermissoes';
 import { useToast } from '@/hooks/use-toast';
@@ -126,6 +139,21 @@ interface ConclusaoEtapa {
   notificar: boolean;
 }
 
+interface ChecklistItem {
+  id: string;
+  label: string;
+  status: 'completed' | 'pending' | 'warning';
+  description?: string;
+}
+
+interface TimelineItem {
+  id: string;
+  autor: string;
+  descricao: string;
+  dataHora: string;
+  tipo: 'versao' | 'comentario' | 'anexo' | 'status';
+}
+
 interface DFDFormSectionProps {
   processoId: string;
   etapaId: number;
@@ -169,9 +197,9 @@ const mockVersions: DFDVersion[] = [
     autorCargo: 'Analista de Projetos',
     autorGerencia: 'GSP - Gerência de Soluções e Projetos',
     autorEmail: 'lucas.brito@hospital.gov.br',
-    criadoEm: '2024-01-15T14:30:00Z',
-    atualizadoEm: '2024-01-18T16:45:00Z',
-    enviadoParaAnaliseEm: '2024-01-18T16:45:00Z',
+    criadoEm: '2025-01-15T14:30:00Z',
+    atualizadoEm: '2025-01-18T16:45:00Z',
+    enviadoParaAnaliseEm: '2025-01-18T16:45:00Z',
     prazoDiasUteis: 7,
     prazoInicialDiasUteis: 7,
     prazoCumpridoDiasUteis: 3,
@@ -188,8 +216,8 @@ const mockVersions: DFDVersion[] = [
           gerencia: 'GSP - Gerência de Soluções e Projetos'
         }
       ],
-      dataElaboracao: '2024-01-15',
-      numeroDFD: 'DFD-2024-001',
+      dataElaboracao: '2025-01-15',
+      numeroDFD: 'DFD-2025-001',
       prioridade: 'MEDIO'
     }
   }
@@ -201,7 +229,7 @@ const mockAnexos: Anexo[] = [
     nome: 'Documento_Referencia.pdf',
     tamanhoBytes: 1024000,
     mimeType: 'application/pdf',
-    criadoEm: '2024-01-15T10:30:00Z',
+    criadoEm: '2025-01-15T10:30:00Z',
     autorId: 'user1',
     autorNome: 'Lucas Moreira Brito',
     versaoId: 'v1',
@@ -264,7 +292,6 @@ export default function DFDFormSection({
 
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const [activeTab, setActiveTab] = useState('versoes');
   
   // Estados para conclusão da etapa
   const [showConcluirModal, setShowConcluirModal] = useState(false);
@@ -716,25 +743,326 @@ export default function DFDFormSection({
     return value;
   };
 
+  // Gerar checklist dinâmico baseado no status da etapa
+  const generateChecklist = (): ChecklistItem[] => {
+    const checklist: ChecklistItem[] = [];
+
+    // Checklist para Elaboração do DFD
+    // Versão inicial criada
+    if (versions.length === 0) {
+      checklist.push({
+        id: 'versao-criada',
+        label: 'Versão inicial ainda não criada',
+        status: 'pending',
+        description: 'Nenhuma versão foi criada ainda'
+      });
+    } else {
+      checklist.push({
+        id: 'versao-criada',
+        label: 'Versão inicial criada',
+        status: 'completed',
+        description: `${versions.length} versão(ões) criada(s)`
+      });
+    }
+
+    // Documentos anexados
+    if (anexos.length === 0) {
+      checklist.push({
+        id: 'anexos-adicionados',
+        label: 'Documentos anexados (nenhum encontrado)',
+        status: 'pending',
+        description: 'Nenhum documento foi anexado'
+      });
+    } else {
+      checklist.push({
+        id: 'anexos-adicionados',
+        label: 'Documentos anexados',
+        status: 'completed',
+        description: `${anexos.length} documento(s) anexado(s)`
+      });
+    }
+
+    // Responsáveis definidos
+    if (!formData.responsaveis || formData.responsaveis.length === 0) {
+      checklist.push({
+        id: 'responsaveis-definidos',
+        label: 'Responsáveis definidos (nenhum encontrado)',
+        status: 'pending',
+        description: 'Nenhum responsável foi atribuído'
+      });
+    } else if (formData.responsaveis.length < 2) {
+      checklist.push({
+        id: 'responsaveis-definidos',
+        label: `Responsáveis definidos (${formData.responsaveis.length} de 2)`,
+        status: 'warning',
+        description: 'Recomenda-se pelo menos 2 responsáveis'
+      });
+    } else {
+      checklist.push({
+        id: 'responsaveis-definidos',
+        label: 'Responsáveis definidos',
+        status: 'completed',
+        description: `${formData.responsaveis.length} responsável(is) atribuído(s)`
+      });
+    }
+
+    // Objeto da contratação
+    if (!formData.objeto || formData.objeto.trim() === '') {
+      checklist.push({
+        id: 'objeto-preenchido',
+        label: 'Objeto da contratação preenchido',
+        status: 'pending',
+        description: 'Campo obrigatório para elaboração do DFD'
+      });
+    } else {
+      checklist.push({
+        id: 'objeto-preenchido',
+        label: 'Objeto da contratação preenchido',
+        status: 'completed',
+        description: 'Campo preenchido corretamente'
+      });
+    }
+
+    // Área/Setor Demandante
+    if (!formData.areaSetorDemandante || formData.areaSetorDemandante.trim() === '') {
+      checklist.push({
+        id: 'area-demandante-preenchida',
+        label: 'Área/Setor demandante preenchido',
+        status: 'pending',
+        description: 'Campo obrigatório para elaboração do DFD'
+      });
+    } else {
+      checklist.push({
+        id: 'area-demandante-preenchida',
+        label: 'Área/Setor demandante preenchido',
+        status: 'completed',
+        description: 'Campo preenchido corretamente'
+      });
+    }
+
+    // Versão enviada para análise
+    const hasSentVersion = versions.some(v => v.status === 'enviada_para_analise' || v.status === 'aprovada');
+    if (!hasSentVersion) {
+      checklist.push({
+        id: 'versao-enviada',
+        label: 'Versão enviada para análise',
+        status: 'pending',
+        description: 'Nenhuma versão foi enviada para análise'
+      });
+    } else {
+      checklist.push({
+        id: 'versao-enviada',
+        label: 'Versão enviada para análise',
+        status: 'completed',
+        description: 'Versão enviada com sucesso'
+      });
+    }
+
+    // Ordenar: pendentes primeiro, depois em atenção, por último concluídos
+    return checklist.sort((a, b) => {
+      const statusOrder = { pending: 0, warning: 1, completed: 2 };
+      return statusOrder[a.status] - statusOrder[b.status];
+    });
+  };
+
+  // Gerar timeline com últimas ações
+  const generateTimeline = (): TimelineItem[] => {
+    const timeline: TimelineItem[] = [];
+
+    // Adicionar ações das versões
+    versions.slice(0, 2).forEach(version => {
+      if (version.status === 'enviada_para_analise' && version.enviadoParaAnaliseEm) {
+        timeline.push({
+          id: `versao-${version.id}-enviada`,
+          autor: version.autorNome,
+          descricao: `Versão ${version.numeroVersao} enviada para análise`,
+          dataHora: version.enviadoParaAnaliseEm,
+          tipo: 'versao'
+        });
+      }
+      if (version.status === 'aprovada') {
+        timeline.push({
+          id: `versao-${version.id}-aprovada`,
+          autor: version.autorNome,
+          descricao: `Versão ${version.numeroVersao} aprovada`,
+          dataHora: version.atualizadoEm,
+          tipo: 'versao'
+        });
+      }
+      if (version.status === 'reprovada') {
+        timeline.push({
+          id: `versao-${version.id}-reprovada`,
+          autor: version.autorNome,
+          descricao: `Versão ${version.numeroVersao} devolvida`,
+          dataHora: version.atualizadoEm,
+          tipo: 'versao'
+        });
+      }
+    });
+
+    // Adicionar anexos recentes
+    anexos.slice(0, 2).forEach(anexo => {
+      timeline.push({
+        id: `anexo-${anexo.id}`,
+        autor: anexo.autorNome,
+        descricao: `Documento comentado anexado`,
+        dataHora: anexo.criadoEm,
+        tipo: 'anexo'
+      });
+    });
+
+    // Ordenar por data (mais recente primeiro) e pegar apenas os 3 mais recentes
+    return timeline
+      .sort((a, b) => new Date(b.dataHora).getTime() - new Date(a.dataHora).getTime())
+      .slice(0, 3);
+  };
+
+  // Obter ícone da timeline baseado no tipo e status
+  const getTimelineIcon = (item: TimelineItem) => {
+    switch (item.tipo) {
+      case 'versao':
+        if (item.descricao.includes('aprovada')) {
+          return <CheckCircleIcon className="w-4 h-4 text-green-600" />;
+        } else if (item.descricao.includes('devolvida')) {
+          return <XCircleIcon className="w-4 h-4 text-red-600" />;
+        } else {
+          return <Send className="w-4 h-4 text-blue-600" />;
+        }
+      case 'anexo':
+        return <Paperclip className="w-4 h-4 text-gray-600" />;
+      case 'comentario':
+        return <MessageSquare className="w-4 h-4 text-indigo-600" />;
+      case 'status':
+        return <Flag className="w-4 h-4 text-purple-600" />;
+      default:
+        return <ClockIcon className="w-4 h-4 text-gray-600" />;
+    }
+  };
+
+  // Obter status da etapa
+  const getEtapaStatus = () => {
+    if (etapaConcluida) return 'Concluída';
+    if (versions.some(v => v.status === 'aprovada')) return 'Aprovada';
+    if (versions.some(v => v.status === 'enviada_para_analise')) return 'Em análise';
+    if (versions.some(v => v.status === 'reprovada')) return 'Devolvida';
+    return 'Em elaboração';
+  };
+
+  // Obter classes de cor para o status
+  const getStatusClasses = (status: string) => {
+    switch (status) {
+      case 'Concluída':
+      case 'Aprovada':
+        return 'bg-green-100 text-green-800';
+      case 'Em análise':
+        return 'bg-blue-100 text-blue-800';
+      case 'Devolvida':
+        return 'bg-red-100 text-red-800';
+      default:
+        return 'bg-yellow-100 text-yellow-800';
+    }
+  };
+
+  // Obter ícone do checklist
+  const getChecklistIcon = (status: 'completed' | 'pending' | 'warning') => {
+    switch (status) {
+      case 'completed':
+        return <CheckIcon className="w-4 h-4 text-green-600" />;
+      case 'warning':
+        return <AlertTriangle className="w-4 h-4 text-yellow-600" />;
+      default:
+        return <XIcon className="w-4 h-4 text-red-600" />;
+    }
+  };
+
+  // Calcular prazo final previsto
+  const getPrazoFinalPrevisto = () => {
+    const inicio = new Date(currentVersion.criadoEm);
+    const diasUteis = currentVersion.prazoInicialDiasUteis || 7;
+    
+    // Adicionar dias úteis à data inicial
+    let dataFinal = new Date(inicio);
+    let diasAdicionados = 0;
+    
+    while (diasAdicionados < diasUteis) {
+      dataFinal.setDate(dataFinal.getDate() + 1);
+      const dayOfWeek = dataFinal.getDay();
+      // Se é dia útil (segunda a sexta)
+      if (dayOfWeek >= 1 && dayOfWeek <= 5) {
+        diasAdicionados++;
+      }
+    }
+    
+    return dataFinal;
+  };
+
+  // Calcular tempo decorrido (mais preciso)
+  const getTempoDecorrido = () => {
+    const inicio = new Date(currentVersion.criadoEm);
+    const agora = etapaConcluida ? new Date(etapaConcluida.dataConclusao) : new Date();
+    
+    const diasUteis = countBusinessDays(currentVersion.criadoEm, agora.toISOString());
+    
+    return { diasUteis };
+  };
+
+  // Calcular progresso temporal baseado nas datas reais
+  const getProgressoTemporal = () => {
+    const prazoInicial = new Date(currentVersion.criadoEm);
+    const prazoLimite = getPrazoFinalPrevisto();
+    const hoje = etapaConcluida ? new Date(etapaConcluida.dataConclusao) : new Date();
+    
+    // Calcular dias úteis totais entre prazo inicial e limite
+    const diasUteisTotal = Math.max(1, countBusinessDays(prazoInicial.toISOString(), prazoLimite.toISOString()));
+    
+    // Calcular dias úteis passados
+    const diasUteisPassados = countBusinessDays(prazoInicial.toISOString(), hoje.toISOString());
+    
+    // Se hoje > prazo limite, progresso = 100%
+    if (hoje > prazoLimite && !etapaConcluida) {
+      return 100;
+    }
+    
+    const progresso = Math.round((diasUteisPassados / diasUteisTotal) * 100);
+    return Math.min(progresso, 100);
+  };
+
+  // Obter cor da barra de progresso
+  const getProgressColor = (progresso: number) => {
+    if (progresso <= 70) return 'bg-green-500';
+    if (progresso <= 100) return 'bg-yellow-500';
+    return 'bg-red-500';
+  };
+
+  // Obter próximo responsável (mock - em produção viria do fluxo)
+  const getProximoResponsavel = () => {
+    const status = getEtapaStatus();
+    if (status === 'Em análise') return 'Análise Técnica';
+    if (status === 'Aprovada') return 'Jurídico';
+    return null;
+  };
+
+  // Obter iniciais do nome
+  const getIniciais = (nome: string) => {
+    return nome
+      .split(' ')
+      .map(n => n.charAt(0))
+      .join('')
+      .toUpperCase()
+      .substring(0, 2);
+  };
+
   return (
-    <div className="bg-white">
-      {/* Container central ocupando toda a área */}
-      <div className="w-full px-2">
-        {/* Grid principal 12 colunas */}
-        <div className="grid grid-cols-12 gap-4">
-          
-          {/* ESQUERDA: Formulário do DFD */}
-          <section id="formulario-dfd" className="col-span-12 lg:col-span-8 w-full">
-            
-            {/* Card do Formulário */}
-            <div className="rounded-2xl border shadow-sm overflow-hidden bg-white">
-              <header className="bg-indigo-100 px-4 py-3 rounded-t-2xl font-semibold text-slate-900">
-                <div className="flex items-center gap-3">
-                  <FileText className="w-5 h-5 text-indigo-600" />
-                  Formulário do DFD
-                </div>
-              </header>
-              <div className="p-4 md:p-6 space-y-0">
+    <div className="w-full space-y-6">
+      {/* 1️⃣ Formulário DFD */}
+      <div className="rounded-xl border border-slate-200 shadow-sm bg-white p-4 md:p-6">
+        <header className="flex items-center justify-center gap-3 bg-indigo-50 border-b border-indigo-200 py-4 px-4 md:px-6 rounded-t-xl -mx-4 md:-mx-6">
+          <div className="flex items-center gap-3">
+            <FileText className="w-5 h-5 text-indigo-600" />
+            <h2 className="text-lg font-semibold text-slate-800">Formulário do DFD</h2>
+          </div>
+        </header>
+        <div className="space-y-0">
                 {/* Grupo: Número/Data */}
                 <div className="w-full p-4 border-b border-slate-200 my-4">
                   <div className="grid grid-cols-12 gap-4">
@@ -811,29 +1139,29 @@ export default function DFDFormSection({
                 />
               </div>
             </div>
-          </section>
 
-          {/* DIREITA: Gerenciamento (Versões/Anexos) */}
-          <aside id="gerenciamento" className="col-span-12 lg:col-span-4 w-full flex flex-col">
-            
-            {/* Card com Abas */}
-            <div className="rounded-2xl border shadow-sm overflow-hidden bg-white flex-1 flex flex-col">
-              <header className="bg-purple-50 px-4 py-3 rounded-t-2xl font-semibold text-slate-900">
-                <div className="flex items-center gap-3">
-                  <Settings className="w-5 h-5 text-purple-600" />
-                  Gerenciamento
-                </div>
-              </header>
-              <div className="p-4 md:p-6 flex-1 flex flex-col">
-                <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-                  <TabsList className="grid w-full grid-cols-2 rounded-none">
-                    <TabsTrigger value="versoes">Versões</TabsTrigger>
-                    <TabsTrigger value="anexos">Anexos</TabsTrigger>
-                  </TabsList>
-                  
-                  {/* Aba Versões */}
-                  <TabsContent value="versoes" className="mt-0 p-4 flex-1 flex flex-col">
-                    <div className="space-y-4 w-full flex-1 flex flex-col">
+      {/* 2️⃣ Gerenciamento */}
+      <div className="rounded-xl border border-slate-200 shadow-sm bg-white p-4 md:p-6">
+        <header className="flex items-center justify-center gap-3 bg-indigo-50 border-b border-indigo-200 py-4 px-4 md:px-6 rounded-t-xl -mx-4 md:-mx-6">
+          <div className="flex items-center gap-3">
+            <Settings className="w-5 h-5 text-indigo-600" />
+            <h2 className="text-lg font-semibold text-slate-800">Gerenciamento</h2>
+          </div>
+        </header>
+        <div>
+              {/* Grid responsiva para Versões e Anexos */}
+              <div className="grid grid-cols-12 gap-4 items-start">
+                {/* Versões/Revisões - 6 colunas em desktop, 12 em mobile */}
+                <div className="col-span-12 lg:col-span-6">
+                  <div className="rounded-xl border shadow-sm bg-white h-full">
+                    <div className="px-4 py-3 rounded-t-xl border-b">
+                      <h3 className="text-sm font-semibold text-slate-900 flex items-center gap-2">
+                        <History className="w-4 h-4 text-purple-600" />
+                        Versões/Revisões
+                      </h3>
+                    </div>
+                    <div className="p-4">
+                      <div className="space-y-4">
                       {/* Botão Criar Nova Versão */}
                       {permissoes.podeCriarNovaVersao && (
                         <Button
@@ -848,14 +1176,14 @@ export default function DFDFormSection({
 
                       {/* Lista de Versões */}
                       {versions.length === 0 ? (
-                        <div className="text-center py-8 w-full">
+                          <div className="text-center py-8">
                           <div className="p-4 bg-gray-100 rounded-full w-16 h-16 mx-auto mb-4 flex items-center justify-center">
                             <FileText className="w-8 h-8 text-gray-400" />
                           </div>
                           <p className="text-gray-500 font-medium">Ainda não há versões criadas</p>
                         </div>
                       ) : (
-                        <div className="space-y-3 w-full overflow-y-auto max-h-[400px]">
+                          <div className="space-y-3 overflow-y-auto max-h-[320px]">
                           {!showAllVersions && (
                             <div className="text-sm font-semibold text-purple-700">Última versão</div>
                           )}
@@ -867,9 +1195,9 @@ export default function DFDFormSection({
                             
                             return (
                               <React.Fragment key={version.id}>
-                              <div className="border border-gray-200 rounded-xl p-4 hover:bg-gray-50 transition-colors w-full">
-                                <div className="flex items-center justify-between mb-3 w-full">
-                                  <div className="flex items-center gap-3">
+                                <div className="border border-gray-200 rounded-xl p-4 hover:bg-gray-50 transition-colors">
+                                  <div className="flex items-center justify-between mb-3">
+                                    <div className="flex items-center gap-2 flex-wrap">
                                     <Badge variant="outline" className="text-xs font-medium">
                                       V{version.numeroVersao}
                                     </Badge>
@@ -901,7 +1229,7 @@ export default function DFDFormSection({
 
                                 {(expandedVersions[version.id] ?? true) && (
                                   <>
-                                    <div className="text-xs text-gray-700 space-y-1 mb-3 w-full">
+                                      <div className="text-xs text-gray-700 space-y-1 mb-3">
                                       <p><strong>Autor:</strong> {version.autorNome}</p>
                                       <p><strong>Cargo:</strong> {version.autorCargo || 'Não informado'}</p>
                                       <p><strong>Gerência:</strong> {version.autorGerencia || 'Não informado'}</p>
@@ -911,7 +1239,7 @@ export default function DFDFormSection({
                                     </div>
 
                                     {version.documentoNome && (
-                                      <div className="flex items-center justify-between p-2 bg-blue-50 rounded border border-blue-200 w-full">
+                                        <div className="flex items-center justify-between p-2 bg-blue-50 rounded border border-blue-200">
                                         <div className="flex items-center gap-2">
                                           <File className="w-4 h-4 text-blue-600" />
                                           <span className="text-sm font-medium text-blue-800">{version.documentoNome}</span>
@@ -950,11 +1278,26 @@ export default function DFDFormSection({
                         </div>
                       )}
                     </div>
-                  </TabsContent>
-                  
-                  {/* Aba Anexos */}
-                  <TabsContent value="anexos" className="mt-0 p-3">
-                    <div className="space-y-3 w-full">
+                    </div>
+                  </div>
+                </div>
+
+                {/* Anexos - 6 colunas em desktop, 12 em mobile */}
+                <div className="col-span-12 lg:col-span-6">
+                  <div className="rounded-xl border shadow-sm bg-white h-full">
+                    <div className="px-4 py-3 rounded-t-xl border-b">
+                      <div className="flex items-center justify-between">
+                        <h3 className="text-sm font-semibold text-slate-900 flex items-center gap-2">
+                          <Upload className="w-4 h-4 text-green-600" />
+                          Anexos
+                        </h3>
+                        <span className="text-xs text-slate-600 bg-slate-200 px-2 py-0.5 rounded-md font-medium">
+                          {anexos.length}
+                        </span>
+                      </div>
+                    </div>
+                    <div className="p-4">
+                      <div className="space-y-3">
                       {/* Upload no topo */}
                       <div className="w-full">
                         <input ref={fileInputRef} type="file" accept=".pdf,.doc,.docx,.odt,.png,.jpg,.jpeg,.gif,.bmp,.tif,.tiff" className="hidden" onChange={handleFileUpload} />
@@ -962,14 +1305,9 @@ export default function DFDFormSection({
                           <Upload className="w-4 h-4 mr-2"/>Adicionar Anexo
                         </Button>
                       </div>
+                        
                       {/* Filtro de Ordenação */}
                       <div className="w-full flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2 mb-3">
-                        <div className="flex items-center gap-2">
-                          <h3 className="text-sm font-semibold text-slate-800">Anexos</h3>
-                          <span className="text-xs text-slate-600 bg-slate-200 px-2 py-0.5 rounded-md font-medium">
-                            {anexos.length}
-                          </span>
-                        </div>
                         <div className="flex items-center gap-2 w-full sm:w-auto">
                           <span className="text-xs text-slate-500 whitespace-nowrap">Ordenar:</span>
                           <div className="relative flex-1 sm:flex-none">
@@ -1000,10 +1338,10 @@ export default function DFDFormSection({
                           <p className="text-center text-gray-500 font-medium">Nenhum anexo adicionado</p>
                         </div>
                       ) : (
-                        <div className={`${anexos.length > 6 ? 'max-h-[280px] overflow-y-auto' : ''} space-y-0 w-full`}>
+                          <div className={`${anexos.length > 6 ? 'max-h-[320px] overflow-y-auto' : ''} space-y-0`}>
                           {anexosOrdenados.map((anexo, idx)=>(
                             <React.Fragment key={anexo.id}>
-                              <div className="flex items-center justify-between p-2.5 border border-gray-200 rounded-lg hover:bg-slate-50 transition-colors w-full">
+                                <div className="flex items-center justify-between p-2.5 border border-gray-200 rounded-lg hover:bg-slate-50 transition-colors">
                                 <div className="flex items-center gap-3 min-w-0 flex-1">
                                   <div className="p-2 bg-slate-100 rounded-lg">
                                     <FileText className="w-4 h-4 text-blue-600" />
@@ -1032,151 +1370,476 @@ export default function DFDFormSection({
                         </div>
                       )}
                     </div>
-                  </TabsContent>
-                </Tabs>
               </div>
             </div>
-          </aside>
+                </div>
+              </div>
+            </div>
+          </div>
 
-          {/* FULL: Comentários */}
-          <section id="comentarios" className="col-span-12 w-full">
-            <CommentsSection
-              processoId={processoId}
-              etapaId={String(etapaId)}
-              cardId="dfd-form"
-              title="Comentários"
-            />
-          </section>
-
-          {/* FULL: Ações (rodapé não fixo) */}
-          <section id="acoes" className="col-span-12 w-full mt-4 pb-2">
-            {/* Rodapé com Botões de Ação */}
-            <Card className="w-full shadow-lg border-0 bg-white/80 backdrop-blur-sm">
-              <CardContent className="p-4">
-                <div className="flex flex-col sm:flex-row gap-4 justify-between items-center w-full">
-                  
-                  {/* Lado esquerdo - Status e informações */}
-                  <div className="flex items-center gap-4">
-                    <div className="flex items-center gap-2">
-                      {(() => {
-                        const diasRest = getDiasRestantes(currentVersion);
-                        const prazo = getPrazoColorClasses(diasRest);
-                        return (
-                          <>
-                            <Clock className={`w-4 h-4 ${prazo.text}`} />
-                            <span className={`text-sm ${prazo.text}`}>
-                              {diasRest === null ? 'Sem prazo' : diasRest < 0 ? `${Math.abs(diasRest)} dia(s) atrasado` : `${diasRest} dia(s) restantes`}
-                            </span>
-                          </>
-                        );
-                      })()}
+      {/* 3️⃣ Painel da Etapa */}
+      <div className="rounded-xl border border-slate-200 shadow-sm bg-white p-4 md:p-6">
+        <header className="flex items-center justify-center gap-3 bg-indigo-50 border-b border-indigo-200 py-4 px-4 md:px-6 rounded-t-xl -mx-4 md:-mx-6">
+          <div className="flex items-center gap-3">
+            <ClipboardCheck className="w-5 h-5 text-indigo-600" />
+            <h2 className="text-lg font-semibold text-slate-800">Painel da Etapa</h2>
+          </div>
+        </header>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            
+            {/* 1️⃣ Card Status & Prazo (claro e visual) */}
+            <div className="rounded-2xl border shadow-sm bg-white p-4 md:p-6">
+              {/* Header com Status */}
+              <header className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-2">
+                  <Flag className="w-5 h-5 text-indigo-600" />
+                  <h3 className="text-sm font-semibold text-slate-800">Status & Prazo</h3>
+                </div>
+                <Badge className={`text-sm font-semibold px-3 py-2 ${getStatusClasses(getEtapaStatus())}`}>
+                  {getEtapaStatus()}
+                </Badge>
+              </header>
+              
+              <div className="space-y-4">
+                {/* 1. Faixa de Prazos */}
+                <div className="space-y-4">
+                  {/* Data de Criação */}
+                  <div className="flex items-center gap-3 p-3 rounded-lg border border-slate-200">
+                    <div className="w-10 h-10 rounded-full flex items-center justify-center border border-slate-300">
+                      <CalendarIcon className="w-5 h-5 text-slate-600" />
                     </div>
-                    <div className="flex items-center gap-2">
-                      <User className="w-4 h-4 text-gray-500" />
-                      <span className="text-sm text-gray-600">
-                        {currentVersion.autorNome || 'Sem responsável definido'}
+                    <div>
+                      <p className="text-sm font-semibold text-slate-500">Data de Criação</p>
+                      <p className="text-lg font-bold text-slate-900">
+                        {formatDateBR(currentVersion.criadoEm)}
+                      </p>
+                    </div>
+                  </div>
+                  
+                  {/* Prazo Inicial */}
+                  <div className="flex items-center justify-between p-3 rounded-lg border border-slate-200">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-full flex items-center justify-center border border-slate-300">
+                        <ClockIcon className="w-5 h-5 text-slate-600" />
+                      </div>
+                      <div>
+                        <p className="text-sm font-semibold text-slate-500">Prazo Inicial</p>
+                        <p className="text-lg font-bold text-slate-900">
+                          {formatDateBR(currentVersion.criadoEm)}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold border border-slate-300 text-slate-700">
+                        {currentVersion.prazoInicialDiasUteis || 7} dias úteis
                       </span>
                     </div>
                   </div>
-
-                  {/* Lado direito - Botões de ação */}
-                  <div className="flex items-center gap-2">
-                  {/* Botão Salvar Versão */}
-                  {permissoes.podeEditar && currentVersion.status === 'rascunho' && !etapaConcluida && (
-                    <Button 
-                      onClick={handleSaveVersion} 
-                      variant="outline" 
-                      disabled={isLoading}
-                      aria-label="Salvar versão"
-                      className="border-gray-200 text-gray-700 hover:bg-gray-50"
-                    >
-                      <Save className="w-4 h-4 mr-2" />
-                      Salvar Versão
-                    </Button>
-                  )}
                   
-                  {/* Botão Enviar para Análise */}
-                  <TooltipProvider>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <div>
-                          <Button 
-                            onClick={handleSendToAnalysis} 
-                            variant="outline" 
-                            disabled={!canSendToAnalysis() || isLoading || !permissoes.podeEditar || currentVersion.status !== 'rascunho' || !!etapaConcluida}
-                            aria-label="Enviar para análise técnica"
-                            className="border-blue-200 text-blue-700 hover:bg-blue-50"
-                          >
-                            <Send className="w-4 h-4 mr-2" />
-                            Enviar para Análise Técnica
-                          </Button>
-                        </div>
-                      </TooltipTrigger>
-                      {!canSendToAnalysis() && (
-                        <TooltipContent>
-                          <p>Preencha os campos obrigatórios</p>
-                        </TooltipContent>
-                      )}
-                    </Tooltip>
-                  </TooltipProvider>
-
-                  {/* Botão Concluir Etapa */}
-                  {canShowConcluirButton() && !etapaConcluida && (
-                    <TooltipProvider>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <div>
-                            <Button 
-                              onClick={handleOpenConcluirModal} 
-                              variant="default" 
-                              disabled={!canConcluirEtapa() || isLoading}
-                              aria-label="Concluir etapa"
-                              className="bg-green-600 hover:bg-green-700 text-white"
-                            >
-                              <Flag className="w-4 h-4 mr-2" />
-                              Concluir Etapa
-                            </Button>
+                  {/* Prazo Final */}
+                  <div className="flex items-center justify-between p-3 rounded-lg border border-slate-200">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-full flex items-center justify-center border border-slate-300">
+                        <Flag className="w-5 h-5 text-slate-600" />
+                      </div>
+                      <div>
+                        <p className="text-sm font-semibold text-slate-500">Prazo Final</p>
+                        <p className="text-lg font-bold text-slate-900">
+                          {formatDateBR(getPrazoFinalPrevisto().toISOString())}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold border border-slate-300 text-slate-700">
+                        prazo limite
+                      </span>
+                    </div>
+                  </div>
+                  
+                  {/* Prazo Cumprido (quando aplicável) */}
+                  {etapaConcluida && (
+                    <div className="mt-4 pt-4 border-t border-slate-200">
+                      <div className="flex items-center justify-between p-3 rounded-lg border border-slate-200">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 rounded-full flex items-center justify-center border border-green-300">
+                            <CheckCircleIcon className="w-5 h-5 text-green-600" />
                           </div>
-                        </TooltipTrigger>
-                        {!canConcluirEtapa() && (
-                          <TooltipContent>
-                            <p>É necessário enviar uma versão para análise antes de concluir a etapa.</p>
-                          </TooltipContent>
-                        )}
-                      </Tooltip>
-                    </TooltipProvider>
-                  )}
-                  
-                  {!permissoes.podeEditar && (
-                    <div className="flex items-center gap-2 text-sm text-gray-500">
-                      <Info className="w-4 h-4" />
-                      Somente visualização
+                          <div>
+                            <p className="text-sm font-semibold text-green-600">Prazo Cumprido</p>
+                            <p className="text-lg font-bold text-green-700">
+                              {formatDateBR(etapaConcluida.dataConclusao)}
+                            </p>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold border border-green-300 text-green-700">
+                            {getTempoDecorrido().diasUteis} dias úteis
+                          </span>
+                        </div>
+                      </div>
                     </div>
                   )}
                 </div>
                 
-                {/* Informações de Status */}
-                {(currentVersion.status === 'enviada_para_analise' || etapaConcluida) && (
-                  <div className="text-sm text-gray-500 mt-2">
-                    {currentVersion.status === 'enviada_para_analise' && (
-                      <span className="flex items-center gap-2">
-                        <Clock className="w-4 h-4" />
-                        Enviado para análise em {formatDate(currentVersion.enviadoParaAnaliseEm || '')}
-                      </span>
-                    )}
-                    {etapaConcluida && (
-                      <span className="flex items-center gap-2 text-green-600">
-                        <CheckCircle2 className="w-4 h-4" />
-                        Concluída em {formatDate(etapaConcluida.dataConclusao)} por {etapaConcluida.usuarioNome}
-                      </span>
-                    )}
-                  </div>
-                )}
+                {/* 2. Destaque Central - Dias Restantes ou Atraso */}
+                <div className="border-t border-slate-200 my-3 pt-4">
+                  {(() => {
+                    const diasRest = getDiasRestantes(currentVersion);
+                    const prazo = getPrazoColorClasses(diasRest);
+                    const isAtraso = diasRest !== null && diasRest < 0;
+                    
+                    return (
+                      <div className="text-center py-4">
+                        <div className={`text-3xl font-bold ${prazo.text} mb-2`}>
+                          {diasRest === null ? '—' : Math.abs(diasRest)}
+                        </div>
+                        <div className={`text-sm font-medium ${prazo.text}`}>
+                          {diasRest === null ? 'Sem prazo definido' : 
+                           isAtraso ? 'dias em atraso' : 
+                           diasRest <= 2 ? 'dias restantes (urgente)' : 
+                           'dias restantes'}
+                        </div>
+                      </div>
+                    );
+                  })()}
                 </div>
-              </CardContent>
-            </Card>
-          </section>
+                
+                {/* 3. Linha de Progresso Temporal */}
+                <div className="space-y-2">
+                  <div className="flex justify-between text-xs text-slate-500">
+                    <span>Progresso</span>
+                    <span>{getProgressoTemporal()}%</span>
+                  </div>
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <div className="w-full bg-slate-200 rounded-full h-2 cursor-help">
+                          <div 
+                            className={`h-2 rounded-full transition-all ${getProgressColor(getProgressoTemporal())}`}
+                            style={{ width: `${Math.min(getProgressoTemporal(), 100)}%` }}
+                          />
+                        </div>
+                      </TooltipTrigger>
+                       <TooltipContent>
+                         <p>
+                           {(() => {
+                             const prazoInicial = new Date(currentVersion.criadoEm);
+                             const prazoLimite = getPrazoFinalPrevisto();
+                             const hoje = etapaConcluida ? new Date(etapaConcluida.dataConclusao) : new Date();
+                             const diasUteisTotal = Math.max(1, countBusinessDays(prazoInicial.toISOString(), prazoLimite.toISOString()));
+                             const diasUteisPassados = countBusinessDays(prazoInicial.toISOString(), hoje.toISOString());
+                             
+                             return `${diasUteisPassados} dias úteis decorridos de ${diasUteisTotal} totais`;
+                           })()}
+                         </p>
+                       </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                </div>
+                
+              </div>
+            </div>
+
+            {/* 2️⃣ Card Checklist da Etapa (pendências primeiro) */}
+            <div className="rounded-2xl border shadow-sm bg-white p-4 md:p-6">
+              <header className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-2">
+                  <ListChecks className="w-5 h-5 text-indigo-600" />
+                  <h3 className="text-sm font-semibold text-slate-800">Checklist da Etapa</h3>
+                </div>
+                {(() => {
+                  const checklist = generateChecklist();
+                  const pendentes = checklist.filter(item => item.status === 'pending').length;
+                  const total = checklist.length;
+                  
+                  return (
+                    <div className="flex items-center gap-2">
+                      {pendentes > 0 && (
+                        <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-700">
+                          {pendentes} pendente{pendentes !== 1 ? 's' : ''}
+                        </span>
+                      )}
+                      <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-slate-100 text-slate-600">
+                        {total} item{total !== 1 ? 's' : ''}
+                      </span>
+                    </div>
+                  );
+                })()}
+              </header>
+              
+              <div className="space-y-1">
+                {generateChecklist().length === 0 ? (
+                  <p className="text-sm text-gray-500 italic text-center py-6">
+                    Nenhum requisito definido para esta etapa.
+                  </p>
+                ) : (
+                  generateChecklist().map((item) => (
+                    <TooltipProvider key={item.id}>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <div className="flex items-center gap-3 py-2 px-2 hover:bg-slate-50 rounded transition-colors cursor-pointer">
+                            {getChecklistIcon(item.status)}
+                            <span className="text-sm text-slate-700 flex-1">{item.label}</span>
+                          </div>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>{item.description}</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  ))
+                )}
+              </div>
+            </div>
+
+            {/* 3️⃣ Card Mini Timeline (painel vertical completo) */}
+            <div className="rounded-2xl border shadow-sm bg-white p-4 md:p-6 flex flex-col min-h-[320px]">
+              <header className="flex items-center gap-2 mb-4">
+                <ClockIcon className="w-5 h-5 text-indigo-600" />
+                <h3 className="text-sm font-semibold text-slate-800">Mini Timeline</h3>
+              </header>
+
+              <div className="flex-1 flex flex-col">
+                {generateTimeline().length === 0 ? (
+                  <div className="flex-1 flex items-center justify-center">
+                    <p className="text-sm text-gray-500 italic text-center">
+                      Ainda não há ações registradas.
+                    </p>
+                  </div>
+                ) : (
+                  <>
+                    {/* Timeline com scroll */}
+                    <div className="flex-1 relative pr-2">
+                      <div className="absolute left-2 top-0 bottom-0 w-0.5 bg-slate-200"></div>
+                      <div className="max-h-[280px] overflow-y-auto scrollbar-thin scrollbar-thumb-slate-300 scrollbar-track-transparent hover:scrollbar-thumb-slate-400">
+                        <div className="flex flex-col gap-4 pl-6">
+                          {generateTimeline().map((item, index) => (
+                            <div key={item.id} className="relative group">
+                              {/* Ícone sobreposto à linha */}
+                              <div className="absolute -left-6 top-0 w-4 h-4 bg-white rounded-full flex items-center justify-center">
+                                {getTimelineIcon(item)}
+                              </div>
+                              
+                              {/* Conteúdo do item */}
+                              <div className="hover:bg-slate-50 rounded-lg px-3 py-2 transition-colors cursor-pointer">
+                                <p className="text-sm font-semibold text-slate-700 mb-1">
+                                  {item.descricao}
+                                </p>
+                                <div className="flex items-center gap-2 text-xs text-slate-500">
+                                  <span>{item.autor}</span>
+                                  <span>•</span>
+                                  <span>{formatDateTime(new Date(item.dataHora))}</span>
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Rodapé fixo */}
+                    <div className="border-t border-slate-200 pt-3 mt-4">
+                      <button
+                        className="w-full text-center text-sm text-indigo-600 hover:text-indigo-700 hover:underline transition-colors"
+                        aria-label="Ver histórico completo de ações"
+                      >
+                        Ver todas as ações
+                      </button>
+                    </div>
+                  </>
+                )}
+              </div>
+            </div>
         </div>
+      </div>
+
+      {/* 4️⃣ Comentários */}
+      <div className="rounded-xl border border-slate-200 shadow-sm bg-white p-4 md:p-6">
+        <header className="flex items-center justify-center gap-3 bg-indigo-50 border-b border-indigo-200 py-4 px-4 md:px-6 rounded-t-xl -mx-4 md:-mx-6">
+          <div className="flex items-center gap-3">
+            <MessageSquare className="w-5 h-5 text-indigo-600" />
+            <h2 className="text-lg font-semibold text-slate-800">Comentários</h2>
+          </div>
+        </header>
+        
+            <CommentsSection
+              processoId={processoId}
+              etapaId={String(etapaId)}
+              cardId="dfd-form"
+          title=""
+        />
+      </div>
+
+       {/* 5️⃣ Ações da Etapa */}
+       <div className="rounded-xl border border-slate-200 shadow-sm bg-white p-4 md:p-6">
+         <header className="flex items-center justify-center gap-3 bg-indigo-50 border-b border-indigo-200 py-4 px-4 md:px-6 rounded-t-xl -mx-4 md:-mx-6">
+           <div className="flex items-center gap-3">
+             <Flag className="w-5 h-5 text-indigo-600" />
+             <h2 className="text-lg font-semibold text-slate-800">Ações da Etapa</h2>
+           </div>
+         </header>
+         
+         <div className="space-y-4">
+           {/* Informações de Status */}
+           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+             {/* Dias Restantes */}
+             <div className="flex items-center gap-3 p-3 rounded-lg border border-slate-200">
+               <div className="w-10 h-10 rounded-full flex items-center justify-center border border-slate-300">
+                 <Clock className="w-5 h-5 text-slate-600" />
+               </div>
+               <div>
+                 <p className="text-sm font-semibold text-slate-500">Prazo</p>
+                 <p className={`text-lg font-bold ${(() => {
+                   const diasRest = getDiasRestantes(currentVersion);
+                   const prazo = getPrazoColorClasses(diasRest);
+                   return prazo.text;
+                 })()}`}>
+                   {(() => {
+                     const diasRest = getDiasRestantes(currentVersion);
+                     return diasRest === null ? 'Sem prazo' : 
+                            diasRest < 0 ? `${Math.abs(diasRest)} dias atrasado` : 
+                            `${diasRest} dias restantes`;
+                   })()}
+                 </p>
+               </div>
+             </div>
+
+             {/* Responsável */}
+             <div className="flex items-center gap-3 p-3 rounded-lg border border-slate-200">
+               <div className="w-10 h-10 rounded-full flex items-center justify-center border border-slate-300">
+                 <User className="w-5 h-5 text-slate-600" />
+               </div>
+               <div>
+                 <p className="text-sm font-semibold text-slate-500">Responsável</p>
+                 <p className="text-lg font-bold text-slate-900">
+                   {currentVersion.autorNome || 'Sem responsável'}
+                 </p>
+               </div>
+             </div>
+           </div>
+
+           {/* Ação Principal */}
+           <div className="border-t border-slate-200 pt-4">
+             {etapaConcluida ? (
+               <div className="flex items-center justify-center p-4 bg-green-50 rounded-lg border border-green-200">
+                 <div className="flex items-center gap-3">
+                   <CheckCircle2 className="w-6 h-6 text-green-600" />
+                   <div className="text-center">
+                     <p className="text-sm font-semibold text-green-600">Etapa Concluída</p>
+                     <p className="text-sm text-green-700">
+                       {formatDate(etapaConcluida.dataConclusao)} por {etapaConcluida.usuarioNome}
+                     </p>
+                   </div>
+                 </div>
+               </div>
+             ) : (
+               <div className="text-center">
+                 <TooltipProvider>
+                   <Tooltip>
+                     <TooltipTrigger asChild>
+                       <div>
+                         <Button
+                           onClick={handleSendToAnalysis}
+                           disabled={!canSendToAnalysis() || isLoading || !permissoes.podeEditar || currentVersion.status !== 'rascunho' || !!etapaConcluida}
+                           className="bg-indigo-600 hover:bg-indigo-700 text-white px-8 py-3 text-lg font-semibold"
+                           size="lg"
+                         >
+                           {isLoading ? (
+                             <>
+                               <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                               Enviando...
+                             </>
+                           ) : (
+                             <>
+                               <Send className="w-5 h-5 mr-2" />
+                               Enviar para Análise Técnica
+                             </>
+                           )}
+                         </Button>
+                       </div>
+                     </TooltipTrigger>
+                     {!canSendToAnalysis() && (
+                       <TooltipContent>
+                         <p>Preencha os campos obrigatórios</p>
+                       </TooltipContent>
+                     )}
+                   </Tooltip>
+                 </TooltipProvider>
+               </div>
+             )}
+           </div>
+
+           {/* Última Ação */}
+           {currentVersion.enviadoParaAnaliseEm && (
+             <div className="border-t border-slate-200 pt-4">
+               <div className="flex items-center justify-center gap-2 text-sm text-slate-600">
+                 <Clock className="w-4 h-4" />
+                 <span>
+                   Enviado para análise em {formatDateBR(currentVersion.enviadoParaAnaliseEm)}
+                 </span>
+               </div>
+             </div>
+           )}
+
+           {/* Ações Secundárias */}
+           {!etapaConcluida && permissoes.podeEditar && (
+             <div className="border-t border-slate-200 pt-4">
+               <div className="flex justify-center gap-2">
+                 {/* Botão Salvar Versão */}
+                 {currentVersion.status === 'rascunho' && (
+                   <Button 
+                     onClick={handleSaveVersion} 
+                     variant="outline" 
+                     disabled={isLoading}
+                     size="sm"
+                     className="border-slate-300 text-slate-700 hover:bg-slate-50"
+                   >
+                     <Save className="w-4 h-4 mr-2" />
+                     Salvar Versão
+                   </Button>
+                 )}
+
+                 {/* Botão Concluir Etapa */}
+                 {canShowConcluirButton() && (
+                   <TooltipProvider>
+                     <Tooltip>
+                       <TooltipTrigger asChild>
+                         <div>
+                           <Button 
+                             onClick={handleOpenConcluirModal} 
+                             variant="outline" 
+                             disabled={!canConcluirEtapa() || isLoading}
+                             size="sm"
+                             className="border-green-300 text-green-700 hover:bg-green-50"
+                           >
+                             <Flag className="w-4 h-4 mr-2" />
+                             Concluir Etapa
+                           </Button>
+                         </div>
+                       </TooltipTrigger>
+                       {!canConcluirEtapa() && (
+                         <TooltipContent>
+                           <p>É necessário enviar uma versão para análise antes de concluir a etapa.</p>
+                         </TooltipContent>
+                       )}
+                     </Tooltip>
+                   </TooltipProvider>
+                 )}
+               </div>
+             </div>
+           )}
+
+           {/* Mensagem de Visualização */}
+           {!permissoes.podeEditar && (
+             <div className="border-t border-slate-200 pt-4">
+               <div className="flex items-center justify-center gap-2 text-sm text-slate-500">
+                 <Info className="w-4 h-4" />
+                 <span>Somente visualização</span>
+               </div>
+             </div>
+           )}
+         </div>
+       </div>
 
         {/* Modal de Confirmação de Conclusão */}
         <Dialog open={showConcluirModal} onOpenChange={setShowConcluirModal}>
@@ -1255,7 +1918,6 @@ export default function DFDFormSection({
             </div>
           </DialogContent>
         </Dialog>
-      </div>
     </div>
   );
-} 
+}
