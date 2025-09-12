@@ -5,7 +5,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import {
   FileText,
   CheckCircle,
@@ -74,10 +74,10 @@ export default function MatrizRiscoAprovacaoSection({
   const [validationErrors, setValidationErrors] = useState<string[]>([]);
   const [showAprovarDialog, setShowAprovarDialog] = useState(false);
   const [showReprovarDialog, setShowReprovarDialog] = useState(false);
-  const [activeTab, setActiveTab] = useState('versoes');
+  const [activeTab, setActiveTab] = useState('anexos');
   const [attachmentsSort, setAttachmentsSort] = useState<'desc' | 'asc'>('desc');
-  // Declarar annexes antes de usá-lo no useMemo para evitar TDZ
-  const [annexes, setAnnexes] = useState<{ id: string; name: string; size: string; uploadedAt: string; uploadedBy?: string }[]>([]);
+  // Anexos do bloco Comentadas/Revisadas
+  const [annexes, setAnnexes] = useState<{ id: string; name: string; size: string; uploadedAt: string; uploadedBy?: string; tipo: 'comentada' | 'revisada'; url?: string }[]>([]);
   const anexosOrdenados = useMemo(() => {
     const arr = [...annexes];
     arr.sort((a, b) => new Date(b.uploadedAt).getTime() - new Date(a.uploadedAt).getTime());
@@ -86,7 +86,12 @@ export default function MatrizRiscoAprovacaoSection({
   }, [annexes, attachmentsSort]);
   const [matrizArquivo, setMatrizArquivo] = useState<MatrizDocumentoInfo | null>(null);
   const [matrizExiste, setMatrizExiste] = useState(false);
+  const [documentoVisualizacao, setDocumentoVisualizacao] = useState<{ id: string; name: string; size: string; uploadedAt: string; uploadedBy?: string; tipo: 'comentada' | 'revisada'; url?: string } | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [tipoSelecao, setTipoSelecao] = useState<'comentada' | 'revisada' | ''>('');
+  const [dialogSufixoAberto, setDialogSufixoAberto] = useState(false);
+  const arquivoPendenteRef = useRef<File | null>(null);
+  const [sufixoSugerido, setSufixoSugerido] = useState<'_COMENTADA' | '_REVISADA'>('_COMENTADA');
 
   // Mock de versões (somente leitura)
   const [versions, setVersions] = useState<MatrizVersion[]>([
@@ -181,20 +186,62 @@ export default function MatrizRiscoAprovacaoSection({
     onSave(initialData || {});
   };
 
+  const openInNewTab = (url?: string) => {
+    if (!url) {
+      toast({ title: 'Link indisponível', description: 'Link expirado, atualize a página ou gere novo link.', variant: 'destructive' });
+      return;
+    }
+    try {
+      const win = window.open(url, '_blank');
+      if (!win) throw new Error('Popup bloqueado');
+    } catch {
+      toast({ title: 'Não foi possível abrir o documento', description: 'Verifique bloqueio de popups.', variant: 'destructive' });
+    }
+  };
+
   const handleVisualizarMatriz = () => {
-    if (!matrizArquivo) {
+    const docParaVisualizar = documentoVisualizacao || matrizArquivo;
+    if (!docParaVisualizar) {
       toast({ title: 'Nenhum documento', description: 'Nenhuma Matriz enviada.', variant: 'destructive' });
       return;
     }
-    toast({ title: 'Visualizar', description: `Abrindo ${matrizArquivo.name}...` });
+    toast({ title: 'Visualizar', description: `Abrindo ${docParaVisualizar.name}...` });
   };
 
   const handleBaixarMatriz = () => {
-    if (!matrizArquivo) {
+    const docParaBaixar = documentoVisualizacao || matrizArquivo;
+    if (!docParaBaixar) {
       toast({ title: 'Nenhum documento', description: 'Nenhuma Matriz enviada.', variant: 'destructive' });
       return;
     }
-    toast({ title: 'Download Iniciado', description: `Baixando ${matrizArquivo.name}...` });
+    toast({ title: 'Download Iniciado', description: `Baixando ${docParaBaixar.name}...` });
+  };
+
+  // Upload apenas para Comentadas/Revisadas
+  const prepararUpload = () => {
+    if (!tipoSelecao) {
+      toast({
+        title: 'Selecione o tipo',
+        description: 'Escolha se o arquivo é Comentada ou Revisada antes de enviar.',
+        variant: 'destructive'
+      });
+      return;
+    }
+    fileInputRef.current?.click();
+  };
+
+  const verificarSufixo = (nome: string, tipo: 'comentada' | 'revisada') => {
+    const temComentada = /(_COMENTADA)(?=\.|$)/i.test(nome);
+    const temRevisada = /(_REVISADA)(?=\.|$)/i.test(nome);
+    if (tipo === 'comentada' && !temComentada) return false;
+    if (tipo === 'revisada' && !temRevisada) return false;
+    return true;
+  };
+
+  const aplicarSufixoNome = (nome: string, sufixo: '_COMENTADA' | '_REVISADA') => {
+    const dot = nome.lastIndexOf('.');
+    if (dot === -1) return `${nome}${sufixo}`;
+    return `${nome.slice(0, dot)}${sufixo}${nome.slice(dot)}`;
   };
 
   // Calcular SLA baseado em prazo inicial vs prazo cumprido
@@ -245,28 +292,27 @@ export default function MatrizRiscoAprovacaoSection({
                 </div>
               </header>
               <div className="p-4 md:p-6 space-y-4">
-                {/* Documento */}
-                {matrizArquivo && (
-                  <div className="p-3 bg-blue-50 rounded-lg border border-blue-200">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        <FileText className="w-5 h-5 text-blue-600" />
-                        <div>
-                          <p className="text-sm font-medium text-blue-900">{matrizArquivo.name}</p>
-                          <p className="text-xs text-blue-600">{matrizArquivo.size} • {formatDateBR(matrizArquivo.uploadedAt)} • Enviado por: {matrizArquivo.uploadedBy}</p>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                )}
 
                 {/* Área de visualização */}
                 <div className="w-full min-h-[320px] border-2 border-dashed border-gray-300 rounded-lg flex items-center justify-center bg-gray-50">
-                  <div className="text-center">
-                    <FileText className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-                    <p className="text-gray-500 font-medium">Visualização da Matriz de Risco</p>
-                    <p className="text-sm text-gray-400 mt-1">Use os botões acima para visualizar/baixar</p>
-                  </div>
+                  {documentoVisualizacao ? (
+                    <div className="text-center">
+                      <FileText className="w-16 h-16 text-blue-500 mx-auto mb-4" />
+                      <p className="text-gray-700 font-medium">Visualizando: {documentoVisualizacao.name}</p>
+                      <p className="text-sm text-gray-500 mt-1">
+                        Versão {documentoVisualizacao.tipo === 'comentada' ? 'Comentada' : 'Revisada'} • 
+                        {formatDateBR(documentoVisualizacao.uploadedAt)} • 
+                        {documentoVisualizacao.uploadedBy}
+                      </p>
+                      <p className="text-xs text-gray-400 mt-2">Use os botões acima para visualizar/baixar</p>
+                    </div>
+                  ) : (
+                    <div className="text-center">
+                      <FileText className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+                      <p className="text-gray-500 font-medium">Visualização da Matriz de Risco</p>
+                      <p className="text-sm text-gray-400 mt-1">Use os botões acima para visualizar/baixar</p>
+                    </div>
+                  )}
                 </div>
 
                 {/* Seção de Análise */}
@@ -375,107 +421,181 @@ export default function MatrizRiscoAprovacaoSection({
                   </TabsContent>
 
                   <TabsContent value="anexos" className="mt-0 p-4">
-                    {/* Header compacto + Filtro ordenação */}
-                    <div className="w-full flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2 mb-3">
-                      <div className="flex items-center gap-2">
-                        <h3 className="text-sm font-semibold text-slate-800">Anexos</h3>
-                        <span className="text-xs text-slate-600 bg-slate-200 px-2 py-0.5 rounded-md font-medium">{anexosOrdenados.length}</span>
+                    {/* Bloco 1: Versão Elaborada (somente leitura) */}
+                    <div className="mb-4">
+                      <div className="mb-2">
+                        <h3 className="text-sm font-semibold text-slate-800">Versão Elaborada (referência)</h3>
+                        <p className="text-xs text-slate-500">Última versão do Card 8. Somente visualização.</p>
                       </div>
-                      <div className="flex items-center gap-2 w-full sm:w-auto">
-                        <span className="text-xs text-slate-500 whitespace-nowrap">Ordenar:</span>
-                        <div className="relative flex-1 sm:flex-none">
-                          <select
-                            aria-label="Ordenar anexos"
-                            value={attachmentsSort}
-                            onChange={(e) => setAttachmentsSort(e.target.value as 'desc' | 'asc')}
-                            className="w-full h-7 rounded-md border border-slate-200 bg-white px-2 pr-6 text-xs text-slate-700 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 transition-colors appearance-none cursor-pointer hover:border-slate-300"
-                          >
-                            <option value="desc">Mais recente</option>
-                            <option value="asc">Menos recente</option>
-                          </select>
-                          <div className="absolute inset-y-0 right-0 flex items-center pr-1.5 pointer-events-none">
-                            <svg className="w-3 h-3 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                    {canTakeAction && (
-                      <div className="mb-4">
-                        <input
-                          ref={fileInputRef}
-                          type="file"
-                          onChange={(e) => {
-                            const file = e.target.files?.[0];
-                            if (file) {
-                              const item = {
-                                id: `annex-${Date.now().toString()}`,
-                                name: file.name,
-                                size: `${(file.size / 1024 / 1024).toFixed(2)} MB`,
-                                uploadedAt: new Date().toISOString(),
-                                uploadedBy: user?.nome || 'Usuário'
-                              };
-                              setAnnexes(prev => [item, ...prev]);
-                              toast({ title: 'Anexo adicionado', description: `${file.name} foi anexado com sucesso.` });
-                            }
-                            if (e.target) e.target.value = '';
+                      {matrizArquivo ? (
+                        <div
+                          className="group p-3 border border-slate-200 rounded-lg bg-slate-50"
+                          onDragOver={(e)=>{ e.preventDefault(); }}
+                          onDrop={(e)=>{
+                            e.preventDefault();
+                            toast({ title: 'Área somente visualização', description: 'Este espaço é apenas para a versão elaborada. Envie comentadas/revisadas no bloco abaixo.', variant: 'destructive' });
                           }}
-                          accept=".pdf,.doc,.docx,.odt,.png,.jpg,.jpeg,.gif,.bmp,.tif,.tiff"
-                          className="hidden"
-                        />
-                        <Button
-                          onClick={() => fileInputRef.current?.click()}
-                          variant="outline"
-                          className="w-full border-dashed border-2 border-gray-300 hover:border-indigo-400 hover:bg-indigo-50 transition-colors"
                         >
-                          <Upload className="w-4 h-4 mr-2" />
-                          Adicionar Anexo
-                        </Button>
-                      </div>
-                    )}
-
-                    {anexosOrdenados.length === 0 ? (
-                      <div className="text-center py-8 w-full">
-                        <div className="p-4 bg-gray-100 rounded-full w-16 h-16 mx-auto mb-4 flex items-center justify-center">
-                          <Upload className="w-8 h-8 text-gray-400" />
-                        </div>
-                        <p className="text-gray-500 font-medium">Nenhum anexo adicionado</p>
-                        {!canTakeAction && (
-                          <p className="text-sm text-gray-400 mt-1">Apenas usuários autorizados podem adicionar anexos</p>
-                        )}
-                      </div>
-                    ) : (
-                      <div className="space-y-0 max-h-60 overflow-y-auto">
-                        {anexosOrdenados.map((annex, idx) => (
-                          <React.Fragment key={annex.id}>
-                          <div className="flex items-center justify-between p-3 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
-                            <div className="flex items-center gap-3 min-w-0 flex-1">
-                              <div className="p-2 bg-blue-100 rounded-lg">
-                                <FileText className="w-4 h-4 text-blue-600" />
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2 min-w-0 flex-1">
+                              <div className="p-1.5 bg-blue-100 rounded">
+                                <FileText className="w-3.5 h-3.5 text-blue-600" />
                               </div>
                               <div className="min-w-0 flex-1">
-                                <p className="text-sm font-medium truncate">{annex.name}</p>
-                                <p className="text-xs text-gray-500">{formatDateBR(annex.uploadedAt)} • {annex.uploadedBy}</p>
+                                <p className="text-xs font-medium truncate">{matrizArquivo.name}</p>
+                                <p className="text-[10px] text-gray-500 truncate">{matrizArquivo.size} • {formatDateBR(matrizArquivo.uploadedAt)}</p>
                               </div>
                             </div>
                             <div className="flex items-center gap-1 flex-shrink-0">
-                              <Button size="sm" variant="outline" className="h-6 w-6 p-0">
+                              <Button size="sm" variant="outline" aria-label="Visualizar" title="Visualizar em nova aba" className="h-5 w-5 p-0" onClick={()=>openInNewTab('#')}> 
                                 <Eye className="w-3 h-3" />
                               </Button>
-                              <Button size="sm" variant="outline" className="h-6 w-6 p-0">
+                              <Button size="sm" variant="outline" aria-label="Baixar" className="h-5 w-5 p-0">
                                 <Download className="w-3 h-3" />
                               </Button>
-                              {canTakeAction && (
-                                <Button size="sm" variant="outline" className="h-6 w-6 p-0 text-red-600 hover:text-red-700" onClick={() => setAnnexes(prev => prev.filter(a => a.id !== annex.id))}>
-                                  <Trash2 className="w-3 h-3" />
-                                </Button>
-                              )}
                             </div>
                           </div>
-                          {idx < anexosOrdenados.length - 1 && (<div className="border-b border-slate-200" />)}
-                          </React.Fragment>
-                        ))}
+                        </div>
+                      ) : (
+                        <div className="text-xs text-slate-500 p-2 bg-gray-50 rounded border">Nenhuma versão elaborada encontrada.</div>
+                      )}
+                    </div>
+
+                    {/* Bloco 2: Versões Comentadas/Revisadas (com upload) */}
+                    <div>
+                      <div className="mb-3">
+                        <div className="flex items-center gap-2 mb-2">
+                          <h3 className="text-sm font-semibold text-slate-800">Versões Comentadas/Revisadas</h3>
+                          <span className="text-[10px] text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded" title="Use este espaço para anexar somente versões com comentários ou revisões. A versão elaborada é fixa e vem do card anterior.">?</span>
+                        </div>
+                        <div className="flex flex-col sm:flex-row gap-2 sm:items-center sm:justify-between">
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs text-slate-500">Ordenar:</span>
+                            <div className="relative">
+                              <select
+                                aria-label="Ordenar anexos"
+                                value={attachmentsSort}
+                                onChange={(e) => setAttachmentsSort(e.target.value as 'desc' | 'asc')}
+                                className="h-6 rounded border border-slate-200 bg-white px-2 pr-5 text-xs text-slate-700 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 transition-colors appearance-none cursor-pointer hover:border-slate-300"
+                              >
+                                <option value="desc">Mais recente</option>
+                                <option value="asc">Menos recente</option>
+                              </select>
+                              <div className="absolute inset-y-0 right-0 flex items-center pr-1 pointer-events-none">
+                                <svg className="w-2.5 h-2.5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
                       </div>
-                    )}
+
+                      {canTakeAction && (
+                        <div className="mb-3 p-3 bg-slate-50 rounded-lg border border-slate-200">
+                          <div className="flex flex-col gap-2">
+                            <select
+                              aria-label="Classificação do arquivo"
+                              value={tipoSelecao}
+                              onChange={(e)=> setTipoSelecao(e.target.value as 'comentada' | 'revisada' | '')}
+                              className="h-7 rounded border border-slate-200 bg-white px-2 text-xs text-slate-700 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+                              required
+                            >
+                              <option value="">Selecione: Comentada ou Revisada</option>
+                              <option value="comentada">Comentada</option>
+                              <option value="revisada">Revisada</option>
+                            </select>
+                            <input
+                              ref={fileInputRef}
+                              type="file"
+                              onChange={(e) => {
+                                const file = e.target.files?.[0];
+                                if (!file) return;
+                                const tipo = (tipoSelecao || 'comentada') as 'comentada' | 'revisada';
+                                const sufixo = tipo === 'comentada' ? '_COMENTADA' : '_REVISADA';
+                                if (!verificarSufixo(file.name, tipo)) {
+                                  arquivoPendenteRef.current = file;
+                                  setSufixoSugerido(sufixo);
+                                  setDialogSufixoAberto(true);
+                                  } else {
+                                    const item = {
+                                      id: `annex-${Date.now().toString()}`,
+                                      name: file.name,
+                                      size: `${(file.size / 1024 / 1024).toFixed(2)} MB`,
+                                      uploadedAt: new Date().toISOString(),
+                                      uploadedBy: user?.nome || 'Usuário',
+                                      tipo
+                                    } as const;
+                                    setAnnexes(prev => [item, ...prev]);
+                                    setDocumentoVisualizacao(item);
+                                    toast({ title: 'Anexo enviado', description: `${file.name} foi anexado e está sendo visualizado.` });
+                                  }
+                                if (e.target) e.target.value = '';
+                              }}
+                              accept=".pdf,.docx,.xlsx,.png,.jpg,.jpeg,.gif,.bmp,.tif,.tiff"
+                              className="hidden"
+                            />
+                            <Button
+                              onClick={prepararUpload}
+                              variant="outline"
+                              title="Neste card só aceitamos versões comentadas/revisadas. A versão elaborada é exibida acima como referência."
+                              className="w-full border-dashed border-2 border-gray-300 hover:border-indigo-400 hover:bg-indigo-50 transition-colors h-8 text-xs"
+                            >
+                              <Upload className="w-3.5 h-3.5 mr-2" />
+                              Adicionar Anexo
+                            </Button>
+                          </div>
+                        </div>
+                      )}
+
+                      {anexosOrdenados.length === 0 ? (
+                        <div className="text-center py-4 w-full">
+                          <div className="p-3 bg-gray-100 rounded-full w-12 h-12 mx-auto mb-2 flex items-center justify-center">
+                            <Upload className="w-5 h-5 text-gray-400" />
+                          </div>
+                          <p className="text-gray-500 text-xs">Nenhum anexo adicionado</p>
+                        </div>
+                      ) : (
+                        <div className="space-y-1 max-h-[280px] overflow-y-auto">
+                          {anexosOrdenados.map((annex, idx) => (
+                            <React.Fragment key={annex.id}>
+                              <div className="flex items-center justify-between p-2 border border-gray-200 rounded hover:bg-gray-50 transition-colors">
+                                <div className="flex items-center gap-2 min-w-0 flex-1">
+                                  <div className="p-1.5 bg-blue-100 rounded">
+                                    <FileText className="w-3.5 h-3.5 text-blue-600" />
+                                  </div>
+                                  <div className="min-w-0 flex-1">
+                                    <div className="flex items-center gap-1.5">
+                                      <p className="text-xs font-medium truncate" title={annex.name}>{annex.name}</p>
+                                      <span className={`text-[9px] px-1.5 py-0.5 rounded-full border ${annex.tipo==='comentada' ? 'bg-yellow-50 text-yellow-800 border-yellow-200' : 'bg-emerald-50 text-emerald-800 border-emerald-200'}`}>{annex.tipo==='comentada' ? 'Comentada' : 'Revisada'}</span>
+                                    </div>
+                                    <p className="text-[10px] text-gray-500 truncate">{formatDateBR(annex.uploadedAt)} • {annex.uploadedBy}</p>
+                                  </div>
+                                </div>
+                                <div className="flex items-center gap-1 flex-shrink-0">
+                                  <Button size="sm" variant="outline" aria-label="Visualizar" className="h-5 w-5 p-0 hover:bg-blue-50" onClick={()=>{
+                                    setDocumentoVisualizacao(annex);
+                                    toast({ title: 'Documento selecionado', description: `${annex.name} está sendo visualizado.` });
+                                  }}>
+                                    <Eye className="w-3 h-3" />
+                                  </Button>
+                                  <Button size="sm" variant="outline" aria-label="Baixar" className="h-5 w-5 p-0 hover:bg-green-50">
+                                    <Download className="w-3 h-3" />
+                                  </Button>
+                                  <Button size="sm" variant="outline" aria-label="Remover" className="h-5 w-5 p-0 text-red-600 hover:text-red-700 hover:bg-red-50" onClick={()=>{ 
+                                    setAnnexes(prev=>prev.filter(a=>a.id!==annex.id)); 
+                                    if (documentoVisualizacao?.id === annex.id) {
+                                      setDocumentoVisualizacao(null);
+                                    }
+                                    toast({ title: 'Anexo removido' }); 
+                                  }}>
+                                    <Trash2 className="w-3 h-3" />
+                                  </Button>
+                                </div>
+                              </div>
+                            </React.Fragment>
+                          ))}
+                        </div>
+                      )}
+                    </div>
                   </TabsContent>
                 </Tabs>
               </div>
@@ -579,6 +699,57 @@ export default function MatrizRiscoAprovacaoSection({
               Confirmar Reprovação
             </Button>
           </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Diálogo de sufixo assistido */}
+      <Dialog open={dialogSufixoAberto} onOpenChange={setDialogSufixoAberto}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Adicionar sufixo ao nome do arquivo?</DialogTitle>
+            <DialogDescription>
+              Para manter o padrão, sugerimos adicionar o sufixo {sufixoSugerido} ao arquivo selecionado.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="text-sm text-slate-600">
+            Arquivo atual: {arquivoPendenteRef.current?.name}
+          </div>
+          <DialogFooter className="gap-2">
+            <Button variant="outline" onClick={()=>{
+              // Manter nome e subir
+              const file = arquivoPendenteRef.current; if (!file || !tipoSelecao) { setDialogSufixoAberto(false); return; }
+              const item = {
+                id: `annex-${Date.now().toString()}`,
+                name: file.name,
+                size: `${(file.size / 1024 / 1024).toFixed(2)} MB`,
+                uploadedAt: new Date().toISOString(),
+                uploadedBy: user?.nome || 'Usuário',
+                tipo: tipoSelecao
+              } as const;
+              setAnnexes(prev => [item, ...prev]);
+              setDocumentoVisualizacao(item);
+              toast({ title: 'Anexo enviado', description: `${file.name} foi anexado e está sendo visualizado.` });
+              arquivoPendenteRef.current = null;
+              setDialogSufixoAberto(false);
+            }}>Manter</Button>
+            <Button onClick={()=>{
+              const file = arquivoPendenteRef.current; if (!file || !tipoSelecao) { setDialogSufixoAberto(false); return; }
+              const nomeComSufixo = aplicarSufixoNome(file.name, sufixoSugerido);
+              const item = {
+                id: `annex-${Date.now().toString()}`,
+                name: nomeComSufixo,
+                size: `${(file.size / 1024 / 1024).toFixed(2)} MB`,
+                uploadedAt: new Date().toISOString(),
+                uploadedBy: user?.nome || 'Usuário',
+                tipo: tipoSelecao
+              } as const;
+              setAnnexes(prev => [item, ...prev]);
+              setDocumentoVisualizacao(item);
+              toast({ title: 'Anexo enviado', description: `${nomeComSufixo} foi anexado e está sendo visualizado.` });
+              arquivoPendenteRef.current = null;
+              setDialogSufixoAberto(false);
+            }}>Aplicar</Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>
