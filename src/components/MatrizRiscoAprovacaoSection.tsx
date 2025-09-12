@@ -76,6 +76,8 @@ export default function MatrizRiscoAprovacaoSection({
   const [showReprovarDialog, setShowReprovarDialog] = useState(false);
   const [activeTab, setActiveTab] = useState('versoes');
   const [attachmentsSort, setAttachmentsSort] = useState<'desc' | 'asc'>('desc');
+  // Declarar annexes antes de usá-lo no useMemo para evitar TDZ
+  const [annexes, setAnnexes] = useState<{ id: string; name: string; size: string; uploadedAt: string; uploadedBy?: string }[]>([]);
   const anexosOrdenados = useMemo(() => {
     const arr = [...annexes];
     arr.sort((a, b) => new Date(b.uploadedAt).getTime() - new Date(a.uploadedAt).getTime());
@@ -85,7 +87,6 @@ export default function MatrizRiscoAprovacaoSection({
   const [matrizArquivo, setMatrizArquivo] = useState<MatrizDocumentoInfo | null>(null);
   const [matrizExiste, setMatrizExiste] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const [annexes, setAnnexes] = useState<{ id: string; name: string; size: string; uploadedAt: string }[]>([]);
 
   // Mock de versões (somente leitura)
   const [versions, setVersions] = useState<MatrizVersion[]>([
@@ -410,7 +411,8 @@ export default function MatrizRiscoAprovacaoSection({
                                 id: `annex-${Date.now().toString()}`,
                                 name: file.name,
                                 size: `${(file.size / 1024 / 1024).toFixed(2)} MB`,
-                                uploadedAt: new Date().toISOString()
+                                uploadedAt: new Date().toISOString(),
+                                uploadedBy: user?.nome || 'Usuário'
                               };
                               setAnnexes(prev => [item, ...prev]);
                               toast({ title: 'Anexo adicionado', description: `${file.name} foi anexado com sucesso.` });

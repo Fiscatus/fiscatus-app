@@ -221,7 +221,8 @@ export default function ResponsavelSelector({
   const [isOpen, setIsOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [usuarios, setUsuarios] = useState<Usuario[]>([]);
-  const [selectedUsuario, setSelectedUsuario] = useState<Usuario | null>(null);
+  // Suporte a seleção múltipla no modal
+  const [selectedUsuarios, setSelectedUsuarios] = useState<Usuario[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
@@ -272,7 +273,7 @@ export default function ResponsavelSelector({
     
     setIsOpen(true);
     setSearchQuery('');
-    setSelectedUsuario(null);
+    setSelectedUsuarios([]);
     setCurrentPage(1);
     setSelectedIndex(0);
     
@@ -286,77 +287,64 @@ export default function ResponsavelSelector({
   const handleCloseModal = () => {
     setIsOpen(false);
     setSearchQuery('');
-    setSelectedUsuario(null);
+    setSelectedUsuarios([]);
     setSelectedIndex(0);
   };
   
-  // Selecionar usuário
+  // Selecionar/alternar usuário (multi-select)
   const handleSelectUsuario = (usuario: Usuario) => {
-    setSelectedUsuario(usuario);
+    setSelectedUsuarios(prev => {
+      const exists = prev.some(u => u.id === usuario.id);
+      if (exists) {
+        return prev.filter(u => u.id !== usuario.id);
+      }
+      return [...prev, usuario];
+    });
   };
   
-  // Confirmar seleção
+  // Confirmar seleção (múltiplos)
   const handleConfirmarSelecao = async () => {
-    if (!selectedUsuario) return;
-    
+    if (selectedUsuarios.length === 0) return;
     setIsSaving(true);
     try {
-      // Salvar no backend
-      await salvarResponsavel(processoId, selectedUsuario.id);
-      
-      // Criar objeto responsável
-      const responsavel: Responsavel = {
-        id: selectedUsuario.id,
-        nome: selectedUsuario.nome,
-        cargo: selectedUsuario.cargo,
-        gerencia: selectedUsuario.gerencia,
-        avatarUrl: selectedUsuario.avatarUrl
-      };
-      
-      // Verificar se o responsável já existe na lista
-      const responsavelJaExiste = responsaveis.some(r => r.id === selectedUsuario.id);
-      
-      console.log('Verificando duplicação:', {
-        responsavelId: selectedUsuario.id,
-        responsaveisExistentes: responsaveis.map(r => r.id),
-        jaExiste: responsavelJaExiste
-      });
-      
-      if (responsavelJaExiste) {
-        toast({
-          title: "Responsável já adicionado",
-          description: `${selectedUsuario.nome} já está na lista de responsáveis.`,
-          variant: "destructive"
-        });
-        return;
-      }
-      
-      // Adicionar à lista de responsáveis
-      const novosResponsaveis = [...responsaveis, responsavel];
-      console.log('Adicionando responsável:', {
-        responsavel,
-        responsaveisAtuais: responsaveis,
-        novosResponsaveis
-      });
+      const remaining = Math.max(0, maxResponsaveis - responsaveis.length);
+      const toAdd = selectedUsuarios
+        .filter(u => !responsaveis.some(r => r.id === u.id))
+        .slice(0, remaining);
+
+      // Salvar em paralelo (mock)
+      await Promise.all(toAdd.map(u => salvarResponsavel(processoId, u.id)));
+
+      const novosObjs: Responsavel[] = toAdd.map(u => ({
+        id: u.id,
+        nome: u.nome,
+        cargo: u.cargo,
+        gerencia: u.gerencia,
+        avatarUrl: u.avatarUrl
+      }));
+
+      // Garantir unicidade
+      const mapa = new Map<string, Responsavel>();
+      [...responsaveis, ...novosObjs].forEach(r => mapa.set(r.id, r));
+      const novosResponsaveis = Array.from(mapa.values());
       onChange(novosResponsaveis);
-      
-      // Limpar seleção e fechar modal
-      setSelectedUsuario(null);
+
+      if (toAdd.length === 0) {
+        toast({
+          title: 'Nada adicionado',
+          description: remaining === 0 ? 'Limite máximo já atingido.' : 'Todos os selecionados já estavam na lista.',
+          variant: remaining === 0 ? 'destructive' : undefined
+        });
+      } else {
+        toast({ title: 'Responsáveis adicionados', description: `${toAdd.length} responsável(is) adicionado(s).` });
+      }
+
+      setSelectedUsuarios([]);
       setSearchQuery('');
       setSelectedIndex(0);
       handleCloseModal();
-      
-      toast({
-        title: "Responsável adicionado",
-        description: `${selectedUsuario.nome} foi adicionado como responsável pela elaboração.`,
-      });
-      
     } catch (error) {
-      toast({
-        title: "Erro",
-        description: "Erro ao adicionar responsável. Tente novamente.",
-        variant: "destructive"
-      });
+      toast({ title: 'Erro', description: 'Erro ao adicionar responsáveis. Tente novamente.', variant: 'destructive' });
     } finally {
       setIsSaving(false);
     }
@@ -456,23 +444,31 @@ export default function ResponsavelSelector({
     
     return (
       <div className={`p-4 border border-gray-200 rounded-lg ${className}`}>
-        <Label className="text-sm font-semibold text-gray-700 flex items-center gap-2 mb-2">
+        <Label className="text-sm font-semibold text-gray-700 flex items-center gap-2 mb-3">
           <User className="w-4 h-4" />
           Responsáveis pela Elaboração * ({responsaveis.length})
         </Label>
-        <div className="space-y-2">
+        <div className="space-y-2 max-h-[220px] overflow-auto pr-1">
           {responsaveis.map((responsavel, index) => (
-            <div key={`${responsavel.id}-${index}`} className="flex items-center gap-2 p-2 bg-blue-50 rounded-lg border border-blue-200 max-w-full overflow-hidden">
+            <div
+              key={`${responsavel.id}-${index}`}
+              className="flex items-center gap-3 p-2.5 rounded-lg border border-blue-200 bg-blue-50"
+            >
               <Avatar className="w-8 h-8 flex-shrink-0">
                 <AvatarImage src={responsavel.avatarUrl} />
-                <AvatarFallback className="bg-blue-100 text-blue-600 text-xs font-medium">
+                <AvatarFallback className="bg-blue-100 text-blue-700 text-xs font-semibold">
                   {getIniciais(responsavel.nome)}
                 </AvatarFallback>
               </Avatar>
-              <div className="flex-1 min-w-0 overflow-hidden">
-                <div className="font-medium text-gray-900 text-sm truncate">{responsavel.nome}</div>
-                <div className="text-xs text-gray-600 truncate">{responsavel.cargo}</div>
-                <Badge variant="secondary" className="text-xs mt-1 hidden sm:inline-flex">
+              <div className="flex-1 min-w-0 flex items-center gap-2 text-sm">
+                <span className="font-semibold text-gray-900 truncate">
+                  {responsavel.nome}
+                </span>
+                <span className="text-gray-400">•</span>
+                <span className="text-gray-700 truncate">
+                  {responsavel.cargo}
+                </span>
+                <Badge variant="secondary" className="ml-2 text-[10px] bg-blue-100 text-blue-700 border-blue-200 flex-shrink-0">
                   {responsavel.gerencia}
                 </Badge>
               </div>
@@ -492,40 +488,47 @@ export default function ResponsavelSelector({
         </Label>
         
         {responsaveis.length > 0 ? (
-          // Lista de chips com responsáveis selecionados
-          <div className="space-y-2">
+          // Lista melhorada de responsáveis selecionados
+          <div className="flex flex-col gap-2 max-h-[220px] overflow-auto pr-1">
             {console.log('Renderizando responsáveis:', responsaveis)}
             {responsaveis.map((responsavel, index) => (
-              <div key={`${responsavel.id}-${index}`} className="flex items-center gap-2 p-2 bg-blue-50 rounded-lg border border-blue-200 max-w-full overflow-hidden">
-                <Avatar className="w-8 h-8 flex-shrink-0">
-                  <AvatarImage src={responsavel.avatarUrl} />
-                  <AvatarFallback className="bg-blue-100 text-blue-600 text-xs font-medium">
-                    {getIniciais(responsavel.nome)}
-                  </AvatarFallback>
-                </Avatar>
-                <div className="flex-1 min-w-0 overflow-hidden">
-                  <div className="font-medium text-gray-900 text-sm truncate">{responsavel.nome}</div>
-                  <div className="text-xs text-gray-600 truncate">{responsavel.cargo}</div>
-                  <Badge variant="secondary" className="text-xs mt-1 hidden sm:inline-flex">
-                    {responsavel.gerencia}
-                  </Badge>
+              <div key={`${responsavel.id}-${index}`} className="group relative p-2.5 rounded-lg border border-blue-200 bg-blue-50">
+                <div className="flex items-center gap-3">
+                  <Avatar className="w-8 h-8 flex-shrink-0">
+                    <AvatarImage src={responsavel.avatarUrl} />
+                    <AvatarFallback className="bg-blue-100 text-blue-700 text-xs font-semibold">
+                      {getIniciais(responsavel.nome)}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="flex-1 min-w-0 flex items-center gap-2 text-sm">
+                    <span className="font-semibold text-gray-900 truncate">{responsavel.nome}</span>
+                    <span className="text-gray-400">•</span>
+                    <span className="text-gray-700 truncate">{responsavel.cargo}</span>
+                    <Badge variant="secondary" className="ml-2 text-[10px] bg-blue-100 text-blue-700 border-blue-200 flex-shrink-0">
+                      {responsavel.gerencia}
+                    </Badge>
+                  </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleRemoverResponsavel(responsavel.id, responsavel.nome)}
+                    disabled={disabled}
+                    className="text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200 hover:border-red-300 flex-shrink-0"
+                  >
+                    <X className="w-4 h-4" />
+                  </Button>
                 </div>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => handleRemoverResponsavel(responsavel.id, responsavel.nome)}
-                  disabled={disabled}
-                  className="text-xs text-red-600 hover:text-red-700 hover:bg-red-50 flex-shrink-0 ml-auto"
-                >
-                  <X className="w-3 h-3" />
-                </Button>
               </div>
             ))}
           </div>
         ) : (
           // Mensagem quando não há responsáveis
-          <div className="text-sm text-gray-500 text-center py-4">
-            Nenhum responsável definido
+          <div className="text-center py-8 px-4">
+            <div className="w-16 h-16 mx-auto mb-4 bg-gray-100 rounded-full flex items-center justify-center">
+              <User className="w-8 h-8 text-gray-400" />
+            </div>
+            <p className="text-sm text-gray-500 font-medium mb-1">Nenhum responsável definido</p>
+            <p className="text-xs text-gray-400">Adicione pelo menos um responsável pela elaboração</p>
           </div>
         )}
         
@@ -535,9 +538,9 @@ export default function ResponsavelSelector({
             variant="outline"
             onClick={handleOpenModal}
             disabled={disabled}
-            className="w-full justify-start text-gray-500 hover:text-gray-700 mt-3"
+            className="w-full justify-center text-blue-600 hover:text-blue-700 border-blue-200 hover:border-blue-300 bg-blue-50 hover:bg-blue-100 mt-4 py-3 rounded-xl transition-all duration-200"
           >
-            <Plus className="w-4 h-4 mr-2" />
+            <Plus className="w-5 h-5 mr-2" />
             Adicionar Responsável
           </Button>
         )}
@@ -603,15 +606,15 @@ export default function ResponsavelSelector({
                         <div
                           key={usuario.id}
                           className={`p-3 rounded-lg border cursor-pointer transition-colors ${
-                            selectedUsuario?.id === usuario.id
-                              ? 'bg-blue-50 border-blue-200'
+                            selectedUsuarios.some(u => u.id === usuario.id)
+                              ? 'bg-blue-50 border-blue-300'
                               : index === selectedIndex
                               ? 'bg-gray-50 border-gray-200'
                               : 'hover:bg-gray-50 border-transparent'
                           }`}
                           onClick={() => handleSelectUsuario(usuario)}
                           role="option"
-                          aria-selected={selectedUsuario?.id === usuario.id}
+                          aria-selected={selectedUsuarios.some(u => u.id === usuario.id)}
                         >
                           <div className="flex items-center gap-3">
                             <Avatar className="w-10 h-10 flex-shrink-0">
@@ -634,8 +637,8 @@ export default function ResponsavelSelector({
                                 {usuario.gerencia}
                               </Badge>
                             </div>
-                            {selectedUsuario?.id === usuario.id && (
-                              <div className="w-2 h-2 bg-blue-500 rounded-full flex-shrink-0" />
+                            {selectedUsuarios.some(u => u.id === usuario.id) && (
+                              <div className="w-2 h-2 bg-blue-600 rounded-full flex-shrink-0" />
                             )}
                           </div>
                         </div>
@@ -646,27 +649,24 @@ export default function ResponsavelSelector({
               </ScrollArea>
             </div>
             
-            {/* Usuário selecionado */}
-            {selectedUsuario && (
+            {/* Selecionados */}
+            {selectedUsuarios.length > 0 && (
               <div className="p-3 bg-blue-50 rounded-lg border border-blue-200 flex-shrink-0">
                 <div className="text-sm font-medium text-gray-700 mb-2">
-                  Responsável selecionado:
+                  Selecionados: {selectedUsuarios.length}
                 </div>
-                <div className="flex items-center gap-3">
-                  <Avatar className="w-8 h-8 flex-shrink-0">
-                    <AvatarImage src={selectedUsuario.avatarUrl} />
-                    <AvatarFallback className="bg-blue-100 text-blue-600 text-xs font-medium">
-                      {getIniciais(selectedUsuario.nome)}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div className="flex-1 min-w-0">
-                    <div className="font-medium text-gray-900 truncate">
-                      {selectedUsuario.nome}
+                <div className="flex flex-wrap gap-2">
+                  {selectedUsuarios.map(u => (
+                    <div key={u.id} className="flex items-center gap-2 px-2 py-1 bg-white border border-blue-200 rounded-md text-sm">
+                      <Avatar className="w-6 h-6">
+                        <AvatarImage src={u.avatarUrl} />
+                        <AvatarFallback className="bg-blue-100 text-blue-700 text-[10px] font-semibold">
+                          {getIniciais(u.nome)}
+                        </AvatarFallback>
+                      </Avatar>
+                      <span className="max-w-[160px] truncate">{u.nome}</span>
                     </div>
-                    <div className="text-sm text-gray-600 truncate">
-                      {selectedUsuario.cargo} • {selectedUsuario.gerencia}
-                    </div>
-                  </div>
+                  ))}
                 </div>
               </div>
             )}
@@ -685,7 +685,7 @@ export default function ResponsavelSelector({
             </Button>
             <Button
               onClick={handleConfirmarSelecao}
-              disabled={!selectedUsuario || isSaving}
+              disabled={selectedUsuarios.length === 0 || isSaving}
               className="min-w-[120px]"
             >
               {isSaving ? (
@@ -694,7 +694,7 @@ export default function ResponsavelSelector({
                   Adicionando...
                 </>
               ) : (
-                'Adicionar Responsável'
+                'Adicionar Selecionados'
               )}
             </Button>
           </div>

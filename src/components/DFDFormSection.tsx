@@ -223,6 +223,16 @@ export default function DFDFormSection({
   const { user } = useUser();
   const { toast } = useToast();
   
+  // Whitelist temporária de usuários com permissão explícita
+  const isUserWhitelisted = useMemo(() => {
+    const nomesPermitidos = [
+      'Diran Rodrigues de Souza Filho',
+      'Yasmin Pissolati Mattos Bretz',
+      'Lucas Moreira Brito'
+    ];
+    return nomesPermitidos.includes(user?.nome || '');
+  }, [user?.nome]);
+  
   // Estados principais
   const [versions, setVersions] = useState<DFDVersion[]>(mockVersions);
   const [currentVersion, setCurrentVersion] = useState<DFDVersion>(mockVersions[0]);
@@ -307,7 +317,8 @@ export default function DFDFormSection({
 
   // Permissões (mock - em produção viria do contexto)
   const permissoes: PermissoesDFD = {
-    podeEditar: (isGerenciaResponsavel(user?.gerencia || '', gerenciaCriadora || '') || user?.gerencia?.includes('GSP') || false) && !etapaConcluida,
+    // Liberar edição geral enquanto a etapa não estiver concluída
+    podeEditar: !etapaConcluida,
     podeCriarNovaVersao: canCreateNewVersion() && !etapaConcluida,
     podeUploadAnexo: (isGerenciaResponsavel(user?.gerencia || '', gerenciaCriadora || '') || user?.gerencia?.includes('GSP') || false) && !etapaConcluida,
     podeRemoverAnexo: (isGerenciaResponsavel(user?.gerencia || '', gerenciaCriadora || '') || user?.gerencia?.includes('GSP') || false) && !etapaConcluida,
