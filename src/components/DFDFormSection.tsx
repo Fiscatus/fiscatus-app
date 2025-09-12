@@ -8,7 +8,6 @@ import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 // Removido: radio-group não é mais usado aqui
-import { Separator } from '@/components/ui/separator';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -25,7 +24,6 @@ import {
   Info,
   Trash2,
   Save,
-  MessageCircle,
   User,
   Calendar,
   Building2,
@@ -39,7 +37,6 @@ import {
   AlertCircle,
   CheckCircle2,
   RotateCcw,
-  Square,
   Hash,
   ChevronDown,
   Flag,

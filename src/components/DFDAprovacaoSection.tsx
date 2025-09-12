@@ -1,50 +1,30 @@
 import React, { useState, useRef, useEffect, useMemo } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
-import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   FileText,
   CheckCircle,
   XCircle,
-  AlertTriangle,
   Eye,
   History,
   Upload,
-  Plus,
   Download,
   Trash2,
-  Save,
-  MessageCircle,
   User,
-  Calendar,
-  Building2,
   Edit3,
-  Lock,
-  Unlock,
-  XCircle as XCircleIcon,
   Clock,
   Search,
-  Info,
-  Send,
-  File,
-  CalendarDays,
-  Users,
-  CheckSquare,
-  Square,
   Settings
 } from 'lucide-react';
 import { useUser } from '@/contexts/UserContext';
-import { usePermissoes } from '@/hooks/usePermissoes';
 import { useToast } from '@/hooks/use-toast';
-import TextareaWithMentions from './TextareaWithMentions';
 import CommentsSection from './CommentsSection';
-import { useDFD, DFDData, DFDVersion, DFDVersionStatus, DFDAnnex } from '@/hooks/useDFD';
+import { useDFD, DFDData, DFDVersionStatus, DFDAnnex } from '@/hooks/useDFD';
 import { formatDateBR, formatDateTimeBR } from '@/lib/utils';
 
 // Tipos para o novo sistema
@@ -86,17 +66,13 @@ export default function DFDAprovacaoSection({
   canEdit = true
 }: DFDAprovacaoSectionProps) {
   const { user } = useUser();
-  const { podeEditarCard, isGSP } = usePermissoes();
   const { toast } = useToast();
   const { 
     dfdData, 
     aprovarVersao, 
     devolverParaCorrecao,
     addAnnex, 
-    removeAnnex, 
-    updateObservations, 
-    canApprove,
-    canDevolver
+    removeAnnex
   } = useDFD(processoId);
   // Ordenação e helpers de anexos (padrão Card 1)
   const [attachmentsSort, setAttachmentsSort] = useState<'desc' | 'asc'>('desc');
@@ -130,13 +106,7 @@ export default function DFDAprovacaoSection({
   const [showCorrecaoDialog, setShowCorrecaoDialog] = useState(false);
   const [justificativaCorrecao, setJustificativaCorrecao] = useState('');
   const [activeTab, setActiveTab] = useState('versoes');
-  const [parecerExiste, setParecerExiste] = useState(false);
-  const [dfdArquivoExiste, setDfdArquivoExiste] = useState(false);
-  const [dfdArquivo, setDfdArquivo] = useState<{ name: string; size: string; uploadedAt: string; uploadedBy: string } | null>(null);
-  const [parecerArquivo, setParecerArquivo] = useState<{ name: string; size: string; uploadedAt: string; uploadedBy: string } | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const dfdFileInputRef = useRef<HTMLInputElement>(null);
-  const parecerFileInputRef = useRef<HTMLInputElement>(null);
 
   // Verificar se é usuário da GSP
   const isGSPUser = () => {
@@ -153,10 +123,6 @@ export default function DFDAprovacaoSection({
     return isGSPUser() && dfdData.status === 'enviado_analise';
   };
 
-  // Verificar se pode editar - usar nova lógica de permissões
-  const canEditCurrentVersion = () => {
-    return dfdData.status === 'enviado_analise';
-  };
 
   // Verificar se pode editar o parecer técnico - permitir para usuários autorizados
   const canEditParecerTecnico = () => {
@@ -316,125 +282,7 @@ export default function DFDAprovacaoSection({
   };
 
   // Funções para os botões de ação
-  const handleUploadDFD = () => {
-    dfdFileInputRef.current?.click();
-  };
-
-  const handleUploadParecer = () => {
-    parecerFileInputRef.current?.click();
-  };
-
-  const handleDFDFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (file) {
-      const arquivoInfo = {
-        name: file.name,
-        size: `${(file.size / 1024 / 1024).toFixed(2)} MB`,
-        uploadedAt: new Date().toISOString(),
-        uploadedBy: user?.nome || 'Usuário'
-      };
-      
-      setDfdArquivo(arquivoInfo);
-      setDfdArquivoExiste(true);
-      
-      // Mock: salvar no localStorage
-      localStorage.setItem(`dfd-arquivo-${processoId}`, JSON.stringify(arquivoInfo));
-      
-      toast({
-        title: "Arquivo DFD enviado",
-        description: `${file.name} foi enviado com sucesso.`
-      });
-    }
-    
-    // Limpar o input
-    if (event.target) {
-      event.target.value = '';
-    }
-  };
-
-  const handleParecerFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (file) {
-      const arquivoInfo = {
-        name: file.name,
-        size: `${(file.size / 1024 / 1024).toFixed(2)} MB`,
-        uploadedAt: new Date().toISOString(),
-        uploadedBy: user?.nome || 'Usuário'
-      };
-      
-      setParecerArquivo(arquivoInfo);
-      setParecerExiste(true);
-      
-      // Mock: salvar no localStorage
-      localStorage.setItem(`parecer-arquivo-${processoId}`, JSON.stringify(arquivoInfo));
-      
-      toast({
-        title: "Arquivo Parecer enviado",
-        description: `${file.name} foi enviado com sucesso.`
-      });
-    }
-    
-    // Limpar o input
-    if (event.target) {
-      event.target.value = '';
-    }
-  };
-
-  const handleBaixarDFD = () => {
-    if (!dfdArquivo) {
-      toast({
-        title: "Nenhum arquivo",
-        description: "Nenhum arquivo DFD foi enviado ainda.",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    // Mock: simular download do DFD
-    toast({
-      title: "Download Iniciado",
-      description: `O arquivo ${dfdArquivo.name} está sendo baixado.`
-    });
-  };
-
-  const handleBaixarParecer = () => {
-    if (!parecerArquivo) {
-      toast({
-        title: "Nenhum arquivo",
-        description: "Nenhum arquivo de parecer foi enviado ainda.",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    // Mock: simular download do parecer
-    toast({
-      title: "Download Iniciado", 
-      description: `O arquivo ${parecerArquivo.name} está sendo baixado.`
-    });
-  };
-
-  const handleExcluirDFD = () => {
-    setDfdArquivo(null);
-    setDfdArquivoExiste(false);
-    localStorage.removeItem(`dfd-arquivo-${processoId}`);
-    
-    toast({
-      title: "Arquivo removido",
-      description: "O arquivo DFD foi removido com sucesso."
-    });
-  };
-
-  const handleExcluirParecer = () => {
-    setParecerArquivo(null);
-    setParecerExiste(false);
-    localStorage.removeItem(`parecer-arquivo-${processoId}`);
-    
-    toast({
-      title: "Arquivo removido",
-      description: "O arquivo de parecer foi removido com sucesso."
-    });
-  };
+  // Removidos: handlers de upload/download/exclusão de DFD e Parecer
 
   // Função para upload de anexos
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -472,48 +320,11 @@ export default function DFDAprovacaoSection({
         const parecerData = JSON.parse(parecerSalvo);
         setParecerTecnico(parecerData.texto || '');
         setDataAnalise(parecerData.analisadoEm || '');
-        setParecerExiste(true);
       } catch (error) {
         console.error('Erro ao carregar parecer salvo:', error);
       }
     }
-
-    // Carregar arquivos salvos
-    const dfdArquivoSalvo = localStorage.getItem(`dfd-arquivo-${processoId}`);
-    if (dfdArquivoSalvo) {
-      try {
-        const arquivoData = JSON.parse(dfdArquivoSalvo);
-        setDfdArquivo(arquivoData);
-        setDfdArquivoExiste(true);
-      } catch (error) {
-        console.error('Erro ao carregar arquivo DFD salvo:', error);
-      }
-    }
-
-    const parecerArquivoSalvo = localStorage.getItem(`parecer-arquivo-${processoId}`);
-    if (parecerArquivoSalvo) {
-      try {
-        const arquivoData = JSON.parse(parecerArquivoSalvo);
-        setParecerArquivo(arquivoData);
-        setParecerExiste(true);
-      } catch (error) {
-        console.error('Erro ao carregar arquivo parecer salvo:', error);
-      }
-    }
-
-    // Lógica melhorada para habilitar botões de download
-    // Para GSP: habilitar se houver qualquer versão ou se for GSP
-    // Para outros: habilitar apenas se houver versão enviada para análise
-    if (isGSPUser()) {
-      // GSP pode baixar DFD se houver qualquer versão
-      const temQualquerVersao = dfdData.versions.length > 0;
-      setDfdArquivoExiste(temQualquerVersao);
-    } else {
-      // Outros usuários só podem baixar se houver versão enviada para análise
-      const temVersaoEnviada = dfdData.versions.some(v => v.status === 'enviado_analise');
-      setDfdArquivoExiste(temVersaoEnviada);
-    }
-  }, [processoId, dfdData.versions, isGSPUser]);
+  }, [processoId]);
 
   const getStatusConfig = (status: DFDVersionStatus) => {
     switch (status) {
@@ -593,89 +404,23 @@ export default function DFDAprovacaoSection({
           
           {/* ESQUERDA: Parecer Técnico da GSP (8 colunas) */}
           <section id="parecer-tecnico" className="col-span-12 lg:col-span-8 w-full">
-            <div className="rounded-2xl border shadow-sm overflow-hidden bg-white">
+            <div className="rounded-2xl border shadow-sm overflow-hidden bg-white h-full flex flex-col">
               <header className="bg-indigo-50 px-4 py-3 rounded-t-2xl font-semibold text-slate-900">
-                <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3 text-lg">
-                    <Search className="w-5 h-5 text-indigo-600" />
-                    Parecer Técnico
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={handleUploadDFD}
-                      disabled={!isGSPUser()}
-                      className="text-xs"
-                    >
-                      <Upload className="w-3 h-3 mr-1" />
-                      Enviar DFD
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={handleUploadParecer}
-                      disabled={!isGSPUser()}
-                      className="text-xs"
-                    >
-                      <Upload className="w-3 h-3 mr-1" />
-                      Enviar Parecer
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={handleBaixarDFD}
-                      disabled={!dfdArquivoExiste}
-                      className="text-xs"
-                    >
-                      <Download className="w-3 h-3 mr-1" />
-                      Baixar DFD enviado
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={handleBaixarParecer}
-                      disabled={!parecerExiste && !isGSPUser()}
-                      className="text-xs"
-                    >
-                      <Download className="w-3 h-3 mr-1" />
-                      Baixar Parecer (PDF)
-                    </Button>
-                    {dfdArquivo && (
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={handleExcluirDFD}
-                        className="text-xs text-red-600 hover:text-red-700"
-                      >
-                        <Trash2 className="w-3 h-3 mr-1" />
-                        Excluir DFD
-                      </Button>
-                    )}
-                    {parecerArquivo && (
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={handleExcluirParecer}
-                        className="text-xs text-red-600 hover:text-red-700"
-                      >
-                        <Trash2 className="w-3 h-3 mr-1" />
-                        Excluir Parecer
-                      </Button>
-                    )}
-                  </div>
+                  <Search className="w-5 h-5 text-indigo-600" />
+                  Parecer Técnico
                 </div>
               </header>
-              <div className="p-4 md:p-6">
-                    <div className="space-y-4">
-                      <div>
+              <div className="p-6 md:p-8 flex-1 flex flex-col">
+                    <div className="space-y-6 flex-1 flex flex-col">
+                      <div className="flex-1">
                     <Textarea
                       id="parecer-tecnico-textarea"
                       value={parecerTecnico}
                       onChange={(e) => setParecerTecnico(e.target.value)}
                       placeholder="Descreva a análise técnica do DFD..."
                       disabled={!canEditParecerTecnico()}
-                      className="min-h-[200px] mt-2 resize-none border-gray-200 focus:border-indigo-300 focus:ring-indigo-300"
+                      className="min-h-[350px] flex-1 resize-none border-gray-200 focus:border-indigo-300 focus:ring-indigo-300"
                     />
                     {validationErrors.includes('Parecer Técnico é obrigatório') && (
                       <p className="text-red-500 text-sm mt-1">Parecer Técnico é obrigatório</p>
@@ -691,70 +436,7 @@ export default function DFDAprovacaoSection({
                     </div>
                   )}
 
-                  {/* Inputs ocultos para upload de arquivos */}
-                  <input
-                    ref={dfdFileInputRef}
-                    type="file"
-                    onChange={handleDFDFileUpload}
-                    accept="*/*"
-                    className="hidden"
-                  />
-                  <input
-                    ref={parecerFileInputRef}
-                    type="file"
-                    onChange={handleParecerFileUpload}
-                    accept="*/*"
-                    className="hidden"
-                  />
-
-                  {/* Exibir arquivos enviados */}
-                  {dfdArquivo && (
-                    <div className="p-3 bg-blue-50 rounded-lg border border-blue-200">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-3">
-                          <FileText className="w-5 h-5 text-blue-600" />
-                        <div>
-                            <p className="text-sm font-medium text-blue-900">{dfdArquivo.name}</p>
-                            <p className="text-xs text-blue-600">{dfdArquivo.size} • {formatDate(dfdArquivo.uploadedAt)}</p>
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-1">
-                          <Button size="sm" variant="outline" onClick={handleBaixarDFD} className="h-6 w-6 p-0">
-                            <Download className="w-3 h-3" />
-                          </Button>
-                          {isGSPUser() && (
-                            <Button size="sm" variant="outline" onClick={handleExcluirDFD} className="h-6 w-6 p-0 text-red-600 hover:text-red-700">
-                              <Trash2 className="w-3 h-3" />
-                            </Button>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  )}
-
-                  {parecerArquivo && (
-                    <div className="p-3 bg-green-50 rounded-lg border border-green-200">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-3">
-                          <FileText className="w-5 h-5 text-green-600" />
-                        <div>
-                            <p className="text-sm font-medium text-green-900">{parecerArquivo.name}</p>
-                            <p className="text-xs text-green-600">{parecerArquivo.size} • {formatDate(parecerArquivo.uploadedAt)}</p>
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-1">
-                          <Button size="sm" variant="outline" onClick={handleBaixarParecer} className="h-6 w-6 p-0">
-                            <Download className="w-3 h-3" />
-                          </Button>
-                          {isGSPUser() && (
-                            <Button size="sm" variant="outline" onClick={handleExcluirParecer} className="h-6 w-6 p-0 text-red-600 hover:text-red-700">
-                              <Trash2 className="w-3 h-3" />
-                            </Button>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  )}
+                  {/* Removidos: inputs ocultos e exibição de arquivos DFD/Parecer */}
                   </div>
               </div>
             </div>
@@ -769,14 +451,14 @@ export default function DFDAprovacaoSection({
                   Gerenciamento
                 </div>
               </header>
-              <div className="p-4 md:p-6 flex-1 flex flex-col">
+              <div className="p-6 md:p-8 flex-1 flex flex-col">
                 <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
                   <TabsList className="grid w-full grid-cols-2">
                     <TabsTrigger value="versoes">Versões</TabsTrigger>
                     <TabsTrigger value="anexos">Anexos</TabsTrigger>
                   </TabsList>
                   
-                  <TabsContent value="versoes" className="mt-0 p-4">
+                  <TabsContent value="versoes" className="mt-0 p-6">
                     {dfdData.versions.length === 0 ? (
                       <div className="text-center py-8 w-full">
                         <div className="p-4 bg-gray-100 rounded-full w-16 h-16 mx-auto mb-4 flex items-center justify-center">
@@ -785,13 +467,13 @@ export default function DFDAprovacaoSection({
                         <p className="text-gray-500 font-medium">Nenhuma versão disponível</p>
                       </div>
                     ) : (
-                      <div className="space-y-3 max-h-60 overflow-y-auto">
+                      <div className="space-y-4 max-h-80 overflow-y-auto">
                         {dfdData.versions.map((version) => {
                           const statusConfig = getStatusConfig(version.status);
                           const sla = calcularSLA(version.prazoInicialDiasUteis || 0, version.prazoCumpridoDiasUteis);
                           
                           return (
-                            <div key={version.id} className="border border-gray-200 rounded-lg p-3 hover:bg-gray-50 transition-colors">
+                            <div key={version.id} className="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 transition-colors">
                               <div className="flex items-center justify-between mb-2">
                                 <div className="flex items-center gap-2">
                                   <Badge variant={version.isFinal ? "default" : "outline"} className="text-xs">
@@ -845,7 +527,7 @@ export default function DFDAprovacaoSection({
                     )}
                   </TabsContent>
                   
-                  <TabsContent value="anexos" className="mt-0 p-4">
+                  <TabsContent value="anexos" className="mt-0 p-6">
                     {/* Header compacto + Filtro ordenação */}
                     <div className="w-full flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2 mb-3">
                       <div className="flex items-center gap-2">
@@ -904,10 +586,10 @@ export default function DFDAprovacaoSection({
                         )}
                       </div>
                     ) : (
-                      <div className="space-y-0 max-h-60 overflow-y-auto">
+                      <div className="space-y-2 max-h-80 overflow-y-auto">
                         {anexosOrdenados.map((annex, idx) => (
                           <React.Fragment key={annex.id}>
-                          <div className="flex items-center justify-between p-3 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
+                          <div className="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
                             <div className="flex items-center gap-3 min-w-0 flex-1">
                               <div className="p-2 bg-blue-100 rounded-lg">
                                 <FileText className="w-4 h-4 text-blue-600" />
