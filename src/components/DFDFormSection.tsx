@@ -1055,13 +1055,17 @@ export default function DFDFormSection({
   return (
     <div className="w-full space-y-6">
       {/* 1️⃣ Formulário DFD */}
-      <div className="rounded-xl border border-slate-200 shadow-sm bg-white p-4 md:p-6">
-        <header className="flex items-center justify-center gap-3 bg-indigo-50 border-b border-indigo-200 py-4 px-4 md:px-6 rounded-t-xl -mx-4 md:-mx-6">
-          <div className="flex items-center gap-3">
-            <FileText className="w-5 h-5 text-indigo-600" />
-            <h2 className="text-lg font-semibold text-slate-800">Formulário do DFD</h2>
+      <div className="rounded-2xl border border-slate-300 shadow-md bg-white p-6 mb-8">
+        <header className="flex items-center gap-3 mb-4">
+          <FileText className="w-6 h-6 text-purple-600" />
+          <h2 className="text-lg font-bold text-slate-900">Formulário do DFD</h2>
+          <div className="ml-auto">
+            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
+              Formulário
+            </span>
           </div>
         </header>
+        <div className="border-b-2 border-purple-200 mb-6"></div>
         <div className="space-y-0">
                 {/* Grupo: Número/Data */}
                 <div className="w-full p-4 border-b border-slate-200 my-4">
@@ -1141,20 +1145,24 @@ export default function DFDFormSection({
             </div>
 
       {/* 2️⃣ Gerenciamento */}
-      <div className="rounded-xl border border-slate-200 shadow-sm bg-white p-4 md:p-6">
-        <header className="flex items-center justify-center gap-3 bg-indigo-50 border-b border-indigo-200 py-4 px-4 md:px-6 rounded-t-xl -mx-4 md:-mx-6">
-          <div className="flex items-center gap-3">
-            <Settings className="w-5 h-5 text-indigo-600" />
-            <h2 className="text-lg font-semibold text-slate-800">Gerenciamento</h2>
+      <div className="rounded-2xl border border-slate-300 shadow-md bg-white p-6 mb-8 min-h-[500px]">
+        <header className="flex items-center gap-3 mb-4">
+          <Settings className="w-6 h-6 text-slate-600" />
+          <h2 className="text-lg font-bold text-slate-900">Gerenciamento</h2>
+          <div className="ml-auto">
+            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-slate-100 text-slate-800">
+              Gerenciamento
+            </span>
           </div>
         </header>
+        <div className="border-b-2 border-slate-200 mb-6"></div>
         <div>
               {/* Grid responsiva para Versões e Anexos */}
               <div className="grid grid-cols-12 gap-4 items-start">
                 {/* Versões/Revisões - 6 colunas em desktop, 12 em mobile */}
                 <div className="col-span-12 lg:col-span-6">
                   <div className="rounded-xl border shadow-sm bg-white h-full">
-                    <div className="px-4 py-3 rounded-t-xl border-b">
+                    <div className="px-4 py-6 rounded-t-xl border-b">
                       <h3 className="text-sm font-semibold text-slate-900 flex items-center gap-2">
                         <History className="w-4 h-4 text-purple-600" />
                         Versões/Revisões
@@ -1285,7 +1293,7 @@ export default function DFDFormSection({
                 {/* Anexos - 6 colunas em desktop, 12 em mobile */}
                 <div className="col-span-12 lg:col-span-6">
                   <div className="rounded-xl border shadow-sm bg-white h-full">
-                    <div className="px-4 py-3 rounded-t-xl border-b">
+                    <div className="px-4 py-6 rounded-t-xl border-b">
                       <div className="flex items-center justify-between">
                         <h3 className="text-sm font-semibold text-slate-900 flex items-center gap-2">
                           <Upload className="w-4 h-4 text-green-600" />
@@ -1378,13 +1386,17 @@ export default function DFDFormSection({
           </div>
 
       {/* 3️⃣ Painel da Etapa */}
-      <div className="rounded-xl border border-slate-200 shadow-sm bg-white p-4 md:p-6">
-        <header className="flex items-center justify-center gap-3 bg-indigo-50 border-b border-indigo-200 py-4 px-4 md:px-6 rounded-t-xl -mx-4 md:-mx-6">
-          <div className="flex items-center gap-3">
-            <ClipboardCheck className="w-5 h-5 text-indigo-600" />
-            <h2 className="text-lg font-semibold text-slate-800">Painel da Etapa</h2>
+      <div className="rounded-2xl border border-slate-300 shadow-md bg-white p-6 mb-8">
+        <header className="flex items-center gap-3 mb-4">
+          <ClipboardCheck className="w-6 h-6 text-green-600" />
+          <h2 className="text-lg font-bold text-slate-900">Painel da Etapa</h2>
+          <div className="ml-auto">
+            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+              Checklist
+            </span>
           </div>
         </header>
+        <div className="border-b-2 border-green-200 mb-6"></div>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             
             {/* 1️⃣ Card Status & Prazo (claro e visual) */}
@@ -1654,13 +1666,17 @@ export default function DFDFormSection({
       </div>
 
       {/* 4️⃣ Comentários */}
-      <div className="rounded-xl border border-slate-200 shadow-sm bg-white p-4 md:p-6">
-        <header className="flex items-center justify-center gap-3 bg-indigo-50 border-b border-indigo-200 py-4 px-4 md:px-6 rounded-t-xl -mx-4 md:-mx-6">
-          <div className="flex items-center gap-3">
-            <MessageSquare className="w-5 h-5 text-indigo-600" />
-            <h2 className="text-lg font-semibold text-slate-800">Comentários</h2>
+      <div className="rounded-2xl border border-slate-300 shadow-md bg-white p-6 mb-8">
+        <header className="flex items-center gap-3 mb-4">
+          <MessageSquare className="w-6 h-6 text-blue-600" />
+          <h2 className="text-lg font-bold text-slate-900">Comentários</h2>
+          <div className="ml-auto">
+            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+              Comentários
+            </span>
           </div>
         </header>
+        <div className="border-b-2 border-blue-200 mb-6"></div>
         
             <CommentsSection
               processoId={processoId}
@@ -1671,13 +1687,17 @@ export default function DFDFormSection({
       </div>
 
        {/* 5️⃣ Ações da Etapa */}
-       <div className="rounded-xl border border-slate-200 shadow-sm bg-white p-4 md:p-6">
-         <header className="flex items-center justify-center gap-3 bg-indigo-50 border-b border-indigo-200 py-4 px-4 md:px-6 rounded-t-xl -mx-4 md:-mx-6">
-           <div className="flex items-center gap-3">
-             <Flag className="w-5 h-5 text-indigo-600" />
-             <h2 className="text-lg font-semibold text-slate-800">Ações da Etapa</h2>
+       <div className="rounded-2xl border border-slate-300 shadow-md bg-white p-6 mb-8">
+         <header className="flex items-center gap-3 mb-4">
+           <Flag className="w-6 h-6 text-orange-600" />
+           <h2 className="text-lg font-bold text-slate-900">Ações da Etapa</h2>
+           <div className="ml-auto">
+             <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-orange-100 text-orange-800">
+               Ações
+             </span>
            </div>
          </header>
+         <div className="border-b-2 border-orange-200 mb-6"></div>
          
          <div className="space-y-4">
            {/* Informações de Status */}
