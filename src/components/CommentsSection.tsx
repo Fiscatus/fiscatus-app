@@ -7,7 +7,6 @@ import {
   MessageSquarePlus,
   AtSign,
   Paperclip,
-  Smile,
   Reply,
   Copy,
   Trash2,
@@ -522,18 +521,6 @@ export default function CommentsSection({
                 <TooltipContent>Anexar arquivo (em breve)</TooltipContent>
               </Tooltip>
 
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <button
-                    className="p-2 hover:bg-slate-100 rounded-md opacity-50 cursor-not-allowed transition-colors flex items-center justify-center"
-                    aria-label="Emoji"
-                    disabled
-                  >
-                    <Smile className="w-4 h-4" />
-                  </button>
-                </TooltipTrigger>
-                <TooltipContent>Emoji (em breve)</TooltipContent>
-              </Tooltip>
             </TooltipProvider>
           </div>
 
@@ -556,9 +543,6 @@ export default function CommentsSection({
 
           {/* Rodapé do composer */}
           <div className="flex items-center justify-between">
-            <div className="text-xs text-slate-500">
-              Ctrl/Cmd + Enter para enviar
-            </div>
             <button
               onClick={handleSubmit}
               disabled={!text.trim() || isSubmitting}

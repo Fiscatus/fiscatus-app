@@ -30,7 +30,7 @@ export default function CommentsExample() {
         </h2>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-slate-700">
           <div>
-            <h3 className="font-medium mb-2">🎨 Design Moderno</h3>
+            <h3 className="font-medium mb-2">Design Moderno</h3>
             <ul className="space-y-1 text-slate-600">
               <li>• Sem cores de fundo em containers</li>
               <li>• Bordas sutis e tipografia limpa</li>
@@ -39,7 +39,7 @@ export default function CommentsExample() {
             </ul>
           </div>
           <div>
-            <h3 className="font-medium mb-2">⚡ Funcionalidades</h3>
+            <h3 className="font-medium mb-2">Funcionalidades</h3>
             <ul className="space-y-1 text-slate-600">
               <li>• Suporte a @menções com popover</li>
               <li>• Navegação por teclado (↑/↓/Enter/Esc)</li>
@@ -48,7 +48,7 @@ export default function CommentsExample() {
             </ul>
           </div>
           <div>
-            <h3 className="font-medium mb-2">♿ Acessibilidade</h3>
+            <h3 className="font-medium mb-2">Acessibilidade</h3>
             <ul className="space-y-1 text-slate-600">
               <li>• ARIA labels e roles apropriados</li>
               <li>• Foco visível em elementos interativos</li>
@@ -57,7 +57,7 @@ export default function CommentsExample() {
             </ul>
           </div>
           <div>
-            <h3 className="font-medium mb-2">📱 Responsivo</h3>
+            <h3 className="font-medium mb-2">Responsivo</h3>
             <ul className="space-y-1 text-slate-600">
               <li>• Layout adaptativo para mobile</li>
               <li>• Texto responsivo (14px mobile)</li>

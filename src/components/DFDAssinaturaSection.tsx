@@ -49,7 +49,12 @@ import {
   GripVertical,
   Settings,
   Info,
-  MoreHorizontal
+  MoreHorizontal,
+  ClipboardCheck,
+  ListChecks,
+  CheckIcon,
+  XIcon,
+  Paperclip
 } from 'lucide-react';
 import { useUser } from '@/contexts/UserContext';
 import { usePermissoes } from '@/hooks/usePermissoes';
@@ -600,22 +605,22 @@ export default function DFDAssinaturaSection({
   };
 
   return (
-    <div className="min-h-screen bg-white">
-      {/* Container central ocupando toda a área */}
-      <div className="w-full px-2">
-        {/* Grid principal 12 colunas */}
-        <div className="grid grid-cols-12 gap-4">
-          
-          {/* ESQUERDA: Visualização do DFD (8 colunas) */}
-          <section id="visualizacao-dfd" className="col-span-12 lg:col-span-8 w-full">
-            <div className="rounded-2xl border shadow-sm overflow-hidden bg-white">
-              <header className="bg-indigo-50 px-4 py-3 rounded-t-2xl font-semibold text-slate-900">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <PenTool className="w-5 h-5 text-indigo-600" />
-                    <span className="text-lg">Visualização do DFD</span>
+    <div className="w-full space-y-6">
+      {/* 1️⃣ Visualização do DFD */}
+      <div className="rounded-2xl border border-slate-300 shadow-md bg-white p-6 mb-8 min-h-[700px]">
+        <header className="flex items-center gap-3 mb-4">
+          <PenTool className="w-6 h-6 text-indigo-600" />
+          <h2 className="text-lg font-bold text-slate-900">Visualização do DFD</h2>
+          <div className="ml-auto">
+            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800">
+              Visualização
+            </span>
                   </div>
-                  <div className="flex items-center gap-2">
+        </header>
+        <div className="border-b-2 border-indigo-200 mb-6"></div>
+        <div className="space-y-4">
+          {/* Botões de ação */}
+          <div className="flex justify-end gap-2">
                     <Button
                       size="sm"
                       variant="outline"
@@ -645,11 +650,6 @@ export default function DFDAssinaturaSection({
                       Baixar
                     </Button>
                   </div>
-                </div>
-              </header>
-              <div className="p-4 md:p-6">
-                
-                {/* Metadados removidos para padronizar com Assinatura do ETP */}
 
                 {/* Visualização do PDF */}
                 <div className="w-full min-h-[520px] rounded-lg border border-gray-200 bg-gray-50 flex items-center justify-center">
@@ -660,21 +660,23 @@ export default function DFDAssinaturaSection({
                      <p className="text-xs mt-2">(Bloqueado para edição)</p>
                    </div>
                 </div>
-
               </div>
             </div>
-          </section>
 
-          {/* DIREITA: Gerenciamento de Assinaturas (4 colunas) */}
-          <aside id="gerenciamento-assinaturas" className="col-span-12 lg:col-span-4 w-full flex flex-col">
-            <div className="rounded-2xl border shadow-sm overflow-hidden bg-white flex-1 flex flex-col">
-              <header className="bg-purple-50 px-4 py-3 rounded-t-2xl font-semibold text-slate-900">
-                <div className="flex items-center gap-3">
-                  <Settings className="w-5 h-5 text-purple-600" />
+      {/* 2️⃣ Gerenciamento */}
+      <div className="rounded-2xl border border-slate-300 shadow-md bg-white p-6 mb-8 min-h-[700px]">
+        <header className="flex items-center gap-3 mb-4">
+          <Settings className="w-6 h-6 text-slate-600" />
+          <h2 className="text-lg font-bold text-slate-900">Gerenciamento</h2>
+          <div className="ml-auto">
+            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-slate-100 text-slate-800">
                   Gerenciamento
+            </span>
                 </div>
               </header>
-              <div className="p-4 md:p-6 space-y-4 flex-1 flex flex-col">
+        <div className="border-b-2 border-slate-200 mb-6"></div>
+        <div>
+          <div className="space-y-4">
                 <Tabs defaultValue="assinaturas" className="w-full">
                   <TabsList className="grid w-full grid-cols-2">
                     <TabsTrigger value="assinaturas">Assinaturas</TabsTrigger>
@@ -714,9 +716,12 @@ export default function DFDAssinaturaSection({
                       <p className="text-sm">Nenhum assinante selecionado</p>
                     </div>
                   ) : (
-                    <div className="space-y-2">
+                    <div className="max-h-[320px] overflow-y-auto space-y-2">
                       {cardData.assinantes.map((assinante) => {
                         const statusConfig = getAssinaturaStatusConfig(assinante.status);
+                        const diasRest = cardData.sla.prazoDiasUteis - cardData.sla.decorridosDiasUteis;
+                        const isUrgente = diasRest <= 2 && diasRest >= 0 && assinante.status === 'PENDENTE';
+                        
                         return (
                           <div key={assinante.id} className="p-3 border rounded-lg bg-gray-50">
                             <div className="flex items-start justify-between">
@@ -727,6 +732,12 @@ export default function DFDAssinaturaSection({
                                     {statusConfig.icon}
                                     <span className="ml-1">{statusConfig.label}</span>
                                   </Badge>
+                                  {isUrgente && (
+                                    <Badge className="bg-amber-100 text-amber-800 border-amber-300 text-xs">
+                                      <AlertTriangle className="w-3 h-3 mr-1" />
+                                      {diasRest} dia{diasRest !== 1 ? 's' : ''} útil{diasRest !== 1 ? 'eis' : ''}
+                                    </Badge>
+                                  )}
                                 </div>
                                 <div className="text-xs text-gray-600 mb-1">{assinante.cargo}</div>
                                 <div className="text-xs text-gray-500">{assinante.email}</div>
@@ -739,6 +750,22 @@ export default function DFDAssinaturaSection({
                               
                               {/* Ações */}
                               <div className="flex items-center gap-1">
+                                {/* Botão Assinar - para o usuário designado */}
+                                {assinante.status === 'PENDENTE' && assinante.email === user?.email && (
+                                  <Button
+                                    size="sm"
+                                    variant="default"
+                                    onClick={() => {
+                                      setAssinanteSelecionado(assinante);
+                                      setShowAssinarModal(true);
+                                    }}
+                                    className="h-6 px-2 text-xs bg-purple-600 hover:bg-purple-700 text-white"
+                                  >
+                                    <PenTool className="w-3 h-3 mr-1" />
+                                    Assinar
+                                  </Button>
+                                )}
+                                
                                 {isGSPouSE && assinante.status === 'PENDENTE' && (
                                   <Button
                                     size="sm"
@@ -773,37 +800,22 @@ export default function DFDAssinaturaSection({
                   )}
                 </div>
 
-                {/* Progresso das assinaturas */}
+                {/* Progresso das assinaturas (por quantidade) */}
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
                     <Label className="text-sm font-semibold text-gray-700">
                       Progresso
                     </Label>
                     <span className="text-sm text-gray-600">
-                      {assinaturasConcluidas}/{totalAssinaturas}
+                      {assinaturasConcluidas} de {totalAssinaturas} assinaturas concluídas
                     </span>
                   </div>
                   <Progress value={progresso} className="h-2" />
                   <div className="text-xs text-gray-500">
-                    {progresso === 100 ? 'Todas as assinaturas concluídas' : 'Aguardando assinaturas'}
+                    {progresso === 100 ? 'Todas as assinaturas concluídas' : 'Aguardando assinaturas restantes'}
                   </div>
                 </div>
 
-                {/* SLA */}
-                <div className="p-3 bg-yellow-50 rounded-lg">
-                  <div className="flex items-center justify-between mb-2">
-                    <Label className="text-sm font-semibold text-gray-700">
-                      SLA
-                    </Label>
-                    <Badge className={getSLABadgeConfig(cardData.sla.badge).className}>
-                      {getSLABadgeConfig(cardData.sla.badge).label}
-                    </Badge>
-                  </div>
-                  <div className="text-sm text-gray-600">
-                    <div>Prazo: {cardData.sla.prazoDiasUteis} dia útil</div>
-                    <div>Decorridos: {cardData.sla.decorridosDiasUteis} dias úteis</div>
-                  </div>
-                </div>
 
                   </TabsContent>
 
@@ -898,75 +910,440 @@ export default function DFDAssinaturaSection({
                     </div>
                   </TabsContent>
                 </Tabs>
-
-              </div>
-            </div>
-          </aside>
+          </div>
         </div>
+      </div>
 
-        {/* Observações (FULL WIDTH) */}
-        {isAssinantePendente && (
-          <section className="mt-6">
-            <div className="rounded-2xl border shadow-sm overflow-hidden bg-white">
-              <header className="bg-orange-50 px-4 py-3 rounded-t-2xl font-semibold text-slate-900">
-                <div className="flex items-center gap-3">
-                  <Edit3 className="w-5 h-5 text-orange-600" />
-                  Observações (antes da assinatura)
+      {/* 3️⃣ Painel da Etapa */}
+      <div className="rounded-2xl border border-slate-300 shadow-md bg-white p-6 mb-8 min-h-[700px]">
+        <header className="flex items-center gap-3 mb-4">
+          <ClipboardCheck className="w-6 h-6 text-green-600" />
+          <h2 className="text-lg font-bold text-slate-900">Painel da Etapa</h2>
+          <div className="ml-auto">
+            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+              Checklist
+            </span>
+              </div>
+        </header>
+        <div className="border-b-2 border-green-200 mb-6"></div>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            
+            {/* 1️⃣ Card Status & Prazo (controle temporal completo) */}
+            <div className="rounded-2xl border shadow-sm bg-white p-4 md:p-6">
+              {/* Header com Status */}
+              <header className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-2">
+                  <Flag className="w-5 h-5 text-indigo-600" />
+                  <h3 className="text-sm font-semibold text-slate-800">Status & Prazo</h3>
                 </div>
+                {(() => {
+                  const statusMap: Record<string, {label: string; cls: string}> = {
+                    PENDENTE_ASSINATURA: { label: 'Pendente de Assinatura', cls: 'bg-yellow-100 text-yellow-800' },
+                    ASSINADO_N_N: { label: 'Assinado (parcial)', cls: 'bg-blue-100 text-blue-800' },
+                    CONCLUIDO: { label: 'Concluído', cls: 'bg-green-100 text-green-800' }
+                  };
+                  const cfg = statusMap[cardData.statusEtapa] || { label: 'Indefinido', cls: 'bg-gray-100 text-gray-800' };
+                  return <Badge className={`text-sm font-semibold px-3 py-2 ${cfg.cls}`}>{cfg.label}</Badge>;
+                })()}
               </header>
-              <div className="p-4 md:p-6">
-                <TextareaWithMentions
-                  value={observacoes}
-                  onChange={(value) => setObservacoes(value)}
-                  placeholder="Adicione observações antes de assinar o documento... Use @ para mencionar usuários"
-                  minHeight="100px"
-                  maxLength={500}
-                  className="w-full border-gray-200 focus:border-orange-300 focus:ring-orange-300"
-                  processoId={processoId}
-                  etapaId={etapaId}
-                  cardId="observacoes-assinatura"
-                />
+              
+              <div className="space-y-4">
+                {/* 1. Faixa de Prazos */}
+                <div className="space-y-4">
+                  {/* Data de Criação */}
+                  <div className="flex items-center gap-3 p-3 rounded-lg border border-slate-200">
+                    <div className="w-10 h-10 rounded-full flex items-center justify-center border border-slate-300">
+                      <Calendar className="w-5 h-5 text-slate-600" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-semibold text-slate-500">Data de Criação</p>
+                      <p className="text-lg font-bold text-slate-900">
+                        {formatDateBR(new Date().toISOString())}
+                      </p>
+                    </div>
+                  </div>
+                  
+                  {/* Prazo Inicial */}
+                  <div className="flex items-center justify-between p-3 rounded-lg border border-slate-200">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-full flex items-center justify-center border border-slate-300">
+                        <Clock className="w-5 h-5 text-slate-600" />
+                      </div>
+                      <div>
+                        <p className="text-sm font-semibold text-slate-500">Prazo Inicial</p>
+                        <p className="text-lg font-bold text-slate-900">
+                          {formatDateBR(new Date().toISOString())}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold border border-slate-300 text-slate-700">
+                        {cardData.sla.prazoDiasUteis} dias úteis
+                      </span>
+                    </div>
+                  </div>
+                  
+                  {/* Prazo Final */}
+                  <div className="flex items-center justify-between p-3 rounded-lg border border-slate-200">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-full flex items-center justify-center border border-slate-300">
+                        <Flag className="w-5 h-5 text-slate-600" />
+                      </div>
+                      <div>
+                        <p className="text-sm font-semibold text-slate-500">Prazo Final</p>
+                        <p className="text-lg font-bold text-slate-900">
+                          {formatDateBR(new Date(Date.now() + cardData.sla.prazoDiasUteis * 24 * 60 * 60 * 1000).toISOString())}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold border border-slate-300 text-slate-700">
+                        prazo limite
+                      </span>
+                    </div>
+                  </div>
+                  
+                  {/* Prazo Cumprido (quando aplicável) */}
+                  {cardData.statusEtapa === 'CONCLUIDO' && (
+                    <div className="mt-4 pt-4 border-t border-slate-200">
+                      <div className="flex items-center justify-between p-3 rounded-lg border border-slate-200">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 rounded-full flex items-center justify-center border border-green-300">
+                            <CheckCircle className="w-5 h-5 text-green-600" />
+                          </div>
+                          <div>
+                            <p className="text-sm font-semibold text-green-600">Prazo Cumprido</p>
+                            <p className="text-lg font-bold text-green-700">
+                              {formatDateBR(new Date().toISOString())}
+                            </p>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold border border-green-300 text-green-700">
+                            {cardData.sla.decorridosDiasUteis} dias úteis
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+                
+                {/* 2. Destaque Central - Dias Restantes/Atraso */}
+                <div className="border-t border-slate-200 pt-4">
+                  {(() => {
+                    const diasRest = cardData.sla.prazoDiasUteis - cardData.sla.decorridosDiasUteis;
+                    const isAtraso = diasRest < 0;
+                    const isUrgente = diasRest <= 2 && diasRest >= 0;
+                    const isFinalizada = cardData.statusEtapa === 'CONCLUIDO';
+                    
+                    let corTexto = 'text-green-600';
+                    let legenda = 'dias restantes';
+                    
+                    if (isFinalizada) {
+                      corTexto = 'text-green-600';
+                      legenda = 'etapa finalizada';
+                    } else if (isAtraso) {
+                      corTexto = 'text-red-600';
+                      legenda = 'dias em atraso';
+                    } else if (isUrgente) {
+                      corTexto = 'text-amber-600';
+                      legenda = 'dias restantes (≤2)';
+                    }
+                    
+                    return (
+                      <div className="text-center py-4">
+                        <div className={`text-4xl font-extrabold ${corTexto} mb-2`}>
+                          {isFinalizada ? '✓' : Math.abs(diasRest)}
+                        </div>
+                        <div className={`text-sm font-medium ${corTexto}`}>
+                          {legenda}
+                        </div>
+                      </div>
+                    );
+                  })()}
+                </div>
+                
+                {/* 3. Barra de SLA (progresso temporal) */}
+                <div className="space-y-2">
+                  <div className="flex justify-between items-center">
+                    <span className="text-xs text-slate-500">Progresso Temporal</span>
+                    {(() => {
+                      const diasRest = cardData.sla.prazoDiasUteis - cardData.sla.decorridosDiasUteis;
+                      const isAtraso = diasRest < 0;
+                      const isUrgente = diasRest <= 2 && diasRest >= 0;
+                      const isFinalizada = cardData.statusEtapa === 'CONCLUIDO';
+                      
+                      if (isFinalizada) {
+                        return <Badge className="bg-green-100 text-green-800 text-xs">Dentro do prazo</Badge>;
+                      } else if (isAtraso) {
+                        return <Badge className="bg-red-100 text-red-800 text-xs">Atrasado</Badge>;
+                      } else if (isUrgente) {
+                        return <Badge className="bg-amber-100 text-amber-800 text-xs">Próximo do prazo</Badge>;
+                      } else {
+                        return <Badge className="bg-green-100 text-green-800 text-xs">Dentro do prazo</Badge>;
+                      }
+                    })()}
+                  </div>
+                  
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <div 
+                          className="w-full bg-slate-200 rounded-full h-3 cursor-help"
+                          aria-label={`Progresso temporal da etapa de assinatura, ${Math.round((cardData.sla.decorridosDiasUteis / cardData.sla.prazoDiasUteis) * 100)}% concluído, ${cardData.sla.decorridosDiasUteis} de ${cardData.sla.prazoDiasUteis} dias úteis decorridos`}
+                        >
+                          {(() => {
+                            const total = Math.max(1, cardData.sla.prazoDiasUteis);
+                            const passados = Math.max(0, Math.min(cardData.sla.decorridosDiasUteis, total));
+                            const perc = Math.round((passados / total) * 100);
+                            const isFinalizada = cardData.statusEtapa === 'CONCLUIDO';
+                            
+                            let corBarra = 'bg-emerald-500';
+                            if (isFinalizada) {
+                              corBarra = 'bg-green-500';
+                            } else if (perc >= 71 && perc <= 99) {
+                              corBarra = 'bg-amber-500';
+                            } else if (perc >= 100) {
+                              corBarra = 'bg-red-500';
+                            }
+                            
+                            return (
+                              <div 
+                                className={`h-3 rounded-full transition-all ${corBarra}`}
+                                style={{ width: `${Math.min(perc, 100)}%` }}
+                              />
+                            );
+                          })()}
+                        </div>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>
+                          {cardData.sla.decorridosDiasUteis} de {cardData.sla.prazoDiasUteis} dias úteis decorridos
+                        </p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                  
+                  {/* Legenda da barra */}
+                  <div className="flex justify-between text-xs text-slate-500">
+                    <span>Decorridos: {cardData.sla.decorridosDiasUteis} / {cardData.sla.prazoDiasUteis} dias úteis</span>
+                    <span>Progresso: {Math.round((cardData.sla.decorridosDiasUteis / cardData.sla.prazoDiasUteis) * 100)}%</span>
+                  </div>
+                </div>
               </div>
             </div>
-          </section>
-        )}
 
-        {/* Comentários (FULL WIDTH) */}
-        <section className="mt-6">
+            {/* 2️⃣ Card Checklist da Etapa (pendências primeiro) */}
+            <div className="rounded-2xl border shadow-sm bg-white p-4 md:p-6">
+              <header className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-2">
+                  <ListChecks className="w-5 h-5 text-indigo-600" />
+                  <h3 className="text-sm font-semibold text-slate-800">Checklist da Etapa</h3>
+                </div>
+                {(() => {
+                  const checklist = (() => {
+                    const items: Array<{id:string; label:string; status:'completed'|'pending'|'warning'; description?:string}> = [];
+                    items.push({ 
+                      id: 'assinantes', 
+                      label: totalAssinaturas > 0 ? 'Assinantes selecionados' : 'Selecionar assinantes', 
+                      status: totalAssinaturas > 0 ? 'completed' : 'pending',
+                      description: totalAssinaturas > 0 ? `${totalAssinaturas} assinante(s) selecionado(s)` : 'Nenhum assinante foi selecionado'
+                    });
+                    items.push({ 
+                      id: 'coleta', 
+                      label: progresso === 100 ? 'Assinaturas concluídas' : 'Coletar assinaturas restantes', 
+                      status: progresso === 100 ? 'completed' : (progresso > 0 ? 'warning' : 'pending'),
+                      description: progresso === 100 ? 'Todas as assinaturas foram coletadas' : `${assinaturasConcluidas} de ${totalAssinaturas} assinaturas coletadas`
+                    });
+                    return items;
+                  })();
+                  const pendentes = checklist.filter(item => item.status === 'pending').length;
+                  const total = checklist.length;
+                  
+                  return (
+                    <div className="flex items-center gap-2">
+                      {pendentes > 0 && (
+                        <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-700">
+                          {pendentes} pendente{pendentes !== 1 ? 's' : ''}
+                        </span>
+                      )}
+                      <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-slate-100 text-slate-600">
+                        {total} item{total !== 1 ? 's' : ''}
+                      </span>
+                    </div>
+                  );
+                })()}
+              </header>
+              
+              <div className="space-y-1">
+                {(() => {
+                  const checklist = (() => {
+                    const items: Array<{id:string; label:string; status:'completed'|'pending'|'warning'; description?:string}> = [];
+                    items.push({ 
+                      id: 'assinantes', 
+                      label: totalAssinaturas > 0 ? 'Assinantes selecionados' : 'Selecionar assinantes', 
+                      status: totalAssinaturas > 0 ? 'completed' : 'pending',
+                      description: totalAssinaturas > 0 ? `${totalAssinaturas} assinante(s) selecionado(s)` : 'Nenhum assinante foi selecionado'
+                    });
+                    items.push({ 
+                      id: 'coleta', 
+                      label: progresso === 100 ? 'Assinaturas concluídas' : 'Coletar assinaturas restantes', 
+                      status: progresso === 100 ? 'completed' : (progresso > 0 ? 'warning' : 'pending'),
+                      description: progresso === 100 ? 'Todas as assinaturas foram coletadas' : `${assinaturasConcluidas} de ${totalAssinaturas} assinaturas coletadas`
+                    });
+                    return items;
+                  })();
+                  
+                  return checklist.length === 0 ? (
+                    <p className="text-sm text-gray-500 italic text-center py-6">
+                      Nenhum requisito definido para esta etapa.
+                    </p>
+                  ) : (
+                    checklist.map((item) => (
+                      <TooltipProvider key={item.id}>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <div className="flex items-center gap-3 py-2 px-2 hover:bg-slate-50 rounded transition-colors cursor-pointer">
+                              {item.status === 'completed' ? (
+                                <CheckCircle className="w-4 h-4 text-green-600" />
+                              ) : item.status === 'warning' ? (
+                                <AlertTriangle className="w-4 h-4 text-yellow-600" />
+                              ) : (
+                                <XCircle className="w-4 h-4 text-red-600" />
+                              )}
+                              <span className="text-sm text-slate-700 flex-1">{item.label}</span>
+                            </div>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>{item.description}</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    ))
+                  );
+                })()}
+              </div>
+            </div>
+
+            {/* 3️⃣ Card Mini Timeline (painel vertical completo) */}
+            <div className="rounded-2xl border shadow-sm bg-white p-4 md:p-6 flex flex-col min-h-[320px]">
+              <header className="flex items-center gap-2 mb-4">
+                <Clock className="w-5 h-5 text-indigo-600" />
+                <h3 className="text-sm font-semibold text-slate-800">Mini Timeline</h3>
+              </header>
+
+              <div className="flex-1 flex flex-col">
+                {(() => {
+                  const timeline = [] as Array<{id:string; autor:string; descricao:string; dataHora:string; tipo:'assinatura'|'anexo'}>;
+                  // Assinaturas recentes
+                  cardData.assinantes.forEach(a => {
+                    if (a.assinadoEm) {
+                      timeline.push({ id: `ass-${a.id}`, autor: a.nome, descricao: 'Assinatura registrada', dataHora: a.assinadoEm, tipo: 'assinatura' });
+                    }
+                  });
+                  // Anexos recentes
+                  anexosOrdenados.slice(0, 2).forEach(ax => {
+                    timeline.push({ id: `ax-${ax.id}`, autor: ax.uploadedBy, descricao: 'Anexo adicionado', dataHora: ax.uploadedAt, tipo: 'anexo' });
+                  });
+                  const ordered = timeline.sort((a,b)=> new Date(b.dataHora).getTime() - new Date(a.dataHora).getTime()).slice(0,3);
+                  
+                  return ordered.length === 0 ? (
+                    <div className="flex-1 flex items-center justify-center">
+                      <p className="text-sm text-gray-500 italic text-center">
+                        Ainda não há ações registradas.
+                      </p>
+                    </div>
+                  ) : (
+                    <>
+                      {/* Timeline com scroll */}
+                      <div className="flex-1 relative pr-2">
+                        <div className="absolute left-2 top-0 bottom-0 w-0.5 bg-slate-200"></div>
+                        <div className="max-h-[280px] overflow-y-auto scrollbar-thin scrollbar-thumb-slate-300 scrollbar-track-transparent hover:scrollbar-thumb-slate-400">
+                          <div className="flex flex-col gap-4 pl-6">
+                            {ordered.map((item, index) => (
+                              <div key={item.id} className="relative group">
+                                {/* Ícone sobreposto à linha */}
+                                <div className="absolute -left-6 top-0 w-4 h-4 bg-white rounded-full flex items-center justify-center">
+                                  {item.tipo === 'assinatura' ? <CheckCircle className="w-4 h-4 text-green-600" /> : <Paperclip className="w-4 h-4 text-gray-600" />}
+                                </div>
+                                
+                                {/* Conteúdo do item */}
+                                <div className="hover:bg-slate-50 rounded-lg px-3 py-2 transition-colors cursor-pointer">
+                                  <p className="text-sm font-semibold text-slate-700 mb-1">
+                                    {item.descricao}
+                                  </p>
+                                  <div className="flex items-center gap-2 text-xs text-slate-500">
+                                    <span>{item.autor}</span>
+                                    <span>•</span>
+                                    <span>{formatDateTimeBR(new Date(item.dataHora))}</span>
+                                  </div>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Rodapé fixo */}
+                      <div className="border-t border-slate-200 pt-3 mt-4">
+                        <button
+                          className="w-full text-center text-sm text-indigo-600 hover:text-indigo-700 hover:underline transition-colors"
+                          aria-label="Ver histórico completo de ações"
+                        >
+                          Ver todas as ações
+                        </button>
+                      </div>
+                    </>
+                  );
+                })()}
+              </div>
+            </div>
+        </div>
+      </div>
+
+
+      {/* 4️⃣ Comentários */}
+      <div className="w-full">
           <CommentsSection
             processoId={processoId}
             etapaId={etapaId}
             cardId="comentarios-assinatura"
             title="Comentários"
           />
-        </section>
+      </div>
 
-        {/* Seção de Ações - Rodapé não fixo */}
-        <section id="acoes" className="col-span-12 w-full mt-6">
-          {/* Rodapé com Botões de Ação */}
-          <Card className="w-full shadow-lg border-0 bg-white/80 backdrop-blur-sm">
-            <CardContent className="p-4">
-              <div className="flex flex-col sm:flex-row gap-4 justify-between items-center w-full">
-                
-                {/* Lado esquerdo - Status e informações */}
-                <div className="flex items-center gap-4">
-                  <div className="flex items-center gap-2">
-                    <Clock className="w-4 h-4 text-gray-500" />
-                    <span className="text-sm text-gray-600">
-                      1 dia no card
+      {/* 5️⃣ Ações da Etapa */}
+      <div className="rounded-2xl border border-slate-300 shadow-md bg-white p-6 mb-8">
+        <header className="flex items-center gap-3 mb-4">
+          <Flag className="w-6 h-6 text-orange-600" />
+          <h2 className="text-lg font-bold text-slate-900">Ações da Etapa</h2>
+          <div className="ml-auto">
+            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-orange-100 text-orange-800">
+              Ações
                     </span>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <User className="w-4 h-4 text-gray-500" />
-                    <span className="text-sm text-gray-600">
+        </header>
+        <div className="border-b-2 border-orange-200 mb-6"></div>
+        <div className="space-y-4">
+          {/* Informações de Status */}
+          <div className="grid grid-cols-1 gap-4">
+            {/* Responsável */}
+            <div className="flex items-center gap-3 p-3 rounded-lg border border-slate-200">
+              <div className="w-10 h-10 rounded-full flex items-center justify-center border border-slate-300">
+                <User className="w-5 h-5 text-slate-600" />
+              </div>
+              <div>
+                <p className="text-sm font-semibold text-slate-500">Responsável</p>
+                <p className="text-lg font-bold text-slate-900">
                       {cardData.responsavelEtapa.nome || 'Sem responsável definido'}
-                    </span>
+                </p>
+              </div>
                   </div>
                 </div>
 
-                {/* Lado direito - Botões de ação */}
-                <div className="flex items-center gap-2">
-            
+          {/* Ações Principais */}
+          <div className="border-t border-slate-200 pt-4">
+            <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
             {/* Salvar (para GSP ou SE) */}
             {isGSPouSE && (
               <Button
@@ -1061,12 +1438,9 @@ export default function DFDAssinaturaSection({
                 Assinar Documento
               </Button>
             )}
-
                 </div>
               </div>
-            </CardContent>
-          </Card>
-        </section>
+        </div>
       </div>
 
       {/* Modal de Assinatura */}

@@ -1666,28 +1666,17 @@ export default function DFDFormSection({
       </div>
 
       {/* 4️⃣ Comentários */}
-      <div className="rounded-2xl border border-slate-300 shadow-md bg-white p-6 mb-8 min-h-[700px]">
-        <header className="flex items-center gap-3 mb-4">
-          <MessageSquare className="w-6 h-6 text-blue-600" />
-          <h2 className="text-lg font-bold text-slate-900">Comentários</h2>
-          <div className="ml-auto">
-            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-              Comentários
-            </span>
-          </div>
-        </header>
-        <div className="border-b-2 border-blue-200 mb-6"></div>
-        
-            <CommentsSection
-              processoId={processoId}
-              etapaId={String(etapaId)}
-              cardId="dfd-form"
-          title=""
+      <div className="w-full">
+        <CommentsSection
+          processoId={processoId}
+          etapaId={String(etapaId)}
+          cardId="dfd-form"
+          title="Comentários"
         />
       </div>
 
        {/* 5️⃣ Ações da Etapa */}
-       <div className="rounded-2xl border border-slate-300 shadow-md bg-white p-6 mb-8 min-h-[700px]">
+       <div className="rounded-2xl border border-slate-300 shadow-md bg-white p-6 mb-8">
          <header className="flex items-center gap-3 mb-4">
            <Flag className="w-6 h-6 text-orange-600" />
            <h2 className="text-lg font-bold text-slate-900">Ações da Etapa</h2>
