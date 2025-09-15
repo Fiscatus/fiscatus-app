@@ -217,17 +217,15 @@ export default function ResponsavelSelector({
   const { toast } = useToast();
   const { user: currentUser } = useUser();
   
-  // Estados do modal
+  // Estados do modal - fonte única de verdade
   const [isOpen, setIsOpen] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [usuarios, setUsuarios] = useState<Usuario[]>([]);
-  // Suporte a seleção múltipla no modal
-  const [selectedUsuarios, setSelectedUsuarios] = useState<Usuario[]>([]);
+  const [query, setQuery] = useState('');
+  const [results, setResults] = useState<Usuario[]>([]);
+  const [selected, setSelected] = useState<Usuario[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
-  const [currentPage, setCurrentPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
   const [selectedIndex, setSelectedIndex] = useState(0);
+  const [dropdownOpen, setDropdownOpen] = useState(false);
   
   // Refs
   const searchInputRef = useRef<HTMLInputElement>(null);
@@ -239,28 +237,31 @@ export default function ResponsavelSelector({
   // Debounce para busca
   useEffect(() => {
     const timeoutId = setTimeout(() => {
-      if (isOpen) {
+      if (isOpen && query.trim()) {
         buscarUsuariosLista();
+      } else if (isOpen && !query.trim()) {
+        setResults([]);
+        setDropdownOpen(false);
       }
     }, 250);
     
     return () => clearTimeout(timeoutId);
-  }, [searchQuery, currentPage, isOpen]);
+  }, [query, isOpen]);
   
-  // Buscar usuários
+  // Buscar usuários com deduplicação
   const buscarUsuariosLista = async () => {
     setIsLoading(true);
     try {
-      console.log('Buscando usuários com responsáveis existentes:', responsaveis.map(r => r.id));
-      const resultado = await buscarUsuarios(searchQuery, currentPage, 20, responsaveis);
+      const resultado = await buscarUsuarios(query, 1, 20, responsaveis);
       
-      // Filtrar usuários que já são responsáveis (double-check)
+      // Filtrar usuários que já são responsáveis OU já estão selecionados
       const usuariosFiltrados = resultado.usuarios.filter(u => 
-        !responsaveis.some(r => r.id === u.id)
+        !responsaveis.some(r => r.id === u.id) && 
+        !selected.some(s => s.id === u.id)
       );
       
-      setUsuarios(usuariosFiltrados);
-      setTotalPages(resultado.totalPages);
+      setResults(usuariosFiltrados);
+      setDropdownOpen(usuariosFiltrados.length > 0);
       setSelectedIndex(0);
     } catch (error) {
       toast({
@@ -268,6 +269,7 @@ export default function ResponsavelSelector({
         description: "Erro ao buscar usuários. Tente novamente.",
         variant: "destructive"
       });
+      setDropdownOpen(false);
     } finally {
       setIsLoading(false);
     }
@@ -278,11 +280,11 @@ export default function ResponsavelSelector({
     if (disabled || !canEdit || responsaveis.length >= maxResponsaveis) return;
     
     // Limpar todos os estados antes de abrir
-    setSearchQuery('');
-    setSelectedUsuarios([]);
-    setUsuarios([]);
-    setCurrentPage(1);
+    setQuery('');
+    setSelected([]);
+    setResults([]);
     setSelectedIndex(0);
+    setDropdownOpen(false);
     setIsOpen(true);
     
     // Focar no campo de busca
@@ -294,31 +296,42 @@ export default function ResponsavelSelector({
   // Fechar modal
   const handleCloseModal = () => {
     setIsOpen(false);
-    setSearchQuery('');
-    setSelectedUsuarios([]);
+    setQuery('');
+    setSelected([]);
+    setResults([]);
     setSelectedIndex(0);
+    setDropdownOpen(false);
   };
   
-  // Selecionar/alternar usuário (multi-select)
-  const handleSelectUsuario = (usuario: Usuario) => {
-    setSelectedUsuarios(prev => {
-      const exists = prev.some(u => u.id === usuario.id);
-      if (exists) {
-        return prev.filter(u => u.id !== usuario.id);
-      }
-      return [...prev, usuario];
-    });
+  // Selecionar usuário (fonte única de verdade)
+  const onSelect = (user: Usuario) => {
+    setSelected(prev => prev.some(u => u.id === user.id) ? prev : [...prev, user]);
+    setQuery(""); // limpa o input
+    setDropdownOpen(false);
+    
+    // Refiltra results para remover o usuário selecionado
+    setResults(prev => prev.filter(r => r.id !== user.id));
+  };
+  
+  // Remover usuário selecionado
+  const onRemove = (id: string) => {
+    setSelected(prev => prev.filter(u => u.id !== id));
+    
+    // Se há uma query ativa, refaz a busca para incluir o usuário removido
+    if (query.trim()) {
+      setTimeout(() => buscarUsuariosLista(), 100);
+    }
   };
   
   // Confirmar seleção (múltiplos)
   const handleConfirmarSelecao = async () => {
-    if (selectedUsuarios.length === 0) return;
+    if (selected.length === 0) return;
     setIsSaving(true);
     try {
       const remaining = Math.max(0, maxResponsaveis - responsaveis.length);
       
       // Filtrar apenas usuários que ainda não são responsáveis
-      const toAdd = selectedUsuarios
+      const toAdd = selected
         .filter(u => !responsaveis.some(r => r.id === u.id))
         .slice(0, remaining);
 
@@ -328,9 +341,6 @@ export default function ResponsavelSelector({
           description: remaining === 0 ? 'Limite máximo já atingido.' : 'Todos os selecionados já estavam na lista.',
           variant: remaining === 0 ? 'destructive' : undefined
         });
-        setSelectedUsuarios([]);
-        setSearchQuery('');
-        setSelectedIndex(0);
         handleCloseModal();
         return;
       }
@@ -356,10 +366,6 @@ export default function ResponsavelSelector({
         description: `${toAdd.length} responsável(is) adicionado(s) com sucesso.` 
       });
 
-      // Limpar seleções e fechar modal
-      setSelectedUsuarios([]);
-      setSearchQuery('');
-      setSelectedIndex(0);
       handleCloseModal();
       
     } catch (error) {
@@ -399,33 +405,33 @@ export default function ResponsavelSelector({
   
   // Navegação por teclado
   const handleKeyDown = useCallback((e: KeyboardEvent) => {
-    if (!isOpen) return;
+    if (!isOpen || !dropdownOpen) return;
     
     switch (e.key) {
       case 'ArrowDown':
         e.preventDefault();
         setSelectedIndex(prev => 
-          prev < usuarios.length - 1 ? prev + 1 : 0
+          prev < results.length - 1 ? prev + 1 : 0
         );
         break;
       case 'ArrowUp':
         e.preventDefault();
         setSelectedIndex(prev => 
-          prev > 0 ? prev - 1 : usuarios.length - 1
+          prev > 0 ? prev - 1 : results.length - 1
         );
         break;
       case 'Enter':
         e.preventDefault();
-        if (usuarios[selectedIndex]) {
-          handleSelectUsuario(usuarios[selectedIndex]);
+        if (results[selectedIndex]) {
+          onSelect(results[selectedIndex]);
         }
         break;
       case 'Escape':
         e.preventDefault();
-        handleCloseModal();
+        setDropdownOpen(false);
         break;
     }
-  }, [isOpen, usuarios, selectedIndex]);
+  }, [isOpen, dropdownOpen, results, selectedIndex]);
   
   useEffect(() => {
     document.addEventListener('keydown', handleKeyDown);
@@ -434,20 +440,13 @@ export default function ResponsavelSelector({
   
   // Scroll para o item selecionado
   useEffect(() => {
-    if (listRef.current && selectedIndex >= 0) {
+    if (listRef.current && selectedIndex >= 0 && results.length > 0) {
       const selectedElement = listRef.current.children[selectedIndex] as HTMLElement;
       if (selectedElement) {
         selectedElement.scrollIntoView({ block: 'nearest' });
       }
     }
-  }, [selectedIndex]);
-  
-  // Carregar usuários iniciais
-  useEffect(() => {
-    if (isOpen) {
-      buscarUsuariosLista();
-    }
-  }, [isOpen]);
+  }, [selectedIndex, results]);
   
   // Se não pode editar ou está desabilitado, mostrar apenas os chips
   if (!canEdit || disabled) {
@@ -583,12 +582,12 @@ export default function ResponsavelSelector({
               Adicionar Responsável pela Elaboração
             </DialogTitle>
             <DialogDescription>
-              Busque e selecione um usuário para adicionar como responsável pela elaboração do DFD.
+              Busque e selecione usuários para adicionar como responsáveis pela elaboração do DFD.
             </DialogDescription>
           </DialogHeader>
           
           <div className="flex-1 flex flex-col space-y-4 min-h-0">
-            {/* Campo de busca */}
+            {/* Campo de busca com combobox */}
             <div className="space-y-2 flex-shrink-0">
               <Label htmlFor="search">Buscar usuário</Label>
               <div className="relative">
@@ -597,48 +596,36 @@ export default function ResponsavelSelector({
                   ref={searchInputRef}
                   id="search"
                   placeholder="Buscar por nome, e-mail, cargo ou gerência..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
+                  value={query}
+                  onChange={(e) => setQuery(e.target.value)}
+                  onFocus={() => query.trim() && results.length > 0 && setDropdownOpen(true)}
                   className="pl-10"
                 />
-              </div>
-            </div>
-            
-            {/* Lista de usuários com altura fixa */}
-            <div className="flex-1 min-h-0">
-              <ScrollArea className="h-[300px] pr-4">
-                <div className="space-y-1">
-                  {isLoading ? (
-                    <div className="flex items-center justify-center py-8">
-                      <Loader2 className="w-6 h-6 animate-spin text-blue-600" />
-                      <span className="ml-2 text-gray-600">Buscando usuários...</span>
-                    </div>
-                  ) : usuarios.length === 0 ? (
-                    <Alert>
-                      <AlertDescription>
-                        {searchQuery 
-                          ? `Nenhum usuário encontrado para "${searchQuery}".`
-                          : "Todos os usuários disponíveis já são responsáveis."
-                        }
-                      </AlertDescription>
-                    </Alert>
-                  ) : (
-                    <div ref={listRef} className="space-y-1">
-                      {usuarios.map((usuario, index) => (
-                        <div
-                          key={usuario.id}
-                          className={`group p-3 rounded-lg border cursor-pointer transition-all duration-200 ${
-                            selectedUsuarios.some(u => u.id === usuario.id)
-                              ? 'bg-blue-50 border-blue-300 shadow-sm ring-2 ring-blue-200'
-                              : index === selectedIndex
-                              ? 'bg-gray-50 border-gray-200'
-                              : 'hover:bg-gray-50 border-transparent hover:shadow-sm'
-                          }`}
-                          onClick={() => handleSelectUsuario(usuario)}
-                          role="option"
-                          aria-selected={selectedUsuarios.some(u => u.id === usuario.id)}
-                        >
-                          <div className="flex items-center gap-3">
+                
+                {/* Dropdown com portal e z-index alto */}
+                {dropdownOpen && (
+                  <div className="absolute z-50 top-full left-0 right-0 mt-2 bg-white border border-slate-200 rounded-xl shadow-lg max-h-80 overflow-y-auto">
+                    {isLoading ? (
+                      <div className="flex items-center justify-center py-8">
+                        <Loader2 className="w-6 h-6 animate-spin text-blue-600" />
+                        <span className="ml-2 text-gray-600">Buscando usuários...</span>
+                      </div>
+                    ) : results.length === 0 ? (
+                      <div className="p-4 text-center text-gray-500">
+                        {query.trim() ? `Nenhum resultado para "${query}"` : 'Digite para buscar usuários'}
+                      </div>
+                    ) : (
+                      <div ref={listRef} className="p-1">
+                        {results.map((usuario, index) => (
+                          <div
+                            key={usuario.id}
+                            className={`p-3 hover:bg-slate-50 cursor-pointer flex gap-3 items-start rounded-lg transition-colors ${
+                              index === selectedIndex ? 'bg-slate-100' : ''
+                            }`}
+                            onClick={() => onSelect(usuario)}
+                            role="option"
+                            aria-selected={index === selectedIndex}
+                          >
                             <Avatar className="w-10 h-10 flex-shrink-0">
                               <AvatarImage src={usuario.avatarUrl} />
                               <AvatarFallback className="bg-blue-100 text-blue-600 text-sm font-medium">
@@ -659,37 +646,30 @@ export default function ResponsavelSelector({
                                 {usuario.gerencia}
                               </Badge>
                             </div>
-                            {selectedUsuarios.some(u => u.id === usuario.id) ? (
-                              <div className="flex items-center justify-center w-6 h-6 bg-blue-600 rounded-full flex-shrink-0">
-                                <UserCheck className="w-3 h-3 text-white" />
-                              </div>
-                            ) : (
-                              <div className="w-6 h-6 border-2 border-gray-300 rounded-full flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity" />
-                            )}
                           </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              </ScrollArea>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
             </div>
             
-            {/* Selecionados - Seção melhorada */}
-            {selectedUsuarios.length > 0 && (
-              <div className="p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl border-2 border-blue-200 flex-shrink-0 shadow-sm">
+            {/* Bloco Selecionados - posição estática */}
+            {selected.length > 0 && (
+              <div className="mt-3 rounded-xl border border-slate-200 p-3 flex-shrink-0">
                 <div className="flex items-center gap-2 mb-3">
                   <UserCheck className="w-4 h-4 text-blue-600" />
                   <span className="text-sm font-semibold text-blue-900">
-                    Selecionados: {selectedUsuarios.length}
+                    Selecionados: {selected.length}
                   </span>
                   <Badge variant="secondary" className="bg-blue-100 text-blue-700 border-blue-200">
-                    {selectedUsuarios.length} pessoa{selectedUsuarios.length !== 1 ? 's' : ''}
+                    {selected.length} pessoa{selected.length !== 1 ? 's' : ''}
                   </Badge>
                 </div>
-                <div className="space-y-2 max-h-[120px] overflow-y-auto">
-                  {selectedUsuarios.map(u => (
-                    <div key={u.id} className="flex items-center gap-3 p-2.5 bg-white border border-blue-200 rounded-lg shadow-sm hover:shadow-md transition-shadow">
+                <div className="space-y-2 max-h-[200px] overflow-y-auto">
+                  {selected.map(u => (
+                    <div key={u.id} className="flex items-center gap-3 rounded-lg border border-slate-200 p-2">
                       <Avatar className="w-8 h-8 flex-shrink-0">
                         <AvatarImage src={u.avatarUrl} />
                         <AvatarFallback className="bg-blue-100 text-blue-700 text-xs font-semibold">
@@ -705,10 +685,7 @@ export default function ResponsavelSelector({
                         </div>
                       </div>
                       <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleSelectUsuario(u);
-                        }}
+                        onClick={() => onRemove(u.id)}
                         className="p-1 hover:bg-red-50 rounded-full text-red-400 hover:text-red-600 transition-colors flex-shrink-0"
                         aria-label="Remover seleção"
                       >
@@ -734,7 +711,7 @@ export default function ResponsavelSelector({
             </Button>
             <Button
               onClick={handleConfirmarSelecao}
-              disabled={selectedUsuarios.length === 0 || isSaving}
+              disabled={selected.length === 0 || isSaving}
               className="min-w-[120px]"
             >
               {isSaving ? (
