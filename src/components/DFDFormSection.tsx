@@ -1145,7 +1145,7 @@ export default function DFDFormSection({
             </div>
 
       {/* 2️⃣ Gerenciamento */}
-      <div className="rounded-2xl border border-slate-300 shadow-md bg-white p-6 mb-8 min-h-[500px]">
+      <div className="rounded-2xl border border-slate-300 shadow-md bg-white p-6 mb-8 min-h-[700px]">
         <header className="flex items-center gap-3 mb-4">
           <Settings className="w-6 h-6 text-slate-600" />
           <h2 className="text-lg font-bold text-slate-900">Gerenciamento</h2>
@@ -1161,7 +1161,7 @@ export default function DFDFormSection({
               <div className="grid grid-cols-12 gap-4 items-start">
                 {/* Versões/Revisões - 6 colunas em desktop, 12 em mobile */}
                 <div className="col-span-12 lg:col-span-6">
-                  <div className="rounded-xl border shadow-sm bg-white h-full">
+                  <div className="rounded-xl border shadow-sm bg-white h-full min-h-[500px]">
                     <div className="px-4 py-6 rounded-t-xl border-b">
                       <h3 className="text-sm font-semibold text-slate-900 flex items-center gap-2">
                         <History className="w-4 h-4 text-purple-600" />
@@ -1191,7 +1191,7 @@ export default function DFDFormSection({
                           <p className="text-gray-500 font-medium">Ainda não há versões criadas</p>
                         </div>
                       ) : (
-                          <div className="space-y-3 overflow-y-auto max-h-[320px]">
+                          <div className="space-y-3 overflow-y-auto max-h-[450px]">
                           {!showAllVersions && (
                             <div className="text-sm font-semibold text-purple-700">Última versão</div>
                           )}
@@ -1292,7 +1292,7 @@ export default function DFDFormSection({
 
                 {/* Anexos - 6 colunas em desktop, 12 em mobile */}
                 <div className="col-span-12 lg:col-span-6">
-                  <div className="rounded-xl border shadow-sm bg-white h-full">
+                  <div className="rounded-xl border shadow-sm bg-white h-full min-h-[500px]">
                     <div className="px-4 py-6 rounded-t-xl border-b">
                       <div className="flex items-center justify-between">
                         <h3 className="text-sm font-semibold text-slate-900 flex items-center gap-2">
@@ -1346,7 +1346,7 @@ export default function DFDFormSection({
                           <p className="text-center text-gray-500 font-medium">Nenhum anexo adicionado</p>
                         </div>
                       ) : (
-                          <div className={`${anexos.length > 6 ? 'max-h-[320px] overflow-y-auto' : ''} space-y-0`}>
+                          <div className={`${anexos.length > 6 ? 'max-h-[450px] overflow-y-auto' : ''} space-y-0`}>
                           {anexosOrdenados.map((anexo, idx)=>(
                             <React.Fragment key={anexo.id}>
                                 <div className="flex items-center justify-between p-2.5 border border-gray-200 rounded-lg hover:bg-slate-50 transition-colors">

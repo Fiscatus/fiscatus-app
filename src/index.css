@@ -110,3 +110,32 @@ All colors MUST be HSL.
     scroll-behavior: smooth;
   }
 }
+
+/* Custom scrollbar styles for comments section */
+@layer utilities {
+  .scrollbar-thin {
+    scrollbar-width: thin;
+    scrollbar-color: rgb(203 213 225) transparent;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar-thumb {
+    background-color: rgb(203 213 225);
+    border-radius: 3px;
+  }
+
+  .scrollbar-thumb-slate-300::-webkit-scrollbar-thumb {
+    background-color: rgb(203 213 225);
+  }
+
+  .hover\:scrollbar-thumb-slate-400:hover::-webkit-scrollbar-thumb {
+    background-color: rgb(148 163 184);
+  }
+}

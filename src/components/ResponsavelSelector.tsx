@@ -253,7 +253,13 @@ export default function ResponsavelSelector({
     try {
       console.log('Buscando usuários com responsáveis existentes:', responsaveis.map(r => r.id));
       const resultado = await buscarUsuarios(searchQuery, currentPage, 20, responsaveis);
-      setUsuarios(resultado.usuarios);
+      
+      // Filtrar usuários que já são responsáveis (double-check)
+      const usuariosFiltrados = resultado.usuarios.filter(u => 
+        !responsaveis.some(r => r.id === u.id)
+      );
+      
+      setUsuarios(usuariosFiltrados);
       setTotalPages(resultado.totalPages);
       setSelectedIndex(0);
     } catch (error) {
@@ -271,11 +277,13 @@ export default function ResponsavelSelector({
   const handleOpenModal = () => {
     if (disabled || !canEdit || responsaveis.length >= maxResponsaveis) return;
     
-    setIsOpen(true);
+    // Limpar todos os estados antes de abrir
     setSearchQuery('');
     setSelectedUsuarios([]);
+    setUsuarios([]);
     setCurrentPage(1);
     setSelectedIndex(0);
+    setIsOpen(true);
     
     // Focar no campo de busca
     setTimeout(() => {
@@ -308,26 +316,11 @@ export default function ResponsavelSelector({
     setIsSaving(true);
     try {
       const remaining = Math.max(0, maxResponsaveis - responsaveis.length);
+      
+      // Filtrar apenas usuários que ainda não são responsáveis
       const toAdd = selectedUsuarios
         .filter(u => !responsaveis.some(r => r.id === u.id))
         .slice(0, remaining);
-
-      // Salvar em paralelo (mock)
-      await Promise.all(toAdd.map(u => salvarResponsavel(processoId, u.id)));
-
-      const novosObjs: Responsavel[] = toAdd.map(u => ({
-        id: u.id,
-        nome: u.nome,
-        cargo: u.cargo,
-        gerencia: u.gerencia,
-        avatarUrl: u.avatarUrl
-      }));
-
-      // Garantir unicidade
-      const mapa = new Map<string, Responsavel>();
-      [...responsaveis, ...novosObjs].forEach(r => mapa.set(r.id, r));
-      const novosResponsaveis = Array.from(mapa.values());
-      onChange(novosResponsaveis);
 
       if (toAdd.length === 0) {
         toast({
@@ -335,16 +328,46 @@ export default function ResponsavelSelector({
           description: remaining === 0 ? 'Limite máximo já atingido.' : 'Todos os selecionados já estavam na lista.',
           variant: remaining === 0 ? 'destructive' : undefined
         });
-      } else {
-        toast({ title: 'Responsáveis adicionados', description: `${toAdd.length} responsável(is) adicionado(s).` });
+        setSelectedUsuarios([]);
+        setSearchQuery('');
+        setSelectedIndex(0);
+        handleCloseModal();
+        return;
       }
 
+      // Salvar em paralelo (mock)
+      await Promise.all(toAdd.map(u => salvarResponsavel(processoId, u.id)));
+
+      // Converter para Responsavel e adicionar à lista existente
+      const novosResponsaveis: Responsavel[] = toAdd.map(u => ({
+        id: u.id,
+        nome: u.nome,
+        cargo: u.cargo,
+        gerencia: u.gerencia,
+        avatarUrl: u.avatarUrl
+      }));
+
+      // Simplesmente adicionar os novos (já filtrados para não duplicar)
+      const listaAtualizada = [...responsaveis, ...novosResponsaveis];
+      onChange(listaAtualizada);
+
+      toast({ 
+        title: 'Responsáveis adicionados', 
+        description: `${toAdd.length} responsável(is) adicionado(s) com sucesso.` 
+      });
+
+      // Limpar seleções e fechar modal
       setSelectedUsuarios([]);
       setSearchQuery('');
       setSelectedIndex(0);
       handleCloseModal();
+      
     } catch (error) {
-      toast({ title: 'Erro', description: 'Erro ao adicionar responsáveis. Tente novamente.', variant: 'destructive' });
+      toast({ 
+        title: 'Erro', 
+        description: 'Erro ao adicionar responsáveis. Tente novamente.', 
+        variant: 'destructive' 
+      });
     } finally {
       setIsSaving(false);
     }
@@ -490,7 +513,6 @@ export default function ResponsavelSelector({
         {responsaveis.length > 0 ? (
           // Lista melhorada de responsáveis selecionados
           <div className="flex flex-col gap-2 max-h-[220px] overflow-auto pr-1">
-            {console.log('Renderizando responsáveis:', responsaveis)}
             {responsaveis.map((responsavel, index) => (
               <div key={`${responsavel.id}-${index}`} className="group relative p-2.5 rounded-lg border border-blue-200 bg-blue-50">
                 <div className="flex items-center gap-3">
@@ -554,7 +576,7 @@ export default function ResponsavelSelector({
       
       {/* Modal de seleção */}
       <Dialog open={isOpen} onOpenChange={setIsOpen}>
-        <DialogContent className="sm:max-w-[600px] h-[600px] max-h-[90vh] flex flex-col">
+        <DialogContent className="sm:max-w-[600px] h-[650px] max-h-[90vh] flex flex-col">
           <DialogHeader className="flex-shrink-0">
             <DialogTitle className="flex items-center gap-2">
               <UserPlus className="w-5 h-5 text-blue-600" />
@@ -584,7 +606,7 @@ export default function ResponsavelSelector({
             
             {/* Lista de usuários com altura fixa */}
             <div className="flex-1 min-h-0">
-              <ScrollArea className="h-[280px] pr-4">
+              <ScrollArea className="h-[300px] pr-4">
                 <div className="space-y-1">
                   {isLoading ? (
                     <div className="flex items-center justify-center py-8">
@@ -605,12 +627,12 @@ export default function ResponsavelSelector({
                       {usuarios.map((usuario, index) => (
                         <div
                           key={usuario.id}
-                          className={`p-3 rounded-lg border cursor-pointer transition-colors ${
+                          className={`group p-3 rounded-lg border cursor-pointer transition-all duration-200 ${
                             selectedUsuarios.some(u => u.id === usuario.id)
-                              ? 'bg-blue-50 border-blue-300'
+                              ? 'bg-blue-50 border-blue-300 shadow-sm ring-2 ring-blue-200'
                               : index === selectedIndex
                               ? 'bg-gray-50 border-gray-200'
-                              : 'hover:bg-gray-50 border-transparent'
+                              : 'hover:bg-gray-50 border-transparent hover:shadow-sm'
                           }`}
                           onClick={() => handleSelectUsuario(usuario)}
                           role="option"
@@ -637,8 +659,12 @@ export default function ResponsavelSelector({
                                 {usuario.gerencia}
                               </Badge>
                             </div>
-                            {selectedUsuarios.some(u => u.id === usuario.id) && (
-                              <div className="w-2 h-2 bg-blue-600 rounded-full flex-shrink-0" />
+                            {selectedUsuarios.some(u => u.id === usuario.id) ? (
+                              <div className="flex items-center justify-center w-6 h-6 bg-blue-600 rounded-full flex-shrink-0">
+                                <UserCheck className="w-3 h-3 text-white" />
+                              </div>
+                            ) : (
+                              <div className="w-6 h-6 border-2 border-gray-300 rounded-full flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity" />
                             )}
                           </div>
                         </div>
@@ -649,22 +675,45 @@ export default function ResponsavelSelector({
               </ScrollArea>
             </div>
             
-            {/* Selecionados */}
+            {/* Selecionados - Seção melhorada */}
             {selectedUsuarios.length > 0 && (
-              <div className="p-3 bg-blue-50 rounded-lg border border-blue-200 flex-shrink-0">
-                <div className="text-sm font-medium text-gray-700 mb-2">
-                  Selecionados: {selectedUsuarios.length}
+              <div className="p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl border-2 border-blue-200 flex-shrink-0 shadow-sm">
+                <div className="flex items-center gap-2 mb-3">
+                  <UserCheck className="w-4 h-4 text-blue-600" />
+                  <span className="text-sm font-semibold text-blue-900">
+                    Selecionados: {selectedUsuarios.length}
+                  </span>
+                  <Badge variant="secondary" className="bg-blue-100 text-blue-700 border-blue-200">
+                    {selectedUsuarios.length} pessoa{selectedUsuarios.length !== 1 ? 's' : ''}
+                  </Badge>
                 </div>
-                <div className="flex flex-wrap gap-2">
+                <div className="space-y-2 max-h-[120px] overflow-y-auto">
                   {selectedUsuarios.map(u => (
-                    <div key={u.id} className="flex items-center gap-2 px-2 py-1 bg-white border border-blue-200 rounded-md text-sm">
-                      <Avatar className="w-6 h-6">
+                    <div key={u.id} className="flex items-center gap-3 p-2.5 bg-white border border-blue-200 rounded-lg shadow-sm hover:shadow-md transition-shadow">
+                      <Avatar className="w-8 h-8 flex-shrink-0">
                         <AvatarImage src={u.avatarUrl} />
-                        <AvatarFallback className="bg-blue-100 text-blue-700 text-[10px] font-semibold">
+                        <AvatarFallback className="bg-blue-100 text-blue-700 text-xs font-semibold">
                           {getIniciais(u.nome)}
                         </AvatarFallback>
                       </Avatar>
-                      <span className="max-w-[160px] truncate">{u.nome}</span>
+                      <div className="flex-1 min-w-0">
+                        <div className="font-medium text-gray-900 truncate text-sm">
+                          {u.nome}
+                        </div>
+                        <div className="text-xs text-gray-600 truncate">
+                          {u.cargo}
+                        </div>
+                      </div>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleSelectUsuario(u);
+                        }}
+                        className="p-1 hover:bg-red-50 rounded-full text-red-400 hover:text-red-600 transition-colors flex-shrink-0"
+                        aria-label="Remover seleção"
+                      >
+                        <X className="w-3 h-3" />
+                      </button>
                     </div>
                   ))}
                 </div>
