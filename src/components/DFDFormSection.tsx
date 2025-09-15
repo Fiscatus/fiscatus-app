@@ -1055,7 +1055,7 @@ export default function DFDFormSection({
   return (
     <div className="w-full space-y-6">
       {/* 1️⃣ Formulário DFD */}
-      <div className="rounded-2xl border border-slate-300 shadow-md bg-white p-6 mb-8">
+      <div className="rounded-2xl border border-slate-300 shadow-md bg-white p-6 mb-8 min-h-[700px]">
         <header className="flex items-center gap-3 mb-4">
           <FileText className="w-6 h-6 text-purple-600" />
           <h2 className="text-lg font-bold text-slate-900">Formulário do DFD</h2>
@@ -1386,7 +1386,7 @@ export default function DFDFormSection({
           </div>
 
       {/* 3️⃣ Painel da Etapa */}
-      <div className="rounded-2xl border border-slate-300 shadow-md bg-white p-6 mb-8">
+      <div className="rounded-2xl border border-slate-300 shadow-md bg-white p-6 mb-8 min-h-[700px]">
         <header className="flex items-center gap-3 mb-4">
           <ClipboardCheck className="w-6 h-6 text-green-600" />
           <h2 className="text-lg font-bold text-slate-900">Painel da Etapa</h2>
@@ -1666,7 +1666,7 @@ export default function DFDFormSection({
       </div>
 
       {/* 4️⃣ Comentários */}
-      <div className="rounded-2xl border border-slate-300 shadow-md bg-white p-6 mb-8">
+      <div className="rounded-2xl border border-slate-300 shadow-md bg-white p-6 mb-8 min-h-[700px]">
         <header className="flex items-center gap-3 mb-4">
           <MessageSquare className="w-6 h-6 text-blue-600" />
           <h2 className="text-lg font-bold text-slate-900">Comentários</h2>
@@ -1687,7 +1687,7 @@ export default function DFDFormSection({
       </div>
 
        {/* 5️⃣ Ações da Etapa */}
-       <div className="rounded-2xl border border-slate-300 shadow-md bg-white p-6 mb-8">
+       <div className="rounded-2xl border border-slate-300 shadow-md bg-white p-6 mb-8 min-h-[700px]">
          <header className="flex items-center gap-3 mb-4">
            <Flag className="w-6 h-6 text-orange-600" />
            <h2 className="text-lg font-bold text-slate-900">Ações da Etapa</h2>

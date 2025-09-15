@@ -19,7 +19,12 @@ import {
   Edit3,
   Clock,
   Search,
-  Settings
+  Settings,
+  ClipboardCheck,
+  Flag,
+  Calendar,
+  ListChecks,
+  AlertCircle
 } from 'lucide-react';
 import { useUser } from '@/contexts/UserContext';
 import { useToast } from '@/hooks/use-toast';
@@ -101,6 +106,7 @@ export default function DFDAprovacaoSection({
   // Estados principais
   const [parecerTecnico, setParecerTecnico] = useState('');
   const [dataAnalise, setDataAnalise] = useState<string>('');
+  const [parecerExiste, setParecerExiste] = useState(false);
   const [validationErrors, setValidationErrors] = useState<string[]>([]);
   const [showAprovarDialog, setShowAprovarDialog] = useState(false);
   const [showCorrecaoDialog, setShowCorrecaoDialog] = useState(false);
@@ -395,117 +401,99 @@ export default function DFDAprovacaoSection({
     : versaoEnviada;
 
   return (
-    <div className="bg-white">
-      {/* Container central ocupando toda a área */}
-      <div className="w-full px-2">
-        
-        {/* Grid principal 12 colunas */}
-        <div className="grid grid-cols-12 gap-4">
+    <div className="w-full space-y-6">
+      {/* 1️⃣ Parecer Técnico */}
+      <div className="rounded-2xl border border-slate-300 shadow-md bg-white p-6 mb-8">
+        <header className="flex items-center gap-3 mb-4">
+          <Search className="w-6 h-6 text-indigo-600" />
+          <h2 className="text-lg font-bold text-slate-900">Parecer Técnico</h2>
+          <div className="ml-auto">
+            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800">
+              Análise
+            </span>
+          </div>
+        </header>
+        <div className="border-b-2 border-indigo-200 mb-6"></div>
+        <div className="space-y-6">
+          <div className="flex-1">
+            <Textarea
+              id="parecer-tecnico-textarea"
+              value={parecerTecnico}
+              onChange={(e) => setParecerTecnico(e.target.value)}
+              placeholder="Descreva a análise técnica do DFD..."
+              disabled={!canEditParecerTecnico()}
+              className="min-h-[350px] resize-none border-gray-200 focus:border-indigo-300 focus:ring-indigo-300"
+            />
+            {validationErrors.includes('Parecer Técnico é obrigatório') && (
+              <p className="text-red-500 text-sm mt-1">Parecer Técnico é obrigatório</p>
+            )}
+          </div>
           
-          {/* ESQUERDA: Parecer Técnico da GSP (8 colunas) */}
-          <section id="parecer-tecnico" className="col-span-12 lg:col-span-8 w-full">
-            <div className="rounded-2xl border shadow-sm overflow-hidden bg-white h-full flex flex-col">
-              <header className="bg-indigo-50 px-4 py-3 rounded-t-2xl font-semibold text-slate-900">
-                <div className="flex items-center gap-3 text-lg">
-                  <Search className="w-5 h-5 text-indigo-600" />
-                  Parecer Técnico
-                </div>
-              </header>
-              <div className="p-6 md:p-8 flex-1 flex flex-col">
-                    <div className="space-y-6 flex-1 flex flex-col">
-                      <div className="flex-1">
-                    <Textarea
-                      id="parecer-tecnico-textarea"
-                      value={parecerTecnico}
-                      onChange={(e) => setParecerTecnico(e.target.value)}
-                      placeholder="Descreva a análise técnica do DFD..."
-                      disabled={!canEditParecerTecnico()}
-                      className="min-h-[350px] flex-1 resize-none border-gray-200 focus:border-indigo-300 focus:ring-indigo-300"
-                    />
-                    {validationErrors.includes('Parecer Técnico é obrigatório') && (
-                      <p className="text-red-500 text-sm mt-1">Parecer Técnico é obrigatório</p>
-                    )}
-                      </div>
-                      
-                  {dataAnalise && (
-                      <div>
-                      <Label className="text-sm font-semibold text-gray-700">Data da Análise</Label>
-                      <div className="mt-2 p-3 bg-gray-50 rounded-lg border border-gray-200">
-                        <p className="text-gray-800">{formatDate(dataAnalise)}</p>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Removidos: inputs ocultos e exibição de arquivos DFD/Parecer */}
-                  </div>
+          {dataAnalise && (
+            <div>
+              <Label className="text-sm font-semibold text-gray-700">Data da Análise</Label>
+              <div className="mt-2 p-3 bg-gray-50 rounded-lg border border-gray-200">
+                <p className="text-gray-800">{formatDate(dataAnalise)}</p>
               </div>
             </div>
-          </section>
+          )}
+        </div>
+      </div>
 
-          {/* DIREITA: Gerenciamento (4 colunas) */}
-          <aside id="gerenciamento" className="col-span-12 lg:col-span-4 w-full flex flex-col">
-            <div className="rounded-2xl border shadow-sm overflow-hidden bg-white flex-1 flex flex-col">
-              <header className="bg-purple-50 px-4 py-3 rounded-t-2xl font-semibold text-slate-900">
-                <div className="flex items-center gap-3">
-                  <Settings className="w-5 h-5 text-purple-600" />
-                  Gerenciamento
+      {/* 2️⃣ Gerenciamento */}
+      <div className="rounded-2xl border border-slate-300 shadow-md bg-white p-6 mb-8 min-h-[700px]">
+        <header className="flex items-center gap-3 mb-4">
+          <Settings className="w-6 h-6 text-slate-600" />
+          <h2 className="text-lg font-bold text-slate-900">Gerenciamento</h2>
+          <div className="ml-auto">
+            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-slate-100 text-slate-800">
+              Gerenciamento
+            </span>
+          </div>
+        </header>
+        <div className="border-b-2 border-slate-200 mb-6"></div>
+        <div>
+          {/* Grid responsiva para Versões e Anexos */}
+          <div className="grid grid-cols-12 gap-4 items-start">
+            {/* Versões/Revisões - 6 colunas em desktop, 12 em mobile */}
+            <div className="col-span-12 lg:col-span-6">
+              <div className="rounded-xl border shadow-sm bg-white h-full min-h-[500px]">
+                <div className="px-4 py-6 rounded-t-xl border-b">
+                  <h3 className="text-sm font-semibold text-slate-900 flex items-center gap-2">
+                    <History className="w-4 h-4 text-purple-600" />
+                    Versões/Revisões
+                  </h3>
                 </div>
-              </header>
-              <div className="p-6 md:p-8 flex-1 flex flex-col">
-                <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-                  <TabsList className="grid w-full grid-cols-2">
-                    <TabsTrigger value="versoes">Versões</TabsTrigger>
-                    <TabsTrigger value="anexos">Anexos</TabsTrigger>
-                  </TabsList>
-                  
-                  <TabsContent value="versoes" className="mt-0 p-6">
+                <div className="p-4">
+                  <div className="space-y-4">
                     {dfdData.versions.length === 0 ? (
-                      <div className="text-center py-8 w-full">
+                      <div className="text-center py-8">
                         <div className="p-4 bg-gray-100 rounded-full w-16 h-16 mx-auto mb-4 flex items-center justify-center">
                           <History className="w-8 h-8 text-gray-400" />
                         </div>
                         <p className="text-gray-500 font-medium">Nenhuma versão disponível</p>
                       </div>
                     ) : (
-                      <div className="space-y-4 max-h-80 overflow-y-auto">
+                      <div className="space-y-3 overflow-y-auto max-h-[450px]">
                         {dfdData.versions.map((version) => {
                           const statusConfig = getStatusConfig(version.status);
                           const sla = calcularSLA(version.prazoInicialDiasUteis || 0, version.prazoCumpridoDiasUteis);
                           
                           return (
-                            <div key={version.id} className="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 transition-colors">
-                              <div className="flex items-center justify-between mb-2">
-                                <div className="flex items-center gap-2">
-                                  <Badge variant={version.isFinal ? "default" : "outline"} className="text-xs">
+                            <div key={version.id} className="border border-gray-200 rounded-xl p-4 hover:bg-gray-50 transition-colors">
+                              <div className="flex items-center justify-between mb-3">
+                                <div className="flex items-center gap-2 flex-wrap">
+                                  <Badge variant={version.isFinal ? "default" : "outline"} className="text-xs font-medium">
                                     V{version.version}
                                     {version.isFinal && <CheckCircle className="w-3 h-3 ml-1" />}
                                   </Badge>
-                                  <Badge className={`text-xs ${statusConfig.color}`}>
+                                  <Badge className={`text-xs font-medium ${statusConfig.color}`}>
                                     {statusConfig.icon}
                                     <span className="ml-1">{statusConfig.label}</span>
                                   </Badge>
-                                </div>
-                                <div className="flex items-center gap-1">
-                                  <Button size="sm" variant="outline" className="h-6 w-6 p-0">
-                                    <Eye className="w-3 h-3" />
-                                  </Button>
-                                  <Button size="sm" variant="outline" className="h-6 w-6 p-0">
-                                    <Download className="w-3 h-3" />
-                                  </Button>
-                                </div>
-                              </div>
-                              <div className="text-xs text-gray-600 space-y-1">
-                                <p><strong>Autor:</strong> {version.createdBy}</p>
-                                <p><strong>Cargo:</strong> {version.createdByCargo || 'Não informado'}</p>
-                                <p><strong>Gerência:</strong> {version.createdByGerencia || 'Não informado'}</p>
-                                <p><strong>Criado:</strong> {formatDateTimeBR(new Date(version.createdAt))}</p>
-                                <p><strong>Prazo inicial:</strong> {version.prazoInicialDiasUteis || 0} dias úteis</p>
-                                <p><strong>Prazo cumprido:</strong> {version.prazoCumpridoDiasUteis !== undefined ? `${version.prazoCumpridoDiasUteis} dias úteis` : 'Não enviado'}</p>
-                                {sla && (
-                                  <div className="flex items-center gap-2">
-                                    <span><strong>SLA:</strong> {sla.dias} dias úteis</span>
+                                  {sla && (
                                     <Badge 
-                                      className={`text-xs ${
+                                      className={`text-xs font-medium ${
                                         sla.status === 'ok' ? 'bg-green-100 text-green-800' :
                                         sla.status === 'risco' ? 'bg-yellow-100 text-yellow-800' :
                                         sla.status === 'nao_enviado' ? 'bg-gray-100 text-gray-800' :
@@ -517,23 +505,74 @@ export default function DFDAprovacaoSection({
                                        sla.status === 'nao_enviado' ? 'Não Enviado' :
                                        'Prazo Não Cumprido'}
                                     </Badge>
-                                  </div>
-                                )}
+                                  )}
+                                </div>
+                                <div className="flex items-center gap-2">
+                                  <Button size="sm" variant="outline" className="h-7 w-7 p-0 hover:bg-blue-50">
+                                    <Eye className="w-3 h-3" />
+                                  </Button>
+                                  <Button size="sm" variant="outline" className="h-7 w-7 p-0 hover:bg-green-50">
+                                    <Download className="w-3 h-3" />
+                                  </Button>
+                                </div>
+                              </div>
+                              <div className="text-xs text-gray-700 space-y-1">
+                                <p><strong>Autor:</strong> {version.createdBy}</p>
+                                <p><strong>Cargo:</strong> {version.createdByCargo || 'Não informado'}</p>
+                                <p><strong>Gerência:</strong> {version.createdByGerencia || 'Não informado'}</p>
+                                <p><strong>Criado:</strong> {formatDateTimeBR(new Date(version.createdAt))}</p>
+                                <p><strong>Prazo inicial:</strong> {version.prazoInicialDiasUteis || 0} dias úteis</p>
+                                <p><strong>Prazo cumprido:</strong> {version.prazoCumpridoDiasUteis !== undefined ? `${version.prazoCumpridoDiasUteis} dias úteis` : 'Não enviado'}</p>
                               </div>
                             </div>
                           );
                         })}
                       </div>
                     )}
-                  </TabsContent>
-                  
-                  <TabsContent value="anexos" className="mt-0 p-6">
-                    {/* Header compacto + Filtro ordenação */}
-                    <div className="w-full flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2 mb-3">
-                      <div className="flex items-center gap-2">
-                        <h3 className="text-sm font-semibold text-slate-800">Anexos</h3>
-                        <span className="text-xs text-slate-600 bg-slate-200 px-2 py-0.5 rounded-md font-medium">{dfdData.annexes.length}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Anexos - 6 colunas em desktop, 12 em mobile */}
+            <div className="col-span-12 lg:col-span-6">
+              <div className="rounded-xl border shadow-sm bg-white h-full min-h-[500px]">
+                <div className="px-4 py-6 rounded-t-xl border-b">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-sm font-semibold text-slate-900 flex items-center gap-2">
+                      <Upload className="w-4 h-4 text-green-600" />
+                      Anexos
+                    </h3>
+                    <span className="text-xs text-slate-600 bg-slate-200 px-2 py-0.5 rounded-md font-medium">
+                      {dfdData.annexes.length}
+                    </span>
+                  </div>
+                </div>
+                <div className="p-4">
+                  <div className="space-y-3">
+                    {/* Upload no topo */}
+                    {canEditParecerTecnico() && (
+                      <div className="w-full">
+                        <input
+                          ref={fileInputRef}
+                          type="file"
+                          onChange={handleFileUpload}
+                          accept=".pdf,.doc,.docx,.odt,.png,.jpg,.jpeg,.gif,.bmp,.tif,.tiff"
+                          className="hidden"
+                        />
+                        <Button
+                          onClick={() => fileInputRef.current?.click()}
+                          variant="outline"
+                          className="w-full h-9 border-dashed border-2 border-gray-300 hover:border-green-400 hover:bg-green-50 transition-colors text-sm"
+                        >
+                          <Upload className="w-4 h-4 mr-2"/>
+                          Adicionar Anexo
+                        </Button>
                       </div>
+                    )}
+                    
+                    {/* Filtro de Ordenação */}
+                    <div className="w-full flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2 mb-3">
                       <div className="flex items-center gap-2 w-full sm:w-auto">
                         <span className="text-xs text-slate-500 whitespace-nowrap">Ordenar:</span>
                         <div className="relative flex-1 sm:flex-none">
@@ -547,126 +586,352 @@ export default function DFDAprovacaoSection({
                             <option value="asc">Menos recente</option>
                           </select>
                           <div className="absolute inset-y-0 right-0 flex items-center pr-1.5 pointer-events-none">
-                            <svg className="w-3 h-3 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
+                            <svg className="w-3 h-3 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                            </svg>
                           </div>
                         </div>
                       </div>
                     </div>
-                    {/* Upload de Anexos */}
-                    {canEditParecerTecnico() && (
-                      <div className="mb-4">
-                        <input
-                          ref={fileInputRef}
-                          type="file"
-                          onChange={handleFileUpload}
-                          accept=".pdf,.doc,.docx,.odt,.png,.jpg,.jpeg,.gif,.bmp,.tif,.tiff"
-                          className="hidden"
-                        />
-                        <Button
-                          onClick={() => fileInputRef.current?.click()}
-                          variant="outline"
-                          className="w-full border-dashed border-2 border-gray-300 hover:border-indigo-400 hover:bg-indigo-50 transition-colors"
-                        >
-                          <Upload className="w-4 h-4 mr-2" />
-                          Adicionar Anexo
-                        </Button>
-                      </div>
-                    )}
 
+                    {/* Lista */}
                     {dfdData.annexes.length === 0 ? (
-                      <div className="text-center py-8 w-full">
+                      <div className="pt-4">
                         <div className="p-4 bg-gray-100 rounded-full w-16 h-16 mx-auto mb-4 flex items-center justify-center">
                           <Upload className="w-8 h-8 text-gray-400" />
                         </div>
-                        <p className="text-gray-500 font-medium">Nenhum anexo adicionado</p>
+                        <p className="text-center text-gray-500 font-medium">Nenhum anexo adicionado</p>
                         {!canEditParecerTecnico() && (
-                          <p className="text-sm text-gray-400 mt-1">
+                          <p className="text-center text-sm text-gray-400 mt-1">
                             Apenas usuários autorizados podem adicionar anexos
                           </p>
                         )}
                       </div>
                     ) : (
-                      <div className="space-y-2 max-h-80 overflow-y-auto">
+                      <div className={`${dfdData.annexes.length > 6 ? 'max-h-[450px] overflow-y-auto' : ''} space-y-0`}>
                         {anexosOrdenados.map((annex, idx) => (
                           <React.Fragment key={annex.id}>
-                          <div className="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
-                            <div className="flex items-center gap-3 min-w-0 flex-1">
-                              <div className="p-2 bg-blue-100 rounded-lg">
-                                <FileText className="w-4 h-4 text-blue-600" />
+                            <div className="flex items-center justify-between p-2.5 border border-gray-200 rounded-lg hover:bg-slate-50 transition-colors">
+                              <div className="flex items-center gap-3 min-w-0 flex-1">
+                                <div className="p-2 bg-slate-100 rounded-lg">
+                                  <FileText className="w-4 h-4 text-blue-600" />
+                                </div>
+                                <div className="min-w-0 flex-1">
+                                  <p className="text-sm font-medium truncate">{annex.name}</p>
+                                  <p className="text-xs text-gray-500 hidden sm:block">{annex.uploadedBy} • {formatDate(annex.uploadedAt)}</p>
+                                  <p className="text-xs text-gray-500 sm:hidden">{annex.uploadedBy} • {formatDate(annex.uploadedAt)}</p>
+                                </div>
                               </div>
-                              <div className="min-w-0 flex-1">
-                                <p className="text-sm font-medium truncate">{annex.name}</p>
-                                <p className="text-xs text-gray-500">
-                                  {formatDate(annex.uploadedAt)} • {annex.uploadedBy}
-                                </p>
-                              </div>
-                            </div>
-                            <div className="flex items-center gap-1.5 flex-shrink-0">
-                              <Button size="sm" variant="outline" aria-label="Visualizar" className="h-7 w-7 p-0 hover:bg-blue-50" onClick={() => openInNewTab(annex.url)}>
-                                <Eye className="w-3 h-3" />
-                              </Button>
-                              <Button size="sm" variant="outline" aria-label="Baixar" className="h-7 w-7 p-0 hover:bg-green-50">
-                                <Download className="w-3 h-3" />
-                              </Button>
-                              {canEditParecerTecnico() && (
-                                <Button 
-                                  size="sm" 
-                                  variant="outline" 
-                                  className="h-7 w-7 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
-                                  onClick={() => removeAnnex(annex.id)}
-                                >
-                                  <Trash2 className="w-3 h-3" />
+                              <div className="hidden sm:flex items-center gap-2 flex-shrink-0">
+                                <Button size="sm" variant="outline" aria-label="Visualizar" className="h-7 w-7 p-0 hover:bg-blue-50" onClick={() => openInNewTab(annex.url)}>
+                                  <Eye className="w-3 h-3" />
                                 </Button>
-                              )}
+                                <Button size="sm" variant="outline" aria-label="Baixar" className="h-7 w-7 p-0 hover:bg-green-50">
+                                  <Download className="w-3 h-3" />
+                                </Button>
+                                {canEditParecerTecnico() && (
+                                  <Button size="sm" variant="outline" aria-label="Remover" className="h-7 w-7 p-0 text-red-600 hover:text-red-700 hover:bg-red-50" onClick={() => removeAnnex(annex.id)}>
+                                    <Trash2 className="w-3 h-3" />
+                                  </Button>
+                                )}
+                              </div>
                             </div>
-                          </div>
-                          {idx < anexosOrdenados.length - 1 && (<div className="border-b border-slate-200" />)}
+                            {idx < anexosOrdenados.length-1 && (<div className="border-b border-slate-200" />)}
                           </React.Fragment>
                         ))}
                       </div>
                     )}
-                  </TabsContent>
-                </Tabs>
+                  </div>
+                </div>
               </div>
             </div>
-          </aside>
+          </div>
+        </div>
+      </div>
 
-          {/* FULL: Comentários */}
-          <section id="comentarios" className="col-span-12 w-full">
-            <CommentsSection
-              processoId={processoId}
-              etapaId={etapaId.toString()}
-              cardId="comentarios-aprovacao"
-              title="Comentários"
-            />
-          </section>
+      {/* 3️⃣ Painel da Etapa */}
+      <div className="rounded-2xl border border-slate-300 shadow-md bg-white p-6 mb-8">
+        <header className="flex items-center gap-3 mb-4">
+          <ClipboardCheck className="w-6 h-6 text-green-600" />
+          <h2 className="text-lg font-bold text-slate-900">Painel da Etapa</h2>
+          <div className="ml-auto">
+            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+              Checklist
+            </span>
+          </div>
+        </header>
+        <div className="border-b-2 border-green-200 mb-6"></div>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            
+          {/* 1️⃣ Card Status & Prazo */}
+          <div className="rounded-2xl border shadow-sm bg-white p-4 md:p-6">
+            <header className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-2">
+                <Flag className="w-5 h-5 text-indigo-600" />
+                <h3 className="text-sm font-semibold text-slate-800">Status & Prazo</h3>
+              </div>
+              <Badge className="text-sm font-semibold px-3 py-2 bg-yellow-100 text-yellow-800">
+                {dfdData.status === 'enviado_analise' ? 'Em Análise' : 
+                 dfdData.status === 'aprovado' ? 'Aprovado' : 
+                 dfdData.status === 'devolvido' ? 'Devolvido' : 'Pendente'}
+              </Badge>
+            </header>
+            
+            <div className="space-y-4">
+              {/* Data de Envio */}
+              <div className="flex items-center gap-3 p-3 rounded-lg border border-slate-200">
+                <div className="w-10 h-10 rounded-full flex items-center justify-center border border-slate-300">
+                  <Calendar className="w-5 h-5 text-slate-600" />
+                </div>
+                <div>
+                  <p className="text-sm font-semibold text-slate-500">Data de Envio</p>
+                  <p className="text-lg font-bold text-slate-900">
+                    {dfdData.enviadoData ? formatDate(dfdData.enviadoData) : '—'}
+                  </p>
+                </div>
+              </div>
+              
+              {/* Status da Análise */}
+              {dataAnalise && (
+                <div className="flex items-center gap-3 p-3 rounded-lg border border-slate-200">
+                  <div className="w-10 h-10 rounded-full flex items-center justify-center border border-green-300">
+                    <CheckCircle className="w-5 h-5 text-green-600" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold text-green-600">Análise Realizada</p>
+                    <p className="text-lg font-bold text-green-700">
+                      {formatDate(dataAnalise)}
+                    </p>
+                  </div>
+                </div>
+              )}
+              
+              {/* Destaque Central - Status */}
+              <div className="border-t border-slate-200 my-3 pt-4">
+                <div className="text-center py-4">
+                  <div className={`text-2xl font-bold mb-2 ${
+                    dfdData.status === 'aprovado' ? 'text-green-600' :
+                    dfdData.status === 'devolvido' ? 'text-red-600' :
+                    'text-yellow-600'
+                  }`}>
+                    {dfdData.status === 'enviado_analise' ? 'Aguardando' :
+                     dfdData.status === 'aprovado' ? 'Aprovado' :
+                     dfdData.status === 'devolvido' ? 'Devolvido' : 'Pendente'}
+                  </div>
+                  <div className={`text-sm font-medium ${
+                    dfdData.status === 'aprovado' ? 'text-green-600' :
+                    dfdData.status === 'devolvido' ? 'text-red-600' :
+                    'text-yellow-600'
+                  }`}>
+                    {dfdData.status === 'enviado_analise' ? 'análise técnica' :
+                     dfdData.status === 'aprovado' ? 'pela GSP' :
+                     dfdData.status === 'devolvido' ? 'para correção' : 'definição'}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
 
-          {/* FULL: Ações (rodapé não fixo) */}
-          {isGSPUser() && (
-            <section id="acoes" className="col-span-12 w-full mt-6 pb-6">
-              {/* Rodapé com Botões de Ação */}
-              <Card className="w-full shadow-lg border-0 bg-white/80 backdrop-blur-sm">
-                <CardContent className="p-4">
-                  <div className="flex flex-col sm:flex-row gap-4 justify-between items-center w-full">
+          {/* 2️⃣ Card Checklist da Etapa */}
+          <div className="rounded-2xl border shadow-sm bg-white p-4 md:p-6">
+            <header className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-2">
+                <ListChecks className="w-5 h-5 text-indigo-600" />
+                <h3 className="text-sm font-semibold text-slate-800">Checklist da Etapa</h3>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-slate-100 text-slate-600">
+                  3 itens
+                </span>
+              </div>
+            </header>
+            
+            <div className="space-y-1">
+              {/* Item 1 - DFD Recebido */}
+              <div className="flex items-center gap-3 py-2 px-2 hover:bg-slate-50 rounded transition-colors">
+                <CheckCircle className="w-4 h-4 text-green-600" />
+                <span className="text-sm text-slate-700 flex-1">DFD recebido para análise</span>
+              </div>
+              
+              {/* Item 2 - Parecer Técnico */}
+              <div className="flex items-center gap-3 py-2 px-2 hover:bg-slate-50 rounded transition-colors">
+                {parecerTecnico.trim() ? (
+                  <CheckCircle className="w-4 h-4 text-green-600" />
+                ) : (
+                  <AlertCircle className="w-4 h-4 text-yellow-600" />
+                )}
+                <span className="text-sm text-slate-700 flex-1">Parecer técnico elaborado</span>
+              </div>
+              
+              {/* Item 3 - Decisão Tomada */}
+              <div className="flex items-center gap-3 py-2 px-2 hover:bg-slate-50 rounded transition-colors">
+                {dfdData.status === 'aprovado' || dfdData.status === 'devolvido' ? (
+                  <CheckCircle className="w-4 h-4 text-green-600" />
+                ) : (
+                  <Clock className="w-4 h-4 text-slate-400" />
+                )}
+                <span className="text-sm text-slate-700 flex-1">Decisão de aprovação/devolução</span>
+              </div>
+            </div>
+          </div>
+
+          {/* 3️⃣ Card Mini Timeline */}
+          <div className="rounded-2xl border shadow-sm bg-white p-4 md:p-6 flex flex-col min-h-[320px]">
+            <header className="flex items-center gap-2 mb-4">
+              <Clock className="w-5 h-5 text-indigo-600" />
+              <h3 className="text-sm font-semibold text-slate-800">Mini Timeline</h3>
+            </header>
+
+            <div className="flex-1 flex flex-col">
+              <div className="flex-1 relative pr-2">
+                <div className="absolute left-2 top-0 bottom-0 w-0.5 bg-slate-200"></div>
+                <div className="max-h-[280px] overflow-y-auto scrollbar-thin scrollbar-thumb-slate-300 scrollbar-track-transparent hover:scrollbar-thumb-slate-400">
+                  <div className="flex flex-col gap-4 pl-6">
                     
-                    {/* Lado esquerdo - Status e informações */}
-                    <div className="flex items-center gap-4">
-                      <div className="flex items-center gap-2">
-                        <Clock className="w-4 h-4 text-gray-500" />
-                        <span className="text-sm text-gray-600">
-                          1 dia no card
-                        </span>
+                    {/* Timeline Item - DFD Enviado */}
+                    {dfdData.enviadoData && (
+                      <div className="relative group">
+                        <div className="absolute -left-6 top-0 w-4 h-4 bg-white rounded-full flex items-center justify-center">
+                          <Upload className="w-3 h-3 text-blue-600" />
+                        </div>
+                        <div className="hover:bg-slate-50 rounded-lg px-3 py-2 transition-colors">
+                          <p className="text-sm font-semibold text-slate-700 mb-1">
+                            DFD enviado para análise
+                          </p>
+                          <div className="flex items-center gap-2 text-xs text-slate-500">
+                            <span>{dfdData.enviadoPor}</span>
+                            <span>•</span>
+                            <span>{formatDateTime(dfdData.enviadoData)}</span>
+                          </div>
+                        </div>
                       </div>
-                      <div className="flex items-center gap-2">
-                        <User className="w-4 h-4 text-gray-500" />
-                        <span className="text-sm text-gray-600">
-                          {dfdData.enviadoPor || 'Sem responsável definido'}
-                        </span>
+                    )}
+                    
+                    {/* Timeline Item - Parecer Elaborado */}
+                    {parecerTecnico.trim() && (
+                      <div className="relative group">
+                        <div className="absolute -left-6 top-0 w-4 h-4 bg-white rounded-full flex items-center justify-center">
+                          <Edit3 className="w-3 h-3 text-indigo-600" />
+                        </div>
+                        <div className="hover:bg-slate-50 rounded-lg px-3 py-2 transition-colors">
+                          <p className="text-sm font-semibold text-slate-700 mb-1">
+                            Parecer técnico elaborado
+                          </p>
+                          <div className="flex items-center gap-2 text-xs text-slate-500">
+                            <span>{user?.nome || 'Usuário'}</span>
+                            <span>•</span>
+                            <span>{dataAnalise ? formatDateTime(dataAnalise) : 'Hoje'}</span>
+                          </div>
+                        </div>
                       </div>
-                    </div>
+                    )}
+                    
+                  </div>
+                </div>
+              </div>
 
-                    {/* Lado direito - Botões de ação */}
-                    <div className="flex items-center gap-2">
+              {/* Rodapé fixo */}
+              <div className="border-t border-slate-200 pt-3 mt-4">
+                <button
+                  className="w-full text-center text-sm text-indigo-600 hover:text-indigo-700 hover:underline transition-colors"
+                  aria-label="Ver histórico completo de ações"
+                >
+                  Ver todas as ações
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* 4️⃣ Comentários */}
+      <div className="w-full">
+        <CommentsSection
+          processoId={processoId}
+          etapaId={etapaId.toString()}
+          cardId="comentarios-aprovacao"
+          title="Comentários"
+        />
+      </div>
+
+
+      {/* 5️⃣ Ações da Etapa */}
+      <div className="rounded-2xl border border-slate-300 shadow-md bg-white p-6 mb-8">
+        <header className="flex items-center gap-3 mb-4">
+          <Flag className="w-6 h-6 text-orange-600" />
+          <h2 className="text-lg font-bold text-slate-900">Ações da Etapa</h2>
+          <div className="ml-auto">
+            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-orange-100 text-orange-800">
+              Ações
+            </span>
+          </div>
+        </header>
+        <div className="border-b-2 border-orange-200 mb-6"></div>
+        
+        <div className="space-y-4">
+          {/* Informações de Status */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* Prazo */}
+            <div className="flex items-center gap-3 p-3 rounded-lg border border-slate-200">
+              <div className="w-10 h-10 rounded-full flex items-center justify-center border border-slate-300">
+                <Clock className="w-5 h-5 text-slate-600" />
+              </div>
+              <div>
+                <p className="text-sm font-semibold text-slate-500">Prazo</p>
+                <p className="text-lg font-bold text-slate-900">
+                  {dfdData.status === 'enviado_analise' ? '5 dias úteis' : 
+                   dfdData.status === 'aprovado' ? 'Concluído' : 
+                   dfdData.status === 'devolvido' ? 'Devolvido' : 'Aguardando'}
+                </p>
+              </div>
+            </div>
+
+            {/* Responsável */}
+            <div className="flex items-center gap-3 p-3 rounded-lg border border-slate-200">
+              <div className="w-10 h-10 rounded-full flex items-center justify-center border border-slate-300">
+                <User className="w-5 h-5 text-slate-600" />
+              </div>
+              <div>
+                <p className="text-sm font-semibold text-slate-500">Responsável</p>
+                <p className="text-lg font-bold text-slate-900">
+                  {user?.nome || 'GSP - Analista'}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Ação Principal */}
+          <div className="border-t border-slate-200 pt-4">
+            {dfdData.status === 'aprovado' ? (
+              <div className="flex items-center justify-center p-4 bg-green-50 rounded-lg border border-green-200">
+                <div className="flex items-center gap-3">
+                  <CheckCircle className="w-6 h-6 text-green-600" />
+                  <div className="text-center">
+                    <p className="text-sm font-semibold text-green-600">DFD Aprovado</p>
+                    <p className="text-sm text-green-700">
+                      {dfdData.aprovadoData ? formatDate(dfdData.aprovadoData) : ''} por {dfdData.aprovadoPor || user?.nome}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            ) : dfdData.status === 'devolvido' ? (
+              <div className="flex items-center justify-center p-4 bg-red-50 rounded-lg border border-red-200">
+                <div className="flex items-center gap-3">
+                  <XCircle className="w-6 h-6 text-red-600" />
+                  <div className="text-center">
+                    <p className="text-sm font-semibold text-red-600">DFD Devolvido</p>
+                    <p className="text-sm text-red-700">
+                      {dfdData.devolucaoData ? formatDate(dfdData.devolucaoData) : ''} por {dfdData.devolucaoPor || user?.nome}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div className="text-center space-y-3">
+                <p className="text-sm text-slate-600 mb-4">
+                  Analise o DFD e tome uma decisão:
+                </p>
+                <div className="flex items-center justify-center gap-3">
                   <Button 
                     onClick={handleSolicitarCorrecao}
                     variant="outline" 
@@ -674,22 +939,20 @@ export default function DFDAprovacaoSection({
                     className="border-red-200 text-red-700 hover:bg-red-50"
                   >
                     <XCircle className="w-4 h-4 mr-2" />
-                    Encaminhar para Cumprimento de Ressalvas
+                    Devolver para Correção
                   </Button>
                   <Button 
                     onClick={handleAprovar}
                     disabled={!canApproveUser()}
-                    className="bg-green-600 hover:bg-green-700 text-white px-8 py-3 shadow-lg"
+                    className="bg-green-600 hover:bg-green-700 text-white px-8 py-3"
                   >
                     <CheckCircle className="w-4 h-4 mr-2" />
-                    Aprovação
+                    Aprovar DFD
                   </Button>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </section>
-          )}
+                </div>
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
