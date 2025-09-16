@@ -996,6 +996,32 @@ export default function DFDFormSection({
     return dataFinal;
   };
 
+  // Prazo final da versão (fixo solicitado)
+  // Usar meio-dia UTC para evitar regressão por fuso horário na renderização local
+  const prazoFinalVersaoFixo = new Date('2025-01-16T12:00:00Z');
+
+  // Calcular prazo final previsto da ETAPA (com base nas versões)
+  const getPrazoFinalPrevistoDaEtapa = () => {
+    if (!versions || versions.length === 0) {
+      return getPrazoFinalPrevisto();
+    }
+    // considerar a primeira versão criada (mais antiga) como início da etapa
+    const oldest = [...versions].sort((a, b) => new Date(a.criadoEm).getTime() - new Date(b.criadoEm).getTime())[0];
+    const inicio = new Date(oldest.criadoEm);
+    const diasUteis = oldest.prazoInicialDiasUteis ?? currentVersion.prazoInicialDiasUteis ?? 7;
+
+    let dataFinal = new Date(inicio);
+    let diasAdicionados = 0;
+    while (diasAdicionados < diasUteis) {
+      dataFinal.setDate(dataFinal.getDate() + 1);
+      const dayOfWeek = dataFinal.getDay();
+      if (dayOfWeek >= 1 && dayOfWeek <= 5) {
+        diasAdicionados++;
+      }
+    }
+    return dataFinal;
+  };
+
   // Calcular tempo decorrido (mais preciso)
   const getTempoDecorrido = () => {
     const inicio = new Date(currentVersion.criadoEm);
@@ -1428,14 +1454,14 @@ export default function DFDFormSection({
                     </div>
                   </div>
                   
-                  {/* Prazo Inicial */}
+                  {/* Prazo Inicial da Versão */}
                   <div className="flex items-center justify-between p-3 rounded-lg border border-slate-200">
                     <div className="flex items-center gap-3">
                       <div className="w-10 h-10 rounded-full flex items-center justify-center border border-slate-300">
                         <ClockIcon className="w-5 h-5 text-slate-600" />
                       </div>
                       <div>
-                        <p className="text-sm font-semibold text-slate-500">Prazo Inicial</p>
+                        <p className="text-sm font-semibold text-slate-500">Prazo Inicial da Versão</p>
                         <p className="text-lg font-bold text-slate-900">
                           {formatDateBR(currentVersion.criadoEm)}
                         </p>
@@ -1448,22 +1474,42 @@ export default function DFDFormSection({
                     </div>
                   </div>
                   
-                  {/* Prazo Final */}
+                  {/* Prazo Final da Versão */}
                   <div className="flex items-center justify-between p-3 rounded-lg border border-slate-200">
                     <div className="flex items-center gap-3">
                       <div className="w-10 h-10 rounded-full flex items-center justify-center border border-slate-300">
                         <Flag className="w-5 h-5 text-slate-600" />
                       </div>
                       <div>
-                        <p className="text-sm font-semibold text-slate-500">Prazo Final</p>
+                        <p className="text-sm font-semibold text-slate-500">Prazo Final da Versão</p>
                         <p className="text-lg font-bold text-slate-900">
-                          {formatDateBR(getPrazoFinalPrevisto().toISOString())}
+                          {formatDateBR(prazoFinalVersaoFixo.toISOString())}
                         </p>
                       </div>
                     </div>
                     <div className="text-right">
                       <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold border border-slate-300 text-slate-700">
                         prazo limite
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Prazo Final da Etapa */}
+                  <div className="flex items-center justify-between p-3 rounded-lg border border-slate-200">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-full flex items-center justify-center border border-slate-300">
+                        <Flag className="w-5 h-5 text-indigo-600" />
+                      </div>
+                      <div>
+                        <p className="text-sm font-semibold text-slate-500">Prazo Final da Etapa</p>
+                        <p className="text-lg font-bold text-slate-900">
+                          {formatDateBR(getPrazoFinalPrevistoDaEtapa().toISOString())}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold border border-slate-300 text-slate-700">
+                        etapa
                       </span>
                     </div>
                   </div>
