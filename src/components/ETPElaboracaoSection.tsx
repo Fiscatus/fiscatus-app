@@ -17,8 +17,6 @@ import {
   CheckCircle,
   XCircle,
   AlertTriangle,
-  DollarSign,
-  TrendingUp,
   Eye,
   History,
   Upload, 
@@ -41,14 +39,13 @@ import {
   AlertCircle,
   CheckCircle2,
   RotateCcw,
-  Square,
   Hash,
   ChevronDown,
   Flag,
   Settings,
-  Edit,
-  MoreHorizontal,
-  ArrowLeftRight
+  ClipboardCheck,
+  ListChecks,
+  Paperclip
 } from 'lucide-react';
 import { useUser } from '@/contexts/UserContext';
 import { usePermissoes } from '@/hooks/usePermissoes';
@@ -486,34 +483,34 @@ export default function ETPElaboracaoSection({
   };
 
   const handleCreateNewVersion = async () => {
-    if (!canCreateNewVersion()) return;
+    if (!canCreateNewRevision()) return;
 
     setIsLoading(true);
     try {
-      const newVersionNumber = Math.max(...versions.map(v => v.numeroVersao)) + 1;
-      const newVersion: DFDVersion = {
+      const newVersionNumber = Math.max(...versions.map(v => v.numeroRevisao)) + 1;
+      const newVersion: ETPVersion = {
         id: `v${newVersionNumber}`,
-        numeroVersao: newVersionNumber,
+        numeroRevisao: newVersionNumber,
         status: 'rascunho',
-        autorId: user?._id || 'user1',
+        autorId: (user as any)?._id || (user as any)?.id || 'user1',
         autorNome: user?.nome || 'Usuário Atual',
         autorCargo: user?.cargo,
         autorGerencia: user?.gerencia,
-        autorEmail: user?.email,
+        autorEmail: (user as any)?.email,
         criadoEm: new Date().toISOString(),
         atualizadoEm: new Date().toISOString(),
-        prazoDiasUteis: 7,
-        prazoInicialDiasUteis: 7,
+        prazoDiasUteis: 5,
+        prazoInicialDiasUteis: 5,
         payload: {
           ...currentVersion.payload,
-          objeto: ''
+          descricaoObjeto: ''
         }
       };
       
       setVersions(prev => [newVersion, ...prev]);
       setCurrentVersion(newVersion);
       setFormData(newVersion.payload);
-      setExpandedVersions(prev => ({ ...prev, [newVersion.id]: true }));
+      setExpandedRevisions(prev => ({ ...prev, [newVersion.id]: true }));
     
     toast({
         title: "Nova versão criada",
@@ -759,26 +756,161 @@ export default function ETPElaboracaoSection({
     return value;
   };
 
+  // ===== Helpers adicionais para Painel da Etapa (espelhando DFD) =====
+  const getEtapaStatus = () => {
+    if (etapaConcluida) return 'Concluída';
+    if (versions.some(v => v.status === 'enviada_para_assinatura')) return 'Em assinatura';
+    if (versions.some(v => v.status === 'finalizada')) return 'Finalizada';
+    return 'Em elaboração';
+  };
+
+  const getStatusClasses = (status: string) => {
+    switch (status) {
+      case 'Concluída':
+      case 'Finalizada':
+        return 'bg-green-100 text-green-800';
+      case 'Em assinatura':
+        return 'bg-blue-100 text-blue-800';
+      default:
+        return 'bg-yellow-100 text-yellow-800';
+    }
+  };
+
+  const getPrazoFinalPrevisto = () => {
+    const inicio = new Date(currentVersion.criadoEm);
+    const diasUteis = currentVersion.prazoInicialDiasUteis || 5;
+    let dataFinal = new Date(inicio);
+    let diasAdicionados = 0;
+    while (diasAdicionados < diasUteis) {
+      dataFinal.setDate(dataFinal.getDate() + 1);
+      const dayOfWeek = dataFinal.getDay();
+      if (dayOfWeek >= 1 && dayOfWeek <= 5) {
+        diasAdicionados++;
+      }
+    }
+    return dataFinal;
+  };
+
+  const getTempoDecorrido = () => {
+    const inicio = new Date(currentVersion.criadoEm);
+    const agora = etapaConcluida ? new Date(etapaConcluida.dataConclusao) : new Date();
+    const diasUteis = countBusinessDays(currentVersion.criadoEm, agora.toISOString());
+    return { diasUteis };
+  };
+
+  const getProgressoTemporal = () => {
+    const prazoInicial = new Date(currentVersion.criadoEm);
+    const prazoLimite = getPrazoFinalPrevisto();
+    const hoje = etapaConcluida ? new Date(etapaConcluida.dataConclusao) : new Date();
+    const diasUteisTotal = Math.max(1, countBusinessDays(prazoInicial.toISOString(), prazoLimite.toISOString()));
+    const diasUteisPassados = countBusinessDays(prazoInicial.toISOString(), hoje.toISOString());
+    if (hoje > prazoLimite && !etapaConcluida) {
+      return 100;
+    }
+    const progresso = Math.round((diasUteisPassados / diasUteisTotal) * 100);
+    return Math.min(progresso, 100);
+  };
+
+  const getProgressColor = (progresso: number) => {
+    if (progresso <= 70) return 'bg-green-500';
+    if (progresso <= 100) return 'bg-yellow-500';
+    return 'bg-red-500';
+  };
+
+  type ChecklistStatus = 'completed' | 'pending' | 'warning';
+  interface ChecklistItem { id: string; label: string; status: ChecklistStatus; description?: string }
+  interface TimelineItem { id: string; autor: string; descricao: string; dataHora: string; tipo: 'revisao' | 'anexo' | 'status' }
+
+  const getChecklistIcon = (status: ChecklistStatus) => {
+    switch (status) {
+      case 'completed':
+        return <CheckCircle2 className="w-4 h-4 text-green-600" />;
+      case 'warning':
+        return <AlertTriangle className="w-4 h-4 text-yellow-600" />;
+      default:
+        return <XCircle className="w-4 h-4 text-red-600" />;
+    }
+  };
+
+  const generateChecklist = (): ChecklistItem[] => {
+    const checklist: ChecklistItem[] = [];
+    // Revisão inicial criada
+    if (versions.length === 0) {
+      checklist.push({ id: 'rev-criada', label: 'Revisão inicial ainda não criada', status: 'pending', description: 'Nenhuma revisão foi criada' });
+    } else {
+      checklist.push({ id: 'rev-criada', label: 'Revisão inicial criada', status: 'completed', description: `${versions.length} revisão(ões)` });
+    }
+    // Anexos
+    if (anexos.length === 0) {
+      checklist.push({ id: 'anexos', label: 'Documentos anexados (nenhum encontrado)', status: 'pending', description: 'Nenhum anexo adicionado' });
+    } else {
+      checklist.push({ id: 'anexos', label: 'Documentos anexados', status: 'completed', description: `${anexos.length} documento(s)` });
+    }
+    // Responsáveis
+    if (!formData.responsaveis || formData.responsaveis.length === 0) {
+      checklist.push({ id: 'responsaveis', label: 'Responsáveis definidos (nenhum encontrado)', status: 'pending', description: 'Nenhum responsável atribuído' });
+    } else if (formData.responsaveis.length < 2) {
+      checklist.push({ id: 'responsaveis', label: `Responsáveis definidos (${formData.responsaveis.length} de 2)`, status: 'warning', description: 'Recomenda-se ao menos 2' });
+    } else {
+      checklist.push({ id: 'responsaveis', label: 'Responsáveis definidos', status: 'completed', description: `${formData.responsaveis.length} responsável(is)` });
+    }
+    // Descrição do objeto
+    if (!formData.descricaoObjeto || formData.descricaoObjeto.trim() === '') {
+      checklist.push({ id: 'descricao', label: 'Descrição do objeto preenchida', status: 'pending', description: 'Campo obrigatório do ETP' });
+    } else {
+      checklist.push({ id: 'descricao', label: 'Descrição do objeto preenchida', status: 'completed', description: 'Campo preenchido' });
+    }
+    // Envio para assinatura
+    const hasSent = versions.some(v => v.status === 'enviada_para_assinatura');
+    checklist.push({ id: 'envio-ass', label: 'Revisão enviada para assinatura', status: hasSent ? 'completed' : 'pending', description: hasSent ? 'Enviado com sucesso' : 'Nenhuma revisão enviada' });
+    return checklist.sort((a, b) => {
+      const order: Record<ChecklistStatus, number> = { pending: 0, warning: 1, completed: 2 };
+      return order[a.status] - order[b.status];
+    });
+  };
+
+  const generateTimeline = (): TimelineItem[] => {
+    const timeline: TimelineItem[] = [];
+    versions.slice(0, 2).forEach(version => {
+      if (version.status === 'enviada_para_assinatura' && version.enviadoParaAssinaturaEm) {
+        timeline.push({ id: `rev-${version.id}-envio`, autor: version.autorNome, descricao: `Revisão ${version.numeroRevisao} enviada para assinatura`, dataHora: version.enviadoParaAssinaturaEm, tipo: 'revisao' });
+      }
+      if (version.status === 'finalizada') {
+        timeline.push({ id: `rev-${version.id}-finalizada`, autor: version.autorNome, descricao: `Revisão ${version.numeroRevisao} finalizada`, dataHora: version.atualizadoEm, tipo: 'status' });
+      }
+    });
+    anexos.slice(0, 2).forEach(anexo => {
+      timeline.push({ id: `anexo-${anexo.id}`, autor: anexo.autorNome, descricao: `Documento comentado anexado`, dataHora: anexo.criadoEm, tipo: 'anexo' });
+    });
+    return timeline.sort((a, b) => new Date(b.dataHora).getTime() - new Date(a.dataHora).getTime()).slice(0, 3);
+  };
+
+  const getTimelineIcon = (item: TimelineItem) => {
+    switch (item.tipo) {
+      case 'revisao':
+        if (item.descricao.includes('finalizada')) return <CheckCircle2 className="w-4 h-4 text-green-600" />;
+        if (item.descricao.includes('enviada')) return <Send className="w-4 h-4 text-blue-600" />;
+        return <FileText className="w-4 h-4 text-slate-600" />;
+      case 'anexo':
+        return <Paperclip className="w-4 h-4 text-gray-600" />;
+      default:
+        return <Clock className="w-4 h-4 text-gray-600" />;
+    }
+  };
+
   return (
-    <div className="bg-white">
-      {/* Container central ocupando toda a área */}
-      <div className="w-full px-2">
-        {/* Grid principal 12 colunas */}
-        <div className="grid grid-cols-12 gap-4">
-          
-          {/* ESQUERDA: Formulário do ETP */}
-          <section id="formulario-etp" className="col-span-12 lg:col-span-8 w-full">
-            
-            {/* Card do Formulário */}
-             <div className="rounded-2xl border shadow-sm overflow-hidden bg-white">
-              <header className="bg-indigo-100 px-4 py-3 rounded-t-2xl font-semibold text-slate-900">
-                 <div className="flex items-center gap-3">
-                   <FileText className="w-5 h-5 text-indigo-600" />
-                  Formulário do ETP
+    <div className="w-full space-y-6">
+      {/* 1️⃣ Formulário do ETP */}
+      <div className="rounded-2xl border border-slate-300 shadow-md bg-white p-6 mb-8 min-h-[700px]">
+        <header className="flex items-center gap-3 mb-4">
+          <FileText className="w-6 h-6 text-purple-600" />
+          <h2 className="text-lg font-bold text-slate-900">Formulário do ETP</h2>
+          <div className="ml-auto">
+            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">Formulário</span>
                  </div>
                </header>
-               <div className="p-4 md:p-6 space-y-0">
-                {/* Grupo: Número/Data */}
+        <div className="border-b-2 border-purple-200 mb-6"></div>
+        <div className="space-y-0">
                 <div className="w-full p-4 border-b border-slate-200 my-4">
                   <div className="grid grid-cols-12 gap-4">
                     <div className="col-span-12 md:col-span-6">
@@ -786,165 +918,99 @@ export default function ETPElaboracaoSection({
                         <Hash className="w-4 h-4" />
                         Número do ETP
                       </Label>
-                      <Input
-                        id="numeroETP"
-                        value={formatNumeroETP(formData.numeroETP)}
-                        readOnly
-                        className="w-full bg-gray-50 border-gray-200 text-gray-600"
-                      />
+                <Input id="numeroETP" value={formatNumeroETP(formData.numeroETP)} readOnly className="w-full bg-gray-50 border-gray-200 text-gray-600" />
                     </div>
                     <div className="col-span-12 md:col-span-6">
                       <Label htmlFor="dataElaboracao" className="text-sm font-semibold text-gray-700 flex items-center gap-2 mb-2">
                         <Calendar className="w-4 h-4" />
                         Data da Elaboração
                       </Label>
-                      <Input
-                        id="dataElaboracao"
-                        value={formatDate(formData.dataElaboracao)}
-                        readOnly
-                        className="w-full bg-gray-50 border-gray-200 text-gray-600"
-                      />
+                <Input id="dataElaboracao" value={formatDate(formData.dataElaboracao)} readOnly className="w-full bg-gray-50 border-gray-200 text-gray-600" />
                     </div>
                   </div>
                 </div>
-
-                {/* 1 - Descrição do Objeto */}
                 <div className="w-full p-4 border-b border-slate-200 my-4">
                   <Label htmlFor="descricaoObjeto" className="text-sm font-semibold text-gray-700 flex items-center gap-2 mb-2">
                     <Building2 className="w-4 h-4" />
                     Descrição do Objeto *
                   </Label>
-                  <Textarea
-                    id="descricaoObjeto"
-                    value={formData.descricaoObjeto}
-                    onChange={(e) => setFormData({...formData, descricaoObjeto: e.target.value})}
-                    placeholder="Descreva detalhadamente o objeto da contratação..."
-                    disabled={!permissoes.podeEditar || currentVersion.status !== 'rascunho'}
-                    className="w-full min-h-[100px] resize-none border-gray-200 focus:border-blue-300 focus:ring-blue-300"
-                  />
+            <Textarea id="descricaoObjeto" value={formData.descricaoObjeto} onChange={(e) => setFormData({ ...formData, descricaoObjeto: e.target.value })} placeholder="Descreva detalhadamente o objeto da contratação..." disabled={!permissoes.podeEditar || currentVersion.status !== 'rascunho'} className="w-full min-h-[100px] resize-none border-gray-200 focus:border-blue-300 focus:ring-blue-300" />
                 </div>
-
-                {/* 2 - Observações Complementares */}
                 <div className="w-full p-4 border-b border-slate-200 my-4">
                   <Label htmlFor="observacoesComplementares" className="text-sm font-semibold text-gray-700 flex items-center gap-2 mb-2">
                     <MessageCircle className="w-4 h-4" />
                     Observações Complementares
                        </Label>
-                  <Textarea
-                    id="observacoesComplementares"
-                    value={formData.observacoesComplementares}
-                    onChange={(e) => setFormData({...formData, observacoesComplementares: e.target.value})}
-                    placeholder="Adicione observações complementares relevantes..."
-                    disabled={!permissoes.podeEditar || currentVersion.status !== 'rascunho'}
-                    className="w-full min-h-[100px] resize-none border-gray-200 focus:border-blue-300 focus:ring-blue-300"
-                       />
+            <Textarea id="observacoesComplementares" value={formData.observacoesComplementares} onChange={(e) => setFormData({ ...formData, observacoesComplementares: e.target.value })} placeholder="Adicione observações complementares relevantes..." disabled={!permissoes.podeEditar || currentVersion.status !== 'rascunho'} className="w-full min-h-[100px] resize-none border-gray-200 focus:border-blue-300 focus:ring-blue-300" />
                      </div>
-
-                {/* 6 - Responsáveis pela Elaboração */}
-                <ResponsavelSelector
-                  value={formData.responsaveis || []}
-                  onChange={(responsaveis) => {
-                    salvarResponsaveis(responsaveis || []);
-                  }}
-                  disabled={!permissoes.podeEditar || currentVersion.status !== 'rascunho'}
-                  canEdit={permissoes.podeEditar}
-                  processoId={processoId}
-                  className="w-full border-b border-slate-200 my-4"
-                  maxResponsaveis={5}
-                />
+          <ResponsavelSelector value={formData.responsaveis || []} onChange={(responsaveis) => { salvarResponsaveis(responsaveis || []); }} disabled={!permissoes.podeEditar || currentVersion.status !== 'rascunho'} canEdit={permissoes.podeEditar} processoId={processoId} className="w-full border-b border-slate-200 my-4" maxResponsaveis={5} />
                  </div>
             </div>
-          </section>
 
-          {/* DIREITA: Gerenciamento (Versões/Anexos) */}
-          <aside id="gerenciamento" className="col-span-12 lg:col-span-4 w-full flex flex-col">
-            
-            {/* Card com Abas */}
-            <div className="rounded-2xl border shadow-sm overflow-hidden bg-white flex-1 flex flex-col">
-              <header className="bg-purple-50 px-4 py-3 rounded-t-2xl font-semibold text-slate-900">
-                        <div className="flex items-center gap-3">
-                  <Settings className="w-5 h-5 text-purple-600" />
-                  Gerenciamento
+      {/* 2️⃣ Gerenciamento */}
+      <div className="rounded-2xl border border-slate-300 shadow-md bg-white p-6 mb-8 min-h-[700px]">
+        <header className="flex items-center gap-3 mb-4">
+          <Settings className="w-6 h-6 text-slate-600" />
+          <h2 className="text-lg font-bold text-slate-900">Gerenciamento</h2>
+          <div className="ml-auto">
+            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-slate-100 text-slate-800">Gerenciamento</span>
                           </div>
               </header>
-              <div className="p-4 md:p-6 flex-1 flex flex-col">
-                <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-                  <TabsList className="grid w-full grid-cols-2 rounded-none">
-                    <TabsTrigger value="revisoes">Revisões</TabsTrigger>
-                    <TabsTrigger value="anexos">Anexos</TabsTrigger>
-                  </TabsList>
-                  
-                  {/* Aba Revisões */}
-                  <TabsContent value="revisoes" className="mt-0 p-4 flex-1 flex flex-col">
-                    <div className="space-y-4 w-full flex-1 flex flex-col">
-                      {/* Botão Criar Nova Revisão (apenas se multiversão habilitada) */}
-                      {permissoes.podeCriarNovaRevisao && allowMultipleEtpVersions && (
-                        <Button
-                          onClick={handleCreateNewVersion}
-                          variant="outline"
-                          className="w-full border-dashed border-2 border-gray-300 hover:border-purple-400 hover:bg-purple-50"
-                        >
+        <div className="border-b-2 border-slate-200 mb-6"></div>
+        <div>
+          <div className="grid grid-cols-12 gap-4 items-start">
+            <div className="col-span-12 lg:col-span-6">
+              <div className="rounded-xl border shadow-sm bg-white h-full min-h-[500px]">
+                <div className="px-4 py-6 rounded-t-xl border-b">
+                  <h3 className="text-sm font-semibold text-slate-900 flex items-center gap-2">
+                    <History className="w-4 h-4 text-purple-600" />
+                    Revisões
+                  </h3>
+                </div>
+                <div className="p-4">
+                  <div className="space-y-4">
+                    {permissoes.podeCriarNovaRevisao && (
+                      <Button onClick={handleCreateNewVersion} variant="outline" className="w-full border-dashed border-2 border-gray-300 hover:border-purple-400 hover:bg-purple-50">
                           <Plus className="w-4 h-4 mr-2" />
                           Criar Nova Revisão
                         </Button>
                       )}
-
-                      {/* Lista de Revisões */}
                       {versions.length === 0 ? (
-                        <div className="text-center py-8 w-full">
+                      <div className="text-center py-8">
                           <div className="p-4 bg-gray-100 rounded-full w-16 h-16 mx-auto mb-4 flex items-center justify-center">
                             <FileText className="w-8 h-8 text-gray-400" />
                           </div>
                           <p className="text-gray-500 font-medium">Ainda não há revisões criadas</p>
                         </div>
                       ) : (
-                        <div className="space-y-3 w-full overflow-y-auto max-h-[400px]">
-                          {!showAllRevisions && (
-                            <div className="text-sm font-semibold text-purple-700">Última revisão</div>
-                          )}
+                      <div className="space-y-3 overflow-y-auto max-h-[450px]">
+                        {!showAllRevisions && <div className="text-sm font-semibold text-purple-700">Última revisão</div>}
                           {(showAllRevisions ? versions : [versions[0]]).map((version, idx, arr) => {
                             const statusConfig = getStatusConfig(version.status);
                             const slaBadge = getSLABadge(version.prazoInicialDiasUteis || 0, version.prazoCumpridoDiasUteis);
                             const diasRestantes = getDiasRestantes(version);
                             const prazoClasses = getPrazoColorClasses(diasRestantes);
-                            
                             return (
                               <React.Fragment key={version.id}>
-                              <div className="border border-gray-200 rounded-xl p-4 hover:bg-gray-50 transition-colors w-full">
-                                <div className="flex items-center justify-between mb-3 w-full">
-                                  <div className="flex items-center gap-3">
-                                    <Badge variant="outline" className="text-xs font-medium">
-                                      R{version.numeroRevisao}
-                                    </Badge>
-                                    <Badge className={`text-xs font-medium ${statusConfig.color}`}>
-                                      {statusConfig.icon}
-                                      <span className="ml-1">{statusConfig.label}</span>
-                                    </Badge>
-                                    <Badge className={`text-xs font-medium ${slaBadge.color}`}>
-                                      {slaBadge.label}
-                                    </Badge>
-                                    <Badge className={`text-xs font-medium ${prazoClasses.badge}`}>
-                                      {diasRestantes === null ? 'Sem prazo' : diasRestantes < 0 ? `${Math.abs(diasRestantes)}d atrasado` : `${diasRestantes}d restantes`}
-                                    </Badge>
+                              <div className="border border-gray-200 rounded-xl p-4 hover:bg-gray-50 transition-colors">
+                                <div className="flex items-center justify-between mb-3">
+                                  <div className="flex items-center gap-2 flex-wrap">
+                                    <Badge variant="outline" className="text-xs font-medium">R{version.numeroRevisao}</Badge>
+                                    <Badge className={`text-xs font-medium ${statusConfig.color}`}>{statusConfig.icon}<span className="ml-1">{statusConfig.label}</span></Badge>
+                                    <Badge className={`text-xs font-medium ${slaBadge.color}`}>{slaBadge.label}</Badge>
+                                    <Badge className={`text-xs font-medium ${prazoClasses.badge}`}>{diasRestantes === null ? 'Sem prazo' : diasRestantes < 0 ? `${Math.abs(diasRestantes)}d atrasado` : `${diasRestantes}d restantes`}</Badge>
                         </div>
                         <div className="flex items-center gap-2">
                                     {(showAllRevisions || versions[0].id !== version.id) && (
-                              <Button 
-                                size="sm" 
-                                variant="ghost" 
-                                        aria-label={expandedRevisions[version.id] ? 'Recolher detalhes' : 'Expandir detalhes'}
-                                        className="h-7 px-2 text-gray-600"
-                                        onClick={() => setExpandedRevisions(prev => ({ ...prev, [version.id]: !prev[version.id] }))}
-                              >
+                                      <Button size="sm" variant="ghost" aria-label={expandedRevisions[version.id] ? 'Recolher detalhes' : 'Expandir detalhes'} className="h-7 px-2 text-gray-600" onClick={() => setExpandedRevisions(prev => ({ ...prev, [version.id]: !prev[version.id] }))}>
                                         <ChevronDown className={`w-4 h-4 transition-transform ${expandedRevisions[version.id] ? 'rotate-180' : ''}`} />
                               </Button>
                           )}
                         </div>
                       </div>
-
                                 {(expandedRevisions[version.id] ?? true) && (
                                   <>
-                                    <div className="text-xs text-gray-700 space-y-1 mb-3 w-full">
+                                    <div className="text-xs text-gray-700 space-y-1 mb-3">
                                       <p><strong>Autor:</strong> {version.autorNome}</p>
                                       <p><strong>Cargo:</strong> {version.autorCargo || 'Não informado'}</p>
                                       <p><strong>Gerência:</strong> {version.autorGerencia || 'Não informado'}</p>
@@ -952,40 +1018,28 @@ export default function ETPElaboracaoSection({
                                       <p><strong>Prazo inicial:</strong> {version.prazoInicialDiasUteis || 0} dias úteis</p>
                                       <p><strong>Prazo cumprido:</strong> {version.prazoCumpridoDiasUteis !== undefined ? `${version.prazoCumpridoDiasUteis} dias úteis` : 'Não enviado'}</p>
                   </div>
-
                                     {version.documentoNome && (
-                                      <div className="flex items-center justify-between p-2 bg-blue-50 rounded border border-blue-200 w-full">
+                                      <div className="flex items-center justify-between p-2 bg-blue-50 rounded border border-blue-200">
                            <div className="flex items-center gap-2">
                                           <File className="w-4 h-4 text-blue-600" />
                                           <span className="text-sm font-medium text-blue-800">{version.documentoNome}</span>
                            </div>
                                         <div className="flex items-center gap-1">
-                                          <Button size="sm" variant="outline" aria-label="Visualizar documento" className="h-7 w-7 p-0 hover:bg-blue-50">
-                                            <Eye className="w-3 h-3" />
-                                          </Button>
-                                          <Button size="sm" variant="outline" aria-label="Baixar documento" className="h-7 w-7 p-0 hover:bg-green-50">
-                                            <Download className="w-3 h-3" />
-                                          </Button>
+                                          <Button size="sm" variant="outline" aria-label="Visualizar documento" className="h-7 w-7 p-0 hover:bg-blue-50"><Eye className="w-3 h-3" /></Button>
+                                          <Button size="sm" variant="outline" aria-label="Baixar documento" className="h-7 w-7 p-0 hover:bg-green-50"><Download className="w-3 h-3" /></Button>
                          </div>
                        </div>
                                     )}
                                   </>
                                 )}
                          </div>
-                              {idx < arr.length - 1 && (
-                                <div className="border-b border-slate-200 my-2" />
-                              )}
+                              {idx < arr.length - 1 && <div className="border-b border-slate-200 my-2" />}
                               </React.Fragment>
                             );
                           })}
                           {versions.length > 1 && (
                             <div className="pt-2">
-                              <Button
-                                variant="ghost"
-                                aria-label={showAllRevisions ? 'Recolher lista de revisões' : 'Ver todas as revisões'}
-                                className="text-sm text-purple-700 hover:text-purple-800 hover:bg-purple-50"
-                                onClick={() => setShowAllRevisions(v => !v)}
-                              >
+                            <Button variant="ghost" aria-label={showAllRevisions ? 'Recolher lista de revisões' : 'Ver todas as revisões'} className="text-sm text-purple-700 hover:text-purple-800 hover:bg-purple-50" onClick={() => setShowAllRevisions(v => !v)}>
                                 {showAllRevisions ? 'Ocultar revisões antigas' : 'Ver todas as revisões'}
                               </Button>
                        </div>
@@ -993,48 +1047,42 @@ export default function ETPElaboracaoSection({
                    </div>
                  )}
                </div>
-                  </TabsContent>
-                  
-                  {/* Aba Anexos */}
-                  <TabsContent value="anexos" className="mt-0 p-3">
-                    <div className="space-y-3 w-full">
-                      {/* Upload no topo */}
+                </div>
+              </div>
+            </div>
+            <div className="col-span-12 lg:col-span-6">
+              <div className="rounded-xl border shadow-sm bg-white h-full min-h-[500px]">
+                <div className="px-4 py-6 rounded-t-xl border-b">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-sm font-semibold text-slate-900 flex items-center gap-2">
+                      <Upload className="w-4 h-4 text-green-600" />
+                      Anexos
+                    </h3>
+                    <span className="text-xs text-slate-600 bg-slate-200 px-2 py-0.5 rounded-md font-medium">{anexos.length}</span>
+                  </div>
+                </div>
+                <div className="p-4">
+                  <div className="space-y-3">
                       <div className="w-full">
                         <input ref={fileInputRef} type="file" accept=".pdf,.doc,.docx,.odt,.png,.jpg,.jpeg,.gif,.bmp,.tif,.tiff" className="hidden" onChange={handleFileUpload} />
-                        <Button onClick={()=>fileInputRef.current?.click()} variant="outline" className="w-full h-9 border-dashed border-2 border-gray-300 hover:border-green-400 hover:bg-green-50 transition-colors text-sm">
-                          <Upload className="w-4 h-4 mr-2"/>Adicionar Anexo
+                      <Button onClick={() => fileInputRef.current?.click()} variant="outline" className="w-full h-9 border-dashed border-2 border-gray-300 hover:border-green-400 hover:bg-green-50 transition-colors text-sm">
+                        <Upload className="w-4 h-4 mr-2" />Adicionar Anexo
                         </Button>
                  </div>
-                      {/* Filtro de Ordenação */}
                       <div className="w-full flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2 mb-3">
-                      <div className="flex items-center gap-2">
-                          <h3 className="text-sm font-semibold text-slate-800">Anexos</h3>
-                          <span className="text-xs text-slate-600 bg-slate-200 px-2 py-0.5 rounded-md font-medium">
-                            {anexos.length}
-                          </span>
-                        </div>
                         <div className="flex items-center gap-2 w-full sm:w-auto">
                           <span className="text-xs text-slate-500 whitespace-nowrap">Ordenar:</span>
                           <div className="relative flex-1 sm:flex-none">
-                            <select
-                              aria-label="Ordenar anexos"
-                              value={attachmentsSort}
-                              onChange={(e) => setAttachmentsSort(e.target.value as 'desc' | 'asc')}
-                              className="w-full h-7 rounded-md border border-slate-200 bg-white px-2 pr-6 text-xs text-slate-700 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 transition-colors appearance-none cursor-pointer hover:border-slate-300"
-                            >
+                          <select aria-label="Ordenar anexos" value={attachmentsSort} onChange={(e) => setAttachmentsSort(e.target.value as 'desc' | 'asc')} className="w-full h-7 rounded-md border border-slate-200 bg-white px-2 pr-6 text-xs text-slate-700 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 transition-colors appearance-none cursor-pointer hover:border-slate-300">
                               <option value="desc">Mais recente</option>
                               <option value="asc">Menos recente</option>
                             </select>
                             <div className="absolute inset-y-0 right-0 flex items-center pr-1.5 pointer-events-none">
-                              <svg className="w-3 h-3 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                              </svg>
+                            <svg className="w-3 h-3 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
                       </div>
                           </div>
                         </div>
                       </div>
-
-                      {/* Lista */}
                       {anexos.length === 0 ? (
                         <div className="pt-4">
                           <div className="p-4 bg-gray-100 rounded-full w-16 h-16 mx-auto mb-4 flex items-center justify-center">
@@ -1043,10 +1091,10 @@ export default function ETPElaboracaoSection({
                           <p className="text-center text-gray-500 font-medium">Nenhum anexo adicionado</p>
                       </div>
                       ) : (
-                        <div className={`${anexos.length > 6 ? 'max-h-[280px] overflow-y-auto' : ''} space-y-0 w-full`}>
-                          {anexosOrdenados.map((anexo, idx)=>(
+                      <div className={`${anexos.length > 6 ? 'max-h-[450px] overflow-y-auto' : ''} space-y-0`}>
+                        {anexosOrdenados.map((anexo, idx) => (
                             <React.Fragment key={anexo.id}>
-                              <div className="flex items-center justify-between p-2.5 border border-gray-200 rounded-lg hover:bg-slate-50 transition-colors w-full">
+                            <div className="flex items-center justify-between p-2.5 border border-gray-200 rounded-lg hover:bg-slate-50 transition-colors">
                                 <div className="flex items-center gap-3 min-w-0 flex-1">
                                   <div className="p-2 bg-slate-100 rounded-lg">
                                     <FileText className="w-4 h-4 text-blue-600" />
@@ -1058,272 +1106,290 @@ export default function ETPElaboracaoSection({
                       </div>
                         </div>
                                 <div className="hidden sm:flex items-center gap-2 flex-shrink-0">
-                                  <Button size="sm" variant="outline" aria-label="Visualizar" className="h-7 w-7 p-0 hover:bg-blue-50" onClick={()=>openInNewTab(anexo.urlDownload)}>
-                                    <Eye className="w-3 h-3" />
-                                  </Button>
-                                  <Button size="sm" variant="outline" aria-label="Baixar" className="h-7 w-7 p-0 hover:bg-green-50">
-                                    <Download className="w-3 h-3" />
-                                  </Button>
-                                  <Button size="sm" variant="outline" aria-label="Remover" className="h-7 w-7 p-0 text-red-600 hover:text-red-700 hover:bg-red-50" onClick={()=>handleDeleteAnexo(anexo.id)}>
-                                    <Trash2 className="w-3 h-3" />
-                                  </Button>
+                                <Button size="sm" variant="outline" aria-label="Visualizar" className="h-7 w-7 p-0 hover:bg-blue-50" onClick={() => openInNewTab(anexo.urlDownload)}><Eye className="w-3 h-3" /></Button>
+                                <Button size="sm" variant="outline" aria-label="Baixar" className="h-7 w-7 p-0 hover:bg-green-50"><Download className="w-3 h-3" /></Button>
+                                <Button size="sm" variant="outline" aria-label="Remover" className="h-7 w-7 p-0 text-red-600 hover:text-red-700 hover:bg-red-50" onClick={() => handleDeleteAnexo(anexo.id)}><Trash2 className="w-3 h-3" /></Button>
                       </div>
                     </div>
-                              {idx < anexosOrdenados.length-1 && (<div className="border-b border-slate-200" />)}
+                            {idx < anexosOrdenados.length - 1 && <div className="border-b border-slate-200" />}
                             </React.Fragment>
                           ))}
                   </div>
                       )}
                </div>
-                  </TabsContent>
-                </Tabs>
              </div>
         </div>
-          </aside>
+            </div>
+          </div>
+        </div>
+      </div>
 
-          {/* FULL: Comentários */}
-          <section id="comentarios" className="col-span-12 w-full">
-          <CommentsSection
-            processoId={processoId}
-              etapaId={String(etapaId)}
-              cardId="dfd-form"
-            title="Comentários"
-          />
-        </section>
-
-          {/* FULL: Ações (rodapé não fixo) */}
-          <section id="acoes" className="col-span-12 w-full mt-4 pb-2">
-                 {/* Rodapé com Botões de Ação */}
-            <Card className="w-full shadow-lg border-0 bg-white/80 backdrop-blur-sm">
-          <CardContent className="p-4">
-            <div className="flex flex-col sm:flex-row gap-4 justify-between items-center w-full">
-              
-              {/* Lado esquerdo - Status e informações */}
-              <div className="flex items-center gap-4">
+      {/* 3️⃣ Painel da Etapa */}
+      <div className="rounded-2xl border border-slate-300 shadow-md bg-white p-6 mb-8 min-h-[700px]">
+        <header className="flex items-center gap-3 mb-4">
+          <ClipboardCheck className="w-6 h-6 text-green-600" />
+          <h2 className="text-lg font-bold text-slate-900">Painel da Etapa</h2>
+          <div className="ml-auto">
+            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">Checklist</span>
+          </div>
+        </header>
+        <div className="border-b-2 border-green-200 mb-6"></div>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="rounded-2xl border shadow-sm bg-white p-4 md:p-6">
+            <header className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-2">
+                <Flag className="w-5 h-5 text-indigo-600" />
+                <h3 className="text-sm font-semibold text-slate-800">Status & Prazo</h3>
+              </div>
+              <Badge className={`text-sm font-semibold px-3 py-2 ${getStatusClasses(getEtapaStatus())}`}>{getEtapaStatus()}</Badge>
+            </header>
+            <div className="space-y-4">
+              <div className="space-y-4">
+                <div className="flex items-center gap-3 p-3 rounded-lg border border-slate-200">
+                  <div className="w-10 h-10 rounded-full flex items-center justify-center border border-slate-300">
+                    <Calendar className="w-5 h-5 text-slate-600" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold text-slate-500">Data de Criação</p>
+                    <p className="text-lg font-bold text-slate-900">{formatDateBR(currentVersion.criadoEm)}</p>
+                  </div>
+                </div>
+                <div className="flex items-center justify-between p-3 rounded-lg border border-slate-200">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-full flex items-center justify-center border border-slate-300">
+                      <Clock className="w-5 h-5 text-slate-600" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-semibold text-slate-500">Prazo Inicial</p>
+                      <p className="text-lg font-bold text-slate-900">{formatDateBR(currentVersion.criadoEm)}</p>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold border border-slate-300 text-slate-700">{currentVersion.prazoInicialDiasUteis || 5} dias úteis</span>
+                  </div>
+                </div>
+                <div className="flex items-center justify-between p-3 rounded-lg border border-slate-200">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-full flex items-center justify-center border border-slate-300">
+                      <Flag className="w-5 h-5 text-slate-600" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-semibold text-slate-500">Prazo Final</p>
+                      <p className="text-lg font-bold text-slate-900">{formatDateBR(getPrazoFinalPrevisto().toISOString())}</p>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold border border-slate-300 text-slate-700">prazo limite</span>
+                  </div>
+                </div>
+                {etapaConcluida && (
+                  <div className="mt-4 pt-4 border-t border-slate-200">
+                    <div className="flex items-center justify-between p-3 rounded-lg border border-slate-200">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-full flex items-center justify-center border border-green-300">
+                          <CheckCircle2 className="w-5 h-5 text-green-600" />
+                        </div>
+                        <div>
+                          <p className="text-sm font-semibold text-green-600">Prazo Cumprido</p>
+                          <p className="text-lg font-bold text-green-700">{formatDateBR(etapaConcluida.dataConclusao)}</p>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold border border-green-300 text-green-700">{getTempoDecorrido().diasUteis} dias úteis</span>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+              <div className="border-t border-slate-200 my-3 pt-4">
                       {(() => {
                         const diasRest = getDiasRestantes(currentVersion);
                         const prazo = getPrazoColorClasses(diasRest);
+                  const isAtraso = diasRest !== null && diasRest < 0;
                         return (
-                          <>
-                            <Clock className={`w-4 h-4 ${prazo.text}`} />
-                            <span className={`text-sm ${prazo.text}`}>
-                              {diasRest === null ? 'Sem prazo' : diasRest < 0 ? `${Math.abs(diasRest)} dia(s) atrasado` : `${diasRest} dia(s) restantes`}
-                  </span>
-                          </>
+                    <div className="text-center py-4">
+                      <div className={`text-3xl font-bold ${prazo.text} mb-2`}>{diasRest === null ? '—' : Math.abs(diasRest)}</div>
+                      <div className={`text-sm font-medium ${prazo.text}`}>
+                        {diasRest === null ? 'Sem prazo definido' : isAtraso ? 'dias em atraso' : diasRest <= 2 ? 'dias restantes (urgente)' : 'dias restantes'}
+                      </div>
+                    </div>
                         );
                       })()}
                 </div>
-                <div className="flex items-center gap-2">
-                  <User className="w-4 h-4 text-gray-500" />
-                  <span className="text-sm text-gray-600">
-                        {currentVersion.autorNome || 'Sem responsável definido'}
-                  </span>
+              <div className="space-y-2">
+                <div className="flex justify-between text-xs text-slate-500">
+                  <span>Progresso</span>
+                  <span>{getProgressoTemporal()}%</span>
+                </div>
+                <div className="w-full bg-slate-200 rounded-full h-2">
+                  <div className={`h-2 rounded-full transition-all ${getProgressColor(getProgressoTemporal())}`} style={{ width: `${Math.min(getProgressoTemporal(), 100)}%` }} />
+                </div>
+              </div>
                 </div>
               </div>
 
-              {/* Lado direito - Botões de ação */}
+          <div className="rounded-2xl border shadow-sm bg-white p-4 md:p-6">
+            <header className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-2">
-                  {/* Botão Salvar Rascunho */}
-                  {permissoes.podeEditar && currentVersion.status === 'rascunho' && !etapaConcluida && (
-                      <Button
-                      onClick={handleSaveRevision} 
-                        variant="outline"
-                      disabled={isLoading}
-                      aria-label="Salvar rascunho"
-                      className="border-gray-200 text-gray-700 hover:bg-gray-50"
-                      >
-                      <Save className="w-4 h-4 mr-2" />
-                      Salvar Rascunho
-                      </Button>
-                  )}
-                  
-                  {/* Botão Finalizar */}
-                  <TooltipProvider>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <div>
-                    <Button
-                            onClick={handleFinalizar} 
-                      variant="outline"
-                            disabled={!canFinalizar() || isLoading || !permissoes.podeEditar || currentVersion.status !== 'rascunho' || !!etapaConcluida}
-                            aria-label="Finalizar ETP"
-                            className="border-green-200 text-green-700 hover:bg-green-50"
-                    >
-                            <CheckCircle2 className="w-4 h-4 mr-2" />
-                            Finalizar
-                    </Button>
-                        </div>
-                      </TooltipTrigger>
-                      {!canFinalizar() && (
-                        <TooltipContent>
-                          <p>Preencha os campos obrigatórios</p>
-                        </TooltipContent>
-                      )}
-                    </Tooltip>
-                  </TooltipProvider>
+                <ListChecks className="w-5 h-5 text-indigo-600" />
+                <h3 className="text-sm font-semibold text-slate-800">Checklist da Etapa</h3>
+              </div>
+              {(() => {
+                const checklist = generateChecklist();
+                const pendentes = checklist.filter(i => i.status === 'pending').length;
+                const total = checklist.length;
+                return (
+                  <div className="flex items-center gap-2">
+                    {pendentes > 0 && <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-700">{pendentes} pendente{pendentes !== 1 ? 's' : ''}</span>}
+                    <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-slate-100 text-slate-600">{total} item{total !== 1 ? 's' : ''}</span>
+                  </div>
+                );
+              })()}
+            </header>
+            <div className="space-y-1">
+              {generateChecklist().length === 0 ? (
+                <p className="text-sm text-gray-500 italic text-center py-6">Nenhum requisito definido para esta etapa.</p>
+              ) : (
+                generateChecklist().map(item => (
+                  <div key={item.id} className="flex items-center gap-3 py-2 px-2 hover:bg-slate-50 rounded transition-colors cursor-pointer">
+                    {getChecklistIcon(item.status)}
+                    <span className="text-sm text-slate-700 flex-1">{item.label}</span>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
 
-                  {/* Botão Enviar para Assinatura */}
-                  <TooltipProvider>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <div>
-                    <Button
-                            onClick={handleSendToSignature} 
-                            variant="outline" 
-                            disabled={!canSendToSignature() || isLoading || !permissoes.podeEditar || !!etapaConcluida}
-                            aria-label="Enviar para assinatura"
-                            className="border-blue-200 text-blue-700 hover:bg-blue-50"
-                          >
-                            <Send className="w-4 h-4 mr-2" />
-                      Enviar para Assinatura
-                    </Button>
+          <div className="rounded-2xl border shadow-sm bg-white p-4 md:p-6 flex flex-col min-h-[320px]">
+            <header className="flex items-center gap-2 mb-4">
+              <Clock className="w-5 h-5 text-indigo-600" />
+              <h3 className="text-sm font-semibold text-slate-800">Mini Timeline</h3>
+            </header>
+            <div className="flex-1 flex flex-col">
+              {generateTimeline().length === 0 ? (
+                <div className="flex-1 flex items-center justify-center"><p className="text-sm text-gray-500 italic text-center">Ainda não há ações registradas.</p></div>
+              ) : (
+                <>
+                  <div className="flex-1 relative pr-2">
+                    <div className="absolute left-2 top-0 bottom-0 w-0.5 bg-slate-200"></div>
+                    <div className="max-h-[280px] overflow-y-auto">
+                      <div className="flex flex-col gap-4 pl-6">
+                        {generateTimeline().map(item => (
+                          <div key={item.id} className="relative group">
+                            <div className="absolute -left-6 top-0 w-4 h-4 bg-white rounded-full flex items-center justify-center">{getTimelineIcon(item)}</div>
+                            <div className="hover:bg-slate-50 rounded-lg px-3 py-2 transition-colors cursor-pointer">
+                              <p className="text-sm font-semibold text-slate-700 mb-1">{item.descricao}</p>
+                              <div className="flex items-center gap-2 text-xs text-slate-500"><span>{item.autor}</span><span>•</span><span>{formatDateTimeBR(new Date(item.dataHora))}</span></div>
                         </div>
-                      </TooltipTrigger>
-                      {!canSendToSignature() && (
-                        <TooltipContent>
-                          <p>Finalize o ETP antes de enviar para assinatura</p>
-                        </TooltipContent>
-                      )}
-                    </Tooltip>
-                  </TooltipProvider>
-
-                  {/* Botão Concluir Etapa */}
-                  {canShowConcluirButton() && !etapaConcluida && (
-                    <TooltipProvider>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <div>
-                            <Button 
-                              onClick={handleOpenConcluirModal} 
-                              variant="default" 
-                              disabled={!canConcluirEtapa() || isLoading}
-                              aria-label="Concluir etapa"
-                              className="bg-green-600 hover:bg-green-700 text-white"
-                            >
-                              <Flag className="w-4 h-4 mr-2" />
-                              Concluir Etapa
-                            </Button>
                           </div>
-                        </TooltipTrigger>
-                        {!canConcluirEtapa() && (
-                          <TooltipContent>
-                            <p>É necessário finalizar o ETP antes de concluir a etapa.</p>
-                          </TooltipContent>
-                        )}
-                      </Tooltip>
-                    </TooltipProvider>
-                  )}
-                  
-                  {!permissoes.podeEditar && (
-                  <div className="flex items-center gap-2 text-sm text-gray-500">
-                    <Info className="w-4 h-4" />
-                    Somente visualização
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                  <div className="border-t border-slate-200 pt-3 mt-4">
+                    <button className="w-full text-center text-sm text-indigo-600 hover:text-indigo-700 hover:underline transition-colors" aria-label="Ver histórico completo de ações">Ver todas as ações</button>
+                  </div>
+                </>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* 4️⃣ Comentários */}
+      <div className="w-full">
+        <div className="rounded-2xl border border-slate-300 shadow-md bg-white p-6">
+          <CommentsSection processoId={processoId} etapaId={String(etapaId)} cardId="etp-form" title="Comentários" />
+                        </div>
+      </div>
+
+      {/* 5️⃣ Ações da Etapa */}
+      <div className="rounded-2xl border border-slate-300 shadow-md bg-white p-6 mb-8">
+        <header className="flex items-center gap-3 mb-4">
+          <Flag className="w-6 h-6 text-orange-600" />
+          <h2 className="text-lg font-bold text-slate-900">Ações da Etapa</h2>
+          <div className="ml-auto"><span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-orange-100 text-orange-800">Ações</span></div>
+        </header>
+        <div className="border-b-2 border-orange-200 mb-6"></div>
+        <div className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="flex items-center gap-3 p-3 rounded-lg border border-slate-200">
+              <div className="w-10 h-10 rounded-full flex items-center justify-center border border-slate-300"><Clock className="w-5 h-5 text-slate-600" /></div>
+                          <div>
+                <p className="text-sm font-semibold text-slate-500">Prazo</p>
+                <p className={`text-lg font-bold ${(() => { const diasRest = getDiasRestantes(currentVersion); const prazo = getPrazoColorClasses(diasRest); return prazo.text; })()}`}>
+                  {(() => { const diasRest = getDiasRestantes(currentVersion); return diasRest === null ? 'Sem prazo' : diasRest < 0 ? `${Math.abs(diasRest)} dias atrasado` : `${diasRest} dias restantes`; })()}
+                </p>
+                          </div>
+            </div>
+            <div className="flex items-center gap-3 p-3 rounded-lg border border-slate-200">
+              <div className="w-10 h-10 rounded-full flex items-center justify-center border border-slate-300"><User className="w-5 h-5 text-slate-600" /></div>
+              <div>
+                <p className="text-sm font-semibold text-slate-500">Responsável</p>
+                <p className="text-lg font-bold text-slate-900">{currentVersion.autorNome || 'Sem responsável'}</p>
+              </div>
+            </div>
+          </div>
+          <div className="border-t border-slate-200 pt-4">
+            {etapaConcluida ? (
+              <div className="flex items-center justify-center p-4 bg-green-50 rounded-lg border border-green-200">
+                <div className="flex items-center gap-3">
+                  <CheckCircle2 className="w-6 h-6 text-green-600" />
+                  <div className="text-center">
+                    <p className="text-sm font-semibold text-green-600">Etapa Concluída</p>
+                    <p className="text-sm text-green-700">{formatDate(etapaConcluida.dataConclusao)} por {etapaConcluida.usuarioNome}</p>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div className="flex flex-wrap gap-2 justify-center">
+                {permissoes.podeEditar && currentVersion.status === 'rascunho' && (
+                  <Button onClick={handleSaveRevision} variant="outline" disabled={isLoading} size="sm" className="border-slate-300 text-slate-700 hover:bg-slate-50"><Save className="w-4 h-4 mr-2" />Salvar Rascunho</Button>
+                )}
+                <Button onClick={handleFinalizar} variant="outline" disabled={!canFinalizar() || isLoading || !permissoes.podeEditar || currentVersion.status !== 'rascunho'} size="sm" className="border-green-300 text-green-700 hover:bg-green-50"><CheckCircle2 className="w-4 h-4 mr-2" />Finalizar</Button>
+                <Button onClick={handleSendToSignature} variant="outline" disabled={!canSendToSignature() || isLoading || !permissoes.podeEditar} size="sm" className="border-blue-300 text-blue-700 hover:bg-blue-50"><Send className="w-4 h-4 mr-2" />Enviar para Assinatura</Button>
+                {canShowConcluirButton() && (
+                  <Button onClick={handleOpenConcluirModal} variant="outline" disabled={!canConcluirEtapa() || isLoading} size="sm" className="border-green-300 text-green-700 hover:bg-green-50"><Flag className="w-4 h-4 mr-2" />Concluir Etapa</Button>
+                )}
+                {!permissoes.podeEditar && (<div className="flex items-center gap-2 text-sm text-gray-500"><Info className="w-4 h-4" />Somente visualização</div>)}
                   </div>
                 )}
               </div>
-                
-                {/* Informações de Status */}
-                {(currentVersion.status === 'enviada_para_assinatura' || etapaConcluida) && (
-                  <div className="text-sm text-gray-500 mt-2">
-                    {currentVersion.status === 'enviada_para_assinatura' && (
-                      <span className="flex items-center gap-2">
+          {currentVersion.enviadoParaAssinaturaEm && (
+            <div className="border-t border-slate-200 pt-4">
+              <div className="flex items-center justify-center gap-2 text-sm text-slate-600">
                         <Clock className="w-4 h-4" />
-                        Enviado para assinatura em {formatDate(currentVersion.enviadoParaAssinaturaEm || '')}
-                      </span>
-                    )}
-                    {etapaConcluida && (
-                      <span className="flex items-center gap-2 text-green-600">
-                        <CheckCircle2 className="w-4 h-4" />
-                        Concluída em {formatDate(etapaConcluida.dataConclusao)} por {etapaConcluida.usuarioNome}
-                      </span>
-                    )}
+                <span>Enviado para assinatura em {formatDateBR(currentVersion.enviadoParaAssinaturaEm)}</span>
+              </div>
                   </div>
                 )}
             </div>
-          </CardContent>
-        </Card>
-          </section>
         </div>
 
-        {/* Modal de Confirmação de Conclusão */}
+      {/* Modais */}
         <Dialog open={showConcluirModal} onOpenChange={setShowConcluirModal}>
           <DialogContent className="sm:max-w-[500px]">
             <DialogHeader>
-              <DialogTitle className="flex items-center gap-2">
-                <Flag className="w-5 h-5 text-green-600" />
-                Concluir Etapa
-              </DialogTitle>
-              <DialogDescription>
-                Concluir a etapa Elaboração do ETP para o processo {processoId}?
-              </DialogDescription>
+            <DialogTitle className="flex items-center gap-2"><Flag className="w-5 h-5 text-green-600" />Concluir Etapa</DialogTitle>
+            <DialogDescription>Concluir a etapa Elaboração do ETP para o processo {processoId}?</DialogDescription>
             </DialogHeader>
-            
             <div className="space-y-4">
-              {/* Observações de conclusão */}
               <div className="space-y-2">
-                <Label htmlFor="observacao" className="text-sm font-medium">
-                  Observações de conclusão (opcional)
-                </Label>
-                <Textarea
-                  id="observacao"
-                  value={observacaoConclusao}
-                  onChange={(e) => setObservacaoConclusao(e.target.value)}
-                  placeholder="Adicione observações sobre a conclusão da etapa..."
-                  className="min-h-[80px] resize-none"
-                />
+              <Label htmlFor="observacao" className="text-sm font-medium">Observações de conclusão (opcional)</Label>
+              <Textarea id="observacao" value={observacaoConclusao} onChange={(e) => setObservacaoConclusao(e.target.value)} placeholder="Adicione observações sobre a conclusão da etapa..." className="min-h-[80px] resize-none" />
               </div>
-
-              {/* Checkbox de notificação */}
               <div className="flex items-center space-x-2">
-                <Checkbox
-                  id="notificar"
-                  checked={notificarPartes}
-                  onCheckedChange={(checked) => setNotificarPartes(checked as boolean)}
-                />
-                <Label htmlFor="notificar" className="text-sm font-medium">
-                  Notificar partes interessadas
-                </Label>
+              <Checkbox id="notificar" checked={notificarPartes} onCheckedChange={(checked) => setNotificarPartes(checked as boolean)} />
+              <Label htmlFor="notificar" className="text-sm font-medium">Notificar partes interessadas</Label>
               </div>
-
-              {/* Resumo da ação */}
-              <Alert>
-                <AlertCircle className="h-4 w-4" />
-                <AlertDescription>
-                  <strong>Atenção:</strong> Ao concluir esta etapa, o card será bloqueado para edição e a próxima etapa do fluxo será habilitada.
-                </AlertDescription>
-              </Alert>
+            <Alert><AlertCircle className="h-4 w-4" /><AlertDescription><strong>Atenção:</strong> Ao concluir esta etapa, o card será bloqueado para edição e a próxima etapa do fluxo será habilitada.</AlertDescription></Alert>
             </div>
-
             <div className="flex justify-end gap-3 pt-4 pb-2">
-              <Button
-                variant="outline"
-                onClick={() => setShowConcluirModal(false)}
-                disabled={isLoading}
-              >
-                Cancelar
-              </Button>
-              <Button
-                onClick={handleConcluirEtapa}
-                disabled={isLoading}
-                className="bg-green-600 hover:bg-green-700"
-              >
-                {isLoading ? (
-                  <>
-                    <RotateCcw className="w-4 h-4 mr-2 animate-spin" />
-                    Concluindo...
-                  </>
-                ) : (
-                  <>
-                    <Flag className="w-4 h-4 mr-2" />
-                    Concluir Etapa
-                  </>
-                )}
-              </Button>
+            <Button variant="outline" onClick={() => setShowConcluirModal(false)} disabled={isLoading}>Cancelar</Button>
+            <Button onClick={handleConcluirEtapa} disabled={isLoading} className="bg-green-600 hover:bg-green-700">{isLoading ? (<><RotateCcw className="w-4 h-4 mr-2 animate-spin" />Concluindo...</>) : (<><Flag className="w-4 h-4 mr-2" />Concluir Etapa</>)}</Button>
             </div>
           </DialogContent>
         </Dialog>
-      </div>
     </div>
   );
 }
