@@ -278,6 +278,50 @@ export default function ETPElaboracaoSection({
   
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // Função utilitária: garantir que o scroll global esteja destravado
+  const unlockScroll = useCallback(() => {
+    try {
+      const html = document.documentElement;
+      const body = document.body;
+      if (body) {
+        body.style.overflow = 'auto';
+        body.style.position = '';
+        body.style.top = '';
+        body.style.height = '';
+        body.classList.remove('overflow-hidden', 'fixed');
+      }
+      if (html) {
+        html.style.overflow = 'auto';
+        html.style.height = '';
+        html.classList.remove('overflow-hidden');
+      }
+    } catch {}
+  }, []);
+
+  // Garante que o scroll global nunca fique travado ao retornar para a tela
+  useEffect(() => {
+    // Destrava ao montar (caso alguma tela anterior tenha deixado travado)
+    unlockScroll();
+    // Destrava ao desmontar por segurança
+    return () => unlockScroll();
+  }, [unlockScroll]);
+
+  // Se o modal não está aberto, garantir que o scroll global esteja destravado
+  useEffect(() => {
+    if (!showConcluirModal) {
+      unlockScroll();
+      requestAnimationFrame(unlockScroll);
+      setTimeout(unlockScroll, 0);
+    }
+  }, [showConcluirModal, unlockScroll]);
+
+  // Ao mudar a expansão de revisões ou a listagem, reforçar destravamento
+  useEffect(() => {
+    if (!showConcluirModal) {
+      unlockScroll();
+    }
+  }, [expandedRevisions, showAllRevisions, unlockScroll, showConcluirModal]);
+
   // Função para normalizar e comparar gerências
   const isGerenciaResponsavel = (userGerencia: string, gerenciaCriadora: string): boolean => {
     if (!userGerencia || !gerenciaCriadora) {
@@ -1002,7 +1046,7 @@ export default function ETPElaboracaoSection({
                         </div>
                         <div className="flex items-center gap-2">
                                     {(showAllRevisions || versions[0].id !== version.id) && (
-                                      <Button size="sm" variant="ghost" aria-label={expandedRevisions[version.id] ? 'Recolher detalhes' : 'Expandir detalhes'} className="h-7 px-2 text-gray-600" onClick={() => setExpandedRevisions(prev => ({ ...prev, [version.id]: !prev[version.id] }))}>
+                                      <Button size="sm" variant="ghost" aria-label={expandedRevisions[version.id] ? 'Recolher detalhes' : 'Expandir detalhes'} className="h-7 px-2 text-gray-600" onClick={() => { setExpandedRevisions(prev => ({ ...prev, [version.id]: !prev[version.id] })); requestAnimationFrame(unlockScroll); setTimeout(unlockScroll, 0); }}>
                                         <ChevronDown className={`w-4 h-4 transition-transform ${expandedRevisions[version.id] ? 'rotate-180' : ''}`} />
                               </Button>
                           )}

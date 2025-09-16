@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Clock, 
@@ -136,25 +136,36 @@ export default function FluxoProcessoCompleto({ etapas = etapasPadrao, onEtapaCl
   // Controle de fullscreen (apenas um card por vez)
   const [fullscreenCardId, setFullscreenCardId] = useState<number | null>(null);
   const isAnyCardFullscreen = fullscreenCardId !== null;
-  // Bloqueia scroll do body quando fullscreen estiver ativo
+
+  // Utilitário para garantir que o scroll global esteja destravado
+  const unlockScroll = useCallback(() => {
+    try {
+      const html = document.documentElement;
+      const body = document.body;
+      if (body) {
+        body.style.overflow = 'auto';
+        body.classList.remove('overflow-hidden', 'fixed');
+      }
+      if (html) {
+        html.style.overflow = 'auto';
+        html.classList.remove('overflow-hidden');
+      }
+    } catch {}
+  }, []);
+
+  // Bloqueia/desbloqueia scroll quando fullscreen estiver ativo
   useEffect(() => {
     if (isAnyCardFullscreen) {
-      const originalOverflow = document.body.style.overflow;
-      document.body.dataset.prevOverflow = originalOverflow;
-      document.body.style.overflow = 'hidden';
+      try {
+        document.body.style.overflow = 'hidden';
+      } catch {}
     } else {
-      // restaura overflow
-      const prev = document.body.dataset.prevOverflow ?? '';
-      document.body.style.overflow = prev;
-      delete document.body.dataset.prevOverflow;
+      unlockScroll();
     }
     return () => {
-      // garante restauração ao desmontar
-      const prev = document.body.dataset.prevOverflow ?? '';
-      document.body.style.overflow = prev;
-      delete document.body.dataset.prevOverflow;
+      unlockScroll();
     };
-  }, [isAnyCardFullscreen]);
+  }, [isAnyCardFullscreen, unlockScroll]);
   // ESC para sair do fullscreen
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
@@ -634,6 +645,8 @@ export default function FluxoProcessoCompleto({ etapas = etapasPadrao, onEtapaCl
   const handleCloseModal = () => {
     setIsModalOpen(false);
     setModalEtapa(null);
+    setFullscreenCardId(null);
+    unlockScroll();
   };
 
   // Funções para modo de edição
@@ -1363,7 +1376,7 @@ export default function FluxoProcessoCompleto({ etapas = etapasPadrao, onEtapaCl
                   </button>
                 )}
                 <button 
-                  onClick={() => setShowDFDModal(false)}
+                  onClick={() => { setShowDFDModal(false); setFullscreenCardId(null); unlockScroll(); }}
                   className="w-7 h-7 rounded-full bg-gray-100/80 border border-gray-200/60 shadow-sm opacity-60 hover:opacity-80 transition-all duration-200 flex items-center justify-center"
                 >
                   <X className="h-3.5 w-3.5 text-gray-500" />
@@ -1499,7 +1512,7 @@ export default function FluxoProcessoCompleto({ etapas = etapasPadrao, onEtapaCl
                   </button>
                 )}
                 <button 
-                  onClick={() => setShowETPModal(false)}
+                  onClick={() => { setShowETPModal(false); setFullscreenCardId(null); unlockScroll(); }}
                   className="w-7 h-7 rounded-full bg-gray-100/80 border border-gray-200/60 shadow-sm opacity-60 hover:opacity-80 transition-all duration-200 flex items-center justify-center"
                 >
                   <X className="h-3.5 w-3.5 text-gray-500" />
@@ -1649,7 +1662,7 @@ export default function FluxoProcessoCompleto({ etapas = etapasPadrao, onEtapaCl
                   )}
                 </button>
                 <button 
-                  onClick={() => setShowConsolidacaoModal(false)}
+                  onClick={() => { setShowConsolidacaoModal(false); setFullscreenCardId(null); unlockScroll(); }}
                   className="w-7 h-7 rounded-full bg-gray-100/80 border border-gray-200/60 shadow-sm opacity-60 hover:opacity-80 transition-all duration-200 flex items-center justify-center"
                 >
                   <X className="h-3.5 w-3.5 text-gray-500" />
