@@ -39,7 +39,7 @@ const App = () => (
             <Sonner />
             <BrowserRouter basename="/fiscatus-app/">
             <Routes>
-              <Route path="/" element={<UserRedirect><Dashboard /></UserRedirect>} />
+              <Route path="/" element={<UserRedirect><Home /></UserRedirect>} />
               <Route path="/dashboard" element={<UserRedirect><Dashboard /></UserRedirect>} />
               <Route path="/login" element={<Auth />} />
               <Route path="/home" element={<UserRedirect><Home /></UserRedirect>} />

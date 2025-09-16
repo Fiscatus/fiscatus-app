@@ -15,10 +15,10 @@ import {
 } from "lucide-react";
 
 const dashboard = {
-  label: "Dashboard Principal", 
+  label: "Painel Inicial", 
   icon: <LayoutDashboard className="w-5 h-5" />,
   path: "/",
-  description: "Visão geral do sistema"
+  description: "Painel Geral do Sistema"
 };
 
 const modules = [
