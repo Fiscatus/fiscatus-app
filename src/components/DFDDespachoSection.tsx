@@ -50,7 +50,10 @@ import {
   FileCheck,
   Printer,
   Shield,
-  Settings
+  Settings,
+  ClipboardCheck,
+  ListChecks,
+  Paperclip
 } from 'lucide-react';
 import { useUser } from '@/contexts/UserContext';
 import { usePermissoes } from '@/hooks/usePermissoes';
@@ -58,6 +61,7 @@ import { useToast } from '@/hooks/use-toast';
 import TextareaWithMentions from './TextareaWithMentions';
 import CommentsSection from './CommentsSection';
 import { formatDateBR, formatDateTimeBR } from '@/lib/utils';
+import ResponsavelSelector from './ResponsavelSelector';
 
 // Tipos TypeScript conforme especificação
 type DespachoStatus = 'PENDENTE' | 'GERADO' | 'ASSINADO' | 'CANCELADO';
@@ -225,7 +229,6 @@ export default function DFDDespachoSection({
   const [comentarios, setComentarios] = useState<Comentario[]>(mockComentarios);
   const [novoComentario, setNovoComentario] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [showAdicionarResponsavel, setShowAdicionarResponsavel] = useState(false);
   const [usuariosSelecionados, setUsuariosSelecionados] = useState<string[]>([]);
   const [showConcluirModal, setShowConcluirModal] = useState(false);
   const [observacaoConclusao, setObservacaoConclusao] = useState('');
@@ -581,59 +584,7 @@ export default function DFDDespachoSection({
     });
   };
 
-  const handleAdicionarResponsavel = async () => {
-    if (usuariosSelecionados.length === 0) return;
-
-    setIsLoading(true);
-    
-    try {
-      const novosResponsaveis = usuariosSelecionados.map(userId => {
-        const usuario = mockUsuariosDisponiveis.find(u => u.id === userId);
-        return {
-          id: usuario?.id || '',
-          nome: usuario?.nome || '',
-          cargo: usuario?.cargo || '',
-          gerencia: usuario?.gerencia || ''
-        };
-      });
-
-      setDespachoData({
-        ...despachoData,
-        responsaveis: [...despachoData.responsaveis, ...novosResponsaveis]
-      });
-      
-      setShowAdicionarResponsavel(false);
-      setUsuariosSelecionados([]);
-      
-      toast({
-        title: "Responsáveis adicionados",
-        description: `${novosResponsaveis.length} responsável(is) adicionado(s) com sucesso.`
-      });
-
-    } catch (error) {
-      toast({
-        title: "Erro ao adicionar",
-        description: "Não foi possível adicionar os responsáveis.",
-        variant: "destructive"
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleRemoverResponsavel = (responsavelId: string) => {
-    const responsaveisAtualizados = despachoData.responsaveis.filter(r => r.id !== responsavelId);
-    
-    setDespachoData({
-      ...despachoData,
-      responsaveis: responsaveisAtualizados
-    });
-    
-    toast({
-      title: "Responsável removido",
-      description: "O responsável foi removido com sucesso."
-    });
-  };
+  
 
   const handleAddComentario = () => {
     if (!novoComentario.trim()) return;
@@ -847,21 +798,19 @@ export default function DFDDespachoSection({
   return (
     <div className="min-h-screen bg-white">
       {/* Container central ocupando toda a área */}
-      <div className="w-full px-2">
-        {/* Grid principal 12 colunas */}
-        <div className="grid grid-cols-12 gap-4">
-          
-          {/* ESQUERDA: Formulário do Despacho (8 colunas) */}
-          <section id="formulario-despacho" className="col-span-12 lg:col-span-8 w-full">
-            
+      <div className="w-full px-2 space-y-6">
+        {/* Formulário do Despacho */}
+        <section id="formulario-despacho" className="w-full">
             {/* Card do Formulário */}
-            <div className="rounded-2xl border shadow-sm overflow-hidden bg-white">
-              <header className="bg-indigo-100 px-4 py-3 rounded-t-2xl font-semibold text-slate-900">
-                <div className="flex items-center gap-3">
+            <div className="rounded-2xl border shadow-sm bg-white">
+              <header className="flex items-center gap-3 px-4 py-3">
                   <FileCheck className="w-5 h-5 text-indigo-600" />
-                  Formulário do Despacho
+                <h2 className="text-lg font-bold text-slate-900">Formulário do Despacho</h2>
+                <div className="ml-auto">
+                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">Formulário</span>
                 </div>
               </header>
+              <div className="border-b-2 border-purple-200"></div>
               <div className="p-4 md:p-6 space-y-0">
                 
                 {/* Número do DFD */}
@@ -941,67 +890,34 @@ export default function DFDDespachoSection({
                   />
                 </div>
 
-                {/* Nome e Cargo dos Responsáveis */}
+                {/* Nome e Cargo dos Responsáveis (mesma estrutura do card Elaboração do DFD) */}
                 <div className="w-full p-4">
-                  <Label className="text-sm font-semibold text-gray-700 flex items-center gap-2 mb-2">
-                    <Users className="w-4 h-4" />
-                    Nome e Cargo dos Responsáveis *
-                  </Label>
-                  
-                  {/* Lista de responsáveis */}
-                  {despachoData.responsaveis.length > 0 ? (
-                    <div className="space-y-2 mb-3">
-                      {despachoData.responsaveis.map((responsavel) => (
-                        <div key={responsavel.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border">
-                          <div>
-                            <div className="font-medium text-gray-900">{responsavel.nome}</div>
-                            <div className="text-sm text-gray-600">{responsavel.cargo} - {responsavel.gerencia}</div>
-                          </div>
-                          {podeEditar && despachoData.status === 'PENDENTE' && (
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => handleRemoverResponsavel(responsavel.id)}
-                              className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                            >
-                              <UserMinus className="w-4 h-4" />
-                            </Button>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="p-4 bg-gray-50 rounded-lg border border-gray-200 text-center text-gray-500">
-                      Nenhum responsável selecionado
-                    </div>
-                  )}
-
-                  {/* Botão para adicionar responsáveis */}
-                  {podeEditar && despachoData.status === 'PENDENTE' && (
-                    <Button
-                      variant="outline"
-                      onClick={() => setShowAdicionarResponsavel(true)}
+                  <ResponsavelSelector
+                    value={despachoData.responsaveis}
+                    onChange={(responsaveis) => setDespachoData({ ...despachoData, responsaveis: responsaveis || [] })}
+                    disabled={!podeEditar || despachoData.status !== 'PENDENTE'}
+                    canEdit={podeEditar && despachoData.status === 'PENDENTE'}
+                    processoId={processoId}
                       className="w-full"
-                    >
-                      <UserPlus className="w-4 h-4 mr-2" />
-                      Adicionar Responsáveis
-                    </Button>
-                  )}
+                    label="Responsáveis pelo Despacho *"
+                  />
                 </div>
               </div>
             </div>
           </section>
 
-          {/* DIREITA: Gerenciamento (4 colunas) */}
-          <aside id="gerenciamento" className="col-span-12 lg:col-span-4 w-full flex flex-col">
-            <div className="rounded-2xl border shadow-sm overflow-hidden bg-white flex-1 flex flex-col">
-              <header className="bg-purple-50 px-4 py-3 rounded-t-2xl font-semibold text-slate-900">
-                <div className="flex items-center gap-3">
-                  <Settings className="w-5 h-5 text-purple-600" />
-                  Gerenciamento
+        {/* Gerenciamento (card horizontal abaixo do formulário) */}
+        <section id="gerenciamento" className="w-full">
+          <div className="rounded-2xl border border-slate-300 shadow-md bg-white p-6">
+            <header className="flex items-center gap-3 mb-4">
+              <Settings className="w-6 h-6 text-slate-600" />
+              <h2 className="text-lg font-bold text-slate-900">Gerenciamento</h2>
+              <div className="ml-auto">
+                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-slate-100 text-slate-800">Gerenciamento</span>
                 </div>
               </header>
-              <div className="p-4 md:p-6 space-y-4 flex-1 flex flex-col">
+            <div className="border-b-2 border-slate-200 mb-6"></div>
+            <div className="space-y-4">
                 <Tabs defaultValue="assinaturas" className="w-full">
                   <TabsList className="grid w-full grid-cols-2">
                     <TabsTrigger value="assinaturas">Assinaturas</TabsTrigger>
@@ -1041,9 +957,12 @@ export default function DFDDespachoSection({
                       <p className="text-sm">Nenhum assinante selecionado</p>
                     </div>
                   ) : (
-                    <div className="space-y-2">
+                    <div className="max-h-[320px] overflow-y-auto space-y-2">
                       {assinantes.map((assinante) => {
                         const statusConfig = getAssinaturaStatusConfig(assinante.status);
+                        const diasRest = sla.prazoDiasUteis - sla.decorridosDiasUteis;
+                        const isUrgente = diasRest <= 2 && diasRest >= 0 && assinante.status === 'PENDENTE';
+                        
                         return (
                           <div key={assinante.id} className="p-3 border rounded-lg bg-gray-50">
                             <div className="flex items-start justify-between">
@@ -1054,6 +973,12 @@ export default function DFDDespachoSection({
                                     {statusConfig.icon}
                                     <span className="ml-1">{statusConfig.label}</span>
                                   </Badge>
+                                  {isUrgente && (
+                                    <Badge className="bg-amber-100 text-amber-800 border-amber-300 text-xs">
+                                      <AlertTriangle className="w-3 h-3 mr-1" />
+                                      {diasRest} dia{diasRest !== 1 ? 's' : ''} útil{diasRest !== 1 ? 'eis' : ''}
+                                    </Badge>
+                                  )}
                                 </div>
                                 <div className="text-xs text-gray-600 mb-1">{assinante.cargo}</div>
                                 <div className="text-xs text-gray-500">{assinante.email}</div>
@@ -1107,30 +1032,15 @@ export default function DFDDespachoSection({
                       Progresso
                     </Label>
                     <span className="text-sm text-gray-600">
-                      {assinaturasConcluidas}/{totalAssinaturas}
+                      {assinaturasConcluidas} de {totalAssinaturas} assinaturas concluídas
                     </span>
                   </div>
                   <Progress value={progresso} className="h-2" />
                   <div className="text-xs text-gray-500">
-                    {progresso === 100 ? 'Todas as assinaturas concluídas' : 'Aguardando assinaturas'}
+                    {progresso === 100 ? 'Todas as assinaturas concluídas' : 'Aguardando assinaturas restantes'}
                   </div>
                 </div>
 
-                {/* SLA */}
-                <div className="p-3 bg-yellow-50 rounded-lg">
-                  <div className="flex items-center justify-between mb-2">
-                    <Label className="text-sm font-semibold text-gray-700">
-                      SLA
-                    </Label>
-                    <Badge className={getSLABadgeConfig(sla.badge).className}>
-                      {getSLABadgeConfig(sla.badge).label}
-                    </Badge>
-                  </div>
-                  <div className="text-sm text-gray-600">
-                    <div>Prazo: {sla.prazoDiasUteis} dia útil</div>
-                    <div>Decorridos: {sla.decorridosDiasUteis} dias úteis</div>
-                  </div>
-                </div>
 
                   </TabsContent>
 
@@ -1208,12 +1118,259 @@ export default function DFDDespachoSection({
 
               </div>
             </div>
-          </aside>
+        </section>
+
+
+        {/* Painel da Etapa (mesmo layout do card Assinatura) */}
+        <div className="rounded-2xl border border-slate-300 shadow-md bg-white p-6 min-h-[700px]">
+          <header className="flex items-center gap-3 mb-4">
+            <ClipboardCheck className="w-6 h-6 text-green-600" />
+            <h2 className="text-lg font-bold text-slate-900">Painel da Etapa</h2>
+            <div className="ml-auto">
+              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                Checklist
+                    </span>
+        </div>
+          </header>
+          <div className="border-b-2 border-green-200 mb-6"></div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {/* Status & Prazo */}
+            <div className="rounded-2xl border shadow-sm bg-white p-4 md:p-6">
+              <header className="flex items-center justify-between mb-4">
+                  <div className="flex items-center gap-2">
+                  <Flag className="w-5 h-5 text-indigo-600" />
+                  <h3 className="text-sm font-semibold text-slate-800">Status & Prazo</h3>
+                </div>
+                {(() => {
+                  const statusMap: Record<DespachoStatus, {label: string; cls: string}> = {
+                    PENDENTE: { label: 'Pendente', cls: 'bg-yellow-100 text-yellow-800' },
+                    GERADO: { label: 'Gerado', cls: 'bg-blue-100 text-blue-800' },
+                    ASSINADO: { label: 'Assinado', cls: 'bg-green-100 text-green-800' },
+                    CANCELADO: { label: 'Cancelado', cls: 'bg-red-100 text-red-800' }
+                  };
+                  const cfg = statusMap[despachoData.status] || { label: 'Indefinido', cls: 'bg-gray-100 text-gray-800' } as any;
+                  return <Badge className={`text-sm font-semibold px-3 py-2 ${cfg.cls}`}>{cfg.label}</Badge>;
+                })()}
+              </header>
+
+              <div className="space-y-4">
+                {/* Data de Criação */}
+                <div className="flex items-center gap-3 p-3 rounded-lg border border-slate-200">
+                  <div className="w-10 h-10 rounded-full flex items-center justify-center border border-slate-300">
+                    <Calendar className="w-5 h-5 text-slate-600" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold text-slate-500">Data de Criação</p>
+                    <p className="text-lg font-bold text-slate-900">{formatDateBR(new Date().toISOString())}</p>
+                  </div>
+                </div>
+
+                {/* Prazo Inicial */}
+                <div className="flex items-center justify-between p-3 rounded-lg border border-slate-200">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-full flex items-center justify-center border border-slate-300">
+                      <Clock className="w-5 h-5 text-slate-600" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-semibold text-slate-500">Prazo Inicial</p>
+                      <p className="text-lg font-bold text-slate-900">{formatDateBR(new Date().toISOString())}</p>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold border border-slate-300 text-slate-700">
+                      {sla.prazoDiasUteis} dias úteis
+                    </span>
+                  </div>
+                </div>
+
+                {/* Prazo Final */}
+                <div className="flex items-center justify-between p-3 rounded-lg border border-slate-200">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-full flex items-center justify-center border border-slate-300">
+                      <Flag className="w-5 h-5 text-slate-600" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-semibold text-slate-500">Prazo Final</p>
+                      <p className="text-lg font-bold text-slate-900">{formatDateBR(new Date(Date.now() + sla.prazoDiasUteis * 24 * 60 * 60 * 1000).toISOString())}</p>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold border border-slate-300 text-slate-700">prazo limite</span>
+                  </div>
+                </div>
+
+                {/* Destaque dias restantes */}
+                <div className="border-t border-slate-200 pt-4">
+                  {(() => {
+                    const diasRest = sla.prazoDiasUteis - sla.decorridosDiasUteis;
+                    const isAtraso = diasRest < 0;
+                    const isUrgente = diasRest <= 2 && diasRest >= 0;
+                    let corTexto = 'text-green-600';
+                    let legenda = 'dias restantes';
+                    if (isAtraso) { corTexto = 'text-red-600'; legenda = 'dias em atraso'; }
+                    else if (isUrgente) { corTexto = 'text-amber-600'; legenda = 'dias restantes (≤2)'; }
+                    return (
+                      <div className="text-center py-4">
+                        <div className={`text-4xl font-extrabold ${corTexto} mb-2`}>{Math.abs(diasRest)}</div>
+                        <div className={`text-sm font-medium ${corTexto}`}>{legenda}</div>
+                      </div>
+                    );
+                  })()}
+                </div>
+
+                {/* Barra de SLA */}
+                <div className="space-y-2">
+                  <div className="flex justify-between items-center">
+                    <span className="text-xs text-slate-500">Progresso Temporal</span>
+                  </div>
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <div className="w-full bg-slate-200 rounded-full h-3 cursor-help">
+                          {(() => {
+                            const total = Math.max(1, sla.prazoDiasUteis);
+                            const passados = Math.max(0, Math.min(sla.decorridosDiasUteis, total));
+                            const perc = Math.round((passados / total) * 100);
+                            let corBarra = 'bg-emerald-500';
+                            if (perc >= 71 && perc <= 99) corBarra = 'bg-amber-500';
+                            else if (perc >= 100) corBarra = 'bg-red-500';
+                            return <div className={`h-3 rounded-full transition-all ${corBarra}`} style={{ width: `${Math.min(perc, 100)}%` }} />
+                          })()}
+                        </div>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>{sla.decorridosDiasUteis} de {sla.prazoDiasUteis} dias úteis decorridos</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                  <div className="flex justify-between text-xs text-slate-500">
+                    <span>Decorridos: {sla.decorridosDiasUteis} / {sla.prazoDiasUteis} dias úteis</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Checklist da Etapa */}
+            <div className="rounded-2xl border shadow-sm bg-white p-4 md:p-6">
+              <header className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-2">
+                  <ListChecks className="w-5 h-5 text-indigo-600" />
+                  <h3 className="text-sm font-semibold text-slate-800">Checklist da Etapa</h3>
+                </div>
+                {(() => {
+                  const checklist = (() => {
+                    const items: Array<{id:string; label:string; status:'completed'|'pending'|'warning'; description?:string}> = [];
+                    items.push({ id: 'responsaveis', label: despachoData.responsaveis.length > 0 ? 'Responsáveis definidos' : 'Selecionar responsáveis', status: despachoData.responsaveis.length > 0 ? 'completed' : 'pending', description: despachoData.responsaveis.length > 0 ? `${despachoData.responsaveis.length} responsável(is) selecionado(s)` : 'Nenhum responsável selecionado' });
+                    items.push({ id: 'geracao', label: despachoData.status !== 'PENDENTE' ? 'Despacho gerado' : 'Gerar despacho', status: despachoData.status !== 'PENDENTE' ? 'completed' : 'pending', description: despachoData.documentoNome ? despachoData.documentoNome : 'Documento ainda não gerado' });
+                    items.push({ id: 'assinatura', label: despachoData.status === 'ASSINADO' ? 'Assinatura concluída' : 'Coletar assinatura', status: despachoData.status === 'ASSINADO' ? 'completed' : (despachoData.status === 'GERADO' ? 'warning' : 'pending'), description: despachoData.status === 'ASSINADO' ? 'Despacho assinado' : (despachoData.status === 'GERADO' ? 'Aguardando assinatura da SE' : 'Gere o despacho para assinar') });
+                    return items;
+                  })();
+                  const pendentes = checklist.filter(item => item.status === 'pending').length;
+                  const total = checklist.length;
+                  return (
+                    <div className="flex items-center gap-2">
+                      {pendentes > 0 && (
+                        <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-700">{pendentes} pendente{pendentes !== 1 ? 's' : ''}</span>
+                      )}
+                      <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-slate-100 text-slate-600">{total} item{total !== 1 ? 's' : ''}</span>
+                    </div>
+                  );
+                })()}
+              </header>
+
+              <div className="space-y-1">
+                {(() => {
+                  const checklist = (() => {
+                    const items: Array<{id:string; label:string; status:'completed'|'pending'|'warning'; description?:string}> = [];
+                    items.push({ id: 'responsaveis', label: despachoData.responsaveis.length > 0 ? 'Responsáveis definidos' : 'Selecionar responsáveis', status: despachoData.responsaveis.length > 0 ? 'completed' : 'pending', description: despachoData.responsaveis.length > 0 ? `${despachoData.responsaveis.length} responsável(is) selecionado(s)` : 'Nenhum responsável selecionado' });
+                    items.push({ id: 'geracao', label: despachoData.status !== 'PENDENTE' ? 'Despacho gerado' : 'Gerar despacho', status: despachoData.status !== 'PENDENTE' ? 'completed' : 'pending', description: despachoData.documentoNome ? despachoData.documentoNome : 'Documento ainda não gerado' });
+                    items.push({ id: 'assinatura', label: despachoData.status === 'ASSINADO' ? 'Assinatura concluída' : 'Coletar assinatura', status: despachoData.status === 'ASSINADO' ? 'completed' : (despachoData.status === 'GERADO' ? 'warning' : 'pending'), description: despachoData.status === 'ASSINADO' ? 'Despacho assinado' : (despachoData.status === 'GERADO' ? 'Aguardando assinatura da SE' : 'Gere o despacho para assinar') });
+                    return items;
+                  })();
+                  return checklist.length === 0 ? (
+                    <p className="text-sm text-gray-500 italic text-center py-6">Nenhum requisito definido para esta etapa.</p>
+                  ) : (
+                    checklist.map((item) => (
+                      <TooltipProvider key={item.id}>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <div className="flex items-center gap-3 py-2 px-2 hover:bg-slate-50 rounded transition-colors cursor-pointer">
+                              {item.status === 'completed' ? (
+                                <CheckCircle className="w-4 h-4 text-green-600" />
+                              ) : item.status === 'warning' ? (
+                                <AlertTriangle className="w-4 h-4 text-yellow-600" />
+                              ) : (
+                                <XCircle className="w-4 h-4 text-red-600" />
+                              )}
+                              <span className="text-sm text-slate-700 flex-1">{item.label}</span>
+                            </div>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>{item.description}</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    ))
+                  );
+                })()}
+              </div>
+            </div>
+
+            {/* Mini Timeline */}
+            <div className="rounded-2xl border shadow-sm bg-white p-4 md:p-6 flex flex-col min-h-[320px]">
+              <header className="flex items-center gap-2 mb-4">
+                <Clock className="w-5 h-5 text-indigo-600" />
+                <h3 className="text-sm font-semibold text-slate-800">Mini Timeline</h3>
+              </header>
+              <div className="flex-1 flex flex-col">
+                {(() => {
+                  const timeline: Array<{id:string; autor:string; descricao:string; dataHora:string; tipo:'assinatura'|'anexo'}> = [];
+                  // Assinaturas
+                  assinantes.forEach(a => { if (a.assinadoEm) timeline.push({ id: `ass-${a.id}`, autor: a.nome, descricao: 'Assinatura registrada', dataHora: a.assinadoEm, tipo: 'assinatura' }); });
+                  // Anexos
+                  anexosOrdenados.slice(0, 2).forEach(ax => { timeline.push({ id: `ax-${ax.id}`, autor: ax.uploadedBy, descricao: 'Anexo adicionado', dataHora: ax.uploadedAt, tipo: 'anexo' }); });
+                  const ordered = timeline.sort((a,b)=> new Date(b.dataHora).getTime() - new Date(a.dataHora).getTime()).slice(0,3);
+                  return ordered.length === 0 ? (
+                    <div className="flex-1 flex items-center justify-center">
+                      <p className="text-sm text-gray-500 italic text-center">Ainda não há ações registradas.</p>
+                    </div>
+                  ) : (
+                    <>
+                      <div className="flex-1 relative pr-2">
+                        <div className="absolute left-2 top-0 bottom-0 w-0.5 bg-slate-200"></div>
+                        <div className="max-h-[280px] overflow-y-auto">
+                          <div className="flex flex-col gap-4 pl-6">
+                            {ordered.map((item) => (
+                              <div key={item.id} className="relative group">
+                                <div className="absolute -left-6 top-0 w-4 h-4 bg-white rounded-full flex items-center justify-center">
+                                  {item.tipo === 'assinatura' ? <CheckCircle className="w-4 h-4 text-green-600" /> : <Paperclip className="w-4 h-4 text-gray-600" />}
+                                </div>
+                                <div className="hover:bg-slate-50 rounded-lg px-3 py-2 transition-colors cursor-pointer">
+                                  <p className="text-sm font-semibold text-slate-700 mb-1">{item.descricao}</p>
+                                  <div className="flex items-center gap-2 text-xs text-slate-500">
+                                    <span>{item.autor}</span>
+                                    <span>•</span>
+                                    <span>{formatDateTimeBR(new Date(item.dataHora))}</span>
+                                  </div>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                      <div className="border-t border-slate-200 pt-3 mt-4">
+                        <button className="w-full text-center text-sm text-indigo-600 hover:text-indigo-700 hover:underline transition-colors">Ver todas as ações</button>
+                      </div>
+                    </>
+                  );
+                })()}
+              </div>
+            </div>
+          </div>
         </div>
 
-
         {/* FULL: Comentários */}
-        <section id="comentarios" className="col-span-12 w-full mt-6">
+        <section id="comentarios" className="col-span-12 w-full">
           <CommentsSection
             processoId={processoId}
             etapaId={etapaId.toString()}
@@ -1222,179 +1379,74 @@ export default function DFDDespachoSection({
           />
         </section>
 
-        {/* Rodapé com botões */}
-        <div className="mt-6">
-          {/* Rodapé com Botões de Ação */}
-          <Card className="w-full shadow-lg border-0 bg-white/80 backdrop-blur-sm">
-            <CardContent className="p-4">
-              <div className="flex flex-col sm:flex-row gap-4 justify-between items-center w-full">
-                
-                {/* Lado esquerdo - Status e informações */}
-                <div className="flex items-center gap-4">
-                  <div className="flex items-center gap-2">
-                    <Clock className="w-4 h-4 text-gray-500" />
-                    <span className="text-sm text-gray-600">
-                      1 dia no card
-                    </span>
+        {/* Ações da Etapa (igual ao card Assinatura) */}
+        <div className="rounded-2xl border border-slate-300 shadow-md bg-white p-6">
+          <header className="flex items-center gap-3 mb-4">
+            <Flag className="w-6 h-6 text-orange-600" />
+            <h2 className="text-lg font-bold text-slate-900">Ações da Etapa</h2>
+            <div className="ml-auto">
+              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-orange-100 text-orange-800">Ações</span>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <User className="w-4 h-4 text-gray-500" />
-                    <span className="text-sm text-gray-600">
-                      {despachoData.responsaveis[0]?.nome || 'Sem responsável definido'}
-                    </span>
+          </header>
+          <div className="border-b-2 border-orange-200 mb-6"></div>
+          <div className="space-y-4">
+            <div className="grid grid-cols-1 gap-4">
+              <div className="flex items-center gap-3 p-3 rounded-lg border border-slate-200">
+                <div className="w-10 h-10 rounded-full flex items-center justify-center border border-slate-300">
+                  <User className="w-5 h-5 text-slate-600" />
+                </div>
+                <div>
+                  <p className="text-sm font-semibold text-slate-500">Responsável</p>
+                  <p className="text-lg font-bold text-slate-900">{despachoData.responsaveis[0]?.nome || 'Sem responsável definido'}</p>
+                </div>
                   </div>
                 </div>
 
-                {/* Lado direito - Botões de ação */}
-                <div className="flex items-center gap-2">
-              {/* Botão Salvar */}
+            <div className="border-t border-slate-200 pt-4">
+              <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
               {podeEditar && despachoData.status === 'PENDENTE' && (
-                <Button
-                  variant="outline"
-                  onClick={handleSaveDespacho}
-                  disabled={isLoading}
-                >
+                  <Button variant="outline" onClick={handleSaveDespacho} className="text-blue-600 border-blue-300 hover:bg-blue-50">
                   <Save className="w-4 h-4 mr-2" />
                   Salvar
                 </Button>
               )}
-
-              {/* Botão Gerar Despacho */}
-              {podeEditar && despachoData.status === 'PENDENTE' && (
-                <Button
-                  onClick={handleGerarDespacho}
-                  disabled={isLoading || !despachoData.observacoes.trim() || despachoData.responsaveis.length === 0}
-                  className="bg-blue-600 hover:bg-blue-700"
-                >
-                  {isLoading ? (
-                    <>
-                      <RotateCcw className="w-4 h-4 mr-2 animate-spin" />
-                      Gerando...
-                    </>
-                  ) : (
-                    <>
-                      <FileCheck className="w-4 h-4 mr-2" />
-                      Gerar Despacho
-                    </>
-                  )}
-                </Button>
-              )}
-
-              {/* Botão Assinar Despacho */}
               {podeAssinar && despachoData.status === 'GERADO' && (
-                <Button
-                  onClick={handleAssinarDespacho}
-                  disabled={isLoading}
-                  className="bg-green-600 hover:bg-green-700"
-                >
-                  {isLoading ? (
-                    <>
-                      <RotateCcw className="w-4 h-4 mr-2 animate-spin" />
-                      Assinando...
-                    </>
-                  ) : (
-                    <>
+                  <Button onClick={handleAssinarDespacho} className="bg-green-600 hover:bg-green-700">
                       <PenTool className="w-4 h-4 mr-2" />
                       Assinar Despacho
-                    </>
-                  )}
                 </Button>
               )}
-
-              {/* Botão Download PDF */}
               {despachoData.status !== 'PENDENTE' && (
-                <Button
-                  variant="outline"
-                  onClick={handleDownloadPDF}
-                  disabled={isLoading}
-                >
+                  <Button variant="outline" onClick={handleDownloadPDF}>
                   <Download className="w-4 h-4 mr-2" />
                   Download PDF
                 </Button>
               )}
-
-              {/* Botão Concluir Etapa */}
-              {despachoData.status === 'ASSINADO' && (
-                <Button
-                  onClick={() => setShowConcluirModal(true)}
-                  disabled={isLoading}
-                  className="bg-green-600 hover:bg-green-700"
-                >
-                  <Flag className="w-4 h-4 mr-2" />
-                  Concluir Etapa
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <div>
+                        <Button onClick={() => setShowConcluirModal(true)} disabled={despachoData.status !== 'ASSINADO'} className="inline-flex items-center rounded-xl px-4 py-2 text-sm font-medium bg-indigo-600 text-white hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed">
+                          <CheckCircle className="w-4 h-4 mr-2" />
+                          Concluir
                 </Button>
-              )}
+                      </div>
+                    </TooltipTrigger>
+                    {despachoData.status !== 'ASSINADO' && (
+                      <TooltipContent>
+                        <p>Aguarde o despacho ser assinado para concluir.</p>
+                      </TooltipContent>
+                    )}
+                  </Tooltip>
+                </TooltipProvider>
                 </div>
               </div>
-            </CardContent>
-          </Card>
+          </div>
         </div>
 
-        {/* Modal para adicionar responsáveis */}
-        <Dialog open={showAdicionarResponsavel} onOpenChange={setShowAdicionarResponsavel}>
-          <DialogContent className="sm:max-w-[500px]">
-            <DialogHeader>
-              <DialogTitle className="flex items-center gap-2">
-                <UserPlus className="w-5 h-5 text-blue-600" />
-                Adicionar Responsáveis
-              </DialogTitle>
-              <DialogDescription>
-                Selecione os usuários responsáveis pelo despacho (GSP e SE).
-              </DialogDescription>
-            </DialogHeader>
-            
-            <div className="space-y-4">
-              <div className="space-y-2">
-                {mockUsuariosDisponiveis.map((usuario) => (
-                  <div key={usuario.id} className="flex items-center space-x-2">
-                    <Checkbox
-                      id={usuario.id}
-                      checked={usuariosSelecionados.includes(usuario.id)}
-                      onCheckedChange={(checked) => {
-                        if (checked) {
-                          setUsuariosSelecionados([...usuariosSelecionados, usuario.id]);
-                        } else {
-                          setUsuariosSelecionados(usuariosSelecionados.filter(id => id !== usuario.id));
-                        }
-                      }}
-                    />
-                    <Label htmlFor={usuario.id} className="text-sm">
-                      <div className="font-medium">{usuario.nome}</div>
-                      <div className="text-gray-600">{usuario.cargo} - {usuario.gerencia}</div>
-                    </Label>
-                  </div>
-                ))}
-              </div>
-            </div>
+        {/* Removido: Rodapé antigo com botões (substituído por Ações da Etapa) */}
 
-            <div className="flex justify-end gap-3 pt-4 pb-2">
-              <Button
-                variant="outline"
-                onClick={() => setShowAdicionarResponsavel(false)}
-                disabled={isLoading}
-              >
-                Cancelar
-              </Button>
-              <Button
-                onClick={handleAdicionarResponsavel}
-                disabled={isLoading || usuariosSelecionados.length === 0}
-                className="bg-blue-600 hover:bg-blue-700"
-              >
-                {isLoading ? (
-                  <>
-                    <RotateCcw className="w-4 h-4 mr-2 animate-spin" />
-                    Adicionando...
-                  </>
-                ) : (
-                  <>
-                    <UserPlus className="w-4 h-4 mr-2" />
-                    Adicionar Responsáveis
-                  </>
-                )}
-              </Button>
-            </div>
-          </DialogContent>
-        </Dialog>
+        
 
         {/* Modal de Confirmação de Conclusão */}
         <Dialog open={showConcluirModal} onOpenChange={setShowConcluirModal}>

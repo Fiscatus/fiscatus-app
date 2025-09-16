@@ -1139,7 +1139,7 @@ export default function DFDFormSection({
                   canEdit={permissoes.podeEditar}
                   processoId={processoId}
                   className="w-full border-b border-slate-200 my-4"
-                  maxResponsaveis={5}
+                  label="Responsáveis pela Elaboração *"
                 />
               </div>
             </div>

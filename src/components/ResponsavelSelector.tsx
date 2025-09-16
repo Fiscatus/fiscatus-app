@@ -38,7 +38,8 @@ interface ResponsavelSelectorProps {
   canEdit?: boolean;
   processoId: string;
   className?: string;
-  maxResponsaveis?: number;
+  maxResponsaveis?: number; // se omitido, sem limite
+  label?: string;
 }
 
 // Mock de usuários ativos do sistema
@@ -212,7 +213,8 @@ export default function ResponsavelSelector({
   canEdit = true,
   processoId,
   className = '',
-  maxResponsaveis = 5
+  maxResponsaveis,
+  label = 'Responsáveis pela Elaboração *'
 }: ResponsavelSelectorProps) {
   const { toast } = useToast();
   const { user: currentUser } = useUser();
@@ -277,7 +279,8 @@ export default function ResponsavelSelector({
   
   // Abrir modal
   const handleOpenModal = () => {
-    if (disabled || !canEdit || responsaveis.length >= maxResponsaveis) return;
+    if (disabled || !canEdit) return;
+    if (typeof maxResponsaveis === 'number' && responsaveis.length >= maxResponsaveis) return;
     
     // Limpar todos os estados antes de abrir
     setQuery('');
@@ -328,7 +331,7 @@ export default function ResponsavelSelector({
     if (selected.length === 0) return;
     setIsSaving(true);
     try {
-      const remaining = Math.max(0, maxResponsaveis - responsaveis.length);
+      const remaining = typeof maxResponsaveis === 'number' ? Math.max(0, maxResponsaveis - responsaveis.length) : selected.length;
       
       // Filtrar apenas usuários que ainda não são responsáveis
       const toAdd = selected
@@ -338,8 +341,8 @@ export default function ResponsavelSelector({
       if (toAdd.length === 0) {
         toast({
           title: 'Nada adicionado',
-          description: remaining === 0 ? 'Limite máximo já atingido.' : 'Todos os selecionados já estavam na lista.',
-          variant: remaining === 0 ? 'destructive' : undefined
+          description: (typeof maxResponsaveis === 'number' && remaining === 0) ? 'Limite máximo já atingido.' : 'Todos os selecionados já estavam na lista.',
+          variant: (typeof maxResponsaveis === 'number' && remaining === 0) ? 'destructive' : undefined
         });
         handleCloseModal();
         return;
@@ -455,7 +458,7 @@ export default function ResponsavelSelector({
         <div className={`p-4 border border-gray-200 rounded-lg bg-gray-50 ${className}`}>
           <Label className="text-sm font-semibold text-gray-700 flex items-center gap-2 mb-2">
             <User className="w-4 h-4" />
-            Responsáveis pela Elaboração *
+            {label}
           </Label>
           <div className="text-sm text-gray-500">
             Nenhum responsável definido
@@ -468,7 +471,7 @@ export default function ResponsavelSelector({
       <div className={`p-4 border border-gray-200 rounded-lg ${className}`}>
         <Label className="text-sm font-semibold text-gray-700 flex items-center gap-2 mb-3">
           <User className="w-4 h-4" />
-          Responsáveis pela Elaboração * ({responsaveis.length})
+          {label} ({responsaveis.length})
         </Label>
         <div className="space-y-2 max-h-[220px] overflow-auto pr-1">
           {responsaveis.map((responsavel, index) => (
@@ -506,7 +509,7 @@ export default function ResponsavelSelector({
       <div className={`p-4 border border-gray-200 rounded-lg ${className}`}>
         <Label className="text-sm font-semibold text-gray-700 flex items-center gap-2 mb-2">
           <User className="w-4 h-4" />
-          Responsáveis pela Elaboração * ({responsaveis.length}/{maxResponsaveis})
+          {label} ({responsaveis.length}/{maxResponsaveis})
         </Label>
         
         {responsaveis.length > 0 ? (
@@ -554,7 +557,7 @@ export default function ResponsavelSelector({
         )}
         
         {/* Botão para adicionar responsável */}
-        {responsaveis.length < maxResponsaveis && (
+        {(typeof maxResponsaveis !== 'number' || responsaveis.length < maxResponsaveis) && (
           <Button
             variant="outline"
             onClick={handleOpenModal}
@@ -566,7 +569,7 @@ export default function ResponsavelSelector({
           </Button>
         )}
         
-        {responsaveis.length >= maxResponsaveis && (
+        {typeof maxResponsaveis === 'number' && responsaveis.length >= maxResponsaveis && (
           <div className="text-xs text-gray-500 text-center mt-2">
             Limite máximo de {maxResponsaveis} responsáveis atingido
           </div>
