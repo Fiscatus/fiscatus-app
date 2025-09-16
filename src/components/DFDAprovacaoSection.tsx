@@ -846,12 +846,14 @@ export default function DFDAprovacaoSection({
 
       {/* 4️⃣ Comentários */}
       <div className="w-full">
-        <CommentsSection
-          processoId={processoId}
-          etapaId={etapaId.toString()}
-          cardId="comentarios-aprovacao"
-          title="Comentários"
-        />
+        <div className="rounded-2xl border border-slate-300 shadow-md bg-white p-6">
+          <CommentsSection
+            processoId={processoId}
+            etapaId={etapaId.toString()}
+            cardId="comentarios-aprovacao"
+            title="Comentários"
+          />
+        </div>
       </div>
 
 

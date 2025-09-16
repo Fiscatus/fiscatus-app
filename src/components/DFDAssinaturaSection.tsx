@@ -1304,12 +1304,14 @@ export default function DFDAssinaturaSection({
 
       {/* 4️⃣ Comentários */}
       <div className="w-full">
+        <div className="rounded-2xl border border-slate-300 shadow-md bg-white p-6">
           <CommentsSection
             processoId={processoId}
             etapaId={etapaId}
             cardId="comentarios-assinatura"
             title="Comentários"
           />
+        </div>
       </div>
 
       {/* 5️⃣ Ações da Etapa */}

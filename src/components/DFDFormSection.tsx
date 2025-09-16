@@ -1667,12 +1667,14 @@ export default function DFDFormSection({
 
       {/* 4️⃣ Comentários */}
       <div className="w-full">
-        <CommentsSection
-          processoId={processoId}
-          etapaId={String(etapaId)}
-          cardId="dfd-form"
-          title="Comentários"
-        />
+        <div className="rounded-2xl border border-slate-300 shadow-md bg-white p-6">
+          <CommentsSection
+            processoId={processoId}
+            etapaId={String(etapaId)}
+            cardId="dfd-form"
+            title="Comentários"
+          />
+        </div>
       </div>
 
        {/* 5️⃣ Ações da Etapa */}

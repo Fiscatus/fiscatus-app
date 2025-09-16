@@ -980,12 +980,14 @@ export default function ETPDespachoSection({
 
         {/* FULL: Comentários */}
         <section id="comentarios" className="col-span-12 w-full mt-6">
-          <CommentsSection
-            processoId={processoId}
-            etapaId={etapaId.toString()}
-            cardId="comentarios-despacho-etp"
-            title="Comentários"
-          />
+          <div className="rounded-2xl border border-slate-300 shadow-md bg-white p-6">
+            <CommentsSection
+              processoId={processoId}
+              etapaId={etapaId.toString()}
+              cardId="comentarios-despacho-etp"
+              title="Comentários"
+            />
+          </div>
         </section>
 
         {/* Rodapé com botões */}

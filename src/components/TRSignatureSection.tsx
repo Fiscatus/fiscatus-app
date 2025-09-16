@@ -793,12 +793,14 @@ export default function TRSignatureSection({
 
           {/* FULL: Comentários */}
           <section id="comentarios" className="col-span-12 w-full">
-            <CommentsSection
-              processoId={processoId}
-              etapaId={etapaId.toString()}
-              cardId="comentarios-assinatura-tr"
-              title="Comentários"
-            />
+            <div className="rounded-2xl border border-slate-300 shadow-md bg-white p-6">
+              <CommentsSection
+                processoId={processoId}
+                etapaId={etapaId.toString()}
+                cardId="comentarios-assinatura-tr"
+                title="Comentários"
+              />
+            </div>
           </section>
 
           {/* FULL: Ações (rodapé não fixo) */}

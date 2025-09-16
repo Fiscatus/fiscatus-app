@@ -802,16 +802,16 @@ export default function DFDDespachoSection({
         {/* Formulário do Despacho */}
         <section id="formulario-despacho" className="w-full">
             {/* Card do Formulário */}
-            <div className="rounded-2xl border shadow-sm bg-white">
-              <header className="flex items-center gap-3 px-4 py-3">
+            <div className="rounded-2xl border border-slate-300 shadow-md bg-white p-6">
+              <header className="flex items-center gap-3 mb-4">
                   <FileCheck className="w-5 h-5 text-indigo-600" />
                 <h2 className="text-lg font-bold text-slate-900">Formulário do Despacho</h2>
                 <div className="ml-auto">
                   <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">Formulário</span>
                 </div>
               </header>
-              <div className="border-b-2 border-purple-200"></div>
-              <div className="p-4 md:p-6 space-y-0">
+              <div className="border-b-2 border-purple-200 mb-6"></div>
+              <div className="space-y-0">
                 
                 {/* Número do DFD */}
                 <div className="w-full p-4 border-b border-gray-100">
@@ -1371,12 +1371,14 @@ export default function DFDDespachoSection({
 
         {/* FULL: Comentários */}
         <section id="comentarios" className="col-span-12 w-full">
-          <CommentsSection
-            processoId={processoId}
-            etapaId={etapaId.toString()}
-            cardId="comentarios-despacho"
-            title="Comentários"
-          />
+          <div className="rounded-2xl border border-slate-300 shadow-md bg-white p-6">
+            <CommentsSection
+              processoId={processoId}
+              etapaId={etapaId.toString()}
+              cardId="comentarios-despacho"
+              title="Comentários"
+            />
+          </div>
         </section>
 
         {/* Ações da Etapa (igual ao card Assinatura) */}

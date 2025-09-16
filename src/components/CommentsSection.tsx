@@ -311,26 +311,24 @@ export default function CommentsSection({
 
   return (
     <div className={`${className}`}>
-      {/* Subcard padrão */}
-      <div className="rounded-xl border border-slate-200 shadow-sm bg-white p-4 md:p-6">
-        {/* Header com ícone + título e contador */}
-        <div className="flex items-center gap-3 mb-2">
-          <MessageSquare className="w-5 h-5 text-blue-600" />
-          <h3 className="text-lg font-semibold text-slate-900">Comentários</h3>
-          <Badge variant="secondary" className="ml-auto">
-            {comments.filter(c => !c.isOptimistic).length}
-          </Badge>
-        </div>
+      {/* Header com ícone + título e contador */}
+      <div className="flex items-center gap-3 mb-2">
+        <MessageSquare className="w-5 h-5 text-blue-600" />
+        <h3 className="text-lg font-semibold text-slate-900">Comentários</h3>
+        <Badge variant="secondary" className="ml-auto">
+          {comments.filter(c => !c.isOptimistic).length}
+        </Badge>
+      </div>
 
-        {/* Linha divisória */}
-        <div className="border-b border-slate-200 mt-2 mb-4"></div>
+      {/* Linha divisória */}
+      <div className="border-b border-slate-200 mt-2 mb-4"></div>
 
-        {/* Histórico (lista de mensagens) */}
-        <div 
-          ref={historyRef}
-          className="max-h-[420px] overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-slate-300 hover:scrollbar-thumb-slate-400 mb-6"
-          aria-live="polite"
-        >
+      {/* Histórico (lista de mensagens) */}
+      <div 
+        ref={historyRef}
+        className="max-h-[420px] overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-slate-300 hover:scrollbar-thumb-slate-400 mb-6"
+        aria-live="polite"
+      >
           {groupedComments.length === 0 ? (
             <div className="text-center py-8">
               <div className="flex flex-col items-center gap-3">
@@ -482,85 +480,84 @@ export default function CommentsSection({
               ))}
             </div>
           )}
+      </div>
+
+      {/* Campo "Adicionar Comentário" */}
+      <div className="border-t border-slate-200 pt-4">
+        {/* Header secundário */}
+        <div className="flex items-center gap-2 mb-3">
+          <MessageSquarePlus className="w-4 h-4 text-indigo-600" />
+          <h4 className="text-sm font-semibold text-slate-900">Adicionar Comentário</h4>
         </div>
 
-        {/* Campo "Adicionar Comentário" */}
-        <div className="border-t border-slate-200 pt-4">
-          {/* Header secundário */}
-          <div className="flex items-center gap-2 mb-3">
-            <MessageSquarePlus className="w-4 h-4 text-indigo-600" />
-            <h4 className="text-sm font-semibold text-slate-900">Adicionar Comentário</h4>
-          </div>
+        {/* Toolbar simples */}
+        <div className="flex items-center gap-1 text-slate-600 mb-3">
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button
+                  onClick={handleInsertMention}
+                  className="p-2 hover:bg-slate-100 rounded-md transition-colors flex items-center justify-center"
+                  aria-label="Inserir menção"
+                >
+                  <AtSign className="w-4 h-4" />
+                </button>
+              </TooltipTrigger>
+              <TooltipContent>Inserir menção @</TooltipContent>
+            </Tooltip>
 
-          {/* Toolbar simples */}
-          <div className="flex items-center gap-1 text-slate-600 mb-3">
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <button
-                    onClick={handleInsertMention}
-                    className="p-2 hover:bg-slate-100 rounded-md transition-colors flex items-center justify-center"
-                    aria-label="Inserir menção"
-                  >
-                    <AtSign className="w-4 h-4" />
-                  </button>
-                </TooltipTrigger>
-                <TooltipContent>Inserir menção @</TooltipContent>
-              </Tooltip>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button
+                  className="p-2 hover:bg-slate-100 rounded-md opacity-50 cursor-not-allowed transition-colors flex items-center justify-center"
+                  aria-label="Anexar arquivo"
+                  disabled
+                >
+                  <Paperclip className="w-4 h-4" />
+                </button>
+              </TooltipTrigger>
+              <TooltipContent>Anexar arquivo (em breve)</TooltipContent>
+            </Tooltip>
 
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <button
-                    className="p-2 hover:bg-slate-100 rounded-md opacity-50 cursor-not-allowed transition-colors flex items-center justify-center"
-                    aria-label="Anexar arquivo"
-                    disabled
-                  >
-                    <Paperclip className="w-4 h-4" />
-                  </button>
-                </TooltipTrigger>
-                <TooltipContent>Anexar arquivo (em breve)</TooltipContent>
-              </Tooltip>
+          </TooltipProvider>
+        </div>
 
-            </TooltipProvider>
-          </div>
+        {/* Textarea expandível */}
+        <div className="relative mb-3">
+          <textarea
+            ref={textareaRef}
+            value={text}
+            onChange={handleTextareaChange}
+            placeholder="Escreva um comentário… use @ para mencionar usuários"
+            className="w-full min-h-[44px] max-h-[200px] resize-y border border-slate-300 rounded-lg p-3 text-sm leading-relaxed focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200"
+            onKeyDown={(e) => {
+              if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+                e.preventDefault();
+                handleSubmit();
+              }
+            }}
+          />
+        </div>
 
-          {/* Textarea expandível */}
-          <div className="relative mb-3">
-            <textarea
-              ref={textareaRef}
-              value={text}
-              onChange={handleTextareaChange}
-              placeholder="Escreva um comentário… use @ para mencionar usuários"
-              className="w-full min-h-[44px] max-h-[200px] resize-y border border-slate-300 rounded-lg p-3 text-sm leading-relaxed focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200"
-              onKeyDown={(e) => {
-                if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
-                  e.preventDefault();
-                  handleSubmit();
-                }
-              }}
-            />
-          </div>
-
-          {/* Rodapé do composer */}
-          <div className="flex items-center justify-between">
-            <button
-              onClick={handleSubmit}
-              disabled={!text.trim() || isSubmitting}
-              className="bg-indigo-600 hover:bg-indigo-700 disabled:bg-slate-300 disabled:cursor-not-allowed text-white rounded-lg px-4 py-2 font-medium shadow-sm transition-all duration-200 hover:shadow-md flex items-center gap-2 text-sm"
-            >
-              {isSubmitting ? (
-                <>
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                  Enviando
-                </>
-              ) : (
-                <>
-                  <Send className="w-4 h-4" />
-                  Adicionar
-                </>
-              )}
-            </button>
-          </div>
+        {/* Rodapé do composer */}
+        <div className="flex items-center justify-between">
+          <button
+            onClick={handleSubmit}
+            disabled={!text.trim() || isSubmitting}
+            className="bg-indigo-600 hover:bg-indigo-700 disabled:bg-slate-300 disabled:cursor-not-allowed text-white rounded-lg px-4 py-2 font-medium shadow-sm transition-all duration-200 hover:shadow-md flex items-center gap-2 text-sm"
+          >
+            {isSubmitting ? (
+              <>
+                <Loader2 className="w-4 h-4 animate-spin" />
+                Enviando
+              </>
+            ) : (
+              <>
+                <Send className="w-4 h-4" />
+                Adicionar
+              </>
+            )}
+          </button>
         </div>
       </div>
     </div>
