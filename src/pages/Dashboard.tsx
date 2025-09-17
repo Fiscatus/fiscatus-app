@@ -18,7 +18,13 @@ import {
   Menu,
   Bell,
   LogOut,
-  LayoutDashboard
+  LayoutDashboard,
+  Star,
+  Play,
+  HelpCircle,
+  BookOpen,
+  Headphones,
+  MessageSquare
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Input } from "@/components/ui/input";
@@ -151,52 +157,10 @@ export default function Dashboard() {
 
   console.log('Dashboard: Rendering with user:', user?.email);
 
-  // Dados globais do sistema com foco institucional
-  const dadosGlobais = [
-    {
-      label: "Total de Processos Criados",
-      value: "2.847",
-      descricao: "Processos no sistema",
-      icon: <FileText className="w-10 h-10" />,
-      color: "bg-blue-50 border-blue-200 text-blue-700",
-      bgColor: "bg-blue-50",
-      borderColor: "border-blue-200",
-      iconColor: "text-blue-600",
-      crescimento: "+12% este mês"
-    },
-    {
-      label: "Processos Ativos",
-      value: "1.234",
-      descricao: "Em andamento",
-      icon: <Activity className="w-10 h-10" />,
-      color: "bg-green-50 border-green-200 text-green-700",
-      bgColor: "bg-green-50",
-      borderColor: "border-green-200",
-      iconColor: "text-green-600",
-      link: "Ver todos os processos ativos"
-    },
-    {
-      label: "Processos Concluídos",
-      value: "1.456",
-      descricao: "Finalizados",
-      icon: <CheckCircle className="w-10 h-10" />,
-      color: "bg-emerald-50 border-emerald-200 text-emerald-700",
-      bgColor: "bg-emerald-50",
-      borderColor: "border-emerald-200",
-      iconColor: "text-emerald-600"
-    },
-    {
-      label: "Pendências e Ações Necessárias",
-      value: "89",
-      descricao: "Demandas em aberto",
-      icon: <Bell className="w-10 h-10" />,
-      color: "bg-orange-50 border-orange-200 text-orange-700",
-      bgColor: "bg-orange-50",
-      borderColor: "border-orange-200",
-      iconColor: "text-orange-600",
-      link: "Ir para minhas pendências"
-    }
-  ];
+  const modulosSectionRef = React.useRef<HTMLDivElement | null>(null);
+  const tutoriaisSectionRef = React.useRef<HTMLDivElement | null>(null);
+
+  // Indicadores removidos conforme solicitação
 
   // Módulos do sistema com design limpo e moderno
   const modulos = [
@@ -238,6 +202,27 @@ export default function Dashboard() {
     }
   ];
 
+  // Favoritos (persistidos no localStorage)
+  const [favoritos, setFavoritos] = React.useState<string[]>(() => {
+    try {
+      const saved = localStorage.getItem('fav_modulos');
+      return saved ? JSON.parse(saved) : [];
+    } catch {
+      return [];
+    }
+  });
+
+  const toggleFavorito = (nome: string) => {
+    setFavoritos(prev => {
+      const exists = prev.includes(nome);
+      const next = exists ? prev.filter(n => n !== nome) : [...prev, nome];
+      localStorage.setItem('fav_modulos', JSON.stringify(next));
+      return next;
+    });
+  };
+
+  // Ordem fixa conforme navbar lateral; favoritos não alteram a ordem
+
   const handleModuloClick = (path: string) => {
     navigate(path);
   };
@@ -248,128 +233,460 @@ export default function Dashboard() {
       
       <main className="pt-20 px-6 py-8 flex-1">
 
-        {/* Cards de Indicadores (Top Cards) - Grid 2x2 */}
+        {/* 1. Hero de boas-vindas */}
         <section className="mb-12">
-          <h2 className="text-xl font-semibold text-gray-900 mb-6">
-            Visão Geral da Administração Pública
-          </h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {dadosGlobais.map((dado, index) => (
-              <Card 
-                key={index} 
-                className={`bg-white border-2 shadow-md hover:shadow-lg transition-all duration-300 hover:scale-105 ${dado.borderColor}`}
-              >
-                <CardContent className="p-6">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-4">
-                      <div className={`p-3 rounded-xl ${dado.bgColor}`}>
-                        <div className={dado.iconColor}>
-                          {dado.icon}
+          <div className="max-w-[1200px] mx-auto px-0 md:px-0">
+            <div className="relative overflow-hidden rounded-2xl border border-gray-200 bg-gradient-to-r from-blue-50 via-indigo-50 to-purple-50">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-0">
+                <div className="p-8 md:p-12 flex flex-col justify-center">
+                  <p className="uppercase text-xs tracking-wider text-gray-500 mb-2">Painel</p>
+                  <h1 className="text-3xl md:text-4xl font-semibold text-gray-900 mb-3">
+                    Bem-vindo, {user?.nome?.split(' ')[0] || 'Usuário'}
+                  </h1>
+                  <p className="text-gray-600 mb-6 max-w-2xl">
+                    Sua central para gerenciar contratações públicas de forma inteligente e integrada.
+                  </p>
+                  <div className="flex items-center gap-2 mb-6">
+                    <span className="px-2.5 py-1 rounded-full text-xs bg-blue-600 text-white">SaaS Premium</span>
+                    <span className="px-2.5 py-1 rounded-full text-xs bg-white text-gray-700 border border-gray-200">Novo layout</span>
+                  </div>
+                  <div className="flex flex-wrap items-center gap-3">
+                    <button
+                      onClick={() => modulosSectionRef.current?.scrollIntoView({ behavior: 'smooth' })}
+                      className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition-colors shadow-sm"
+                    >
+                      Explorar Módulos
+                      <ArrowRight className="w-4 h-4" />
+                    </button>
+                    <button
+                      onClick={() => tutoriaisSectionRef.current?.scrollIntoView({ behavior: 'smooth' })}
+                      className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-white text-gray-700 border border-gray-200 hover:bg-gray-50 transition-colors"
+                    >
+                      <Play className="w-4 h-4 text-blue-600" />
+                      Assistir Guia Rápido
+                    </button>
                         </div>
                       </div>
-                      <div className="flex-1">
-                        <p className="text-3xl font-bold text-gray-900 mb-1">
-                          {dado.value}
-                        </p>
-                        <p className="text-sm font-medium text-gray-600 mb-1">
-                          {dado.label}
-                        </p>
-                        <p className="text-xs text-gray-500 mb-2">
-                          {dado.descricao}
-                        </p>
-                        
-                        {/* Crescimento (opcional) */}
-                        {dado.crescimento && (
-                          <p className="text-xs text-green-600 font-medium">
-                            {dado.crescimento}
-                          </p>
-                        )}
-                        
-                        {/* Link (opcional) */}
-                        {dado.link && (
-                          <button 
-                            className="text-xs text-blue-600 hover:text-blue-700 font-medium mt-1"
-                            onClick={() => navigate(dado.link === "Ver todos os processos ativos" ? "/processos-ativos" : "/minhas-pendencias")}
-                          >
-                            {dado.link}
-                          </button>
-                        )}
+                <div className="relative min-h-[240px] md:min-h-[360px]">
+                  {/* Foto equipe formal ao fundo */}
+                  <div
+                    className="absolute inset-0 bg-center bg-cover"
+                    style={{ backgroundImage: 'url("https://images.unsplash.com/photo-1521737604893-d14cc237f11d?auto=format&fit=crop&w=1400&q=60")' }}
+                    aria-hidden="true"
+                  />
+                  {/* Overlay removido para manter a imagem nítida */}
+                  {/* Bordas/blur decorativos sutis */}
+                  <div className="absolute -right-12 -bottom-12 w-64 h-64 bg-blue-200/40 rounded-full blur-3xl" />
+                  <div className="absolute -right-24 -top-12 w-72 h-72 bg-indigo-200/40 rounded-full blur-3xl" />
                       </div>
                     </div>
                   </div>
-                </CardContent>
-              </Card>
-            ))}
           </div>
         </section>
 
-        {/* Módulos do Sistema */}
-        <section className="mb-8">
+        {/* Seção de indicadores foi removida */}
+
+        {/* 2. Módulos do Sistema */}
+        <section ref={modulosSectionRef} className="mb-12">
           <h2 className="text-xl font-semibold text-gray-900 mb-6">
             Módulos do Sistema
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {modulos.map((modulo, index) => (
-              <Card 
-                key={index} 
-                className="bg-white border border-gray-200 rounded-2xl cursor-pointer shadow-md hover:shadow-lg transition-all duration-300 hover:scale-[1.02] hover:border-gray-300"
+              <div key={index} className="group relative h-48 rounded-2xl p-[1px] bg-gradient-to-br from-gray-200/60 to-transparent hover:from-blue-200/60 hover:to-purple-200/60 transition-all duration-200">
+                <div className="h-full rounded-2xl bg-white border border-gray-200 shadow-sm group-hover:shadow-md overflow-hidden">
+                  <div className="p-5 relative flex flex-col h-full">
+                    {/* canto de acento */}
+                    <div className="pointer-events-none absolute -right-6 -top-6 w-20 h-20 bg-blue-100/40 rounded-full blur-2xl group-hover:bg-blue-200/60" />
+                    <div className="flex items-start justify-between mb-3">
+                      <div className="flex items-center gap-3 min-w-0">
+                        <div className="flex items-center justify-center w-12 h-12 rounded-xl bg-gradient-to-br from-blue-50 to-indigo-50 text-blue-600 ring-1 ring-blue-100">
+                          {modulo.icon}
+                        </div>
+                        <div className="min-w-0">
+                          <h3 className="text-[17px] font-semibold text-gray-900 leading-snug truncate">{modulo.nome}</h3>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => toggleFavorito(modulo.nome)}
+                          aria-label="Favoritar módulo"
+                          className="p-2 rounded-lg hover:bg-gray-100"
+                        >
+                          <Star className={"w-5 h-5 transition-colors " + (favoritos.includes(modulo.nome) ? "text-yellow-500 fill-yellow-400" : "text-gray-300 group-hover:text-gray-400")} />
+                        </button>
+                      </div>
+                    </div>
+                    <div className="flex-1">
+                      <p className="text-sm text-gray-600 line-clamp-2">{modulo.descricao}</p>
+                    </div>
+                    <div className="mt-4 flex items-center justify-between">
+                      <button
                 onClick={() => handleModuloClick(modulo.path)}
-              >
-                <CardContent className="p-6 relative flex flex-col h-full">
-                  {/* Ícone no topo */}
-                  <div className="flex items-center justify-center w-12 h-12 rounded-full bg-neutral-100 mb-4">
-                    <div className="text-gray-600">
-                      {modulo.icon}
+                        className="inline-flex items-center gap-2 px-3 py-1.5 rounded-md bg-blue-600 text-white text-sm hover:bg-blue-700 shadow-sm"
+                      >
+                        Abrir
+                        <ChevronRight className="w-4 h-4" />
+                      </button>
+                      <div className="opacity-0 group-hover:opacity-100 transition-opacity text-xs text-gray-500">
+                        Clique para saber mais
+                      </div>
                     </div>
                   </div>
-                  
-                  {/* Conteúdo do card */}
-                  <div className="flex-1">
-                    <h3 className="text-lg font-medium text-gray-900 mb-2">
-                      {modulo.nome}
-                    </h3>
-                    <p className="text-sm text-gray-600 mb-4">
-                      {modulo.descricao}
-                    </p>
-                  </div>
-                  
-                  {/* Ícone de ação no canto inferior direito */}
-                  <div className="flex justify-end mt-auto">
-                    <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center">
-                      <ChevronRight className="w-4 h-4 text-gray-400" />
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
+                </div>
+              </div>
             ))}
+          </div>
+        </section>
+
+        {/* 3. Suporte & Documentação */}
+        <section className="mb-12">
+          <div className="grid grid-cols-12 gap-6">
+            <div className="col-span-12 lg:col-span-6">
+              <div className="relative overflow-hidden rounded-2xl border border-gray-200 shadow-sm h-full">
+                {/* Imagem de fundo profissional como background */}
+                <div
+                  className="absolute inset-0 bg-center bg-cover"
+                  style={{ backgroundImage: 'url("https://images.unsplash.com/photo-1529336953121-ad5a0d43d0d2?auto=format&fit=crop&w=1600&q=60")' }}
+                  aria-hidden="true"
+                />
+                {/* Overlay em gradiente para contraste */}
+                <div className="absolute inset-0 bg-gradient-to-tr from-gray-900/80 via-gray-900/50 to-transparent" />
+                {/* Conteúdo */}
+                <div className="relative p-5 md:p-6 lg:p-7 text-white h-full flex flex-col">
+                  <div className="flex items-start gap-3 mb-3">
+                    <div className="w-9 h-9 rounded-xl bg-white/15 backdrop-blur flex items-center justify-center">
+                      <BookOpen className="w-5 h-5 text-white" />
+                    </div>
+                    <h3 className="text-lg font-semibold">Sobre o Sistema</h3>
+                  </div>
+                  <p className="text-white/90 mb-4">Conheça os princípios, funcionalidades e boas práticas para obter o máximo do Fiscatus.</p>
+                  <div className="flex flex-wrap gap-2 mb-5">
+                    {['Fluxos Personalizados','Assinaturas Digitais','Notificações','Relatórios Inteligentes','Multi-Órgão'].map((chip) => (
+                      <span key={chip} className="px-2.5 py-1 rounded-full text-xs bg-white/15 text-white/95 border border-white/20">
+                        {chip}
+                      </span>
+                    ))}
+                  </div>
+                  <div className="mt-auto">
+                    <button
+                      onClick={() => navigate('/documentacao')}
+                      className="inline-flex items-center gap-1.5 text-sm font-medium text-white hover:text-white/90 underline underline-offset-4 decoration-white/60 hover:decoration-white"
+                    >
+                      Ver documentação completa
+                      <ArrowRight className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div className="col-span-12 lg:col-span-6">
+              <div className="relative overflow-hidden rounded-2xl border border-gray-200 shadow-sm p-5 h-full bg-gradient-to-br from-blue-50 via-indigo-50 to-white">
+                <div className="absolute -right-10 -top-10 w-40 h-40 bg-blue-300/20 rounded-full blur-3xl" />
+                <div className="absolute -left-16 -bottom-16 w-52 h-52 bg-indigo-300/20 rounded-full blur-3xl" />
+                <div className="relative">
+                  <div className="flex items-start justify-between mb-3">
+                    <div className="flex items-center gap-3">
+                      <div className="w-9 h-9 rounded-xl bg-blue-600 text-white flex items-center justify-center shadow-sm">
+                        <Headphones className="w-5 h-5" />
+                      </div>
+                      <div>
+                        <h3 className="text-lg font-semibold text-gray-900">Chatbot & Suporte</h3>
+                        <div className="inline-flex items-center gap-2 text-xs mt-1">
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
+                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" /> Online agora
+                          </span>
+                          <span className="text-gray-500">Tempo médio: 3 min</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Prévia do chat */}
+                  <div className="mb-4">
+                    <div className="flex items-start gap-3">
+                      <img src="https://randomuser.me/api/portraits/women/65.jpg" alt="Agente" className="w-8 h-8 rounded-full object-cover" />
+                      <div className="max-w-[85%] rounded-2xl rounded-tl-sm bg-white shadow border border-gray-200 p-3">
+                        <p className="text-sm text-gray-900">Olá! Precisa de ajuda para iniciar um DFD ou configurar seu fluxo?</p>
+                        <div className="mt-2 flex items-center gap-2">
+                          <button onClick={() => navigate('/planejamento-da-contratacao')} className="px-2 py-1 text-xs rounded-md bg-blue-50 text-blue-700 border border-blue-200 hover:bg-blue-100">Iniciar DFD</button>
+                          <button onClick={() => navigate('/documentacao')} className="px-2 py-1 text-xs rounded-md bg-gray-50 text-gray-700 border border-gray-200 hover:bg-gray-100">Ver docs</button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  {/* Ações rápidas */}
+                  <div className="grid grid-cols-3 gap-3 mb-4">
+                    <button onClick={() => navigate('/suporte')} className="col-span-3 md:col-span-1 inline-flex items-center justify-center gap-2 px-3 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700">
+                      Abrir suporte
+                    </button>
+                    <button onClick={() => navigate('/documentacao')} className="col-span-3 md:col-span-1 inline-flex items-center justify-center gap-2 px-3 py-2 rounded-lg bg-white text-gray-700 border border-gray-200 hover:bg-gray-50">
+                      Base de conhecimento
+                    </button>
+                    <button onClick={() => navigate('/suporte#ticket')} className="col-span-3 md:col-span-1 inline-flex items-center justify-center gap-2 px-3 py-2 rounded-lg bg-white text-gray-700 border border-gray-200 hover:bg-gray-50">
+                      Enviar ticket
+                    </button>
+                  </div>
+                  
+                  <p className="text-xs text-gray-500">Horário de atendimento: 8h às 18h, em dias úteis.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* 4. Resumo Rápido / Continuar de onde parei */}
+        <section className="mb-12">
+          <h2 className="text-xl font-semibold text-gray-900 mb-4">Resumo Rápido</h2>
+          <div className="bg-white rounded-2xl border border-gray-200 shadow-sm">
+            <ul className="divide-y divide-gray-100">
+              {[
+                { titulo: 'DFD 2025 - Aquisição de Insumos', status: 'Em andamento', data: 'Hoje', acao: '/processos/123' },
+                { titulo: 'Parecer Técnico - Contrato 45/2024', status: 'Pendente revisão', data: 'Ontem', acao: '/processos/456' },
+                { titulo: 'Termo de Referência - Equipamentos', status: 'Em elaboração', data: '13/09', acao: '/processos/789' },
+                { titulo: 'Relatório Mensal - Julho', status: 'Concluído', data: '11/09', acao: '/relatorios' },
+                { titulo: 'Publicação do Edital', status: 'Agendado', data: '10/09', acao: '/processo-licitatorio' }
+              ].map((item, idx) => (
+                <li key={idx} className="flex items-center justify-between p-4">
+            <div className="flex items-center gap-3">
+                    <FolderOpen className="w-5 h-5 text-blue-600" />
+                    <div>
+                      <p className="text-sm font-medium text-gray-900">{item.titulo}</p>
+                      <p className="text-xs text-gray-500">{item.status} • {item.data}</p>
+                    </div>
+                  </div>
+                  <button onClick={() => navigate(item.acao)} className="text-sm text-blue-600 hover:text-blue-700 inline-flex items-center gap-1">
+                    Abrir
+                    <ChevronRight className="w-4 h-4" />
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </section>
+
+        {/* 5. Tutoriais & Recursos */}
+        <section ref={tutoriaisSectionRef} className="mb-12">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-xl font-semibold text-gray-900">Tutoriais & Recursos</h2>
+            <button className="text-sm text-blue-600 hover:text-blue-700" onClick={() => navigate('/tutoriais')}>Ver todos os tutoriais</button>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-6">
+            {[
+              { titulo: 'Introdução ao Fiscatus', tempo: '4:32', thumb: 'https://images.unsplash.com/photo-1552581234-26160f608093?auto=format&fit=crop&w=1200&q=60' },
+              { titulo: 'Modelando Fluxos', tempo: '7:18', thumb: 'https://images.unsplash.com/photo-1519389950473-47ba0277781c?auto=format&fit=crop&w=1200&q=60' },
+              { titulo: 'Relatórios Inteligentes', tempo: '5:05', thumb: 'https://images.unsplash.com/photo-1551836022-d5d88e9218df?auto=format&fit=crop&w=1200&q=60' }
+            ].map((v, i) => (
+              <div key={i} className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
+                <div className="relative aspect-video bg-gray-100">
+                  <img src={v.thumb} alt={`Capa do vídeo: ${v.titulo}`} className="w-full h-full object-cover" />
+                  <button className="absolute inset-0 m-auto w-12 h-12 rounded-full bg-white/90 backdrop-blur flex items-center justify-center shadow hover:bg-white">
+                    <Play className="w-6 h-6 text-blue-600" />
+                  </button>
+                  <span className="absolute bottom-2 right-2 px-2 py-0.5 text-xs rounded bg-gray-900/80 text-white">{v.tempo}</span>
+                </div>
+                <div className="p-4">
+                  <p className="text-sm font-medium text-gray-900">{v.titulo}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+          {/* FAQ */}
+          <div className="bg-white rounded-2xl border border-gray-200 shadow-sm">
+            {[
+              { q: 'Como personalizar o fluxo?', a: 'Acesse Configurações do Fluxo para editar etapas, responsáveis e regras.' },
+              { q: 'Onde vejo minhas pendências?', a: 'Abra Notificações ou o módulo Minhas Pendências no topo do painel.' },
+              { q: 'Como gerar relatórios?', a: 'No módulo Relatórios, selecione um template e ajuste os filtros desejados.' }
+            ].map((faq, idx) => (
+              <AccordionItem key={idx} pergunta={faq.q} resposta={faq.a} />
+            ))}
+          </div>
+        </section>
+
+        {/* 6. Depoimentos & Treinamento */}
+        <section className="mb-12">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {/* Feedbacks de Usuários */}
+            <TestimonialsCarousel title="Feedback de Usuários" />
+            {/* Feedbacks de Administrações Públicas */}
+            <PublicTestimonialsCarousel title="Feedback de Administrações Públicas" />
+            {/* Card Treinamento */}
+            <div className="lg:col-span-1 bg-gradient-to-br from-blue-50 to-indigo-50 rounded-2xl border border-blue-100 p-6 flex flex-col justify-between">
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">Treinamento Personalizado</h3>
+                <p className="text-gray-600 mb-4">Capacite sua equipe com um plano de adoção sob medida.</p>
+                <ul className="text-sm text-gray-700 list-disc pl-5 space-y-1 mb-6">
+                  <li>Workshops práticos</li>
+                  <li>Onboarding guiado</li>
+                  <li>Materiais exclusivos</li>
+                </ul>
+              </div>
+              <button onClick={() => navigate('/treinamento')}
+                className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700">
+                Agendar Treinamento
+              </button>
+            </div>
           </div>
         </section>
       </main>
 
-      {/* Downbar Institucional */}
-      <div className="bg-white border-t border-gray-200 shadow-sm">
-        <div className="px-6 py-3">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
+      {/* 7. Rodapé Premium */}
+      <footer className="bg-gray-50 border-t border-gray-200">
+        <div className="max-w-[1200px] mx-auto px-6 md:px-8 py-10 grid grid-cols-2 md:grid-cols-4 gap-8">
+          <div>
+            <div className="flex items-center gap-3 mb-3">
               <img src={logo} alt="Logo Fiscatus" className="w-8 h-8" />
-              <div>
-                <h1 className="text-lg font-bold text-gray-900">
-                  Fiscatus
-                </h1>
-                <p className="text-xs text-gray-600 italic">
-                  Gestão inteligente e integrada para contratações públicas.
-                </p>
-              </div>
+              <span className="font-semibold text-gray-900">Fiscatus</span>
             </div>
-            <div className="text-right">
-              <p className="text-xs text-gray-500">
-                v1.0.0 – 2025
-              </p>
-              <p className="text-xs text-gray-500">
-                Desenvolvido para transformar a gestão pública.
-              </p>
-            </div>
+            <p className="text-sm text-gray-600">Gestão moderna e integrada para contratações públicas.</p>
           </div>
+          <div>
+            <p className="uppercase text-xs text-gray-500 mb-2">Status do sistema</p>
+            <span className="inline-flex items-center gap-2 px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 text-xs">
+              <span className="w-2 h-2 rounded-full bg-emerald-500" /> Online
+            </span>
+          </div>
+          <div>
+            <p className="uppercase text-xs text-gray-500 mb-2">Links úteis</p>
+            <ul className="space-y-2 text-sm">
+              <li><a className="text-gray-700 hover:text-blue-700" href="#">Política de Privacidade</a></li>
+              <li><a className="text-gray-700 hover:text-blue-700" href="#">Termos de Uso</a></li>
+              <li><button onClick={() => navigate('/suporte')} className="text-left text-gray-700 hover:text-blue-700">Suporte</button></li>
+            </ul>
+          </div>
+          <div>
+            <p className="uppercase text-xs text-gray-500 mb-2">Informações técnicas</p>
+            <ul className="text-sm text-gray-700">
+              <li>Versão: v1.0.0</li>
+              <li>Ano: 2025</li>
+              <li>Ambiente: Produção</li>
+            </ul>
+          </div>
+        </div>
+        <div className="py-4 text-center text-xs text-gray-600">
+          © 2025 Fiscatus — Feito com ❤️ para a administração pública brasileira
+        </div>
+      </footer>
+    </div>
+  );
+} 
+
+// Componentes auxiliares locais
+function AccordionItem({ pergunta, resposta }: { pergunta: string; resposta: string }) {
+  const [open, setOpen] = React.useState(false);
+  return (
+    <div className="px-4 py-3">
+      <button onClick={() => setOpen(v => !v)} className="w-full flex items-center justify-between py-2">
+        <span className="text-sm font-medium text-gray-900">{pergunta}</span>
+        <ChevronRight className={"w-4 h-4 text-gray-400 transition-transform " + (open ? "rotate-90" : "")} />
+      </button>
+      {open && (
+        <p className="text-sm text-gray-600 pb-3">{resposta}</p>
+      )}
+      <div className="h-px bg-gray-100" />
+    </div>
+  );
+}
+
+function TestimonialsCarousel({ title }: { title?: string }) {
+  const items = [
+    { nome: 'Carla Nunes', cargo: 'Gestora de Compras', frase: 'O Fiscatus simplificou nosso processo de ponta a ponta.', foto: 'https://randomuser.me/api/portraits/women/68.jpg', estrelas: 5 },
+    { nome: 'Rafael Lima', cargo: 'Coordenador de TI', frase: 'Integração fluida e relatórios que fazem diferença.', foto: 'https://randomuser.me/api/portraits/men/32.jpg', estrelas: 5 },
+    { nome: 'Mariana Alves', cargo: 'Analista Sênior', frase: 'Onboarding rápido e suporte excelente.', foto: 'https://randomuser.me/api/portraits/women/44.jpg', estrelas: 4 }
+  ];
+  const [index, setIndex] = React.useState(0);
+  const next = () => setIndex((index + 1) % items.length);
+  const prev = () => setIndex((index - 1 + items.length) % items.length);
+  React.useEffect(() => {
+    const id = setInterval(next, 6000);
+    return () => clearInterval(id);
+  }, [index]);
+
+  const current = items[index];
+  return (
+    <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6 flex flex-col">
+      {title && (
+        <h3 className="text-lg font-semibold text-gray-900 mb-2">{title}</h3>
+      )}
+      <div className="flex items-center gap-3 mb-4">
+        <img src={current.foto} alt={current.nome} className="w-10 h-10 rounded-full object-cover" />
+        <div>
+          <p className="text-sm font-medium text-gray-900">{current.nome}</p>
+          <p className="text-xs text-gray-500">{current.cargo}</p>
+        </div>
+      </div>
+      <div className="flex items-center gap-1 mb-3">
+        {Array.from({ length: 5 }).map((_, i) => (
+          <Star key={i} className={"w-4 h-4 " + (i < current.estrelas ? "text-yellow-500 fill-yellow-400" : "text-gray-300")} />
+        ))}
+      </div>
+      <p className="text-gray-700 mb-6">“{current.frase}”</p>
+      <div className="mt-auto flex items-center justify-center">
+        <div className="flex gap-2">
+          {items.map((_, i) => (
+            <button key={i} onClick={() => setIndex(i)} className={"w-2.5 h-2.5 rounded-full transition-colors " + (i === index ? "bg-blue-600" : "bg-gray-300 hover:bg-gray-400")} aria-label={`Ir para depoimento ${i+1}`} />
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+} 
+
+function PublicTestimonialsCarousel({ title }: { title?: string }) {
+  const base = (import.meta as any).env?.BASE_URL || '/';
+  const brasaoPrefeitura = `${base}logos/brasao-generico.svg`;
+  const items = [
+    { nome: 'Secretaria de Saúde', cargo: 'Governo Estadual', logo: brasaoPrefeitura, frase: 'A adoção da plataforma trouxe transparência e agilidade às contratações.', estrelas: 5 },
+    { nome: 'Prefeitura Municipal', cargo: 'Administração Pública', logo: brasaoPrefeitura, frase: 'Padronizamos fluxos e reduzimos retrabalho significativamente.', estrelas: 5 },
+    { nome: 'Hospital Público', cargo: 'Instituição de Saúde', logo: brasaoPrefeitura, frase: 'Relatórios e notificações facilitaram nosso controle interno.', estrelas: 4 }
+  ];
+  const [index, setIndex] = React.useState(0);
+  const next = () => setIndex((index + 1) % items.length);
+  const prev = () => setIndex((index - 1 + items.length) % items.length);
+  React.useEffect(() => {
+    const id = setInterval(next, 7000);
+    return () => clearInterval(id);
+  }, [index]);
+
+  const current = items[index];
+  return (
+    <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6 flex flex-col">
+      {title && (
+        <h3 className="text-lg font-semibold text-gray-900 mb-2">{title}</h3>
+      )}
+      <div className="flex items-center gap-3 mb-4">
+        <div className="w-10 h-10 rounded-md overflow-hidden ring-1 ring-gray-200 bg-white flex items-center justify-center">
+          <img 
+            src={items[index].logo} 
+            alt={current.nome} 
+            className="w-full h-full object-contain p-1" 
+            onError={(e) => {
+              const target = e.target as HTMLImageElement;
+              target.style.display = 'none';
+              const parent = target.parentElement;
+              if (parent) {
+                parent.innerHTML = '<div class="w-6 h-6 text-gray-400"><svg fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z" clip-rule="evenodd"></path></svg></div>';
+              }
+            }}
+          />
+        </div>
+        <div>
+          <p className="text-sm font-medium text-gray-900">{current.nome}</p>
+          <p className="text-xs text-gray-500">{current.cargo}</p>
+        </div>
+      </div>
+      <div className="flex items-center gap-1 mb-3">
+        {Array.from({ length: 5 }).map((_, i) => (
+          <Star key={i} className={"w-4 h-4 " + (i < current.estrelas ? "text-yellow-500 fill-yellow-400" : "text-gray-300")} />
+        ))}
+      </div>
+      <p className="text-gray-700 mb-6">“{current.frase}”</p>
+      <div className="mt-auto flex items-center justify-center">
+        <div className="flex gap-2">
+          {items.map((_, i) => (
+            <button key={i} onClick={() => setIndex(i)} className={"w-2.5 h-2.5 rounded-full transition-colors " + (i === index ? "bg-blue-600" : "bg-gray-300 hover:bg-gray-400")} aria-label={`Ir para depoimento público ${i+1}`} />
+          ))}
         </div>
       </div>
     </div>
