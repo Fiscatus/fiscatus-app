@@ -14,6 +14,7 @@ import {
   Shield,
   Home
 } from "lucide-react";
+import logo from "@/assets/logo_fiscatus.png";
 
 const dashboard = {
   label: "Início", 
@@ -121,14 +122,14 @@ export default function Sidebar({ open, onClose }: { open: boolean; onClose: () 
         className={`fixed top-0 left-0 h-screen w-80 bg-white shadow-lg z-50 flex flex-col transition-transform duration-300 ${open ? "translate-x-0" : "-translate-x-full"}`}
         tabIndex={-1}
       >
-        <div className="flex items-center justify-between h-16 px-6 border-b border-gray-200 bg-gray-50">
-          <div>
-            <span className="text-lg font-semibold text-gray-900">Módulos</span>
-            <p className="text-xs text-gray-500">Navegação do sistema</p>
+        <div className="flex items-center justify-center h-16 px-6 border-b border-gray-200 bg-gray-50 relative">
+          <div className="flex items-center gap-3">
+            <img src={logo} className="w-8 h-8" alt="Logo Fiscatus" />
+            <span className="text-lg font-semibold text-gray-900">Fiscatus</span>
           </div>
           <button 
             onClick={onClose} 
-            className="p-2 rounded-lg hover:bg-gray-200 transition-colors" 
+            className="absolute right-4 p-2 rounded-lg hover:bg-gray-200 transition-colors" 
             aria-label="Fechar sidebar"
           >
             <X className="w-5 h-5" />
@@ -136,25 +137,25 @@ export default function Sidebar({ open, onClose }: { open: boolean; onClose: () 
         </div>
         
         <nav className="flex-1 overflow-y-auto py-4">
-          {/* Dashboard Principal */}
+          {/* Dashboard Principal - Agora no topo */}
           <div className="px-4 mb-6">
             <button
               onClick={() => handleModuleClick(dashboard)}
-              className={`w-full flex items-center gap-3 px-6 py-3 text-left transition-all duration-200 group ${
+              className={`w-full flex items-start gap-3 px-6 py-3 text-left transition-all duration-200 group ${
                 isActiveDashboard(dashboard.path)
                   ? "bg-blue-50 border-l-4 border-blue-600 text-blue-700"
                   : "text-gray-700 hover:bg-gray-50 border-l-4 border-transparent hover:border-gray-300"
               } cursor-pointer`}
               tabIndex={0}
             >
-              <div className={`${isActiveDashboard(dashboard.path) ? "text-blue-600" : "text-gray-500 group-hover:text-gray-700"}`}>
+              <div className={`flex-shrink-0 mt-0.5 ${isActiveDashboard(dashboard.path) ? "text-blue-600" : "text-gray-500 group-hover:text-gray-700"}`}>
                 {dashboard.icon}
               </div>
               <div className="flex-1 min-w-0">
-                <span className="block font-medium">
+                <span className="block font-medium leading-tight">
                   {dashboard.label}
                 </span>
-                <span className="block text-xs text-gray-500 truncate">
+                <span className="block text-xs text-gray-500 truncate leading-tight">
                   {dashboard.description}
                 </span>
               </div>
@@ -172,7 +173,7 @@ export default function Sidebar({ open, onClose }: { open: boolean; onClose: () 
             <button
               key={module.label}
               onClick={() => handleModuleClick(module)}
-              className={`w-full flex items-center gap-3 px-6 py-3 text-left transition-all duration-200 group ${
+              className={`w-full flex items-start gap-3 px-6 py-3 text-left transition-all duration-200 group ${
                 isActiveModule(module.path)
                   ? "bg-blue-50 border-l-4 border-blue-600 text-blue-700"
                   : "text-gray-700 hover:bg-gray-50 border-l-4 border-transparent hover:border-gray-300"
@@ -180,19 +181,19 @@ export default function Sidebar({ open, onClose }: { open: boolean; onClose: () 
               disabled={module.disabled}
               tabIndex={0}
             >
-              <div className={`${isActiveModule(module.path) ? "text-blue-600" : "text-gray-500 group-hover:text-gray-700"}`}>
+              <div className={`flex-shrink-0 mt-0.5 ${isActiveModule(module.path) ? "text-blue-600" : "text-gray-500 group-hover:text-gray-700"}`}>
                 {module.icon}
               </div>
               <div className="flex-1 min-w-0">
-                <span className={`block font-medium ${module.disabled ? "text-gray-400" : ""}`}>
+                <span className={`block font-medium leading-tight ${module.disabled ? "text-gray-400" : ""}`}>
                   {module.label}
                 </span>
-                <span className="block text-xs text-gray-500 truncate">
+                <span className="block text-xs text-gray-500 truncate leading-tight">
                   {module.description}
                 </span>
               </div>
               {module.disabled && (
-                <span className="text-xs text-gray-400">Em breve</span>
+                <span className="text-xs text-gray-400 flex-shrink-0 mt-0.5">Em breve</span>
               )}
             </button>
           ))}
@@ -214,21 +215,21 @@ export default function Sidebar({ open, onClose }: { open: boolean; onClose: () 
                 path: "/administracao",
                 description: "Painel de administração"
               })}
-              className={`w-full flex items-center gap-3 px-4 py-3 text-left transition-all duration-200 group rounded-lg ${
+              className={`w-full flex items-start gap-3 px-4 py-3 text-left transition-all duration-200 group rounded-lg ${
                 isActiveModule("/administracao")
                   ? "bg-blue-50 border border-blue-200 text-blue-700"
                   : "text-gray-600 hover:bg-gray-50 border border-transparent hover:border-gray-200"
               } cursor-pointer`}
               tabIndex={0}
             >
-              <div className={`${isActiveModule("/administracao") ? "text-blue-600" : "text-gray-500 group-hover:text-gray-700"}`}>
+              <div className={`flex-shrink-0 mt-0.5 ${isActiveModule("/administracao") ? "text-blue-600" : "text-gray-500 group-hover:text-gray-700"}`}>
                 <Shield className="w-4 h-4" />
               </div>
               <div className="flex-1 min-w-0">
-                <span className="block font-medium text-sm">
+                <span className="block font-medium text-sm leading-tight">
                   Administração
                 </span>
-                <span className="block text-xs text-gray-500 truncate">
+                <span className="block text-xs text-gray-500 truncate leading-tight">
                   Painel de administração
                 </span>
               </div>

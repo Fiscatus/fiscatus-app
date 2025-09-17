@@ -14,7 +14,10 @@ import {
   FileText,
   AlertTriangle,
   CheckCircle2,
-  FolderOpen
+  FolderOpen,
+  RotateCcw,
+  CheckCircle2 as CheckIcon,
+  Clock as ClockIcon
 } from "lucide-react";
 
 // Função para criar path do donut chart
@@ -104,9 +107,9 @@ export default function PlanejamentoContratacao() {
 
   // Dados do gráfico de pizza - Status dos Processos
   const statusData = [
-    { label: "Em Andamento", value: 342, percentage: 27, color: "#3B82F6", icon: "🔄" },
-    { label: "Concluído", value: 856, percentage: 69, color: "#10B981", icon: "✅" },
-    { label: "Pendente", value: 49, percentage: 4, color: "#F59E0B", icon: "⏳" }
+    { label: "Em Andamento", value: 342, percentage: 27, color: "#3B82F6", icon: <RotateCcw className="w-4 h-4" /> },
+    { label: "Concluído", value: 856, percentage: 69, color: "#10B981", icon: <CheckIcon className="w-4 h-4" /> },
+    { label: "Pendente", value: 49, percentage: 4, color: "#F59E0B", icon: <ClockIcon className="w-4 h-4" /> }
   ];
 
   // Dados do gráfico de barras - Processos por Etapa
@@ -244,7 +247,7 @@ export default function PlanejamentoContratacao() {
                 {statusData.map((item) => (
                   <div key={item.label} className="flex items-center justify-between">
                     <div className="flex items-center space-x-2">
-                      <span>{item.icon}</span>
+                      <span className="text-gray-600">{item.icon}</span>
                       <span className="text-sm text-gray-600">{item.label}</span>
                     </div>
                     <span className="text-sm font-medium text-gray-900">{item.value}</span>
