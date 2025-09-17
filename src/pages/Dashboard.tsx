@@ -484,16 +484,15 @@ export default function Dashboard() {
                   </div>
                   
                   <div className="space-y-4 mb-6">
-                    <p className="text-gray-700 leading-relaxed">
-                      O Fiscatus integra todas as etapas da contratação pública em uma plataforma unificada.
-                      Do planejamento à execução contratual, oferecemos recursos inteligentes para garantir mais eficiência, transparência e conformidade legal.
+                    <p className="text-black leading-relaxed">
+                      O Fiscatus foi criado para apoiar gestores públicos na condução das contratações, reunindo em uma única plataforma todas as etapas do processo, do planejamento à execução contratual. Nasceu da prática e do olhar atento de profissionais que conhecem de perto os desafios da administração, oferecendo uma ferramenta que alia simplicidade, inovação e segurança para tornar cada etapa mais clara e acessível.
                     </p>
-                    <p className="text-gray-600 leading-relaxed">
-                      Com dashboards intuitivos, fluxos personalizáveis e suporte dedicado, o sistema simplifica a rotina dos gestores públicos e fortalece o controle social, transformando a forma como a administração conduz seus processos de contratação.
+                    <p className="text-black leading-relaxed">
+                      Com dashboards intuitivos, fluxos flexíveis e recursos de automação, o sistema ajuda a reduzir a burocracia e a dar mais agilidade às rotinas, permitindo que as equipes foquem no que realmente importa: resultados. O Fiscatus inspira confiança, fortalece a transparência e se apresenta como um parceiro de trabalho diário, trazendo tranquilidade e eficiência para quem lida com as contratações públicas.
                     </p>
                   </div>
                   
-                  <div className="flex flex-wrap gap-2 mb-6">
+                  <div className="flex flex-wrap gap-2 mb-4">
                     {['Fluxos Personalizados','Assinaturas Digitais','Notificações','Relatórios Inteligentes','Multi-Órgão'].map((chip) => (
                       <span key={chip} className="px-3 py-1.5 rounded-full text-xs font-medium bg-white/90 text-gray-700 border border-gray-200 shadow-sm">
                         {chip}
@@ -503,10 +502,10 @@ export default function Dashboard() {
                   
                   <div className="mt-auto">
                     <button
-                      onClick={() => navigate('/documentacao')}
+                      onClick={() => navigate('/historia')}
                       className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-blue-600 text-white text-sm font-medium hover:bg-blue-700 shadow-sm transition-colors"
                     >
-                      Ver documentação completa
+                      Conhecer a história completa
                       <ArrowRight className="w-4 h-4" />
                     </button>
                   </div>
