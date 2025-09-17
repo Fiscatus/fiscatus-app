@@ -2,6 +2,9 @@ import React from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { HeroWithMockup } from "@/components/ui/hero-with-mockup";
+import { useScrollReveal } from "@/hooks/useScrollReveal";
+import { ScrollEffects } from "@/components/interactive/ScrollEffects";
 import { 
   FileText, 
   TrendingUp, 
@@ -81,7 +84,7 @@ function DashboardTopbar() {
 
   return (
     <>
-      <header className="fixed top-0 left-0 w-full h-16 bg-white/95 backdrop-blur-sm border-b border-gray-100 shadow-sm z-50 px-4 md:px-6 flex flex-col md:flex-row items-center justify-between gap-3 md:gap-4">
+      <header className="topbar fixed top-0 left-0 w-full h-16 bg-white/95 backdrop-blur-sm border-b border-gray-100 shadow-sm z-50 px-4 md:px-6 flex flex-col md:flex-row items-center justify-between gap-3 md:gap-4">
         {/* Esquerda: menu, logo, nome do sistema */}
         <div className="flex items-center gap-3 md:gap-4 flex-shrink-0">
           <button className="p-2 rounded-lg hover:bg-gray-100 transition-colors" onClick={() => setSidebarOpen(true)} aria-label="Abrir menu">
@@ -165,14 +168,20 @@ export default function Dashboard() {
   const navigate = useNavigate();
   const { user } = useUser();
 
-  console.log('Dashboard: Rendering with user:', user?.email);
+  // Ativar scroll reveals
+  useScrollReveal();
 
   const modulosSectionRef = React.useRef<HTMLDivElement | null>(null);
   const tutoriaisSectionRef = React.useRef<HTMLDivElement | null>(null);
 
-  // Estado do chatbot
+  // Estado do chatbot - lazy loading
   const [chatbotOpen, setChatbotOpen] = React.useState(false);
-  const [chatMessages, setChatMessages] = React.useState([
+  const [chatMessages, setChatMessages] = React.useState<Array<{
+    id: number;
+    role: 'bot' | 'user';
+    text: string;
+    timestamp: Date;
+  }>>(() => [
     {
       id: 1,
       role: 'bot',
@@ -192,7 +201,7 @@ export default function Dashboard() {
   }, [chatMessages]);
 
   // Respostas automáticas do bot
-  const getBotResponse = (userMessage: string) => {
+  const getBotResponse = React.useCallback((userMessage: string) => {
     const message = userMessage.toLowerCase();
     
     if (message.includes('dfd') || message.includes('planejamento')) {
@@ -216,14 +225,14 @@ export default function Dashboard() {
     }
     
     return 'Entendi sua pergunta. Para uma resposta mais específica, posso conectar você com nossa equipe de suporte especializada. Deseja que eu faça isso?';
-  };
+  }, []);
 
-  const sendMessage = () => {
+  const sendMessage = React.useCallback(() => {
     if (!inputValue.trim()) return;
 
     const userMessage = {
       id: Date.now(),
-      role: 'user' as const,
+      role: 'user' as 'user',
       text: inputValue.trim(),
       timestamp: new Date()
     };
@@ -236,7 +245,7 @@ export default function Dashboard() {
     setTimeout(() => {
       const botResponse = {
         id: Date.now() + 1,
-        role: 'bot' as const,
+        role: 'bot' as 'bot',
         text: getBotResponse(inputValue),
         timestamp: new Date()
       };
@@ -244,19 +253,19 @@ export default function Dashboard() {
       setChatMessages(prev => [...prev, botResponse]);
       setIsTyping(false);
     }, 1500);
-  };
+  }, [inputValue, getBotResponse]);
 
-  const handleKeyPress = (e: React.KeyboardEvent) => {
+  const handleKeyPress = React.useCallback((e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       sendMessage();
     }
-  };
+  }, [sendMessage]);
 
   // Indicadores removidos conforme solicitação
 
   // Módulos do sistema com design limpo e moderno
-  const modulos = [
+  const modulos = React.useMemo(() => [
     {
       nome: "Planejamento da Contratação",
       descricao: "Organize todas as fases da contratação: da demanda inicial à publicação do edital.",
@@ -293,7 +302,7 @@ export default function Dashboard() {
       icon: <Settings className="w-6 h-6" />,
       path: "/configuracoes-fluxo"
     }
-  ];
+  ], []);
 
   // Favoritos (persistidos no localStorage)
   const [favoritos, setFavoritos] = React.useState<string[]>(() => {
@@ -305,23 +314,24 @@ export default function Dashboard() {
     }
   });
 
-  const toggleFavorito = (nome: string) => {
+  const toggleFavorito = React.useCallback((nome: string) => {
     setFavoritos(prev => {
       const exists = prev.includes(nome);
       const next = exists ? prev.filter(n => n !== nome) : [...prev, nome];
       localStorage.setItem('fav_modulos', JSON.stringify(next));
       return next;
     });
-  };
+  }, []);
 
-  // Ordem fixa conforme navbar lateral; favoritos não alteram a ordem
-
-  const handleModuloClick = (path: string) => {
+  const handleModuloClick = React.useCallback((path: string) => {
     navigate(path);
-  };
+  }, [navigate]);
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
+      <div className="read-progress" />
+      <ScrollEffects />
+      
       <DashboardTopbar />
       
       {/* Botões flutuantes de suporte */}
@@ -338,84 +348,40 @@ export default function Dashboard() {
       <main className="pt-16 md:pt-20 px-6 py-8 flex-1">
 
         {/* 1. Hero de boas-vindas */}
-        <section className="mb-12">
-          <div className="max-w-[1200px] mx-auto px-6 md:px-8">
-            <article className="grid grid-cols-12 rounded-2xl border border-gray-200 bg-white shadow-sm overflow-hidden hover:shadow-md transition-shadow">
-              {/* Texto */}
-              <section className="col-span-12 lg:col-span-6 p-8 md:p-10 lg:p-12 flex flex-col justify-center">
-
-                {/* Título principal */}
-                <div className="mb-6">
-                  <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight text-gray-900 leading-tight">
-                    Bem-vindo,<br />
-                    <span className="text-indigo-600">{user?.nome?.split(' ')[0] || 'Usuário'}</span>
-                  </h1>
-                      </div>
-
-                {/* Subtítulo */}
-                <div className="mb-8">
-                  <p className="text-lg md:text-xl text-gray-600 leading-relaxed max-w-[45ch]">
-                    Sua central para gerenciar contratações públicas de forma inteligente e integrada.
-                  </p>
-                </div>
-                
-                {/* Chips de contexto */}
-                <div className="mb-8">
-                  <div className="flex flex-wrap items-center gap-3">
-                    <span className="inline-flex items-center px-3 py-1.5 rounded-full text-xs font-medium bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200">
-                      <div className="w-2 h-2 rounded-full bg-emerald-500 mr-2"></div>
-                      Ambiente: Produção
-                    </span>
-                    <span className="inline-flex items-center px-3 py-1.5 rounded-full text-xs font-medium bg-blue-50 text-blue-700 ring-1 ring-blue-200">
-                      <div className="w-2 h-2 rounded-full bg-blue-500 mr-2"></div>
-                      Status: Ativo
-                    </span>
-                  </div>
-                </div>
-
-                {/* CTAs */}
-                <div className="flex flex-col sm:flex-row gap-4">
-                  <Button
-                    onClick={() => modulosSectionRef.current?.scrollIntoView({ behavior: 'smooth' })}
-                    className="h-12 px-6 gap-3 hover:translate-y-[-1px] transition-all duration-200 shadow-sm"
-                    aria-label="Explorar todos os módulos do sistema"
-                  >
-                    <span className="font-semibold">Explorar Módulos</span>
-                    <ArrowRight className="w-5 h-5" />
-                  </Button>
-                  <Button
-                    variant="outline"
-                    onClick={() => tutoriaisSectionRef.current?.scrollIntoView({ behavior: 'smooth' })}
-                    className="h-12 px-6 gap-3 hover:translate-y-[-1px] transition-all duration-200 border-gray-300 hover:border-indigo-300"
-                    aria-label="Assistir guia rápido de uso do sistema"
-                  >
-                    <Play className="w-5 h-5 text-indigo-600" />
-                    <span className="font-semibold">Assistir Guia Rápido</span>
-                  </Button>
-                </div>
-              </section>
-
-              {/* Imagem */}
-              <figure className="col-span-12 lg:col-span-6 relative min-h-[240px] md:min-h-[300px] h-44 sm:h-56 md:h-64 lg:h-auto">
-                <div
-                  className="absolute inset-0 bg-center bg-cover rounded-l-none"
-                  style={{ backgroundImage: 'url("https://images.unsplash.com/photo-1521737604893-d14cc237f11d?auto=format&fit=crop&w=1400&q=60")' }}
-                  aria-hidden="true"
-                />
-                <div className="absolute inset-0 bg-gradient-to-l from-black/10 via-black/0 to-black/0 lg:from-black/0" />
-              </figure>
-            </article>
+        <div data-reveal>
+          <HeroWithMockup
+            title={`Bem-vindo, ${user?.nome?.split(' ')[0] || 'Usuário'}`}
+            description="Sua central para gerenciar contratações públicas de forma inteligente e integrada."
+            primaryCta={{ 
+              text: "Explorar Módulos", 
+              onClick: React.useCallback(() => modulosSectionRef.current?.scrollIntoView({ behavior: 'smooth' }), [])
+            }}
+            secondaryCta={{ 
+              text: "Assistir Guia Rápido", 
+              onClick: React.useCallback(() => tutoriaisSectionRef.current?.scrollIntoView({ behavior: 'smooth' }), [])
+            }}
+            mockupImage={{
+              alt: "Painel do Fiscatus",
+              width: 1248,
+              height: 765,
+              src: "https://images.unsplash.com/photo-1521737604893-d14cc237f11d?auto=format&fit=crop&w=1400&q=60"
+            }}
+            glowVariant="above"
+            glowSize="xl"
+            glowColor="brand"
+          />
           </div>
-        </section>
 
         {/* Seção de indicadores foi removida */}
 
         {/* 2. Módulos do Sistema */}
         <section ref={modulosSectionRef} className="mb-12">
-          <h2 className="text-xl font-semibold text-gray-900 mb-6">
+          <header data-reveal className="mb-6">
+            <h2 className="text-xl font-semibold text-gray-900">
             Módulos do Sistema
           </h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          </header>
+          <div data-reveal-stagger className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {modulos.map((modulo, index) => (
               <div key={index} className="group relative h-48 rounded-2xl p-[1px] bg-gradient-to-br from-gray-200/60 to-transparent hover:from-blue-200/60 hover:to-purple-200/60 transition-all duration-200">
                 <div className="h-full rounded-2xl bg-white border border-gray-200 shadow-sm group-hover:shadow-md overflow-hidden">
@@ -466,7 +432,7 @@ export default function Dashboard() {
         {/* 3. Suporte & Documentação */}
         <section className="mb-12">
           <div className="grid grid-cols-12 gap-6">
-            <div className="col-span-12 lg:col-span-6">
+            <div data-reveal className="col-span-12 lg:col-span-6">
               <div className="relative overflow-hidden rounded-2xl border border-gray-200 shadow-sm h-full bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50">
                 {/* Decoração de fundo */}
                 <div className="absolute -right-10 -top-10 w-40 h-40 bg-blue-200/30 rounded-full blur-3xl" />
@@ -512,7 +478,7 @@ export default function Dashboard() {
                 </div>
               </div>
             </div>
-            <div className="col-span-12 lg:col-span-6">
+            <div data-reveal className="col-span-12 lg:col-span-6">
               <Card className="rounded-2xl border border-gray-200 shadow-sm overflow-hidden hover:shadow-md transition-all duration-200">
                 {/* Header */}
                 <div className="px-6 pt-6 pb-5 bg-gradient-to-br from-indigo-50 via-white to-white">
@@ -615,19 +581,25 @@ export default function Dashboard() {
 
         {/* 4. Tutoriais & Recursos */}
         <section ref={tutoriaisSectionRef} className="mb-12">
-          <div className="flex items-center justify-between mb-4">
+          <div data-reveal className="flex items-center justify-between mb-4">
             <h2 className="text-xl font-semibold text-gray-900">Tutoriais & Recursos</h2>
             <button className="text-sm text-blue-600 hover:text-blue-700" onClick={() => navigate('/tutoriais')}>Ver todos os tutoriais</button>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-6">
-            {[
+          <div data-reveal-stagger className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-6">
+            {React.useMemo(() => [
               { titulo: 'Introdução ao Fiscatus', tempo: '4:32', thumb: 'https://images.unsplash.com/photo-1552581234-26160f608093?auto=format&fit=crop&w=1200&q=60' },
               { titulo: 'Modelando Fluxos', tempo: '7:18', thumb: 'https://images.unsplash.com/photo-1519389950473-47ba0277781c?auto=format&fit=crop&w=1200&q=60' },
               { titulo: 'Relatórios Inteligentes', tempo: '5:05', thumb: 'https://images.unsplash.com/photo-1551836022-d5d88e9218df?auto=format&fit=crop&w=1200&q=60' }
-            ].map((v, i) => (
+            ], []).map((v, i) => (
               <div key={i} className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
                 <div className="relative aspect-video bg-gray-100">
-                  <img src={v.thumb} alt={`Capa do vídeo: ${v.titulo}`} className="w-full h-full object-cover" />
+                  <img 
+                    src={v.thumb} 
+                    alt={`Capa do vídeo: ${v.titulo}`} 
+                    className="w-full h-full object-cover" 
+                    loading="lazy"
+                    decoding="async"
+                  />
                   <button className="absolute inset-0 m-auto w-12 h-12 rounded-full bg-white/90 backdrop-blur flex items-center justify-center shadow hover:bg-white">
                     <Play className="w-6 h-6 text-blue-600" />
                   </button>
@@ -640,12 +612,12 @@ export default function Dashboard() {
             ))}
           </div>
           {/* FAQ */}
-          <div className="bg-white rounded-2xl border border-gray-200 shadow-sm">
-            {[
+          <div data-reveal="zoom" className="bg-white rounded-2xl border border-gray-200 shadow-sm">
+            {React.useMemo(() => [
               { q: 'Como personalizar o fluxo?', a: 'Acesse Configurações do Fluxo para editar etapas, responsáveis e regras.' },
               { q: 'Onde vejo minhas pendências?', a: 'Abra Notificações ou o módulo Minhas Pendências no topo do painel.' },
               { q: 'Como gerar relatórios?', a: 'No módulo Relatórios, selecione um template e ajuste os filtros desejados.' }
-            ].map((faq, idx) => (
+            ], []).map((faq, idx) => (
               <AccordionItem key={idx} pergunta={faq.q} resposta={faq.a} />
             ))}
           </div>
@@ -655,11 +627,15 @@ export default function Dashboard() {
         <section className="mb-12">
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             {/* Feedbacks de Usuários */}
+            <div data-reveal>
             <TestimonialsCarousel title="Feedback de Usuários" />
+            </div>
             {/* Feedbacks de Administrações Públicas */}
+            <div data-reveal>
             <PublicTestimonialsCarousel title="Feedback de Administrações Públicas" />
+            </div>
             {/* Card Treinamento */}
-            <div className="lg:col-span-1 bg-gradient-to-br from-blue-50 to-indigo-50 rounded-2xl border border-blue-100 p-6 flex flex-col justify-between">
+            <div data-reveal className="lg:col-span-1 bg-gradient-to-br from-blue-50 to-indigo-50 rounded-2xl border border-blue-100 p-6 flex flex-col justify-between">
               <div>
                 <h3 className="text-lg font-semibold text-gray-900 mb-2">Treinamento Personalizado</h3>
                 <p className="text-gray-600 mb-4">Capacite sua equipe com um plano de adoção sob medida.</p>
@@ -853,19 +829,21 @@ function AccordionItem({ pergunta, resposta }: { pergunta: string; resposta: str
   );
 }
 
-function TestimonialsCarousel({ title }: { title?: string }) {
-  const items = [
+const TestimonialsCarousel = React.memo(({ title }: { title?: string }) => {
+  const items = React.useMemo(() => [
     { nome: 'Carla Nunes', cargo: 'Gestora de Compras', frase: 'O Fiscatus simplificou nosso processo de ponta a ponta.', foto: 'https://randomuser.me/api/portraits/women/68.jpg', estrelas: 5 },
     { nome: 'Rafael Lima', cargo: 'Coordenador de TI', frase: 'Integração fluida e relatórios que fazem diferença.', foto: 'https://randomuser.me/api/portraits/men/32.jpg', estrelas: 5 },
     { nome: 'Mariana Alves', cargo: 'Analista Sênior', frase: 'Onboarding rápido e suporte excelente.', foto: 'https://randomuser.me/api/portraits/women/44.jpg', estrelas: 4 }
-  ];
+  ], []);
+  
   const [index, setIndex] = React.useState(0);
-  const next = () => setIndex((index + 1) % items.length);
-  const prev = () => setIndex((index - 1 + items.length) % items.length);
+  const next = React.useCallback(() => setIndex((index + 1) % items.length), [index, items.length]);
+  const prev = React.useCallback(() => setIndex((index - 1 + items.length) % items.length), [index, items.length]);
+  
   React.useEffect(() => {
     const id = setInterval(next, 6000);
     return () => clearInterval(id);
-  }, [index]);
+  }, [next]);
 
   const current = items[index];
   return (
@@ -874,7 +852,13 @@ function TestimonialsCarousel({ title }: { title?: string }) {
         <h3 className="text-lg font-semibold text-gray-900 mb-2">{title}</h3>
       )}
       <div className="flex items-center gap-3 mb-4">
-        <img src={current.foto} alt={current.nome} className="w-10 h-10 rounded-full object-cover" />
+        <img 
+          src={current.foto} 
+          alt={current.nome} 
+          className="w-10 h-10 rounded-full object-cover" 
+          loading="lazy"
+          decoding="async"
+        />
         <div>
           <p className="text-sm font-medium text-gray-900">{current.nome}</p>
           <p className="text-xs text-gray-500">{current.cargo}</p>
@@ -895,23 +879,26 @@ function TestimonialsCarousel({ title }: { title?: string }) {
       </div>
     </div>
   );
-} 
+});
 
-function PublicTestimonialsCarousel({ title }: { title?: string }) {
+const PublicTestimonialsCarousel = React.memo(({ title }: { title?: string }) => {
   const base = (import.meta as any).env?.BASE_URL || '/';
-  const brasaoPrefeitura = `${base}logos/brasao-generico.svg`;
-  const items = [
+  const brasaoPrefeitura = React.useMemo(() => `${base}logos/brasao-generico.svg`, [base]);
+  
+  const items = React.useMemo(() => [
     { nome: 'Secretaria de Saúde', cargo: 'Governo Estadual', logo: brasaoPrefeitura, frase: 'A adoção da plataforma trouxe transparência e agilidade às contratações.', estrelas: 5 },
     { nome: 'Prefeitura Municipal', cargo: 'Administração Pública', logo: brasaoPrefeitura, frase: 'Padronizamos fluxos e reduzimos retrabalho significativamente.', estrelas: 5 },
     { nome: 'Hospital Público', cargo: 'Instituição de Saúde', logo: brasaoPrefeitura, frase: 'Relatórios e notificações facilitaram nosso controle interno.', estrelas: 4 }
-  ];
+  ], [brasaoPrefeitura]);
+  
   const [index, setIndex] = React.useState(0);
-  const next = () => setIndex((index + 1) % items.length);
-  const prev = () => setIndex((index - 1 + items.length) % items.length);
+  const next = React.useCallback(() => setIndex((index + 1) % items.length), [index, items.length]);
+  const prev = React.useCallback(() => setIndex((index - 1 + items.length) % items.length), [index, items.length]);
+  
   React.useEffect(() => {
     const id = setInterval(next, 7000);
     return () => clearInterval(id);
-  }, [index]);
+  }, [next]);
 
   const current = items[index];
   return (
@@ -925,6 +912,8 @@ function PublicTestimonialsCarousel({ title }: { title?: string }) {
             src={items[index].logo} 
             alt={current.nome} 
             className="w-full h-full object-contain p-1" 
+            loading="lazy"
+            decoding="async"
             onError={(e) => {
               const target = e.target as HTMLImageElement;
               target.style.display = 'none';
@@ -955,4 +944,4 @@ function PublicTestimonialsCarousel({ title }: { title?: string }) {
       </div>
     </div>
   );
-} 
+});
