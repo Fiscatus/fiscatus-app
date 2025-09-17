@@ -1,9 +1,7 @@
 import React, { useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { Menu, Bell, HelpCircle, Settings, LogOut, Headphones } from "lucide-react";
+import { Menu, Bell, Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
-import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
 import Sidebar from "./Sidebar";
 import NotificationDropdown from "./NotificationDropdown";
 import { useUser } from "@/contexts/UserContext";
@@ -11,6 +9,7 @@ import { useToast } from "@/components/ui/use-toast";
 import { ModuleMenubar } from "@/components/topbar/ModuleMenubar";
 import { ModuleSheet } from "@/components/topbar/ModuleSheet";
 import { Button } from "@/components/ui/button";
+import { AccountMenu } from "@/components/topbar/AccountMenu";
 import logo from "@/assets/logo_fiscatus.png";
 
 
@@ -23,35 +22,12 @@ export default function Topbar() {
   const { toast } = useToast();
   const location = useLocation();
 
-  // Função para obter as iniciais do usuário
-  const getUserInitials = (name: string) => {
-    return name
-      .split(' ')
-      .map(word => word.charAt(0))
-      .join('')
-      .toUpperCase()
-      .slice(0, 2);
-  };
-
-  // Função de logout
-  const handleLogout = () => {
-    // Limpar token JWT (simulado)
-    localStorage.removeItem('authToken');
-    sessionStorage.removeItem('authToken');
-    
-    // Limpar dados do usuário
-    setUser(null);
-    
-    // Mostrar toast de sucesso
-    toast({
-      title: "Logout realizado",
-      description: "Você foi desconectado do sistema com sucesso.",
-      variant: "default"
-    });
-    
-    // Redirecionar para login
-    navigate("/login");
-  };
+  // Função para abrir drawer de suporte
+  const openSupportDrawer = () => {
+    // sua função que abre o drawer lateral de suporte
+    const ev = new CustomEvent("open-support")
+    window.dispatchEvent(ev)
+  }
 
   // Verifica se está em qualquer página do módulo Planejamento da Contratação
   const isPlanejamentoContratacao = 
@@ -83,9 +59,10 @@ export default function Topbar() {
   return (
     <>
       <header className="fixed top-0 left-0 w-full z-50 bg-white/90 backdrop-blur supports-[backdrop-filter]:bg-white/60 border-b border-gray-100">
-        <div className="h-14 md:h-16 flex items-center">
-          <div className="w-full max-w-[1280px] 2xl:max-w-[1360px] mx-auto px-3 sm:px-4 md:px-5 grid grid-cols-[auto,auto,1fr,auto] items-center gap-2 sm:gap-3">
-            {/* Coluna 1: menu */}
+        <div className="mx-auto max-w-[1280px] h-16 grid grid-cols-[auto,1fr] items-center px-3 sm:px-4 md:px-5">
+          {/* Coluna esquerda: menu + logo + seletor de módulo */}
+          <div className="flex items-center gap-2 sm:gap-3">
+            {/* Menu hambúrguer */}
             <button
               className="h-9 w-9 grid place-items-center rounded-lg hover:bg-gray-100 focus-visible:outline-2 focus-visible:outline-indigo-500"
               onClick={() => setSidebarOpen(true)}
@@ -94,85 +71,81 @@ export default function Topbar() {
               <Menu className="h-5 w-5 text-gray-700" />
             </button>
 
-            {/* Coluna 2: logo */}
+            {/* Logo */}
             <div className="flex items-center gap-2">
               <img src={logo} className="w-8 h-8 md:w-10 md:h-10" alt="Logo Fiscatus" />
               <span className="text-base md:text-lg font-bold text-gray-800 truncate">Fiscatus</span>
             </div>
 
-            {/* Coluna 3: menubar + busca (desktop), sheet + botão busca (mobile) */}
-            <div className="flex items-center gap-2 sm:gap-3 overflow-hidden">
-              {isPlanejamentoContratacao ? (
-                <>
+            {/* Seletor de módulo (apenas para Planejamento da Contratação) */}
+            {isPlanejamentoContratacao && (
+              <>
+                <div className="hidden sm:block">
                   <ModuleMenubar />
-                  <div className="hidden sm:flex flex-1">
+                </div>
+                <div className="sm:hidden">
+                  <ModuleSheet />
+                </div>
+              </>
+            )}
+          </div>
+
+          {/* Coluna direita: BUSCA + AÇÕES no MESMO FLEX */}
+          <div className="flex items-center gap-2 sm:gap-2.5 md:gap-3 ml-2 sm:ml-3">
+            {/* Busca elástica */}
+            <div className="flex-1 relative">
+              {isPlanejamentoContratacao ? (
+                <div className="hidden sm:block">
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" />
                     <Input
                       type="text"
                       placeholder="Buscar processos, documentos, usuários..."
-                      className="h-9 rounded-xl min-w-[200px] md:min-w-[280px] lg:min-w-[360px] max-w-[520px] 2xl:max-w-[640px] w-full border-gray-200 focus-visible:ring-0 focus-visible:outline-2 focus-visible:outline-indigo-500"
+                      className="h-10 rounded-full w-full min-w-[140px] sm:min-w-[200px] md:min-w-[280px] lg:min-w-[360px] xl:min-w-[420px] max-w-[720px] border-gray-200 focus-visible:ring-0 focus-visible:outline-2 focus-visible:outline-indigo-500 pl-10"
                     />
                   </div>
-                  {/* Mobile: módulos e busca */}
-                  <div className="sm:hidden flex items-center gap-2">
-                    <ModuleSheet />
-                    <Button variant="ghost" size="icon" className="h-9 w-9" aria-label="Buscar" onClick={() => navigate("/buscar")}>
-                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-5 w-5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
-                    </Button>
-                  </div>
-                </>
+                </div>
               ) : (
-                <div className="hidden sm:flex flex-1">
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" />
                   <Input
                     type="text"
                     placeholder="Buscar processos, documentos, usuários..."
-                    className="h-9 rounded-xl min-w-[200px] md:min-w-[280px] lg:min-w-[360px] max-w-[520px] 2xl:max-w-[640px] w-full border-gray-200 focus-visible:ring-0 focus-visible:outline-2 focus-visible:outline-indigo-500"
+                    className="h-10 rounded-full w-full min-w-[140px] sm:min-w-[200px] md:min-w-[280px] lg:min-w-[360px] xl:min-w-[420px] max-w-[720px] border-gray-200 focus-visible:ring-0 focus-visible:outline-2 focus-visible:outline-indigo-500 pl-10"
                   />
                 </div>
               )}
             </div>
 
-            {/* Coluna 4: ações */}
-            <div className="ml-auto flex items-center gap-1 sm:gap-1.5">
-              <Button variant="ghost" size="icon" className="h-9 w-9" aria-label="Ajuda" onClick={() => navigate("/ajuda")}>
-                <HelpCircle className="h-5 w-5" />
+            {/* Mobile: botão de busca para Planejamento da Contratação */}
+            {isPlanejamentoContratacao && (
+              <Button variant="ghost" size="icon" className="h-9 w-9 shrink-0 sm:hidden" aria-label="Buscar" onClick={() => navigate("/buscar")}>
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-5 w-5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
               </Button>
-              <div className="relative">
-                <Button variant="ghost" size="icon" className="h-9 w-9 relative" aria-label="Notificações" onClick={() => setNotificationsOpen(!notificationsOpen)}>
-                  <Bell className="h-5 w-5" />
-                  <span className="absolute -top-1 -right-1 h-4 min-w-4 rounded-full bg-red-500 text-[10px] text-white grid place-items-center px-1">3</span>
-                </Button>
-                <NotificationDropdown isOpen={notificationsOpen} onClose={() => setNotificationsOpen(false)} />
-              </div>
-              <Button variant="ghost" size="icon" className="h-9 w-9" aria-label="Configurações" onClick={() => navigate("/configuracoes")}>
-                <Settings className="h-5 w-5" />
+            )}
+
+            {/* Ações: Notificações + Minha conta (sem ml-auto) */}
+            <div className="relative shrink-0">
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-9 w-9 relative"
+                aria-label="Notificações"
+                onClick={() => setNotificationsOpen(!notificationsOpen)}
+              >
+                <Bell className="h-5 w-5" />
+                <span className="absolute -top-1 -right-1 h-4 min-w-4 rounded-full bg-red-500 text-[10px] text-white grid place-items-center px-1">3</span>
               </Button>
-              <Button variant="ghost" size="icon" className="h-9 w-9" aria-label="Suporte" onClick={() => navigate("/suporte")}>
-                <Headphones className="h-5 w-5" />
-              </Button>
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <button className="flex items-center justify-center h-9 rounded-full border border-gray-200 bg-white px-2 gap-2 focus:outline-none focus-visible:outline-2 focus-visible:outline-indigo-500 hidden md:flex">
-                    <Avatar className="w-6 h-6 border-0">
-                      <AvatarImage src="/usuario.png" />
-                      <AvatarFallback className="bg-gray-100 text-gray-700 font-medium text-xs">
-                        {user ? getUserInitials(user.nome) : "GM"}
-                      </AvatarFallback>
-                    </Avatar>
-                    <span className="hidden lg:inline">Minha conta</span>
-                  </button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-64 p-2">
-                  <div className="px-3 py-2">
-                    <div className="font-semibold text-gray-900 text-sm">{user?.nome || "Usuário"}</div>
-                    <div className="text-gray-500 text-xs">{user?.email || "usuario@exemplo.com"}</div>
-                  </div>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={handleLogout} className="cursor-pointer text-red-600 hover:text-red-700 hover:bg-red-50 focus:text-red-700 focus:bg-red-50">
-                    <LogOut className="mr-2 h-4 w-4" />
-                    <span>Sair do sistema</span>
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
+              <NotificationDropdown isOpen={notificationsOpen} onClose={() => setNotificationsOpen(false)} />
+            </div>
+
+            {/* Minha conta (dropdown com Saiba mais, Configurações, Suporte, Sair) */}
+            <div className="shrink-0">
+              <AccountMenu
+                name={user?.nome || "Usuário"}
+                email={user?.email || "usuario@exemplo.com"}
+                onOpenSupport={openSupportDrawer}
+              />
             </div>
           </div>
         </div>
