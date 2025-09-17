@@ -24,7 +24,11 @@ import {
   HelpCircle,
   BookOpen,
   Headphones,
-  MessageSquare
+  MessageSquare,
+  X,
+  Send,
+  Bot,
+  User
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Input } from "@/components/ui/input";
@@ -160,6 +164,89 @@ export default function Dashboard() {
   const modulosSectionRef = React.useRef<HTMLDivElement | null>(null);
   const tutoriaisSectionRef = React.useRef<HTMLDivElement | null>(null);
 
+  // Estado do chatbot
+  const [chatbotOpen, setChatbotOpen] = React.useState(false);
+  const [chatMessages, setChatMessages] = React.useState([
+    {
+      id: 1,
+      role: 'bot',
+      text: 'Olá! Sou o assistente Fiscatus. Como posso ajudar você hoje?',
+      timestamp: new Date()
+    }
+  ]);
+  const [inputValue, setInputValue] = React.useState('');
+  const [isTyping, setIsTyping] = React.useState(false);
+  const chatRef = React.useRef<HTMLDivElement>(null);
+
+  // Auto-scroll para última mensagem
+  React.useEffect(() => {
+    if (chatRef.current) {
+      chatRef.current.scrollTop = chatRef.current.scrollHeight;
+    }
+  }, [chatMessages]);
+
+  // Respostas automáticas do bot
+  const getBotResponse = (userMessage: string) => {
+    const message = userMessage.toLowerCase();
+    
+    if (message.includes('dfd') || message.includes('planejamento')) {
+      return 'Para iniciar um DFD, acesse o módulo "Planejamento da Contratação" no painel principal. Lá você encontrará todas as ferramentas para organizar sua demanda.';
+    }
+    
+    if (message.includes('fluxo') || message.includes('configurar')) {
+      return 'Os fluxos podem ser personalizados em "Configurações do Fluxo". Você pode definir etapas, responsáveis e regras específicas para sua instituição.';
+    }
+    
+    if (message.includes('relatório') || message.includes('dados')) {
+      return 'No módulo "Relatórios" você tem acesso a dashboards personalizáveis e relatórios automáticos. Que tipo de informação você precisa?';
+    }
+    
+    if (message.includes('assinatura') || message.includes('documento')) {
+      return 'As assinaturas digitais estão integradas em todo o sistema. Acesse "Minhas Assinaturas" para gerenciar documentos pendentes.';
+    }
+    
+    if (message.includes('ajuda') || message.includes('suporte')) {
+      return 'Posso ajudar com dúvidas sobre o sistema. Você também pode acessar a documentação completa ou falar com nossa equipe de suporte.';
+    }
+    
+    return 'Entendi sua pergunta. Para uma resposta mais específica, posso conectar você com nossa equipe de suporte especializada. Deseja que eu faça isso?';
+  };
+
+  const sendMessage = () => {
+    if (!inputValue.trim()) return;
+
+    const userMessage = {
+      id: Date.now(),
+      role: 'user' as const,
+      text: inputValue.trim(),
+      timestamp: new Date()
+    };
+
+    setChatMessages(prev => [...prev, userMessage]);
+    setInputValue('');
+    setIsTyping(true);
+
+    // Simular resposta do bot
+    setTimeout(() => {
+      const botResponse = {
+        id: Date.now() + 1,
+        role: 'bot' as const,
+        text: getBotResponse(inputValue),
+        timestamp: new Date()
+      };
+      
+      setChatMessages(prev => [...prev, botResponse]);
+      setIsTyping(false);
+    }, 1500);
+  };
+
+  const handleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      sendMessage();
+    }
+  };
+
   // Indicadores removidos conforme solicitação
 
   // Módulos do sistema com design limpo e moderno
@@ -230,6 +317,17 @@ export default function Dashboard() {
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
       <DashboardTopbar />
+
+      {/* Botões flutuantes de suporte */}
+      <div className="fixed right-3 md:right-5 bottom-4 md:bottom-6 z-40 flex flex-col gap-2 md:gap-3">
+        <button
+          onClick={() => setChatbotOpen(true)}
+          aria-label="Abrir chatbot de suporte"
+          className="w-10 h-10 md:w-11 md:h-11 rounded-full shadow-md border border-gray-200 bg-white hover:bg-gray-50 flex items-center justify-center"
+        >
+          <MessageSquare aria-label="Suporte" className="w-5 h-5 md:w-5 md:h-5 text-blue-600" />
+        </button>
+      </div>
       
       <main className="pt-20 px-6 py-8 flex-1">
 
@@ -343,35 +441,46 @@ export default function Dashboard() {
         <section className="mb-12">
           <div className="grid grid-cols-12 gap-6">
             <div className="col-span-12 lg:col-span-6">
-              <div className="relative overflow-hidden rounded-2xl border border-gray-200 shadow-sm h-full">
-                {/* Imagem de fundo profissional como background */}
-                <div
-                  className="absolute inset-0 bg-center bg-cover"
-                  style={{ backgroundImage: 'url("https://images.unsplash.com/photo-1529336953121-ad5a0d43d0d2?auto=format&fit=crop&w=1600&q=60")' }}
-                  aria-hidden="true"
-                />
-                {/* Overlay em gradiente para contraste */}
-                <div className="absolute inset-0 bg-gradient-to-tr from-gray-900/80 via-gray-900/50 to-transparent" />
+              <div className="relative overflow-hidden rounded-2xl border border-gray-200 shadow-sm h-full bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50">
+                {/* Decoração de fundo */}
+                <div className="absolute -right-10 -top-10 w-40 h-40 bg-blue-200/30 rounded-full blur-3xl" />
+                <div className="absolute -left-16 -bottom-16 w-52 h-52 bg-indigo-200/30 rounded-full blur-3xl" />
+                <div className="absolute top-4 right-4 w-20 h-20 bg-purple-100/40 rounded-full blur-2xl" />
+                
                 {/* Conteúdo */}
-                <div className="relative p-5 md:p-6 lg:p-7 text-white h-full flex flex-col">
-                  <div className="flex items-start gap-3 mb-3">
-                    <div className="w-9 h-9 rounded-xl bg-white/15 backdrop-blur flex items-center justify-center">
-                      <BookOpen className="w-5 h-5 text-white" />
+                <div className="relative p-6 md:p-7 lg:p-8 h-full flex flex-col">
+                  <div className="flex items-start gap-4 mb-4">
+                    <div className="w-12 h-12 rounded-xl bg-blue-600 text-white flex items-center justify-center shadow-sm">
+                      <BookOpen className="w-6 h-6" />
                     </div>
-                    <h3 className="text-lg font-semibold">Sobre o Sistema</h3>
+                    <div>
+                      <h3 className="text-xl font-semibold text-gray-900 mb-1">Sobre o Sistema</h3>
+                      <p className="text-sm text-blue-600 font-medium">Plataforma unificada para contratações públicas</p>
+                    </div>
                   </div>
-                  <p className="text-white/90 mb-4">Conheça os princípios, funcionalidades e boas práticas para obter o máximo do Fiscatus.</p>
-                  <div className="flex flex-wrap gap-2 mb-5">
+                  
+                  <div className="space-y-4 mb-6">
+                    <p className="text-gray-700 leading-relaxed">
+                      O Fiscatus integra todas as etapas da contratação pública em uma plataforma unificada.
+                      Do planejamento à execução contratual, oferecemos recursos inteligentes para garantir mais eficiência, transparência e conformidade legal.
+                    </p>
+                    <p className="text-gray-600 leading-relaxed">
+                      Com dashboards intuitivos, fluxos personalizáveis e suporte dedicado, o sistema simplifica a rotina dos gestores públicos e fortalece o controle social, transformando a forma como a administração conduz seus processos de contratação.
+                    </p>
+                  </div>
+                  
+                  <div className="flex flex-wrap gap-2 mb-6">
                     {['Fluxos Personalizados','Assinaturas Digitais','Notificações','Relatórios Inteligentes','Multi-Órgão'].map((chip) => (
-                      <span key={chip} className="px-2.5 py-1 rounded-full text-xs bg-white/15 text-white/95 border border-white/20">
+                      <span key={chip} className="px-3 py-1.5 rounded-full text-xs font-medium bg-white/90 text-gray-700 border border-gray-200 shadow-sm">
                         {chip}
                       </span>
                     ))}
                   </div>
+                  
                   <div className="mt-auto">
                     <button
                       onClick={() => navigate('/documentacao')}
-                      className="inline-flex items-center gap-1.5 text-sm font-medium text-white hover:text-white/90 underline underline-offset-4 decoration-white/60 hover:decoration-white"
+                      className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-blue-600 text-white text-sm font-medium hover:bg-blue-700 shadow-sm transition-colors"
                     >
                       Ver documentação completa
                       <ArrowRight className="w-4 h-4" />
@@ -381,14 +490,14 @@ export default function Dashboard() {
               </div>
             </div>
             <div className="col-span-12 lg:col-span-6">
-              <div className="relative overflow-hidden rounded-2xl border border-gray-200 shadow-sm p-5 h-full bg-gradient-to-br from-blue-50 via-indigo-50 to-white">
+              <div className="relative overflow-hidden rounded-2xl border border-gray-200 shadow-sm p-6 md:p-7 h-full bg-gradient-to-br from-blue-50 via-indigo-50 to-white flex flex-col">
                 <div className="absolute -right-10 -top-10 w-40 h-40 bg-blue-300/20 rounded-full blur-3xl" />
                 <div className="absolute -left-16 -bottom-16 w-52 h-52 bg-indigo-300/20 rounded-full blur-3xl" />
-                <div className="relative">
-                  <div className="flex items-start justify-between mb-3">
+                <div className="relative flex-1 flex flex-col">
+                  <div className="flex items-start justify-between mb-4">
                     <div className="flex items-center gap-3">
                       <div className="w-9 h-9 rounded-xl bg-blue-600 text-white flex items-center justify-center shadow-sm">
-                        <Headphones className="w-5 h-5" />
+                      <MessageSquare aria-label="Suporte" className="w-5 h-5" />
                       </div>
                       <div>
                         <h3 className="text-lg font-semibold text-gray-900">Chatbot & Suporte</h3>
@@ -403,10 +512,10 @@ export default function Dashboard() {
                   </div>
 
                   {/* Prévia do chat */}
-                  <div className="mb-4">
+                  <div className="mb-5">
                     <div className="flex items-start gap-3">
                       <img src="https://randomuser.me/api/portraits/women/65.jpg" alt="Agente" className="w-8 h-8 rounded-full object-cover" />
-                      <div className="max-w-[85%] rounded-2xl rounded-tl-sm bg-white shadow border border-gray-200 p-3">
+                      <div className="w-full rounded-2xl rounded-tl-sm bg-white shadow border border-gray-200 p-3">
                         <p className="text-sm text-gray-900">Olá! Precisa de ajuda para iniciar um DFD ou configurar seu fluxo?</p>
                         <div className="mt-2 flex items-center gap-2">
                           <button onClick={() => navigate('/planejamento-da-contratacao')} className="px-2 py-1 text-xs rounded-md bg-blue-50 text-blue-700 border border-blue-200 hover:bg-blue-100">Iniciar DFD</button>
@@ -415,30 +524,42 @@ export default function Dashboard() {
                       </div>
                     </div>
                   </div>
-                  
-                  {/* Ações rápidas */}
-                  <div className="grid grid-cols-3 gap-3 mb-4">
-                    <button onClick={() => navigate('/suporte')} className="col-span-3 md:col-span-1 inline-flex items-center justify-center gap-2 px-3 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700">
+                  {/* Informações complementares */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-5">
+                    <div className="bg-white/70 backdrop-blur rounded-lg border border-gray-200 p-3">
+                      <p className="text-xs font-semibold text-gray-700 mb-1">Canais de atendimento</p>
+                      <ul className="text-sm text-gray-700 space-y-1">
+                        <li>• Chat em tempo real</li>
+                        <li>• E-mail: suporte@fiscatus.gov.br</li>
+                        <li>• Central de ajuda</li>
+                      </ul>
+                    </div>
+                    <div className="bg-white/70 backdrop-blur rounded-lg border border-gray-200 p-3">
+                      <p className="text-xs font-semibold text-gray-700 mb-1">SLA e horário</p>
+                      <ul className="text-sm text-gray-700 space-y-1">
+                        <li>• Primeira resposta: até 5 min</li>
+                        <li>• Atendimento: 8h às 18h (dias úteis)</li>
+                        <li>• Prioridade para incidentes críticos</li>
+                      </ul>
+                    </div>
+                  </div>
+
+                  {/* Ação principal */}
+                  <div className="mt-auto">
+                    <button onClick={() => navigate('/suporte')} className="w-full inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700">
                       Abrir suporte
                     </button>
-                    <button onClick={() => navigate('/documentacao')} className="col-span-3 md:col-span-1 inline-flex items-center justify-center gap-2 px-3 py-2 rounded-lg bg-white text-gray-700 border border-gray-200 hover:bg-gray-50">
-                      Base de conhecimento
-                    </button>
-                    <button onClick={() => navigate('/suporte#ticket')} className="col-span-3 md:col-span-1 inline-flex items-center justify-center gap-2 px-3 py-2 rounded-lg bg-white text-gray-700 border border-gray-200 hover:bg-gray-50">
-                      Enviar ticket
-                    </button>
+                    <p className="text-xs text-gray-500 mt-2">Horário de atendimento: 8h às 18h, em dias úteis.</p>
                   </div>
-                  
-                  <p className="text-xs text-gray-500">Horário de atendimento: 8h às 18h, em dias úteis.</p>
                 </div>
               </div>
             </div>
           </div>
         </section>
 
-        {/* 4. Resumo Rápido / Continuar de onde parei */}
+        {/* 4. Últimas Interações / Continuar de onde parei */}
         <section className="mb-12">
-          <h2 className="text-xl font-semibold text-gray-900 mb-4">Resumo Rápido</h2>
+          <h2 className="text-xl font-semibold text-gray-900 mb-4">Últimas Interações</h2>
           <div className="bg-white rounded-2xl border border-gray-200 shadow-sm">
             <ul className="divide-y divide-gray-100">
               {[
@@ -531,9 +652,126 @@ export default function Dashboard() {
         </section>
       </main>
 
+      {/* Chatbot Drawer */}
+      {chatbotOpen && (
+        <>
+          {/* Overlay */}
+          <div 
+            className="fixed inset-0 bg-black/20 backdrop-blur-sm z-50"
+            onClick={() => setChatbotOpen(false)}
+          />
+          
+          {/* Drawer */}
+          <div className="fixed right-0 top-0 h-full w-full max-w-md bg-white shadow-2xl z-50 flex flex-col">
+            {/* Header */}
+            <div className="flex items-center justify-between p-4 border-b border-gray-200 bg-blue-50">
+            <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-blue-600 flex items-center justify-center">
+                  <Bot className="w-5 h-5 text-white" />
+                </div>
+              <div>
+                  <h3 className="font-semibold text-gray-900">Assistente Fiscatus</h3>
+                  <p className="text-sm text-gray-600">Online agora</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setChatbotOpen(false)}
+                className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
+              >
+                <X className="w-5 h-5 text-gray-600" />
+              </button>
+            </div>
+
+            {/* Chat Area */}
+            <div 
+              ref={chatRef}
+              className="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50"
+            >
+              {chatMessages.map((message) => (
+                <div
+                  key={message.id}
+                  className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
+                >
+                  <div className={`flex gap-2 max-w-[80%] ${message.role === 'user' ? 'flex-row-reverse' : 'flex-row'}`}>
+                    {/* Avatar */}
+                    <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
+                      message.role === 'user' 
+                        ? 'bg-blue-600' 
+                        : 'bg-gray-200'
+                    }`}>
+                      {message.role === 'user' ? (
+                        <User className="w-4 h-4 text-white" />
+                      ) : (
+                        <Bot className="w-4 h-4 text-gray-600" />
+                      )}
+                    </div>
+                    
+                    {/* Message */}
+                    <div className={`rounded-2xl px-4 py-2 ${
+                      message.role === 'user'
+                        ? 'bg-blue-600 text-white'
+                        : 'bg-white text-gray-900 border border-gray-200'
+                    }`}>
+                      <p className="text-sm whitespace-pre-wrap">{message.text}</p>
+                      <p className={`text-xs mt-1 ${
+                        message.role === 'user' ? 'text-blue-100' : 'text-gray-500'
+                      }`}>
+                        {message.timestamp.toLocaleTimeString('pt-BR', { 
+                          hour: '2-digit', 
+                          minute: '2-digit' 
+                        })}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              ))}
+              
+              {/* Typing indicator */}
+              {isTyping && (
+                <div className="flex justify-start">
+                  <div className="flex gap-2 max-w-[80%]">
+                    <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center">
+                      <Bot className="w-4 h-4 text-gray-600" />
+                    </div>
+                    <div className="bg-white border border-gray-200 rounded-2xl px-4 py-2">
+                      <div className="flex items-center gap-1">
+                        <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" />
+                        <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce [animation-delay:150ms]" />
+                        <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce [animation-delay:300ms]" />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Input Area */}
+            <div className="p-4 border-t border-gray-200 bg-white">
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={inputValue}
+                  onChange={(e) => setInputValue(e.target.value)}
+                  onKeyPress={handleKeyPress}
+                  placeholder="Digite sua mensagem..."
+                  className="flex-1 px-4 py-2 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+                <button
+                  onClick={sendMessage}
+                  disabled={!inputValue.trim()}
+                  className="w-10 h-10 rounded-full bg-blue-600 text-white hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed flex items-center justify-center transition-colors"
+                >
+                  <Send className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+          </div>
+        </>
+      )}
+
       {/* 7. Rodapé Premium */}
       <footer className="bg-gray-50 border-t border-gray-200">
-        <div className="max-w-[1200px] mx-auto px-6 md:px-8 py-10 grid grid-cols-2 md:grid-cols-4 gap-8">
+        <div className="max-w-[1200px] mx-auto px-6 md:px-8 py-6 md:py-8 grid grid-cols-2 md:grid-cols-4 gap-6 md:gap-8">
           <div>
             <div className="flex items-center gap-3 mb-3">
               <img src={logo} alt="Logo Fiscatus" className="w-8 h-8" />
@@ -564,8 +802,8 @@ export default function Dashboard() {
             </ul>
           </div>
         </div>
-        <div className="py-4 text-center text-xs text-gray-600">
-          © 2025 Fiscatus — Feito com ❤️ para a administração pública brasileira
+        <div className="py-3 text-center text-xs text-gray-600">
+          © 2025 Fiscatus — Feito com dedicação para a administração pública brasileira
         </div>
       </footer>
     </div>

@@ -11,14 +11,15 @@ import {
   BarChart3,
   Settings,
   Users,
-  Shield
+  Shield,
+  Home
 } from "lucide-react";
 
 const dashboard = {
-  label: "Painel Inicial", 
-  icon: <LayoutDashboard className="w-5 h-5" />,
+  label: "Início", 
+  icon: <Home className="w-5 h-5" />,
   path: "/",
-  description: "Painel Geral do Sistema"
+  description: "Painel inicial do sistema"
 };
 
 const modules = [
