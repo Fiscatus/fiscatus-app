@@ -45,7 +45,7 @@ export default function Home() {
       <Sidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
 
       {/* Conteúdo principal */}
-      <main className="pt-20">
+      <main className="pt-16 md:pt-20">
         <div className="max-w-[1200px] mx-auto px-6 md:px-8">
           {/* A) Hero editorial */}
           <Hero userName={user.name} stats={stats} />

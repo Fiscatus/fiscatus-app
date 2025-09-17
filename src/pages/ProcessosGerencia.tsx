@@ -1221,7 +1221,7 @@ export default function ProcessosGerencia() {
       <Topbar />
       
       {/* Container principal sem botão de retorno */}
-      <div className="pt-20 px-6 pb-6">
+      <div className="pt-16 md:pt-20 px-6 pb-6">
         {/* Header */}
         <div className="mb-6">
           {/* Cabeçalho Principal */}

@@ -145,7 +145,7 @@ export default function MinhasAssinaturas() {
     <div className="h-screen bg-gray-50 flex flex-col">
       <Topbar />
       
-      <div className="flex-1 px-4 pt-20 pb-4 overflow-hidden">
+      <div className="flex-1 px-4 pt-16 md:pt-20 pb-4 overflow-hidden">
         <div className="h-full w-full flex flex-col">
           {/* Cabeçalho Principal */}
           <div className="mb-6">

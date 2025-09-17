@@ -194,7 +194,7 @@ export default function PlanejamentoContratacao() {
     <div className="min-h-screen bg-gray-50">
       <Topbar />
       
-      <main className="pt-20 px-6 py-8">
+      <main className="pt-16 md:pt-20 px-6 py-8">
 
         {/* KPIs */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-6 mb-8">

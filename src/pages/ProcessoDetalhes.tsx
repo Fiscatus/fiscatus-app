@@ -496,7 +496,7 @@ export default function ProcessoDetalhes() {
     >
       <Topbar />
       
-      <div className="pt-20">
+      <div className="pt-16 md:pt-20">
         {/* Cabeçalho Moderno */}
         <motion.div 
           className="bg-white shadow-sm border-b border-gray-200"

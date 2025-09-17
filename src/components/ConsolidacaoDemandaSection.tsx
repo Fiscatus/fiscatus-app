@@ -5,7 +5,7 @@ import {
   CheckCircle, 
   XCircle, 
   Link, 
-  MessageSquare, 
+  Headphones, 
   FileText,
   Send,
   Eye,
@@ -325,7 +325,7 @@ export default function ConsolidacaoDemandaSection({
       {/* Alert para setores notificados */}
       {isSetorNotificado() && podeResponderNotificacao() && (
         <Alert className="border-blue-200 bg-blue-50">
-          <MessageSquare className="h-4 w-4" />
+          <Headphones className="h-4 w-4" />
           <AlertDescription>
             <strong>Sua gerência foi notificada sobre esta demanda.</strong> 
             Clique em "Responder à Provocação" para aceitar ou recusar participar.
@@ -398,7 +398,7 @@ export default function ConsolidacaoDemandaSection({
                             variant="outline"
                             onClick={() => abrirModalResposta(setor)}
                           >
-                            <MessageSquare className="w-3 h-3 mr-1" />
+                            <Headphones className="w-3 h-3 mr-1" />
                             Responder
                           </Button>
                         )}
@@ -556,7 +556,7 @@ export default function ConsolidacaoDemandaSection({
         <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <MessageSquare className="w-5 h-5" />
+              <Headphones className="w-5 h-5" />
               Responder à Provocação
             </DialogTitle>
             <DialogDescription>

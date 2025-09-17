@@ -539,7 +539,7 @@ export default function PastaOrganizacional() {
   return (
     <div className="min-h-screen bg-gray-50/30">
       <Topbar />
-      <div className="pt-20 w-full px-6 py-8">
+      <div className="pt-16 md:pt-20 w-full px-6 py-8">
         {/* Header */}
         <div className="flex items-center justify-between mb-8">
           <div className="flex items-center gap-4">

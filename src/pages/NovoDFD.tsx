@@ -98,7 +98,7 @@ export default function NovoDFD() {
     <div className="min-h-screen bg-gray-50">
       <Topbar />
       
-      <main className="pt-20 px-4 sm:px-6 lg:px-8 py-6 min-h-screen">
+      <main className="pt-16 md:pt-20 px-4 sm:px-6 lg:px-8 py-6 min-h-screen">
         {/* Header da página */}
         <div className="mb-8">
           <ReturnButton className="mb-4 text-gray-600 hover:text-gray-900" />

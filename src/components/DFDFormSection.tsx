@@ -52,7 +52,7 @@ import {
   Paperclip,
   CheckCircle2 as CheckCircleIcon,
   AlertCircle as AlertCircleIcon,
-  MessageSquare,
+  Headphones,
     Calendar as CalendarIcon,
     User as UserIcon,
     Clock as ClockIcon,
@@ -931,7 +931,7 @@ export default function DFDFormSection({
       case 'anexo':
         return <Paperclip className="w-4 h-4 text-gray-600" />;
       case 'comentario':
-        return <MessageSquare className="w-4 h-4 text-indigo-600" />;
+        return <Headphones className="w-4 h-4 text-indigo-600" />;
       case 'status':
         return <Flag className="w-4 h-4 text-purple-600" />;
       default:

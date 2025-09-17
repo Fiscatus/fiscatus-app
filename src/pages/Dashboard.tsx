@@ -24,7 +24,6 @@ import {
   HelpCircle,
   BookOpen,
   Headphones,
-  MessageSquare,
   X,
   Send,
   Bot,
@@ -325,11 +324,11 @@ export default function Dashboard() {
           aria-label="Abrir chatbot de suporte"
           className="w-10 h-10 md:w-11 md:h-11 rounded-full shadow-md border border-gray-200 bg-white hover:bg-gray-50 flex items-center justify-center"
         >
-          <MessageSquare aria-label="Suporte" className="w-5 h-5 md:w-5 md:h-5 text-blue-600" />
+          <Headphones aria-label="Suporte" className="w-5 h-5 md:w-5 md:h-5 text-blue-600" />
         </button>
       </div>
       
-      <main className="pt-20 px-6 py-8 flex-1">
+      <main className="pt-16 md:pt-20 px-6 py-8 flex-1">
 
         {/* 1. Hero de boas-vindas */}
         <section className="mb-12">
@@ -497,7 +496,7 @@ export default function Dashboard() {
                   <div className="flex items-start justify-between mb-4">
                     <div className="flex items-center gap-3">
                       <div className="w-9 h-9 rounded-xl bg-blue-600 text-white flex items-center justify-center shadow-sm">
-                      <MessageSquare aria-label="Suporte" className="w-5 h-5" />
+                      <Headphones aria-label="Suporte" className="w-5 h-5" />
                       </div>
                       <div>
                         <h3 className="text-lg font-semibold text-gray-900">Chatbot & Suporte</h3>

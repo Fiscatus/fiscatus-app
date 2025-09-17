@@ -232,7 +232,7 @@ export default function DFDDashboard() {
   return (
     <div className="min-h-screen bg-gray-50">
       <Topbar />
-      <main className="pt-20 px-4 pb-4 h-screen overflow-y-auto">
+      <main className="pt-16 md:pt-20 px-4 pb-4 h-screen overflow-y-auto">
         {/* 1. Cabeçalho Principal */}
         <div className="mb-6">
           <h1 className="text-2xl font-semibold text-gray-900 mb-1">Painel Inicial</h1>
