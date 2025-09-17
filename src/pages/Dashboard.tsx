@@ -24,7 +24,6 @@ import {
   Bell,
   LogOut,
   LayoutDashboard,
-  Star,
   Play,
   HelpCircle,
   BookOpen,
@@ -304,24 +303,6 @@ export default function Dashboard() {
     }
   ], []);
 
-  // Favoritos (persistidos no localStorage)
-  const [favoritos, setFavoritos] = React.useState<string[]>(() => {
-    try {
-      const saved = localStorage.getItem('fav_modulos');
-      return saved ? JSON.parse(saved) : [];
-    } catch {
-      return [];
-    }
-  });
-
-  const toggleFavorito = React.useCallback((nome: string) => {
-    setFavoritos(prev => {
-      const exists = prev.includes(nome);
-      const next = exists ? prev.filter(n => n !== nome) : [...prev, nome];
-      localStorage.setItem('fav_modulos', JSON.stringify(next));
-      return next;
-    });
-  }, []);
 
   const handleModuloClick = React.useCallback((path: string) => {
     navigate(path);
@@ -397,20 +378,11 @@ export default function Dashboard() {
                           <h3 className="text-[17px] font-semibold text-gray-900 leading-snug truncate">{modulo.nome}</h3>
                         </div>
                       </div>
-                      <div className="flex items-center gap-2">
-                        <button
-                          onClick={() => toggleFavorito(modulo.nome)}
-                          aria-label="Favoritar módulo"
-                          className="p-2 rounded-lg hover:bg-gray-100"
-                        >
-                          <Star className={"w-5 h-5 transition-colors " + (favoritos.includes(modulo.nome) ? "text-yellow-500 fill-yellow-400" : "text-gray-300 group-hover:text-gray-400")} />
-                        </button>
-                      </div>
                     </div>
                     <div className="flex-1">
                       <p className="text-sm text-gray-600 line-clamp-2">{modulo.descricao}</p>
                     </div>
-                    <div className="mt-4 flex items-center justify-between">
+                    <div className="mt-4 flex items-center justify-start">
                       <button
                 onClick={() => handleModuloClick(modulo.path)}
                         className="inline-flex items-center gap-2 px-3 py-1.5 rounded-md bg-blue-600 text-white text-sm hover:bg-blue-700 shadow-sm"
@@ -418,9 +390,6 @@ export default function Dashboard() {
                         Abrir
                         <ChevronRight className="w-4 h-4" />
                       </button>
-                      <div className="opacity-0 group-hover:opacity-100 transition-opacity text-xs text-gray-500">
-                        Clique para saber mais
-                      </div>
                     </div>
                   </div>
                 </div>
@@ -866,7 +835,9 @@ const TestimonialsCarousel = React.memo(({ title }: { title?: string }) => {
       </div>
       <div className="flex items-center gap-1 mb-3">
         {Array.from({ length: 5 }).map((_, i) => (
-          <Star key={i} className={"w-4 h-4 " + (i < current.estrelas ? "text-yellow-500 fill-yellow-400" : "text-gray-300")} />
+          <div key={i} className={"w-4 h-4 " + (i < current.estrelas ? "text-yellow-500" : "text-gray-300")}>
+            ★
+          </div>
         ))}
       </div>
       <p className="text-gray-700 mb-6">“{current.frase}”</p>
@@ -931,7 +902,9 @@ const PublicTestimonialsCarousel = React.memo(({ title }: { title?: string }) =>
       </div>
       <div className="flex items-center gap-1 mb-3">
         {Array.from({ length: 5 }).map((_, i) => (
-          <Star key={i} className={"w-4 h-4 " + (i < current.estrelas ? "text-yellow-500 fill-yellow-400" : "text-gray-300")} />
+          <div key={i} className={"w-4 h-4 " + (i < current.estrelas ? "text-yellow-500" : "text-gray-300")}>
+            ★
+          </div>
         ))}
       </div>
       <p className="text-gray-700 mb-6">“{current.frase}”</p>
