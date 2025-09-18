@@ -41,8 +41,11 @@ import { useDFD, type DFDAnnex } from '@/hooks/useDFD';
 
 interface PublicacaoData {
   dataPublicacao: string;
-  meioPublicacao: string;
-  linkOuNumero: string;
+  dataCertame?: string;
+  horarioCertame?: string;
+  prazoRecurso?: string;
+  meiosPublicacao: string[];
+  linksPorMeio: Record<string, string>;
   observacoes: string;
   comprovanteArquivo?: {
     name: string;
@@ -81,12 +84,17 @@ export default function DFDPublicacaoSection({
 
   // Estados principais
   const [dataPublicacao, setDataPublicacao] = useState('');
-  const [meioPublicacao, setMeioPublicacao] = useState('');
-  const [linkOuNumero, setLinkOuNumero] = useState('');
+  const [meiosSelecionados, setMeiosSelecionados] = useState<string[]>([]);
+  const [linksPorMeio, setLinksPorMeio] = useState<Record<string, string>>({});
   const [observacoes, setObservacoes] = useState('');
+  const [dataCertame, setDataCertame] = useState('');
+  const [horarioCertame, setHorarioCertame] = useState('');
+  const [prazoRecurso, setPrazoRecurso] = useState('');
   const [comprovanteArquivo, setComprovanteArquivo] = useState<PublicacaoData['comprovanteArquivo']>(null);
   const [confirmada, setConfirmada] = useState(false);
   const [confirmacaoData, setConfirmacaoData] = useState<PublicacaoData['confirmacoesData']>(null);
+  // Select control para adicionar meios
+  const [meioTempSelecionado, setMeioTempSelecionado] = useState<string | undefined>(undefined);
   // Removido: seleção de Documento Final da Publicação
   const [validationErrors, setValidationErrors] = useState<string[]>([]);
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
@@ -145,13 +153,16 @@ export default function DFDPublicacaoSection({
       errors.push('Data da Publicação é obrigatória');
     }
     
-    if (!meioPublicacao) {
-      errors.push('Meio de Publicação é obrigatório');
+    if (meiosSelecionados.length === 0) {
+      errors.push('Pelo menos um meio de Publicação é obrigatório');
     }
-    
-    if (!linkOuNumero.trim()) {
-      errors.push('Link da publicação ou número da edição é obrigatório');
-    }
+    // Para cada meio selecionado, o link/número é obrigatório
+    meiosSelecionados.forEach(meio => {
+      const link = (linksPorMeio[meio] || '').trim();
+      if (!link) {
+        errors.push(`Link/Número obrigatório para: ${getMeioPublicacaoLabel(meio)}`);
+      }
+    });
     
     // Removido: obrigatoriedade de Documento Final
 
@@ -194,8 +205,8 @@ export default function DFDPublicacaoSection({
     // Atualizar localStorage
     const publicacaoData = {
       dataPublicacao,
-      meioPublicacao,
-      linkOuNumero,
+      meiosPublicacao: meiosSelecionados,
+      linksPorMeio,
       observacoes,
       comprovanteArquivo: null,
       confirmada,
@@ -238,8 +249,11 @@ export default function DFDPublicacaoSection({
     // Salvar todos os dados no localStorage
     const publicacaoData: PublicacaoData = {
       dataPublicacao,
-      meioPublicacao,
-      linkOuNumero,
+      dataCertame,
+      horarioCertame,
+      prazoRecurso,
+      meiosPublicacao: meiosSelecionados,
+      linksPorMeio,
       observacoes,
       comprovanteArquivo,
       confirmada: true,
@@ -263,8 +277,11 @@ export default function DFDPublicacaoSection({
   const salvarDados = () => {
     const publicacaoData = {
       dataPublicacao,
-      meioPublicacao,
-      linkOuNumero,
+      dataCertame,
+      horarioCertame,
+      prazoRecurso,
+      meiosPublicacao: meiosSelecionados,
+      linksPorMeio,
       observacoes,
       comprovanteArquivo,
       confirmada,
@@ -281,8 +298,11 @@ export default function DFDPublicacaoSection({
       try {
         const dados: PublicacaoData = JSON.parse(publicacaoSalva);
         setDataPublicacao(dados.dataPublicacao || '');
-        setMeioPublicacao(dados.meioPublicacao || '');
-        setLinkOuNumero(dados.linkOuNumero || '');
+        setDataCertame(dados.dataCertame || '');
+        setHorarioCertame(dados.horarioCertame || '');
+        setPrazoRecurso(dados.prazoRecurso || '');
+        setMeiosSelecionados(dados.meiosPublicacao || []);
+        setLinksPorMeio(dados.linksPorMeio || {});
         setObservacoes(dados.observacoes || '');
         setComprovanteArquivo(dados.comprovanteArquivo || null);
         setConfirmada(dados.confirmada || false);
@@ -299,10 +319,10 @@ export default function DFDPublicacaoSection({
 
   // Salvar automaticamente quando dados mudarem
   useEffect(() => {
-    if (dataPublicacao || meioPublicacao || linkOuNumero || observacoes) {
+    if (dataPublicacao || observacoes || dataCertame || horarioCertame || prazoRecurso || meiosSelecionados.length > 0 || Object.keys(linksPorMeio).length > 0) {
       salvarDados();
     }
-  }, [dataPublicacao, meioPublicacao, linkOuNumero, observacoes]);
+  }, [dataPublicacao, observacoes, dataCertame, horarioCertame, prazoRecurso, meiosSelecionados, linksPorMeio]);
 
   // Função para obter ícone do meio de publicação
   const getMeioPublicacaoIcon = (meio: string) => {
@@ -314,6 +334,24 @@ export default function DFDPublicacaoSection({
   const getMeioPublicacaoLabel = (meio: string) => {
     const meioObj = meiosPublicacao.find(m => m.value === meio);
     return meioObj?.label || meio;
+  };
+
+  // Handlers de seleção de meios
+  const handleAddMeioPublicacao = (meio: string) => {
+    setMeiosSelecionados(prev => {
+      if (prev.includes(meio)) return prev;
+      const next = [...prev, meio];
+      return next;
+    });
+    setLinksPorMeio(prev => ({ ...prev, [meio]: prev[meio] || '' }));
+  };
+
+  const handleRemoveMeioPublicacao = (meio: string) => {
+    setMeiosSelecionados(prev => prev.filter(m => m !== meio));
+    setLinksPorMeio(prev => {
+      const { [meio]: _removed, ...rest } = prev;
+      return rest;
+    });
   };
 
   // Mini Timeline (Painel da Etapa)
@@ -350,7 +388,7 @@ export default function DFDPublicacaoSection({
        {/* Container central ocupando toda a área */}
        <div className="w-full px-2">
          
-        {/* Grid principal 12 colunas */}
+         {/* Grid principal 12 colunas */}
        <div className="space-y-6">
           
                      {/* ESQUERDA: Informações da Publicação (8 colunas) */}
@@ -358,36 +396,36 @@ export default function DFDPublicacaoSection({
             <div className="card-shell mb-8 overflow-hidden">
               <header className="flex items-center gap-3 mb-4">
                 <Newspaper className="w-6 h-6 text-green-600" />
-                <h2 className="text-lg font-bold text-slate-900">Publicação</h2>
+                <h2 className="text-lg font-bold text-slate-900">Informações da Publicação do Edital</h2>
                 <div className="ml-auto flex items-center gap-2">
-                  {confirmada && (
-                    <Badge className="bg-green-100 text-green-800 border-green-300">
-                      <Stamp className="w-3 h-3 mr-1" />
-                      Confirmada
-                    </Badge>
-                  )}
-                  {comprovanteArquivo && (
-                    <>
+                    {confirmada && (
+                      <Badge className="bg-green-100 text-green-800 border-green-300">
+                        <Stamp className="w-3 h-3 mr-1" />
+                        Confirmada
+                      </Badge>
+                    )}
+                    {comprovanteArquivo && (
+                      <>
                       <Button size="sm" variant="outline" onClick={handleDownloadComprovante} className="h-7 px-2 text-xs">
-                        <Download className="w-3 h-3 mr-1" />
+                          <Download className="w-3 h-3 mr-1" />
                         Baixar
-                      </Button>
-                      {canEditFields() && (
-                        <Button size="sm" variant="outline" onClick={handleRemoveComprovante} className="h-7 px-2 text-xs text-red-600 hover:text-red-700">
-                          <Trash2 className="w-3 h-3 mr-1" />
-                          Remover
                         </Button>
-                      )}
-                    </>
-                  )}
+                        {canEditFields() && (
+                        <Button size="sm" variant="outline" onClick={handleRemoveComprovante} className="h-7 px-2 text-xs text-red-600 hover:text-red-700">
+                            <Trash2 className="w-3 h-3 mr-1" />
+                            Remover
+                          </Button>
+                        )}
+                      </>
+                    )}
                 </div>
               </header>
               <div className="border-b-2 border-green-200 mb-6"></div>
               <div className="p-4 md:p-6">
                 <div className="space-y-6">
                   
-                  {/* Campos Obrigatórios */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {/* Campos Principais - Datas do evento */}
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     
                                          {/* Data da Publicação */}
                      <div>
@@ -413,57 +451,133 @@ export default function DFDPublicacaoSection({
                        )}
                      </div>
 
-                    {/* Meio de Publicação */}
+                    {/* Data do Certame */}
                     <div>
-                      <Label htmlFor="meio-publicacao" className="text-sm font-semibold text-gray-700 mb-2 block">
-                        Meio de Publicação *
+                      <Label htmlFor="data-certame" className="text-sm font-semibold text-gray-700 mb-2 block">
+                        Data do Certame
                       </Label>
+                      <div className="relative">
+                        <DatePicker
+                          value={dataCertame || null}
+                          onChange={(date) => setDataCertame(date || '')}
+                          placeholder="Selecione a data do certame"
+                          showPresets={true}
+                          businessDaysOnly={true}
+                          className="w-full"
+                          inputClassName="h-10 border-2 border-gray-300 focus:border-green-500 focus:ring-green-200"
+                          popoverClassName="z-50 max-w-[400px]"
+                          disabled={!canEditFields()}
+                        />
+                      </div>
+                    </div>
+
+                    {/* Horário do Certame */}
+                    <div>
+                      <Label htmlFor="horario-certame" className="text-sm font-semibold text-gray-700 mb-2 block">
+                        Horário do Certame
+                      </Label>
+                      <Input
+                        id="horario-certame"
+                        type="time"
+                        value={horarioCertame}
+                        onChange={(e) => setHorarioCertame(e.target.value)}
+                        disabled={!canEditFields()}
+                        className="border-gray-200 focus:border-green-300 focus:ring-green-300"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Prazos e meios de publicação (múltiplos) */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {/* Prazo de Recurso */}
+                    <div>
+                      <Label htmlFor="prazo-recurso" className="text-sm font-semibold text-gray-700 mb-2 block">
+                        Prazo de Recurso
+                      </Label>
+                      <div className="relative">
+                        <DatePicker
+                          value={prazoRecurso || null}
+                          onChange={(date) => setPrazoRecurso(date || '')}
+                          placeholder="Selecione o prazo de recurso"
+                          showPresets={true}
+                          businessDaysOnly={true}
+                          className="w-full"
+                          inputClassName="h-10 border-2 border-gray-300 focus:border-green-500 focus:ring-green-200"
+                          popoverClassName="z-50 max-w-[400px]"
+                          disabled={!canEditFields()}
+                        />
+                      </div>
+                    </div>
+                    {/* Meios de Publicação - botão seletor */}
+                    <div>
+                      <Label className="text-sm font-semibold text-gray-700 mb-2 block">Meios de Publicação *</Label>
                       <Select
-                        value={meioPublicacao}
-                        onValueChange={setMeioPublicacao}
+                        value={meioTempSelecionado}
+                        onValueChange={(value) => { handleAddMeioPublicacao(value); setMeioTempSelecionado(undefined); }}
                         disabled={!canEditFields()}
                       >
                         <SelectTrigger className="border-gray-200 focus:border-green-300 focus:ring-green-300">
-                          <SelectValue placeholder="Selecione o meio de publicação" />
+                          <SelectValue placeholder={meiosSelecionados.length > 0 ? 'Selecionar outros meios' : 'Selecionar meios de publicação'} />
                         </SelectTrigger>
                         <SelectContent>
-                          {meiosPublicacao.map((meio) => (
-                            <SelectItem key={meio.value} value={meio.value}>
-                              <div className="flex items-center gap-2">
-                                {meio.icon}
-                                {meio.label}
-                              </div>
-                            </SelectItem>
-                          ))}
+                          {meiosPublicacao
+                            .filter(m => !meiosSelecionados.includes(m.value))
+                            .map((meio) => (
+                              <SelectItem key={meio.value} value={meio.value}>
+                                <div className="flex items-center gap-2">
+                                  {meio.icon}
+                                  {meio.label}
+                                </div>
+                              </SelectItem>
+                            ))}
                         </SelectContent>
                       </Select>
-                      {validationErrors.includes('Meio de Publicação é obrigatório') && (
-                        <p className="text-red-500 text-sm mt-1">Meio de Publicação é obrigatório</p>
+                      {validationErrors.find(v => v.includes('Pelo menos um meio')) && (
+                        <p className="text-red-500 text-sm mt-1">Selecione ao menos um meio</p>
+                      )}
+                      {/* Chips dos meios selecionados */}
+                      {meiosSelecionados.length > 0 && (
+                        <div className="flex flex-wrap gap-2 mt-2">
+                          {meiosSelecionados.map(meio => (
+                            <Badge key={meio} variant="outline" className="flex items-center gap-1">
+                              {getMeioPublicacaoIcon(meio)}
+                              <span className="text-xs">{getMeioPublicacaoLabel(meio)}</span>
+                              {canEditFields() && (
+                                <button type="button" className="ml-1 text-slate-500 hover:text-red-600" onClick={() => handleRemoveMeioPublicacao(meio)} aria-label={`Remover ${getMeioPublicacaoLabel(meio)}`}>×</button>
+                              )}
+                            </Badge>
+                          ))}
+                        </div>
                       )}
                     </div>
                   </div>
 
-                  {/* Link ou Número da Edição */}
-                  <div>
-                    <Label htmlFor="link-numero" className="text-sm font-semibold text-gray-700 mb-2 block">
-                      Link da Publicação ou Número da Edição *
+                  {/* Links por meio selecionado */}
+                  {meiosSelecionados.length > 0 && (
+                    <div className="space-y-4">
+                      {meiosSelecionados.map((meio) => (
+                        <div key={meio}>
+                          <Label className="text-sm font-semibold text-gray-700 mb-2 block">
+                            {`Link/Número - ${getMeioPublicacaoLabel(meio)}`} *
                     </Label>
                     <div className="relative">
                       <ExternalLink className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 transform -translate-y-1/2" />
                       <Input
-                        id="link-numero"
                         type="text"
-                        value={linkOuNumero}
-                        onChange={(e) => setLinkOuNumero(e.target.value)}
-                        placeholder="Ex: https://diario.oficial.gov.br/edital/123 ou Edição nº 245"
+                              value={linksPorMeio[meio] || ''}
+                              onChange={(e) => setLinksPorMeio(prev => ({ ...prev, [meio]: e.target.value }))}
+                              placeholder="Ex: URL oficial ou número da edição"
                         disabled={!canEditFields()}
                         className="pl-10 border-gray-200 focus:border-green-300 focus:ring-green-300"
                       />
                     </div>
-                    {validationErrors.includes('Link da publicação ou número da edição é obrigatório') && (
-                      <p className="text-red-500 text-sm mt-1">Link da publicação ou número da edição é obrigatório</p>
+                          {validationErrors.includes(`Link/Número obrigatório para: ${getMeioPublicacaoLabel(meio)}`) && (
+                            <p className="text-red-500 text-sm mt-1">Obrigatório para {getMeioPublicacaoLabel(meio)}</p>
                     )}
                   </div>
+                      ))}
+                    </div>
+                  )}
 
                   {/* Removido: campo de Documento Final da Publicação */}
 
