@@ -40,7 +40,12 @@ import {
   Settings,
   Scale,
   Gavel,
-  Shield
+  Shield,
+  ClipboardCheck,
+  ListChecks,
+  Flag,
+  CheckCircle2,
+  AlertCircle
 } from 'lucide-react';
 import { useUser } from '@/contexts/UserContext';
 import { usePermissoes } from '@/hooks/usePermissoes';
@@ -124,6 +129,7 @@ export default function DFDAnaliseJuridicaSection({
   const [interacoes, setInteracoes] = useState<InteracaoAnalise[]>([]);
   const [diasNoCard, setDiasNoCard] = useState(0);
   const [responsavelAtual, setResponsavelAtual] = useState('');
+  const prazoInicialDiasUteis = 5;
   
   const fileInputRef = useRef<HTMLInputElement>(null);
   const editalFileInputRef = useRef<HTMLInputElement>(null);
@@ -527,82 +533,123 @@ export default function DFDAnaliseJuridicaSection({
     }
   };
 
+  // Helpers visuais similares ao ETP
+  const getPrazoColorClasses = (diasRestantes: number | null): { text: string; badge: string } => {
+    if (diasRestantes === null) return { text: 'text-gray-600', badge: 'bg-gray-100 text-gray-800' };
+    if (diasRestantes < 0) return { text: 'text-red-600', badge: 'bg-red-100 text-red-800' };
+    if (diasRestantes <= 2) return { text: 'text-orange-600', badge: 'bg-orange-100 text-orange-800' };
+    return { text: 'text-green-600', badge: 'bg-green-100 text-green-800' };
+  };
+
+  const getDiasRestantes = (): number | null => {
+    if (diasNoCard === undefined || diasNoCard === null) return null;
+    return prazoInicialDiasUteis - diasNoCard;
+  };
+
+  const getProgressColor = (progresso: number) => {
+    if (progresso <= 70) return 'bg-green-500';
+    if (progresso <= 100) return 'bg-yellow-500';
+    return 'bg-red-500';
+  };
+
+  const getProgressoTemporal = () => {
+    // Base simples: diasNoCard sobre prazoInicialDiasUteis
+    const total = Math.max(1, prazoInicialDiasUteis);
+    const progresso = Math.round((Math.min(diasNoCard, total) / total) * 100);
+    return Math.min(Math.max(progresso, 0), 100);
+  };
+
+  const getEtapaStatus = () => {
+    const temFavoravel = interacoes.some(i => i.resultado === 'ANALISE_FAVORAVEL');
+    const temDevolucao = interacoes.some(i => i.resultado === 'DEVOLVIDA_CORRECAO');
+    if (temFavoravel) return 'Concluída';
+    if (temDevolucao) return 'Em ressalvas';
+    return 'Em análise';
+  };
+
+  const getStatusClasses = (status: string) => {
+    switch (status) {
+      case 'Concluída':
+        return 'bg-green-100 text-green-800';
+      case 'Em ressalvas':
+        return 'bg-yellow-100 text-yellow-800';
+      default:
+        return 'bg-blue-100 text-blue-800';
+    }
+  };
+
+  // Helpers de datas para o novo card de prazos
+  const addBusinessDays = (startISO: string, businessDays: number): string => {
+    const date = new Date(startISO);
+    let added = 0;
+    while (added < businessDays) {
+      date.setDate(date.getDate() + 1);
+      const day = date.getDay();
+      if (day >= 1 && day <= 5) {
+        added++;
+      }
+    }
+    return date.toISOString();
+  };
+
+  const dataCriacaoISO = (() => {
+    const d = new Date();
+    // Aproximação: subtrai dias corridos equivalentes aos dias no card
+    d.setDate(d.getDate() - Math.max(0, diasNoCard));
+    return d.toISOString();
+  })();
+
+  type TimelineItem = { id: string; autor: string; descricao: string; dataHora: string; tipo: 'revisao' | 'anexo' | 'status' };
+  const generateTimeline = (): TimelineItem[] => {
+    const arr: TimelineItem[] = [];
+    interacoes.forEach((it) => {
+      arr.push({ id: `int-${it.id}`, autor: it.responsavel, descricao: `Revisão ${getStatusConfig(it.resultado).label}`, dataHora: it.dataHora, tipo: 'revisao' });
+    });
+    dfdData.annexes.slice(0, 2).forEach((ax) => {
+      arr.push({ id: `ax-${ax.id}`, autor: ax.uploadedBy || 'Usuário', descricao: 'Documento anexado', dataHora: ax.uploadedAt, tipo: 'anexo' });
+    });
+    return arr.sort((a, b) => new Date(b.dataHora).getTime() - new Date(a.dataHora).getTime()).slice(0, 3);
+  };
+
+  const getTimelineIcon = (item: TimelineItem) => {
+    switch (item.tipo) {
+      case 'revisao':
+        if (item.descricao.toLowerCase().includes('favorável')) return <CheckCircle2 className="w-4 h-4 text-green-600" />;
+        return <FileText className="w-4 h-4 text-slate-600" />;
+      case 'anexo':
+        return <Upload className="w-4 h-4 text-gray-600" />;
+      default:
+        return <Clock className="w-4 h-4 text-gray-600" />;
+    }
+  };
+
   return (
     <div className="bg-white">
       {/* Container central ocupando toda a área */}
       <div className="w-full px-2">
         
         {/* Grid principal 12 colunas */}
-        <div className="grid grid-cols-12 gap-4">
+        <div className="grid grid-cols-12 gap-6">
           
-          {/* ESQUERDA: Análise Jurídica Prévia (8 colunas) */}
-          <section id="analise-juridica" className="col-span-12 lg:col-span-8 w-full">
-            <div className="rounded-2xl border shadow-sm overflow-hidden bg-white">
-              <header className="bg-blue-50 px-4 py-3 rounded-t-2xl font-semibold text-slate-900">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3 text-lg">
-                    <Scale className="w-5 h-5 text-blue-600" />
-                    Análise Jurídica Prévia
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={handleUploadEdital}
-                      disabled={!isNAJUser()}
-                      className="text-xs"
-                    >
-                      <Upload className="w-3 h-3 mr-1" />
-                      Enviar Edital
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={handleBaixarEdital}
-                      disabled={!editalArquivo}
-                      className="text-xs"
-                    >
-                      <Download className="w-3 h-3 mr-1" />
-                      Baixar Edital
-                    </Button>
-                    {editalArquivo && isNAJUser() && (
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={handleExcluirEdital}
-                        className="text-xs text-red-600 hover:text-red-700"
-                      >
-                        <Trash2 className="w-3 h-3 mr-1" />
-                        Excluir Edital
-                      </Button>
-                    )}
-                  </div>
-                </div>
-              </header>
+          {/* Análise Jurídica Prévia (full-width) */}
+          <section id="analise-juridica" className="col-span-12 w-full">
+            <div className="rounded-2xl border border-slate-300 shadow-md overflow-hidden bg-white">
               <div className="p-4 md:p-6">
+                <header className="flex items-center gap-3 mb-4">
+                  <Scale className="w-6 h-6 text-purple-600" />
+                  <h2 className="text-lg font-bold text-slate-900">Análise Jurídica Preliminar</h2>
+                </header>
+                <div className="border-b-2 border-purple-200 mb-6"></div>
                 <div className="space-y-4">
                   <div>
-                    <Label htmlFor="analise-juridica-textarea" className="text-sm font-semibold text-gray-700">
-                      Análise Jurídica Preliminar *
-                    </Label>
-                    <div className="mt-2 space-y-2">
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={handleCarregarModelo}
-                        disabled={!canEditAnaliseJuridica()}
-                        className="text-xs"
-                      >
-                        <FileText className="w-3 h-3 mr-1" />
-                        Carregar Modelo
-                      </Button>
+                    <div className="mt-2">
                       <Textarea
                         id="analise-juridica-textarea"
                         value={analiseJuridica}
                         onChange={(e) => setAnaliseJuridica(e.target.value)}
-                        placeholder="Descreva a análise jurídica preliminar do edital..."
+                        placeholder="Descreva a análise preliminar do edital..."
                         disabled={!canEditAnaliseJuridica()}
-                        className="min-h-[200px] resize-none border-gray-200 focus:border-blue-300 focus:ring-blue-300"
+                        className="min-h-[320px] resize-none border-gray-200 focus:border-blue-300 focus:ring-blue-300"
                       />
                     </div>
                     {validationErrors.includes('Análise Jurídica Preliminar é obrigatória') && (
@@ -657,26 +704,83 @@ export default function DFDAnaliseJuridicaSection({
             </div>
           </section>
 
-          {/* DIREITA: Gerenciamento (4 colunas) */}
-          <aside id="gerenciamento" className="col-span-12 lg:col-span-4 w-full flex flex-col">
-            <div className="rounded-2xl border shadow-sm overflow-hidden bg-white flex-1 flex flex-col">
-              <header className="bg-purple-50 px-4 py-3 rounded-t-2xl font-semibold text-slate-900">
-                <div className="flex items-center gap-3">
-                  <Settings className="w-5 h-5 text-purple-600" />
-                  Gerenciamento
+          {/* GERENCIAMENTO: embaixo do balão de Análise Jurídica (full-width) */}
+          <section id="gerenciamento" className="col-span-12 w-full">
+            <div className="rounded-2xl border border-slate-300 shadow-md bg-white p-6">
+              <header className="flex items-center gap-3 mb-4">
+                <Settings className="w-6 h-6 text-slate-600" />
+                <h2 className="text-lg font-bold text-slate-900">Gerenciamento</h2>
+                <div className="ml-auto">
+                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-slate-100 text-slate-800">Gerenciamento</span>
                 </div>
               </header>
-              <div className="p-4 md:p-6 flex-1 flex flex-col">
-                <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-                  <TabsList className="grid w-full grid-cols-2">
-                    <TabsTrigger value="documentos">Documentos</TabsTrigger>
-                    <TabsTrigger value="interacoes">Interações</TabsTrigger>
-                  </TabsList>
-                  
-                  <TabsContent value="documentos" className="mt-0 p-4">
-                    {/* Upload de Anexos */}
+              <div className="border-b-2 border-slate-200 mb-6"></div>
+              <div className="grid grid-cols-12 gap-4 items-start">
+                {/* Coluna Revisões (igual ao ETP, substitui Interações) */}
+                <div className="col-span-12 lg:col-span-6">
+                  <div className="rounded-xl border shadow-sm bg-white h-full min-h-[420px]">
+                    <div className="px-4 py-6 rounded-t-xl border-b">
+                      <h3 className="text-sm font-semibold text-slate-900 flex items-center gap-2">
+                        <History className="w-4 h-4 text-purple-600" />
+                        Revisões
+                      </h3>
+                    </div>
+                    <div className="p-4">
+                      {interacoes.length === 0 ? (
+                        <div className="text-center py-8 w-full">
+                          <div className="p-4 bg-gray-100 rounded-full w-16 h-16 mx-auto mb-4 flex items-center justify-center">
+                            <History className="w-8 h-8 text-gray-400" />
+                          </div>
+                          <p className="text-gray-500 font-medium">Nenhuma revisão registrada</p>
+                        </div>
+                      ) : (
+                        <div className="space-y-3 max-h-[420px] overflow-y-auto">
+                          {[...interacoes].slice().reverse().map((interacao, idx) => {
+                            const statusConfig = getStatusConfig(interacao.resultado);
+                            const revisaoNumero = interacoes.length - idx;
+                            return (
+                              <div key={interacao.id} className="border border-gray-200 rounded-lg p-3 hover:bg-gray-50 transition-colors">
+                                <div className="flex items-center justify-between mb-2">
+                                  <div className="flex items-center gap-2 flex-wrap">
+                                    <Badge variant="outline" className="text-xs font-medium">R{revisaoNumero}</Badge>
+                                    <Badge className={`text-xs font-medium ${statusConfig.color}`}>
+                                      {statusConfig.icon}
+                                      <span className="ml-1">{statusConfig.label}</span>
+                                    </Badge>
+                                  </div>
+                                </div>
+                                <div className="text-xs text-gray-600 space-y-1">
+                                  <p><strong>Setor:</strong> {interacao.setor}</p>
+                                  <p><strong>Responsável:</strong> {interacao.responsavel}</p>
+                                  <p><strong>Data:</strong> {formatDateTime(interacao.dataHora)}</p>
+                                  {interacao.justificativa && (
+                                    <p><strong>Justificativa:</strong> {interacao.justificativa}</p>
+                                  )}
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Coluna Documentos/Anexos */}
+                <div className="col-span-12 lg:col-span-6">
+                  <div className="rounded-xl border shadow-sm bg-white h-full min-h-[420px]">
+                    <div className="px-4 py-6 rounded-t-xl border-b">
+                      <div className="flex items-center justify-between">
+                        <h3 className="text-sm font-semibold text-slate-900 flex items-center gap-2">
+                          <Upload className="w-4 h-4 text-green-600" />
+                          Anexos
+                        </h3>
+                        <span className="text-xs text-slate-600 bg-slate-200 px-2 py-0.5 rounded-md font-medium">{dfdData.annexes.length}</span>
+                      </div>
+                    </div>
+                    <div className="p-4">
                     {canEditAnaliseJuridica() && (
-                      <div className="mb-4">
+                        <div className="w-full mb-3">
                         <input
                           ref={fileInputRef}
                           type="file"
@@ -687,106 +791,193 @@ export default function DFDAnaliseJuridicaSection({
                         <Button
                           onClick={() => fileInputRef.current?.click()}
                           variant="outline"
-                          className="w-full border-dashed border-2 border-gray-300 hover:border-blue-400 hover:bg-blue-50 transition-colors"
+                            className="w-full h-9 border-dashed border-2 border-gray-300 hover:border-green-400 hover:bg-green-50 transition-colors text-sm"
                         >
-                          <Upload className="w-4 h-4 mr-2" />
-                          Adicionar Anexo
+                            <Upload className="w-4 h-4 mr-2" />Adicionar Anexo
                         </Button>
                       </div>
                     )}
 
                     {dfdData.annexes.length === 0 ? (
-                      <div className="text-center py-8 w-full">
+                        <div className="pt-4">
                         <div className="p-4 bg-gray-100 rounded-full w-16 h-16 mx-auto mb-4 flex items-center justify-center">
                           <Upload className="w-8 h-8 text-gray-400" />
                         </div>
-                        <p className="text-gray-500 font-medium">Nenhum anexo adicionado</p>
+                          <p className="text-center text-gray-500 font-medium">Nenhum anexo adicionado</p>
                         {!canEditAnaliseJuridica() && (
-                          <p className="text-sm text-gray-400 mt-1">
-                            Apenas usuários autorizados podem adicionar anexos
-                          </p>
+                            <p className="text-sm text-gray-400 mt-1 text-center">Apenas usuários autorizados podem adicionar anexos</p>
                         )}
                       </div>
                     ) : (
-                      <div className="space-y-3 max-h-60 overflow-y-auto">
-                        {dfdData.annexes.map((annex) => (
-                          <div key={annex.id} className="flex items-center justify-between p-3 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
+                        <div className={`${dfdData.annexes.length > 6 ? 'max-h-[420px] overflow-y-auto' : ''} space-y-0`}>
+                          {dfdData.annexes.map((annex, idx) => (
+                            <React.Fragment key={annex.id}>
+                              <div className="flex items-center justify-between p-2.5 border border-gray-200 rounded-lg hover:bg-slate-50 transition-colors">
                             <div className="flex items-center gap-3 min-w-0 flex-1">
-                              <div className="p-2 bg-blue-100 rounded-lg">
+                                  <div className="p-2 bg-slate-100 rounded-lg">
                                 <FileText className="w-4 h-4 text-blue-600" />
                               </div>
                               <div className="min-w-0 flex-1">
                                 <p className="text-sm font-medium truncate">{annex.name}</p>
-                                <p className="text-xs text-gray-500">
-                                  {annex.size} • {formatDate(annex.uploadedAt)}
-                                </p>
+                                    <p className="text-xs text-gray-500">{annex.size} • {formatDate(annex.uploadedAt)}</p>
                               </div>
                             </div>
-                            <div className="flex items-center gap-1 flex-shrink-0">
-                              <Button size="sm" variant="outline" className="h-6 w-6 p-0">
-                                <Eye className="w-3 h-3" />
-                              </Button>
-                              <Button size="sm" variant="outline" className="h-6 w-6 p-0">
-                                <Download className="w-3 h-3" />
-                              </Button>
+                                <div className="flex items-center gap-2 flex-shrink-0">
+                                  <Button size="sm" variant="outline" className="h-7 w-7 p-0 hover:bg-blue-50"><Eye className="w-3 h-3" /></Button>
+                                  <Button size="sm" variant="outline" className="h-7 w-7 p-0 hover:bg-green-50"><Download className="w-3 h-3" /></Button>
                               {canEditAnaliseJuridica() && (
-                                <Button 
-                                  size="sm" 
-                                  variant="outline" 
-                                  className="h-6 w-6 p-0 text-red-600 hover:text-red-700"
-                                  onClick={() => removeAnnex(annex.id)}
-                                >
-                                  <Trash2 className="w-3 h-3" />
-                                </Button>
+                                    <Button size="sm" variant="outline" className="h-7 w-7 p-0 text-red-600 hover:text-red-700 hover:bg-red-50" onClick={() => removeAnnex(annex.id)}><Trash2 className="w-3 h-3" /></Button>
                               )}
                             </div>
                           </div>
+                              {idx < dfdData.annexes.length - 1 && <div className="border-b border-slate-200" />}
+                            </React.Fragment>
                         ))}
                       </div>
                     )}
-                  </TabsContent>
-                  
-                  <TabsContent value="interacoes" className="mt-0 p-4">
-                    {interacoes.length === 0 ? (
-                      <div className="text-center py-8 w-full">
-                        <div className="p-4 bg-gray-100 rounded-full w-16 h-16 mx-auto mb-4 flex items-center justify-center">
-                          <History className="w-8 h-8 text-gray-400" />
                         </div>
-                        <p className="text-gray-500 font-medium">Nenhuma interação registrada</p>
                       </div>
-                    ) : (
-                      <div className="space-y-3 max-h-60 overflow-y-auto">
-                        {interacoes.map((interacao) => {
-                          const statusConfig = getStatusConfig(interacao.resultado);
-                          
-                          return (
-                            <div key={interacao.id} className="border border-gray-200 rounded-lg p-3 hover:bg-gray-50 transition-colors">
-                              <div className="flex items-center justify-between mb-2">
-                                <div className="flex items-center gap-2">
-                                  <Badge className={`text-xs ${statusConfig.color}`}>
-                                    {statusConfig.icon}
-                                    <span className="ml-1">{statusConfig.label}</span>
-                                  </Badge>
-                                </div>
-                              </div>
-                              <div className="text-xs text-gray-600 space-y-1">
-                                <p><strong>Setor:</strong> {interacao.setor}</p>
-                                <p><strong>Responsável:</strong> {interacao.responsavel}</p>
-                                <p><strong>Data:</strong> {formatDateTime(interacao.dataHora)}</p>
-                                {interacao.justificativa && (
-                                  <p><strong>Justificativa:</strong> {interacao.justificativa}</p>
-                                )}
-                              </div>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    )}
-                  </TabsContent>
-                </Tabs>
+                </div>
               </div>
             </div>
-          </aside>
+          </section>
+
+          {/* Painel da Etapa (igual estrutura do ETP) */}
+          <section className="col-span-12 w-full">
+            <div className="rounded-2xl border border-slate-300 shadow-md bg-white p-6 min-h-[700px]">
+              <header className="flex items-center gap-3 mb-4">
+                <ClipboardCheck className="w-6 h-6 text-green-600" />
+                <h2 className="text-lg font-bold text-slate-900">Painel da Etapa</h2>
+                <div className="ml-auto">
+                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">Checklist</span>
+                </div>
+              </header>
+              <div className="border-b-2 border-green-200 mb-6"></div>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="rounded-2xl border shadow-sm bg-white p-4 md:p-6">
+                  <header className="flex items-center justify-between mb-4">
+                    <div className="flex items中心 gap-2">
+                      <Flag className="w-5 h-5 text-indigo-600" />
+                      <h3 className="text-sm font-semibold text-slate-800">Status & Prazo</h3>
+                    </div>
+                    <Badge className={`text-sm font-semibold px-3 py-2 ${getStatusClasses(getEtapaStatus())}`}>{getEtapaStatus()}</Badge>
+                  </header>
+                  <div className="space-y-4">
+                    {/* Card de prazos detalhados (modelo do DFD Assinatura) */}
+                    <div className="grid grid-cols-1 gap-3">
+                      <div className="flex items-center gap-3 p-3 rounded-lg border border-slate-200">
+                        <div className="w-10 h-10 rounded-full flex items-center justify-center border border-slate-300">
+                          <Calendar className="w-5 h-5 text-slate-600" />
+                        </div>
+                        <div>
+                          <p className="text-sm font-semibold text-slate-500">Data de Criação</p>
+                          <p className="text-lg font-bold text-slate-900">{formatDate(dataCriacaoISO)}</p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-3 p-3 rounded-lg border border-slate-200">
+                        <div className="w-10 h-10 rounded-full flex items-center justify-center border border-slate-300">
+                          <Clock className="w-5 h-5 text-slate-600" />
+                        </div>
+                        <div>
+                          <p className="text-sm font-semibold text-slate-500">Prazo Inicial</p>
+                          <p className="text-lg font-bold text-slate-900">{prazoInicialDiasUteis} dias úteis</p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-3 p-3 rounded-lg border border-slate-200">
+                        <div className="w-10 h-10 rounded-full flex items-center justify-center border border-slate-300">
+                          <Flag className="w-5 h-5 text-slate-600" />
+                        </div>
+                        <div>
+                          <p className="text-sm font-semibold text-slate-500">Prazo Final</p>
+                          <p className="text-lg font-bold text-slate-900">{formatDate(addBusinessDays(dataCriacaoISO, prazoInicialDiasUteis))}</p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="border-t border-slate-200 my-3 pt-4">
+                    {(() => {
+                      const diasRest = getDiasRestantes();
+                      const prazo = getPrazoColorClasses(diasRest);
+                      const isAtraso = diasRest !== null && diasRest < 0;
+                          return (
+                        <div className="text-center py-4">
+                          <div className={`text-3xl font-bold ${prazo.text} mb-2`}>{diasRest === null ? '—' : Math.abs(diasRest)}</div>
+                          <div className={`text-sm font-medium ${prazo.text}`}>
+                            {diasRest === null ? 'Sem prazo definido' : isAtraso ? 'dias em atraso' : diasRest <= 2 ? 'dias restantes (urgente)' : 'dias restantes'}
+                          </div>
+                        </div>
+                      );
+                    })()}
+                  </div>
+                  <div className="space-y-2">
+                    <div className="flex justify-between text-xs text-slate-500"><span>Progresso</span><span>{getProgressoTemporal()}%</span></div>
+                    <div className="w-full bg-slate-200 rounded-full h-2">
+                      <div className={`h-2 rounded-full transition-all ${getProgressColor(getProgressoTemporal())}`} style={{ width: `${Math.min(getProgressoTemporal(), 100)}%` }} />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="rounded-2xl border shadow-sm bg-white p-4 md:p-6">
+                  <header className="flex items-center justify-between mb-4">
+                                <div className="flex items-center gap-2">
+                      <ListChecks className="w-5 h-5 text-indigo-600" />
+                      <h3 className="text-sm font-semibold text-slate-800">Checklist da Etapa</h3>
+                                </div>
+                  </header>
+                  <div className="space-y-1">
+                    {(() => {
+                      const items = [
+                        { id: 'texto', label: analiseJuridica.trim() ? 'Análise preenchida' : 'Análise pendente', status: analiseJuridica.trim() ? 'completed' : 'pending' },
+                        { id: 'anexos', label: dfdData.annexes.length > 0 ? 'Documentos anexados' : 'Documentos anexados (nenhum)', status: dfdData.annexes.length > 0 ? 'completed' : 'pending' },
+                        { id: 'mov', label: interacoes.length > 0 ? 'Revisões registradas' : 'Revisões (nenhuma)', status: interacoes.length > 0 ? 'completed' : 'pending' }
+                      ];
+                      const icon = (st: string) => st === 'completed' ? <CheckCircle2 className="w-4 h-4 text-green-600" /> : <AlertCircle className="w-4 h-4 text-red-600" />;
+                      return items.map(it => (
+                        <div key={it.id} className="flex items-center gap-3 py-2 px-2 hover:bg-slate-50 rounded transition-colors">
+                          {icon(it.status)}
+                          <span className="text-sm text-slate-700 flex-1">{it.label}</span>
+                              </div>
+                      ));
+                    })()}
+                              </div>
+                            </div>
+
+                <div className="rounded-2xl border shadow-sm bg-white p-4 md:p-6 flex flex-col min-h-[320px]">
+                  <header className="flex items-center gap-2 mb-4">
+                    <Clock className="w-5 h-5 text-indigo-600" />
+                    <h3 className="text-sm font-semibold text-slate-800">Mini Timeline</h3>
+                  </header>
+                  <div className="flex-1 flex flex-col">
+                    {generateTimeline().length === 0 ? (
+                      <div className="flex-1 flex items-center justify-center"><p className="text-sm text-gray-500 italic text-center">Ainda não há ações registradas.</p></div>
+                    ) : (
+                      <>
+                        <div className="flex-1 relative pr-2">
+                          <div className="absolute left-2 top-0 bottom-0 w-0.5 bg-slate-200"></div>
+                          <div className="max-h-[280px] overflow-y-auto">
+                            <div className="flex flex-col gap-4 pl-6">
+                              {generateTimeline().map(item => (
+                                <div key={item.id} className="relative group">
+                                  <div className="absolute -left-6 top-0 w-4 h-4 bg-white rounded-full flex items-center justify-center">{getTimelineIcon(item)}</div>
+                                  <div className="hover:bg-slate-50 rounded-lg px-3 py-2 transition-colors">
+                                    <p className="text-sm font-semibold text-slate-700 mb-1">{item.descricao}</p>
+                                    <div className="flex items-center gap-2 text-xs text-slate-500"><span>{item.autor}</span><span>•</span><span>{formatDateTime(new Date(item.dataHora))}</span></div>
+                      </div>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        </div>
+                        <div className="border-t border-slate-200 pt-3 mt-4">
+                          <button className="w-full text-center text-sm text-indigo-600 hover:text-indigo-700 hover:underline transition-colors">Ver todas as ações</button>
+                        </div>
+                      </>
+                    )}
+              </div>
+            </div>
+              </div>
+            </div>
+          </section>
 
           {/* FULL: Comentários */}
           <section id="comentarios" className="col-span-12 w-full">
@@ -800,51 +991,43 @@ export default function DFDAnaliseJuridicaSection({
             </div>
           </section>
 
-          {/* FULL: Ações (rodapé não fixo) */}
+          {/*  Ações da Etapa (layout do ETP) */}
           {isNAJUser() && (
-            <section id="acoes" className="col-span-12 w-full mt-6 pb-6">
-              {/* Rodapé com Botões de Ação */}
-              <Card className="w-full shadow-lg border-0 bg-white/80 backdrop-blur-sm">
-                <CardContent className="p-4">
-                  <div className="flex flex-col sm:flex-row gap-4 justify-between items-center w-full">
-                    
-                    {/* Lado esquerdo - Status e informações */}
-                    <div className="flex items-center gap-4">
-                      <div className="flex items-center gap-2">
-                        <Clock className="w-4 h-4 text-gray-500" />
-                        <span className="text-sm text-gray-600">
-                          {diasNoCard} dias no card
-                        </span>
+            <section className="col-span-12 w-full">
+              <div className="rounded-2xl border border-slate-300 shadow-md bg-white p-6">
+                <header className="flex items-center gap-3 mb-4">
+                  <Flag className="w-6 h-6 text-orange-600" />
+                  <h2 className="text-lg font-bold text-slate-900">Ações da Etapa</h2>
+                  <div className="ml-auto"><span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-orange-100 text-orange-800">Ações</span></div>
+                </header>
+                <div className="border-b-2 border-orange-200 mb-6"></div>
+                <div className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="flex items-center gap-3 p-3 rounded-lg border border-slate-200">
+                      <div className="w-10 h-10 rounded-full flex items-center justify-center border border-slate-300"><Clock className="w-5 h-5 text-slate-600" /></div>
+                      <div>
+                        <p className="text-sm font-semibold text-slate-500">Prazo</p>
+                        <p className={`text-lg font-bold ${(() => { const diasRest = getDiasRestantes(); const prazo = getPrazoColorClasses(diasRest); return prazo.text; })()}`}>
+                          {(() => { const diasRest = getDiasRestantes(); return diasRest === null ? 'Sem prazo' : diasRest < 0 ? `${Math.abs(diasRest)} dias atrasado` : `${diasRest} dias restantes`; })()}
+                        </p>
                       </div>
-                      <div className="flex items-center gap-2">
-                        <User className="w-4 h-4 text-gray-500" />
-                        <span className="text-sm text-gray-600">
-                          {responsavelAtual}
-                        </span>
                       </div>
+                    <div className="flex items-center gap-3 p-3 rounded-lg border border-slate-200">
+                      <div className="w-10 h-10 rounded-full flex items-center justify-center border border-slate-300"><User className="w-5 h-5 text-slate-600" /></div>
+                      <div>
+                        <p className="text-sm font-semibold text-slate-500">Responsável</p>
+                        <p className="text-lg font-bold text-slate-900">{responsavelAtual || 'Sem responsável'}</p>
                     </div>
-
-                    {/* Lado direito - Botões de ação */}
-                    <div className="flex items-center gap-2">
-                      <Button 
-                        onClick={handleDevolverCorrecao}
-                        variant="outline" 
-                        className="border-red-200 text-red-700 hover:bg-red-50"
-                      >
-                        <XCircle className="w-4 h-4 mr-2" />
-                        Encaminhar para Cumprimento de Ressalvas
-                      </Button>
-                      <Button 
-                        onClick={handleAnaliseFavoravel}
-                        className="bg-green-600 hover:bg-green-700 text-white px-8 py-3 shadow-lg"
-                      >
-                        <CheckCircle className="w-4 h-4 mr-2" />
-                        Aprovação
-                      </Button>
                     </div>
                   </div>
-                </CardContent>
-              </Card>
+                  <div className="border-t border-slate-200 pt-4">
+                    <div className="flex flex-wrap gap-2 justify-center">
+                      <Button onClick={handleDevolverCorrecao} variant="outline" className="border-red-200 text-red-700 hover:bg-red-50"><XCircle className="w-4 h-4 mr-2" />Encaminhar para Cumprimento de Ressalvas</Button>
+                      <Button onClick={handleAnaliseFavoravel} className="bg-green-600 hover:bg-green-700 text-white"><CheckCircle className="w-4 h-4 mr-2" />Aprovação</Button>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </section>
           )}
         </div>
