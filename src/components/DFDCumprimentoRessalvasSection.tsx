@@ -43,7 +43,10 @@ import {
   Shield,
   FileEdit,
   FileCheck,
-  RotateCcw
+  RotateCcw,
+  ClipboardCheck,
+  ListChecks,
+  Flag
 } from 'lucide-react';
 import { useUser } from '@/contexts/UserContext';
 import { usePermissoes } from '@/hooks/usePermissoes';
@@ -162,6 +165,11 @@ export default function DFDCumprimentoRessalvasSection({
       concluiu: false
     }
   ]);
+  // Formulário de nova gerência
+  const [novaGerencia, setNovaGerencia] = useState<string>('');
+  const [novoResponsavel, setNovoResponsavel] = useState<string>('');
+  const [editingGerenciaId, setEditingGerenciaId] = useState<string | null>(null);
+  const [editingNome, setEditingNome] = useState<string>('');
   
   // Estado para responsável pelas correções
   const [responsavelCorrecoes, setResponsavelCorrecoes] = useState<string>('');
@@ -229,15 +237,6 @@ export default function DFDCumprimentoRessalvasSection({
 
   const validateForm = (): boolean => {
     const errors: string[] = [];
-    
-    // Verificar se todas as ressalvas têm resposta
-    const ressalvasSemResposta = ressalvas.filter(ressalva => 
-      !respostasRessalvas[ressalva.id] || !respostasRessalvas[ressalva.id].trim()
-    );
-    
-    if (ressalvasSemResposta.length > 0) {
-      errors.push('Todas as ressalvas devem ter uma resposta');
-    }
 
     // Verificar se há versão final enviada
     if (!versaoFinal) {
@@ -276,8 +275,7 @@ export default function DFDCumprimentoRessalvasSection({
     setInteracoes(prev => [...prev, novaInteracao]);
     localStorage.setItem(`interacoes-correcao-${processoId}`, JSON.stringify([...interacoes, novaInteracao]));
     
-    // Salvar respostas das ressalvas
-    localStorage.setItem(`respostas-ressalvas-${processoId}`, JSON.stringify(respostasRessalvas));
+    // Respostas às ressalvas removidas do fluxo visual
     
     // Salvar responsável pelas correções
     localStorage.setItem(`responsavel-correcoes-${processoId}`, responsavelCorrecoes);
@@ -318,7 +316,6 @@ export default function DFDCumprimentoRessalvasSection({
     const ressalvasAtualizadas = ressalvas.map(ressalva => ({
       ...ressalva,
       status: 'CORRIGIDA' as StatusRessalva,
-      resposta: respostasRessalvas[ressalva.id],
       respondidaEm: dataAtual,
       respondidaPor: user?.nome || 'Usuário'
     }));
@@ -339,7 +336,7 @@ export default function DFDCumprimentoRessalvasSection({
     
     // Salvar dados finais
     localStorage.setItem(`versao-final-enviada-${processoId}`, 'true');
-    localStorage.setItem(`respostas-ressalvas-${processoId}`, JSON.stringify(respostasRessalvas));
+    // Respostas às ressalvas removidas do fluxo visual
     localStorage.setItem(`responsavel-correcoes-${processoId}`, responsavelCorrecoes);
     localStorage.setItem(`gerencias-participantes-${processoId}`, JSON.stringify(gerenciasParticipantes));
     
@@ -463,6 +460,20 @@ export default function DFDCumprimentoRessalvasSection({
     });
   };
 
+  // Abrir link em nova aba (padrão Aprovação)
+  const openInNewTab = (url?: string) => {
+    if (!url) {
+      toast({ title: 'Link indisponível', description: 'Link expirado, atualize a página ou gere novo link.', variant: 'destructive' });
+      return;
+    }
+    try {
+      const win = window.open(url, '_blank');
+      if (!win) throw new Error('Popup bloqueado');
+    } catch (e) {
+      toast({ title: 'Não foi possível abrir o documento', description: 'Verifique o bloqueador de popups ou gere um novo link.', variant: 'destructive' });
+    }
+  };
+
   // Função para marcar gerência como concluída
   const handleMarcarConcluido = (gerenciaId: string) => {
     setGerenciasParticipantes(prev => prev.map(g => 
@@ -544,15 +555,7 @@ export default function DFDCumprimentoRessalvasSection({
     }
 
     // Carregar respostas das ressalvas
-    const respostasSalvas = localStorage.getItem(`respostas-ressalvas-${processoId}`);
-    if (respostasSalvas) {
-      try {
-        const respostasData = JSON.parse(respostasSalvas);
-        setRespostasRessalvas(respostasData);
-      } catch (error) {
-        console.error('Erro ao carregar respostas salvas:', error);
-      }
-    }
+    // Respostas às ressalvas removidas
 
     // Carregar interações
     const interacoesSalvas = localStorage.getItem(`interacoes-correcao-${processoId}`);
@@ -639,404 +642,462 @@ export default function DFDCumprimentoRessalvasSection({
   const totalGerencias = gerenciasParticipantes.length;
   const progressoGerencias = totalGerencias > 0 ? (gerenciasConcluidas / totalGerencias) * 100 : 0;
 
+  const getProgressClasses = (percent: number) => {
+    if (percent >= 80) return { bar: 'bg-green-600', text: 'text-green-700', chip: 'bg-green-100 text-green-800' };
+    if (percent >= 40) return { bar: 'bg-yellow-500', text: 'text-yellow-700', chip: 'bg-yellow-100 text-yellow-800' };
+    return { bar: 'bg-slate-400', text: 'text-slate-600', chip: 'bg-slate-100 text-slate-700' };
+  };
+
+  const opcoesGerencias = [
+    'GSP - Gerência de Soluções e Projetos',
+    'GLC - Gerência de Licitações e Contratos',
+    'GSL - Gerência de Suprimentos e Logística',
+    'GRH - Gerência de Recursos Humanos',
+    'GUE - Gerência de Urgência e Emergência',
+    'GFC - Gerência Financeira e Contábil',
+    'SE - Secretaria Executiva',
+    'NAJ - Assessoria Jurídica'
+  ];
+  // Busca dinâmica no UserContext (mock users)
+  const getUsuariosDaGerencia = (gerenciaNome: string): string[] => {
+    try {
+      // Importação dinâmica para evitar ciclo
+      const { mockUsers } = require('@/contexts/UserContext');
+      return (mockUsers as any[])
+        .filter((u) => (u.gerencia || '').trim().toLowerCase() === (gerenciaNome || '').trim().toLowerCase())
+        .map((u) => u.nome)
+        .filter(Boolean);
+    } catch {
+      return [];
+    }
+  };
+
+  const handleAdicionarGerencia = () => {
+    const nomeGerencia = (novaGerencia || '').trim();
+    const nomeResp = (novoResponsavel || '').trim();
+    if (!nomeGerencia || !nomeResp) {
+      toast({ title: 'Preencha os campos', description: 'Selecione a gerência e informe o responsável.', variant: 'destructive' });
+      return;
+    }
+    const existe = gerenciasParticipantes.some(g => g.gerencia === nomeGerencia && g.nome === nomeResp);
+    if (existe) {
+      toast({ title: 'Já existente', description: 'Esta gerência com esse responsável já está listada.', variant: 'destructive' });
+      return;
+    }
+    const novo: GerenciaParticipante = {
+      id: `${Date.now()}`,
+      nome: nomeResp,
+      gerencia: nomeGerencia,
+      concluiu: false
+    };
+    setGerenciasParticipantes(prev => [novo, ...prev]);
+    setNovaGerencia('');
+    setNovoResponsavel('');
+    toast({ title: 'Gerência adicionada', description: `${nomeGerencia} incluída com sucesso.` });
+  };
+
+  const handleRemoverGerencia = (gerenciaId: string) => {
+    setGerenciasParticipantes(prev => prev.filter(g => g.id !== gerenciaId));
+    toast({ title: 'Gerência removida', description: 'Item removido da lista.' });
+  };
+
+  const iniciarEdicaoGerencia = (gerenciaId: string, nomeAtual: string) => {
+    setEditingGerenciaId(gerenciaId);
+    setEditingNome(nomeAtual);
+  };
+
+  const salvarEdicaoGerencia = (gerenciaId: string) => {
+    const nome = editingNome.trim();
+    if (!nome) {
+      toast({ title: 'Informe o responsável', description: 'O campo responsável não pode ficar vazio.', variant: 'destructive' });
+      return;
+    }
+    setGerenciasParticipantes(prev => prev.map(g => g.id === gerenciaId ? { ...g, nome } : g));
+    setEditingGerenciaId(null);
+    setEditingNome('');
+    toast({ title: 'Atualizado', description: 'Responsável atualizado com sucesso.' });
+  };
+
+  const cancelarEdicaoGerencia = () => {
+    setEditingGerenciaId(null);
+    setEditingNome('');
+  };
+
   return (
     <div className="bg-white">
       {/* Container central ocupando toda a área */}
       <div className="w-full px-2">
         
         {/* Grid principal 12 colunas */}
-        <div className="grid grid-cols-12 gap-4">
+        <div className="grid grid-cols-12 gap-6">
           
-          {/* ESQUERDA: Cumprimento de Ressalvas (7 colunas) */}
-          <section id="cumprimento-ressalvas" className="col-span-12 lg:col-span-7 w-full">
-            <div className="rounded-2xl border shadow-sm overflow-hidden bg-white">
-              <header className="bg-orange-50 px-4 py-3 rounded-t-2xl font-semibold text-slate-900">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3 text-lg">
-                    <RotateCcw className="w-5 h-5 text-orange-600" />
-                    Cumprimento de Ressalvas pós Análise Jurídica Prévia
+          {/* Cumprimento de Ressalvas (Parecer Técnico - texto) */}
+          <section id="cumprimento-ressalvas" className="col-span-12 w-full">
+            <div className="rounded-2xl border border-slate-300 shadow-md bg-white p-6">
+              <header className="flex items-center gap-3 mb-4">
+                <Search className="w-6 h-6 text-indigo-600" />
+                <h2 className="text-lg font-bold text-slate-900">Parecer Técnico</h2>
+                <div className="ml-auto">
+                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800">Análise</span>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={handleUploadEditavel}
-                      disabled={!canEditCorrecoes() || versaoFinalEnviada}
-                      className="text-xs"
-                    >
-                      <Upload className="w-3 h-3 mr-1" />
-                      Enviar Editável
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={handleUploadVersaoFinal}
-                      disabled={!canEditCorrecoes() || versaoFinalEnviada}
-                      className="text-xs"
-                    >
-                      <Upload className="w-3 h-3 mr-1" />
-                      Enviar Final
-                    </Button>
-                  </div>
-                </div>
               </header>
-              <div className="p-4 md:p-6">
+              <div className="border-b-2 border-indigo-200 mb-6"></div>
+                  <div>
                 <div className="space-y-6">
-                  
-                  {/* Documento Editável */}
-                  <div>
-                    <Label className="text-sm font-semibold text-gray-700 mb-2 block">
-                      Documento Editável (Word)
-                    </Label>
-                    {documentoEditavel ? (
-                      <div className="p-3 bg-blue-50 rounded-lg border border-blue-200">
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-3">
-                            <FileEdit className="w-5 h-5 text-blue-600" />
-                            <div>
-                              <p className="text-sm font-medium text-blue-900">{documentoEditavel.name}</p>
-                              <p className="text-xs text-blue-600">{documentoEditavel.size} • {formatDate(documentoEditavel.uploadedAt)}</p>
-                            </div>
-                          </div>
-                          <div className="flex items-center gap-1">
-                            <Button size="sm" variant="outline" onClick={() => handleBaixarDocumento('editavel')} className="h-6 w-6 p-0">
-                              <Download className="w-3 h-3" />
-                            </Button>
-                            {canEditCorrecoes() && !versaoFinalEnviada && (
-                              <Button size="sm" variant="outline" onClick={() => handleExcluirDocumento('editavel')} className="h-6 w-6 p-0 text-red-600 hover:text-red-700">
-                                <Trash2 className="w-3 h-3" />
-                              </Button>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                    ) : (
-                      <div className="p-4 border-2 border-dashed border-gray-300 rounded-lg text-center">
-                        <FileEdit className="w-8 h-8 text-gray-400 mx-auto mb-2" />
-                        <p className="text-sm text-gray-500">Nenhum documento editável enviado</p>
-                        {canEditCorrecoes() && !versaoFinalEnviada && (
-                          <p className="text-xs text-gray-400 mt-1">Clique em "Enviar Editável" para adicionar</p>
-                        )}
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Versão Final */}
-                  <div>
-                    <Label className="text-sm font-semibold text-gray-700 mb-2 block">
-                      Versão Final (PDF) *
-                    </Label>
-                    {versaoFinal ? (
-                      <div className="p-3 bg-green-50 rounded-lg border border-green-200">
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-3">
-                            <FileCheck className="w-5 h-5 text-green-600" />
-                            <div>
-                              <p className="text-sm font-medium text-green-900">{versaoFinal.name}</p>
-                              <p className="text-xs text-green-600">{versaoFinal.size} • {formatDate(versaoFinal.uploadedAt)}</p>
-                            </div>
-                          </div>
-                          <div className="flex items-center gap-1">
-                            <Button size="sm" variant="outline" onClick={() => handleBaixarDocumento('final')} className="h-6 w-6 p-0">
-                              <Download className="w-3 h-3" />
-                            </Button>
-                            {canEditCorrecoes() && !versaoFinalEnviada && (
-                              <Button size="sm" variant="outline" onClick={() => handleExcluirDocumento('final')} className="h-6 w-6 p-0 text-red-600 hover:text-red-700">
-                                <Trash2 className="w-3 h-3" />
-                              </Button>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                    ) : (
-                      <div className="p-4 border-2 border-dashed border-gray-300 rounded-lg text-center">
-                        <FileCheck className="w-8 h-8 text-gray-400 mx-auto mb-2" />
-                        <p className="text-sm text-gray-500">Nenhuma versão final enviada</p>
-                        {canEditCorrecoes() && !versaoFinalEnviada && (
-                          <p className="text-xs text-gray-400 mt-1">Clique em "Enviar Final" para adicionar</p>
-                        )}
-                      </div>
-                    )}
-                  </div>
-
-
-
-                   {/* Respostas às Ressalvas */}
-                   <div>
-                     <Label className="text-sm font-semibold text-gray-700 mb-3 block">
-                       Respostas às Ressalvas *
-                     </Label>
-                    <div className="space-y-4">
-                      {ressalvas.map((ressalva) => (
-                        <div key={ressalva.id} className="border border-gray-200 rounded-lg p-4">
-                          <div className="flex items-start justify-between mb-3">
+                  {/* Texto do parecer */}
                             <div className="flex-1">
-                              <h4 className="font-medium text-gray-900 mb-1">
-                                Ressalva #{ressalva.id}
-                              </h4>
-                              <p className="text-sm text-gray-600 mb-2">
-                                {ressalva.descricao}
-                              </p>
-                              <div className="flex items-center gap-2 text-xs text-gray-500">
-                                <span>Emitida por: {ressalva.emitidaPor}</span>
-                                <span>•</span>
-                                <span>{formatDateTime(ressalva.emitidaEm)}</span>
-                              </div>
-                            </div>
-                            <Badge className={`text-xs ${getStatusConfig(ressalva.status).color}`}>
-                              {getStatusConfig(ressalva.status).icon}
-                              <span className="ml-1">{getStatusConfig(ressalva.status).label}</span>
-                            </Badge>
-                          </div>
-                          
-                          <div>
-                            <Label className="text-xs font-medium text-gray-700 mb-2 block">
-                              Como esta ressalva foi atendida:
-                            </Label>
                             <Textarea
-                              value={respostasRessalvas[ressalva.id] || ''}
-                              onChange={(e) => setRespostasRessalvas(prev => ({
-                                ...prev,
-                                [ressalva.id]: e.target.value
-                              }))}
-                              placeholder="Descreva como esta ressalva foi corrigida..."
-                              disabled={!canEditCorrecoes() || versaoFinalEnviada}
-                              className="min-h-[80px] resize-none border-gray-200 focus:border-orange-300 focus:ring-orange-300"
-                            />
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                    {validationErrors.includes('Todas as ressalvas devem ter uma resposta') && (
-                      <p className="text-red-500 text-sm mt-2">Todas as ressalvas devem ter uma resposta</p>
-                    )}
-                  </div>
-
-                  {/* Responsável pelas Correções */}
-                  <div>
-                    <Label className="text-sm font-semibold text-gray-700 mb-2 block">
-                      Responsável pelas Correções *
-                    </Label>
-                    <Input
-                      value={responsavelCorrecoes}
-                      onChange={(e) => setResponsavelCorrecoes(e.target.value)}
-                      placeholder="Digite quem irá cumprir as ressalvas..."
+                      id="cumprimento-ressalvas-textarea"
+                      value={justificativa}
+                      onChange={(e) => setJustificativa(e.target.value)}
+                      placeholder="Descreva a análise técnica do DFD..."
                       disabled={!canEditCorrecoes() || versaoFinalEnviada}
-                      className="border-gray-200 focus:border-orange-300 focus:ring-orange-300"
-                    />
-                    {validationErrors.includes('É obrigatório definir quem irá cumprir as ressalvas') && (
-                      <p className="text-red-500 text-sm mt-1">É obrigatório definir quem irá cumprir as ressalvas</p>
-                    )}
+                      className="min-h-[350px] resize-none border-gray-200 focus:border-indigo-300 focus:ring-indigo-300"
+                            />
                   </div>
-
-                  {/* Inputs ocultos para upload de arquivos */}
-                  <input
-                    ref={editavelFileInputRef}
-                    type="file"
-                    onChange={handleEditavelFileUpload}
-                    accept=".doc,.docx"
-                    className="hidden"
-                  />
-                  <input
-                    ref={finalFileInputRef}
-                    type="file"
-                    onChange={handleVersaoFinalUpload}
-                    accept=".pdf"
-                    className="hidden"
-                  />
-                </div>
+                        </div>
               </div>
             </div>
           </section>
 
-          {/* DIREITA: Gerenciamento (5 colunas) */}
-          <aside id="gerenciamento" className="col-span-12 lg:col-span-5 w-full flex flex-col">
-            <div className="rounded-2xl border shadow-sm overflow-hidden bg-white flex-1 flex flex-col">
-              <header className="bg-purple-50 px-4 py-3 rounded-t-2xl font-semibold text-slate-900">
-                <div className="flex items-center gap-3">
-                  <Settings className="w-5 h-5 text-purple-600" />
-                  Gerenciamento
+          {/* GERENCIAMENTO: embaixo do balão principal (full-width) */}
+          <section id="gerenciamento" className="col-span-12 w-full">
+            <div className="rounded-2xl border border-slate-300 shadow-md bg-white p-6">
+              <header className="flex items-center gap-3 mb-4">
+                <Settings className="w-6 h-6 text-slate-600" />
+                <h2 className="text-lg font-bold text-slate-900">Gerenciamento</h2>
+                <div className="ml-auto">
+                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-slate-100 text-slate-800">Gerenciamento</span>
                 </div>
               </header>
-              <div className="p-4 md:p-6 flex-1 flex flex-col">
+              <div className="border-b-2 border-slate-200 mb-6"></div>
+              <div className="flex-1 flex flex-col">
                                  <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-                   <TabsList className="grid w-full grid-cols-3">
+                   <TabsList className="grid w-full grid-cols-2">
                      <TabsTrigger value="gerencias">Gerências</TabsTrigger>
-                     <TabsTrigger value="ressalvas">Ressalvas</TabsTrigger>
-                     <TabsTrigger value="interacoes">Interações</TabsTrigger>
+                     <TabsTrigger value="anexos">Anexos</TabsTrigger>
                    </TabsList>
                   
                   <TabsContent value="gerencias" className="mt-0 p-4">
-                    <div className="space-y-3">
-                      <div className="p-3 bg-blue-50 rounded-lg border border-blue-200">
-                        <div className="flex items-center gap-2 mb-2">
-                          <Users className="w-4 h-4 text-blue-600" />
-                          <span className="text-sm font-medium text-blue-900">Controle de Conclusão por Gerências Participantes *</span>
-                        </div>
-                        <p className="text-xs text-blue-700">
-                          {gerenciasConcluidas} de {totalGerencias} gerências concluíram
-                        </p>
-                      </div>
+                    <div className="space-y-4">
+                      {/* Título padrão (igual outros cards) */}
+                      <div className="px-1">
+                        <div className="flex items-center justify-between mb-1">
+                          <h3 className="text-sm font-semibold text-slate-900 flex items-center gap-2">
+                            <Users className="w-4 h-4 text-indigo-600" />
+                            Gerências Participantes
+                          </h3>
+                          <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${getProgressClasses(progressoGerencias).chip}`}>{gerenciasConcluidas} de {totalGerencias} concluíram</span>
+                            </div>
+                        <p className="text-xs text-slate-500">Marque "Concluir" quando a sua gerência finalizar as correções.</p>
+                          </div>
                       
-                      <div className="space-y-2">
+                      {/* Ferramenta: adicionar gerência */}
+                            {canEditCorrecoes() && !versaoFinalEnviada && (
+                        <div className="rounded-xl border border-slate-200 p-4 bg-white">
+                          <div className="grid grid-cols-12 gap-3 items-end">
+                            <div className="col-span-12 md:col-span-5">
+                              <Label htmlFor="nova-gerencia" className="text-xs font-medium text-slate-600">Gerência</Label>
+                              <select id="nova-gerencia" value={novaGerencia} onChange={(e) => { setNovaGerencia(e.target.value); setNovoResponsavel(''); }} className="mt-1 w-full h-9 rounded-md border border-slate-300 bg-white px-2 text-sm text-slate-800 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500">
+                                <option value="">Selecione...</option>
+                                {opcoesGerencias.map(opt => (
+                                  <option key={opt} value={opt}>{opt}</option>
+                                ))}
+                              </select>
+                          </div>
+                            <div className="col-span-12 md:col-span-5">
+                              <Label htmlFor="novo-responsavel" className="text-xs font-medium text-slate-600">Responsável</Label>
+                              <select id="novo-responsavel" value={novoResponsavel} onChange={(e) => setNovoResponsavel(e.target.value)} disabled={!novaGerencia} className="mt-1 w-full h-9 rounded-md border border-slate-300 bg-white px-2 text-sm text-slate-800 disabled:bg-slate-100 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500">
+                                <option value="">{novaGerencia ? 'Selecione o responsável...' : 'Selecione uma gerência primeiro'}</option>
+                                {getUsuariosDaGerencia(novaGerencia).map(u => (
+                                  <option key={u} value={u}>{u}</option>
+                                ))}
+                              </select>
+                        </div>
+                            <div className="col-span-12 md:col-span-2">
+                              <Button onClick={handleAdicionarGerencia} className="w-full h-9 bg-indigo-600 hover:bg-indigo-700 text-white"><Plus className="w-4 h-4 mr-1" />Adicionar</Button>
+                      </div>
+                      </div>
+                  </div>
+                      )}
+
+                      {/* Lista de gerências em cards modernos */}
+                      <div className="space-y-3">
                         {gerenciasParticipantes.map((gerencia) => (
-                          <div key={gerencia.id} className="border border-gray-200 rounded-lg p-4">
-                            {/* Header com status e ações */}
-                            <div className="flex items-center justify-between mb-3">
-                              <Badge className={`text-xs ${
-                                gerencia.concluiu 
-                                  ? 'bg-green-100 text-green-800 border-green-300' 
-                                  : 'bg-gray-100 text-gray-800 border-gray-300'
-                              }`}>
+                          <div key={gerencia.id} className="border border-slate-200 rounded-xl p-4 hover:bg-slate-50 transition-colors">
+                            <div className="flex items-center justify-between gap-3">
+                              <div className="flex items-center gap-3 min-w-0 flex-1">
+                                <div className={`w-9 h-9 rounded-full flex items-center justify-center border ${gerencia.concluiu ? 'border-green-300' : 'border-slate-300'}`}>
                                 {gerencia.concluiu ? (
-                                  <>
-                                    <CheckCircle className="w-3 h-3 mr-1" />
-                                    Concluído
-                                  </>
-                                ) : (
-                                  <>
-                                    <Clock className="w-3 h-3 mr-1" />
-                                    Pendente
-                                  </>
-                                )}
-                              </Badge>
+                                    <CheckCircle className="w-4 h-4 text-green-600" />
+                                  ) : (
+                                    <Clock className="w-4 h-4 text-slate-500" />
+                                  )}
+                            </div>
+                                <div className="min-w-0">
+                                  <p className="text-sm font-semibold text-slate-900 truncate">{gerencia.gerencia}</p>
+                                  {editingGerenciaId === gerencia.id ? (
+                                    <div className="flex items-center gap-2 mt-1">
+                                      <select value={editingNome} onChange={(e) => setEditingNome(e.target.value)} className="h-7 text-xs rounded-md border border-slate-300 bg-white px-2">
+                                        <option value="">Selecione o responsável...</option>
+                                        {getUsuariosDaGerencia(gerencia.gerencia).map(u => (
+                                          <option key={u} value={u}>{u}</option>
+                                        ))}
+                                      </select>
+                                      <Button size="sm" className="h-7 px-2 bg-green-600 hover:bg-green-700 text-white" onClick={() => salvarEdicaoGerencia(gerencia.id)}><CheckCircle className="w-3 h-3" /></Button>
+                                      <Button size="sm" variant="outline" className="h-7 px-2" onClick={cancelarEdicaoGerencia}><XCircle className="w-3 h-3" /></Button>
+                          </div>
+                                  ) : (
+                                    <div className="flex items-center gap-2 text-xs text-slate-600 truncate">
+                                      <span className="truncate">{gerencia.nome}</span>
+                            {canEditCorrecoes() && !versaoFinalEnviada && (
+                                        <Button size="sm" variant="ghost" className="h-6 px-1 text-slate-500 hover:text-slate-700" onClick={() => iniciarEdicaoGerencia(gerencia.id, gerencia.nome)}>
+                                          <Edit3 className="w-3 h-3" />
+                              </Button>
+                            )}
+                          </div>
+                                  )}
+                              {gerencia.concluiu && gerencia.dataConclusao && (
+                                    <p className="text-[11px] text-green-700 mt-1">Concluído em {formatDateTime(gerencia.dataConclusao)}</p>
+                                  )}
+                        </div>
+                      </div>
+                              <div className="flex items-center gap-2">
+                                <Badge className={`text-xs ${gerencia.concluiu ? 'bg-green-100 text-green-800 border-green-300' : 'bg-slate-100 text-slate-800 border-slate-300'}`}>{gerencia.concluiu ? 'Concluída' : 'Pendente'}</Badge>
                               {canEditCorrecoes() && !versaoFinalEnviada && (
                                 gerencia.concluiu ? (
-                                  <Button
-                                    size="sm"
-                                    variant="outline"
-                                    onClick={() => handleDesmarcarConcluido(gerencia.id)}
-                                    className="text-red-600 hover:text-red-700 h-6 px-2"
-                                  >
-                                    <XCircle className="w-3 h-3" />
-                                  </Button>
-                                ) : (
-                                  <Button
-                                    size="sm"
-                                    onClick={() => handleMarcarConcluido(gerencia.id)}
-                                    className="bg-green-600 hover:bg-green-700 text-white h-6 px-2"
-                                  >
-                                    <CheckCircle className="w-3 h-3 mr-1" />
-                                    Concluir
-                                  </Button>
+                                    <Button size="sm" variant="outline" onClick={() => handleDesmarcarConcluido(gerencia.id)} className="h-7 px-2 text-red-600 hover:text-red-700"><XCircle className="w-3 h-3" /></Button>
+                                  ) : (
+                                    <Button size="sm" className="h-7 px-2 bg-green-600 hover:bg-green-700 text-white" onClick={() => handleMarcarConcluido(gerencia.id)}><CheckCircle className="w-3 h-3 mr-1" />Concluir</Button>
                                 )
                               )}
-                            </div>
-                            
-                            {/* Informações da gerência com mais espaço */}
-                            <div className="space-y-1">
-                              <h4 className="text-sm font-semibold text-gray-900 leading-tight">
-                                {gerencia.gerencia}
-                              </h4>
-                              <p className="text-xs text-gray-600 leading-relaxed">
-                                {gerencia.nome}
-                              </p>
-                              {gerencia.concluiu && gerencia.dataConclusao && (
-                                <p className="text-xs text-green-600 mt-2">
-                                  Concluído em: {formatDateTime(gerencia.dataConclusao)}
-                                </p>
-                              )}
-                            </div>
-                          </div>
+                        {canEditCorrecoes() && !versaoFinalEnviada && (
+                                  <Button size="sm" variant="outline" className="h-7 px-2 text-red-600 hover:text-red-700" onClick={() => handleRemoverGerencia(gerencia.id)}>
+                                    <Trash2 className="w-3 h-3" />
+                                  </Button>
+                        )}
+                      </div>
+                  </div>
+                              </div>
                         ))}
-                      </div>
-                      
-                      {/* Barra de Progresso Compacta */}
-                      <div className="mt-3">
+                          </div>
+                          
+                      {/* Barra de progresso com cores dinâmicas */}
+                      <div className="mt-1">
                         <div className="flex items-center justify-between mb-1">
-                          <span className="text-xs text-gray-600">Progresso</span>
-                          <span className="text-xs text-gray-500">{Math.round(progressoGerencias)}%</span>
+                          <span className="text-xs text-slate-600">Progresso</span>
+                          <span className={`text-xs font-medium ${getProgressClasses(progressoGerencias).text}`}>{Math.round(progressoGerencias)}%</span>
+                          </div>
+                        <div className="w-full bg-slate-200 rounded-full h-2">
+                          <div className={`h-2 rounded-full transition-all duration-300 ${getProgressClasses(progressoGerencias).bar}`} style={{ width: `${progressoGerencias}%` }}></div>
                         </div>
-                        <div className="w-full bg-gray-200 rounded-full h-1.5">
-                          <div 
-                            className="bg-green-600 h-1.5 rounded-full transition-all duration-300"
-                            style={{ width: `${progressoGerencias}%` }}
-                          ></div>
-                        </div>
-                      </div>
-                      
+                  </div>
+
                       {validationErrors.includes('Todas as gerências participantes devem marcar como concluído') && (
                         <div className="mt-2 p-2 bg-red-50 border border-red-200 rounded-lg">
                           <p className="text-xs text-red-600">Todas as gerências participantes devem marcar como concluído</p>
                         </div>
-                      )}
-                    </div>
-                  </TabsContent>
-                  
-                  <TabsContent value="ressalvas" className="mt-0 p-4">
-                    <div className="space-y-3">
-                      <div className="p-3 bg-orange-50 rounded-lg border border-orange-200">
-                        <div className="flex items-center gap-2 mb-2">
-                          <AlertTriangle className="w-4 h-4 text-orange-600" />
-                          <span className="text-sm font-medium text-orange-900">Resumo das Ressalvas</span>
-                        </div>
-                        <p className="text-xs text-orange-700">
-                          {ressalvas.length} ressalvas emitidas pela NAJ em {formatDate(ressalvas[0]?.emitidaEm || '')}
-                        </p>
-                      </div>
-                      
-                      <div className="space-y-2 max-h-60 overflow-y-auto">
-                        {ressalvas.map((ressalva) => (
-                          <div key={ressalva.id} className="border border-gray-200 rounded-lg p-3">
-                            <div className="flex items-center justify-between mb-2">
-                              <Badge className={`text-xs ${getStatusConfig(ressalva.status).color}`}>
-                                {getStatusConfig(ressalva.status).icon}
-                                <span className="ml-1">{getStatusConfig(ressalva.status).label}</span>
-                              </Badge>
-                            </div>
-                            <p className="text-xs text-gray-600 line-clamp-2">
-                              {ressalva.descricao}
-                            </p>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  </TabsContent>
-                  
-                  <TabsContent value="interacoes" className="mt-0 p-4">
-                    {interacoes.length === 0 ? (
-                      <div className="text-center py-8 w-full">
-                        <div className="p-4 bg-gray-100 rounded-full w-16 h-16 mx-auto mb-4 flex items-center justify-center">
-                          <History className="w-8 h-8 text-gray-400" />
-                        </div>
-                        <p className="text-gray-500 font-medium">Nenhuma interação registrada</p>
-                      </div>
-                    ) : (
-                      <div className="space-y-3 max-h-60 overflow-y-auto">
-                        {interacoes.map((interacao) => (
-                          <div key={interacao.id} className="border border-gray-200 rounded-lg p-3 hover:bg-gray-50 transition-colors">
-                            <div className="flex items-center justify-between mb-2">
-                              <div className="flex items-center gap-2">
-                                {interacao.acao === 'salvou' && <Save className="w-3 h-3 text-blue-600" />}
-                                {interacao.acao === 'enviou_versao' && <Upload className="w-3 h-3 text-green-600" />}
-                                {interacao.acao === 'finalizou' && <CheckCircle className="w-3 h-3 text-green-600" />}
-                                <span className="text-xs font-medium text-gray-700">
-                                  {interacao.acao === 'salvou' && 'Salvou alterações'}
-                                  {interacao.acao === 'enviou_versao' && 'Enviou versão'}
-                                  {interacao.acao === 'finalizou' && 'Finalizou correções'}
-                                </span>
-                              </div>
-                            </div>
-                            <div className="text-xs text-gray-600 space-y-1">
-                              <p><strong>Setor:</strong> {interacao.setor}</p>
-                              <p><strong>Responsável:</strong> {interacao.responsavel}</p>
-                              <p><strong>Data:</strong> {formatDateTime(interacao.dataHora)}</p>
-                              {interacao.versao && (
-                                <p><strong>Versão:</strong> {interacao.versao}</p>
-                              )}
-                              {interacao.justificativa && (
-                                <p><strong>Justificativa:</strong> {interacao.justificativa}</p>
-                              )}
-                            </div>
-                          </div>
-                        ))}
-                      </div>
                     )}
+                  </div>
+                  </TabsContent>
+                  
+                  <TabsContent value="anexos" className="mt-0 p-4">
+                    <div className="rounded-xl border shadow-sm bg-white h-full">
+                      <div className="px-4 py-3 rounded-t-xl border-b">
+                        <div className="flex items-center justify-between">
+                          <h3 className="text-sm font-semibold text-slate-900 flex items-center gap-2">
+                            <Upload className="w-4 h-4 text-green-600" />
+                            Anexos
+                          </h3>
+                          <span className="text-xs text-slate-600 bg-slate-200 px-2 py-0.5 rounded-md font-medium">{dfdData.annexes.length}</span>
+                        </div>
+                      </div>
+                      <div className="p-4">
+                        <div className="space-y-3">
+                          <div className="w-full">
+                  <input
+                              ref={fileInputRef}
+                    type="file"
+                              onChange={handleFileUpload}
+                              accept=".pdf,.doc,.docx,.odt,.png,.jpg,.jpeg,.gif,.bmp,.tif,.tiff"
+                    className="hidden"
+                  />
+                              {canEditCorrecoes() && !versaoFinalEnviada && (
+                                  <Button
+                                onClick={() => fileInputRef.current?.click()}
+                                    variant="outline"
+                                className="w-full h-9 border-dashed border-2 border-gray-300 hover:border-green-400 hover:bg-green-50 transition-colors text-sm"
+                                  >
+                                <Upload className="w-4 h-4 mr-2" />Adicionar Anexo
+                                  </Button>
+                              )}
+                            </div>
+                          {dfdData.annexes.length === 0 ? (
+                            <div className="pt-4">
+                        <div className="p-4 bg-gray-100 rounded-full w-16 h-16 mx-auto mb-4 flex items-center justify-center">
+                                <Upload className="w-8 h-8 text-gray-400" />
+                        </div>
+                              <p className="text-center text-gray-500 font-medium">Nenhum anexo adicionado</p>
+                              {!canEditCorrecoes() && (
+                                <p className="text-center text-sm text-gray-400 mt-1">Apenas usuários autorizados podem adicionar anexos</p>
+                              )}
+                            </div>
+                    ) : (
+                            <div className={`${dfdData.annexes.length > 6 ? 'max-h-[450px] overflow-y-auto' : ''} space-y-0`}>
+                              {dfdData.annexes.map((annex, idx) => (
+                                <React.Fragment key={annex.id}>
+                                  <div className="flex items-center justify-between p-2.5 border border-gray-200 rounded-lg hover:bg-slate-50 transition-colors">
+                                    <div className="flex items-center gap-3 min-w-0 flex-1">
+                                      <div className="p-2 bg-slate-100 rounded-lg">
+                                        <FileText className="w-4 h-4 text-blue-600" />
+                          </div>
+                                      <div className="min-w-0 flex-1">
+                                        <p className="text-sm font-medium truncate">{annex.name}</p>
+                                        <p className="text-xs text-gray-500 hidden sm:block">{annex.uploadedBy} • {formatDate(annex.uploadedAt)}</p>
+                                        <p className="text-xs text-gray-500 sm:hidden">{annex.uploadedBy} • {formatDate(annex.uploadedAt)}</p>
+                      </div>
+                        </div>
+                                    <div className="hidden sm:flex items-center gap-2 flex-shrink-0">
+                                      <Button size="sm" variant="outline" aria-label="Visualizar" className="h-7 w-7 p-0 hover:bg-blue-50" onClick={() => openInNewTab(annex.url)}>
+                                        <Eye className="w-3 h-3" />
+                                      </Button>
+                                      <Button size="sm" variant="outline" aria-label="Baixar" className="h-7 w-7 p-0 hover:bg-green-50">
+                                        <Download className="w-3 h-3" />
+                                      </Button>
+                                      {canEditCorrecoes() && !versaoFinalEnviada && (
+                                        <Button size="sm" variant="outline" aria-label="Remover" className="h-7 w-7 p-0 text-red-600 hover:text-red-700 hover:bg-red-50" onClick={() => removeAnnex(annex.id)}>
+                                          <Trash2 className="w-3 h-3" />
+                                        </Button>
+                              )}
+                        </div>
+                      </div>
+                                  {idx < dfdData.annexes.length - 1 && (<div className="border-b border-slate-200" />)}
+                                </React.Fragment>
+                        ))}
+                        </div>
+                      )}
+                        </div>
+                      </div>
+                    </div>
                   </TabsContent>
                 </Tabs>
+                        </div>
+                      </div>
+          </section>
+
+          {/* Painel da Etapa (layout padrão) */}
+          <section className="col-span-12 w-full">
+            <div className="rounded-2xl border border-slate-300 shadow-md bg-white p-6">
+              <header className="flex items-center gap-3 mb-4">
+                <ClipboardCheck className="w-6 h-6 text-green-600" />
+                <h2 className="text-lg font-bold text-slate-900">Painel da Etapa</h2>
+                <div className="ml-auto">
+                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">Checklist</span>
+                </div>
+              </header>
+              <div className="border-b-2 border-green-200 mb-6"></div>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                {/* 1) Status & Prazo */}
+                <div className="rounded-2xl border shadow-sm bg-white p-4 md:p-6">
+                  <header className="flex items-center justify-between mb-4">
+                    <div className="flex items-center gap-2">
+                      <Flag className="w-5 h-5 text-indigo-600" />
+                      <h3 className="text-sm font-semibold text-slate-800">Status & Prazo</h3>
+                    </div>
+                    <Badge className="text-sm font-semibold px-3 py-2 bg-yellow-100 text-yellow-800">
+                      {versaoFinalEnviada ? 'Finalizado' : 'Em correção'}
+                              </Badge>
+                  </header>
+                  <div className="space-y-4">
+                    <div className="flex items-center gap-3 p-3 rounded-lg border border-slate-200">
+                      <div className="w-10 h-10 rounded-full flex items-center justify-center border border-slate-300">
+                        <Calendar className="w-5 h-5 text-slate-600" />
+                            </div>
+                      <div>
+                        <p className="text-sm font-semibold text-slate-500">Data de Início</p>
+                        <p className="text-lg font-bold text-slate-900">{formatDate(new Date().toISOString())}</p>
+                          </div>
+                      </div>
+                    <div className="flex items-center gap-3 p-3 rounded-lg border border-slate-200">
+                      <div className="w-10 h-10 rounded-full flex items-center justify-center border border-slate-300">
+                        <Clock className="w-5 h-5 text-slate-600" />
+                    </div>
+                      <div>
+                        <p className="text-sm font-semibold text-slate-500">Prazo padrão</p>
+                        <p className="text-lg font-bold text-slate-900">3 dias úteis</p>
+                        </div>
+                      </div>
+                  </div>
+                  <div className="border-t border-slate-200 my-3 pt-4">
+                    <div className="text-center py-2">
+                      <div className={`text-2xl font-bold ${sla.status === 'ok' ? 'text-green-600' : sla.status === 'risco' ? 'text-yellow-600' : 'text-red-600'}`}>
+                        {sla.status === 'ok' ? 'Dentro do Prazo' : sla.status === 'risco' ? 'Em Risco' : 'Atrasado'}
+                      </div>
+                      <div className="text-sm text-slate-600">{diasNoCard} dias no card</div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* 2) Checklist */}
+                <div className="rounded-2xl border shadow-sm bg-white p-4 md:p-6">
+                  <header className="flex items-center justify-between mb-4">
+                              <div className="flex items-center gap-2">
+                      <ListChecks className="w-5 h-5 text-indigo-600" />
+                      <h3 className="text-sm font-semibold text-slate-800">Checklist da Etapa</h3>
+                              </div>
+                  </header>
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-3 py-2 px-2">
+                      {documentoEditavel ? <CheckCircle className="w-4 h-4 text-green-600" /> : <Clock className="w-4 h-4 text-slate-400" />}
+                      <span className="text-sm text-slate-700 flex-1">Documento editável anexado</span>
+                            </div>
+                    <div className="flex items-center gap-3 py-2 px-2">
+                      {versaoFinal ? <CheckCircle className="w-4 h-4 text-green-600" /> : <Clock className="w-4 h-4 text-slate-400" />}
+                      <span className="text-sm text-slate-700 flex-1">Versão final anexada</span>
+                    </div>
+                    <div className="flex items-center gap-3 py-2 px-2">
+                      {gerenciasConcluidas === totalGerencias && totalGerencias > 0 ? <CheckCircle className="w-4 h-4 text-green-600" /> : <Clock className="w-4 h-4 text-slate-400" />}
+                      <span className="text-sm text-slate-700 flex-1">Gerências participantes concluídas</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* 3) Mini Timeline */}
+                <div className="rounded-2xl border shadow-sm bg-white p-4 md:p-6 flex flex-col min-h-[320px]">
+                  <header className="flex items-center gap-2 mb-4">
+                    <Clock className="w-5 h-5 text-indigo-600" />
+                    <h3 className="text-sm font-semibold text-slate-800">Mini Timeline</h3>
+                  </header>
+                  <div className="flex-1 flex flex-col">
+                    {interacoes.length === 0 ? (
+                      <div className="flex-1 flex items-center justify-center"><p className="text-sm text-gray-500 italic text-center">Ainda não há ações registradas.</p></div>
+                    ) : (
+                      <div className="flex-1 relative pr-2">
+                        <div className="absolute left-2 top-0 bottom-0 w-0.5 bg-slate-200"></div>
+                        <div className="max-h-[280px] overflow-y-auto">
+                          <div className="flex flex-col gap-4 pl-6">
+                            {interacoes.map(item => (
+                              <div key={item.id} className="relative group">
+                                <div className="absolute -left-6 top-0 w-4 h-4 bg-white rounded-full flex items-center justify-center">
+                                  {item.acao === 'salvou' ? <Save className="w-3 h-3 text-blue-600" /> : item.acao === 'enviou_versao' ? <Upload className="w-3 h-3 text-green-600" /> : <CheckCircle className="w-3 h-3 text-green-600" />}
+                                </div>
+                                <div className="hover:bg-slate-50 rounded-lg px-3 py-2 transition-colors">
+                                  <p className="text-sm font-semibold text-slate-700 mb-1">
+                                    {item.acao === 'salvou' ? 'Alterações salvas' : item.acao === 'enviou_versao' ? 'Versão enviada' : 'Correções finalizadas'}
+                                  </p>
+                                  <div className="flex items-center gap-2 text-xs text-slate-500"><span>{item.responsavel}</span><span>•</span><span>{formatDateTime(item.dataHora)}</span></div>
+                            </div>
+                          </div>
+                        ))}
+                          </div>
+                        </div>
+                      </div>
+                    )}
               </div>
             </div>
-          </aside>
+              </div>
+            </div>
+          </section>
 
           {/* FULL: Comentários */}
           <section id="comentarios" className="col-span-12 w-full">
@@ -1050,64 +1111,51 @@ export default function DFDCumprimentoRessalvasSection({
             </div>
           </section>
 
-          {/* FULL: Ações (rodapé não fixo) */}
-          {canEditCorrecoes() && !versaoFinalEnviada && (
-            <section id="acoes" className="col-span-12 w-full mt-6 pb-6">
-              {/* Rodapé com Botões de Ação */}
-              <Card className="w-full shadow-lg border-0 bg-white/80 backdrop-blur-sm">
-                <CardContent className="p-4">
-                  <div className="flex flex-col sm:flex-row gap-4 justify-between items-center w-full">
-                    
-                    {/* Lado esquerdo - Status e informações */}
-                    <div className="flex items-center gap-4">
-                      <div className="flex items-center gap-2">
-                        <Clock className="w-4 h-4 text-gray-500" />
-                        <span className="text-sm text-gray-600">
-                          {diasNoCard} dias no card
-                        </span>
+          {/* Ações da Etapa (layout padrão) */}
+          <section className="col-span-12 w-full">
+            <div className="rounded-2xl border border-slate-300 shadow-md bg-white p-6">
+              <header className="flex items-center gap-3 mb-4">
+                <Flag className="w-6 h-6 text-orange-600" />
+                <h2 className="text-lg font-bold text-slate-900">Ações da Etapa</h2>
+                <div className="ml-auto"><span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-orange-100 text-orange-800">Ações</span></div>
+              </header>
+              <div className="border-b-2 border-orange-200 mb-6"></div>
+              <div className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="flex items-center gap-3 p-3 rounded-lg border border-slate-200">
+                    <div className="w-10 h-10 rounded-full flex items-center justify-center border border-slate-300"><Clock className="w-5 h-5 text-slate-600" /></div>
+                    <div>
+                      <p className="text-sm font-semibold text-slate-500">Prazo</p>
+                      <p className="text-lg font-bold text-slate-900">{sla.status === 'ok' ? 'Dentro do prazo' : sla.status === 'risco' ? 'Em risco' : 'Em atraso'}</p>
                       </div>
-                      <div className="flex items-center gap-2">
-                        <User className="w-4 h-4 text-gray-500" />
-                        <span className="text-sm text-gray-600">
-                          {responsavelAtual}
-                        </span>
                       </div>
-                      <div className="flex items-center gap-2">
-                        <Badge className={`text-xs ${
-                          sla.status === 'ok' ? 'bg-green-100 text-green-800' :
-                          sla.status === 'risco' ? 'bg-yellow-100 text-yellow-800' :
-                          'bg-red-100 text-red-800'
-                        }`}>
-                          {sla.status === 'ok' ? 'Dentro do Prazo' :
-                           sla.status === 'risco' ? 'Em Risco' :
-                           'Prazo Estourado'}
-                        </Badge>
+                  <div className="flex items-center gap-3 p-3 rounded-lg border border-slate-200">
+                    <div className="w-10 h-10 rounded-full flex items-center justify-center border border-slate-300"><User className="w-5 h-5 text-slate-600" /></div>
+                    <div>
+                      <p className="text-sm font-semibold text-slate-500">Responsável</p>
+                      <p className="text-lg font-bold text-slate-900">{responsavelAtual || 'Sem responsável'}</p>
                       </div>
                     </div>
-
-                    {/* Lado direito - Botões de ação */}
-                    <div className="flex items-center gap-2">
-                      <Button 
-                        onClick={handleSalvarAlteracoes}
-                        variant="outline" 
-                        className="border-blue-200 text-blue-700 hover:bg-blue-50"
-                      >
-                        <Save className="w-4 h-4 mr-2" />
-                        Salvar Alterações
-                      </Button>
-                      <Button 
-                        onClick={handleEnviarVersaoFinal}
-                        className="bg-green-600 hover:bg-green-700 text-white px-8 py-3 shadow-lg"
-                      >
-                        <Send className="w-4 h-4 mr-2" />
-                        Enviar Versão Final Corrigida
-                      </Button>
+                    </div>
+                {!versaoFinalEnviada ? (
+                  <div className="border-t border-slate-200 pt-4 flex flex-wrap gap-2 justify-center">
+                    <Button onClick={handleSalvarAlteracoes} variant="outline" className="border-blue-200 text-blue-700 hover:bg-blue-50"><Save className="w-4 h-4 mr-2" />Salvar Alterações</Button>
+                    <Button onClick={handleEnviarVersaoFinal} className="bg-green-600 hover:bg-green-700 text-white"><Send className="w-4 h-4 mr-2" />Enviar Versão Final Corrigida</Button>
+                  </div>
+                ) : (
+                  <div className="flex items-center justify-center p-4 bg-green-50 rounded-lg border border-green-200">
+                    <div className="flex items-center gap-3">
+                      <CheckCircle className="w-6 h-6 text-green-600" />
+                      <div className="text-center">
+                        <p className="text-sm font-semibold text-green-600">Correções Finalizadas</p>
+                        <p className="text-sm text-green-700">Enviado para nova análise da NAJ</p>
+                      </div>
                     </div>
                   </div>
-                </CardContent>
-              </Card>
-            </section>
-          )}
+                )}
+              </div>
+            </div>
+          </section>
 
           {/* Status Finalizado */}
           {versaoFinalEnviada && (

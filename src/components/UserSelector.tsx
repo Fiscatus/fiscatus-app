@@ -28,11 +28,11 @@ export default function UserSelector() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
           {mockUsers.map((mockUser) => (
             <Button
-              key={mockUser.id}
-              variant={user?.id === mockUser.id ? "default" : "outline"}
+              key={mockUser._id}
+              variant={user?._id === mockUser._id ? "default" : "outline"}
               className={`
                 p-4 h-auto text-left justify-start
-                ${user?.id === mockUser.id 
+                ${user?._id === mockUser._id 
                   ? 'bg-blue-600 hover:bg-blue-700 text-white' 
                   : 'hover:bg-blue-50'
                 }
@@ -48,7 +48,7 @@ export default function UserSelector() {
                     variant="secondary" 
                     className={`
                       text-xs mt-1
-                      ${user?.id === mockUser.id 
+                      ${user?._id === mockUser._id 
                         ? 'bg-blue-500 text-white' 
                         : 'bg-gray-100 text-gray-700'
                       }
