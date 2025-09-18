@@ -26,13 +26,18 @@ import {
   Stamp,
   Lock,
   Eye,
-  Settings
+  Settings,
+  ClipboardCheck,
+  ListChecks,
+  Flag,
+  Paperclip
 } from 'lucide-react';
 import { useUser } from '@/contexts/UserContext';
 import { usePermissoes } from '@/hooks/usePermissoes';
 import { useToast } from '@/hooks/use-toast';
 import CommentsSection from './CommentsSection';
 import { formatDateBR, formatDateTimeBR } from '@/lib/utils';
+import { useDFD, type DFDAnnex } from '@/hooks/useDFD';
 
 interface PublicacaoData {
   dataPublicacao: string;
@@ -82,12 +87,34 @@ export default function DFDPublicacaoSection({
   const [comprovanteArquivo, setComprovanteArquivo] = useState<PublicacaoData['comprovanteArquivo']>(null);
   const [confirmada, setConfirmada] = useState(false);
   const [confirmacaoData, setConfirmacaoData] = useState<PublicacaoData['confirmacoesData']>(null);
+  // Removido: seleção de Documento Final da Publicação
   const [validationErrors, setValidationErrors] = useState<string[]>([]);
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   const [diasNoCard, setDiasNoCard] = useState(0);
   const [responsavelAtual, setResponsavelAtual] = useState('');
 
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null); // (legacy) não usado mais para comprovante
+  const annexInputRef = useRef<HTMLInputElement>(null);
+
+  // Anexos do processo (padrão sistema)
+  const { dfdData, addAnnex, removeAnnex } = useDFD(processoId);
+
+  // Ordenação e helpers para Anexos (padrão Assinatura)
+  const [attachmentsSort, setAttachmentsSort] = useState<'desc' | 'asc'>('desc');
+  const anexosOrdenados = React.useMemo(() => {
+    const sorted = [...dfdData.annexes];
+    sorted.sort((a, b) => {
+      const at = new Date(a.uploadedAt).getTime();
+      const bt = new Date(b.uploadedAt).getTime();
+      return attachmentsSort === 'desc' ? bt - at : at - bt;
+    });
+    return sorted;
+  }, [dfdData.annexes, attachmentsSort]);
+
+  const openInNewTab = (url?: string) => {
+    if (!url) return;
+    window.open(url, '_blank', 'noopener');
+  };
 
   // Verificar se é usuário autorizado para publicação (Secretaria Executiva ou setor designado)
   const canPublish = () => {
@@ -126,50 +153,28 @@ export default function DFDPublicacaoSection({
       errors.push('Link da publicação ou número da edição é obrigatório');
     }
     
-    if (!comprovanteArquivo) {
-      errors.push('Upload do comprovante é obrigatório');
-    }
+    // Removido: obrigatoriedade de Documento Final
 
     setValidationErrors(errors);
     return errors.length === 0;
   };
 
-  // Função para upload de comprovante
-  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+  // Upload de anexos (Gerenciamento)
+  const handleUploadAnexo = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
-      const arquivoInfo = {
+      const newAnnex: DFDAnnex = {
+        id: `anexo-${Date.now()}`,
         name: file.name,
         size: `${(file.size / 1024 / 1024).toFixed(2)} MB`,
         uploadedAt: new Date().toISOString(),
         uploadedBy: user?.nome || 'Usuário',
-        url: `mock-url-${Date.now().toString()}`
+        url: `mock-url-${Date.now()}`
       };
-      
-      setComprovanteArquivo(arquivoInfo);
-      
-      // Salvar no localStorage
-      const publicacaoData = {
-        dataPublicacao,
-        meioPublicacao,
-        linkOuNumero,
-        observacoes,
-        comprovanteArquivo: arquivoInfo,
-        confirmada,
-        confirmacaoData
-      };
-      localStorage.setItem(`publicacao-${processoId}`, JSON.stringify(publicacaoData));
-      
-      toast({
-        title: "Comprovante enviado",
-        description: `${file.name} foi enviado com sucesso.`
-      });
+      addAnnex(newAnnex);
+      toast({ title: 'Anexo adicionado', description: `${file.name} foi anexado com sucesso.` });
     }
-    
-    // Limpar o input
-    if (event.target) {
-      event.target.value = '';
-    }
+    if (event.target) event.target.value = '';
   };
 
   // Função para baixar comprovante
@@ -311,68 +316,73 @@ export default function DFDPublicacaoSection({
     return meioObj?.label || meio;
   };
 
+  // Mini Timeline (Painel da Etapa)
+  type TimelineItem = { id: string; tipo: 'confirmacao' | 'anexo'; titulo: string; dataHora: string };
+  const generateTimeline = (): TimelineItem[] => {
+    const items: TimelineItem[] = [];
+    if (confirmada && confirmacaoData?.dataConfirmacao) {
+      items.push({
+        id: `conf-${confirmacaoData.dataConfirmacao}`,
+        tipo: 'confirmacao',
+        titulo: 'Publicação confirmada',
+        dataHora: confirmacaoData.dataConfirmacao
+      });
+    }
+    anexosOrdenados.slice(0, 5).forEach(anexo => {
+      items.push({
+        id: anexo.id,
+        tipo: 'anexo',
+        titulo: `Anexo adicionado: ${anexo.name}`,
+        dataHora: anexo.uploadedAt
+      });
+    });
+    return items.sort((a, b) => new Date(b.dataHora).getTime() - new Date(a.dataHora).getTime()).slice(0, 6);
+  };
+
+  const getTimelineIcon = (tipo: TimelineItem['tipo']) => {
+    if (tipo === 'confirmacao') return <Stamp className="w-4 h-4 text-green-600" />;
+    if (tipo === 'anexo') return <Paperclip className="w-4 h-4 text-gray-600" />;
+    return <Clock className="w-4 h-4 text-gray-600" />;
+  };
+
      return (
      <div className="bg-white">
        {/* Container central ocupando toda a área */}
        <div className="w-full px-2">
          
-         {/* Grid principal 12 colunas */}
-         <div className="grid grid-cols-12 gap-4">
+        {/* Grid principal 12 colunas */}
+       <div className="space-y-6">
           
                      {/* ESQUERDA: Informações da Publicação (8 colunas) */}
-           <section id="publicacao-info" className="col-span-12 lg:col-span-8 w-full relative">
-             <div className="rounded-2xl border shadow-sm overflow-hidden bg-white">
-              <header className="bg-green-50 px-4 py-3 rounded-t-2xl font-semibold text-slate-900">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3 text-lg">
-                    <Newspaper className="w-5 h-5 text-green-600" />
-                    Publicação
-                    {confirmada && (
-                      <Badge className="bg-green-100 text-green-800 border-green-300">
-                        <Stamp className="w-3 h-3 mr-1" />
-                        Confirmada
-                      </Badge>
-                    )}
-                  </div>
-                  <div className="flex items-center gap-2">
-                    {canEditFields() && (
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => fileInputRef.current?.click()}
-                        className="text-xs"
-                      >
-                        <Upload className="w-3 h-3 mr-1" />
-                        Enviar Comprovante
+          <section id="publicacao-info" className="col-span-12 w-full relative">
+            <div className="card-shell mb-8 overflow-hidden">
+              <header className="flex items-center gap-3 mb-4">
+                <Newspaper className="w-6 h-6 text-green-600" />
+                <h2 className="text-lg font-bold text-slate-900">Publicação</h2>
+                <div className="ml-auto flex items-center gap-2">
+                  {confirmada && (
+                    <Badge className="bg-green-100 text-green-800 border-green-300">
+                      <Stamp className="w-3 h-3 mr-1" />
+                      Confirmada
+                    </Badge>
+                  )}
+                  {comprovanteArquivo && (
+                    <>
+                      <Button size="sm" variant="outline" onClick={handleDownloadComprovante} className="h-7 px-2 text-xs">
+                        <Download className="w-3 h-3 mr-1" />
+                        Baixar
                       </Button>
-                    )}
-                    {comprovanteArquivo && (
-                      <>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={handleDownloadComprovante}
-                          className="text-xs"
-                        >
-                          <Download className="w-3 h-3 mr-1" />
-                          Baixar Comprovante
+                      {canEditFields() && (
+                        <Button size="sm" variant="outline" onClick={handleRemoveComprovante} className="h-7 px-2 text-xs text-red-600 hover:text-red-700">
+                          <Trash2 className="w-3 h-3 mr-1" />
+                          Remover
                         </Button>
-                        {canEditFields() && (
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={handleRemoveComprovante}
-                            className="text-xs text-red-600 hover:text-red-700"
-                          >
-                            <Trash2 className="w-3 h-3 mr-1" />
-                            Remover
-                          </Button>
-                        )}
-                      </>
-                    )}
-                  </div>
+                      )}
+                    </>
+                  )}
                 </div>
               </header>
+              <div className="border-b-2 border-green-200 mb-6"></div>
               <div className="p-4 md:p-6">
                 <div className="space-y-6">
                   
@@ -455,79 +465,7 @@ export default function DFDPublicacaoSection({
                     )}
                   </div>
 
-                  {/* Upload de Comprovante */}
-                  <div>
-                    <Label className="text-sm font-semibold text-gray-700 mb-3 block">
-                      Comprovante da Publicação *
-                    </Label>
-                    
-                    <input
-                      ref={fileInputRef}
-                      type="file"
-                      onChange={handleFileUpload}
-                      accept=".pdf,.png,.jpg,.jpeg,.doc,.docx"
-                      className="hidden"
-                    />
-
-                    {!comprovanteArquivo ? (
-                      <div
-                        onClick={() => canEditFields() && fileInputRef.current?.click()}
-                        className={`
-                          border-2 border-dashed rounded-lg p-6 text-center cursor-pointer transition-colors
-                          ${canEditFields() 
-                            ? 'border-green-300 hover:border-green-400 hover:bg-green-50' 
-                            : 'border-gray-200 cursor-not-allowed bg-gray-50'
-                          }
-                        `}
-                      >
-                        <Upload className="w-8 h-8 text-gray-400 mx-auto mb-2" />
-                        <p className="text-sm text-gray-600">
-                          {canEditFields() 
-                            ? 'Clique para enviar o comprovante da publicação'
-                            : 'Comprovante não enviado'
-                          }
-                        </p>
-                        <p className="text-xs text-gray-500 mt-1">
-                          PDF, PNG, JPG ou DOC (máx. 10MB)
-                        </p>
-                      </div>
-                    ) : (
-                      <div className="p-4 bg-green-50 rounded-lg border border-green-200">
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-3">
-                            <div className="p-2 bg-green-100 rounded-lg">
-                              <FileText className="w-5 h-5 text-green-600" />
-                            </div>
-                            <div>
-                              <p className="text-sm font-medium text-green-900">{comprovanteArquivo.name}</p>
-                              <p className="text-xs text-green-600">
-                                {comprovanteArquivo.size} • Enviado em {formatDateTimeBR(comprovanteArquivo.uploadedAt)}
-                              </p>
-                              <p className="text-xs text-green-600">
-                                Por: {comprovanteArquivo.uploadedBy}
-                              </p>
-                            </div>
-                          </div>
-                          <div className="flex items-center gap-1">
-                            <Button size="sm" variant="outline" onClick={handleDownloadComprovante} className="h-8 px-3">
-                              <Download className="w-3 h-3 mr-1" />
-                              Baixar
-                            </Button>
-                            {canEditFields() && (
-                              <Button size="sm" variant="outline" onClick={handleRemoveComprovante} className="h-8 px-3 text-red-600 hover:text-red-700">
-                                <Trash2 className="w-3 h-3 mr-1" />
-                                Remover
-                              </Button>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                    )}
-                    
-                    {validationErrors.includes('Upload do comprovante é obrigatório') && (
-                      <p className="text-red-500 text-sm mt-2">Upload do comprovante é obrigatório</p>
-                    )}
-                  </div>
+                  {/* Removido: campo de Documento Final da Publicação */}
 
                   {/* Observações */}
                   <div>
@@ -571,198 +509,283 @@ export default function DFDPublicacaoSection({
             </div>
           </section>
 
-          {/* DIREITA: Resumo da Publicação (4 colunas) */}
-          <aside id="resumo-publicacao" className="col-span-12 lg:col-span-4 w-full flex flex-col">
-            <div className="rounded-2xl border shadow-sm overflow-hidden bg-white flex-1 flex flex-col">
-              <header className="bg-purple-50 px-4 py-3 rounded-t-2xl font-semibold text-slate-900">
-                <div className="flex items-center gap-3">
-                  <Settings className="w-5 h-5 text-purple-600" />
-                  Resumo da Publicação
-                </div>
+          {/* GERENCIAMENTO: padrão full-width abaixo */}
+          <section id="gerenciamento" className="col-span-12 w-full">
+            <div className="card-shell mb-8">
+              <header className="card-header-title">
+                <Settings className="w-6 h-6 text-slate-600" />
+                <h2 className="text-lg font-bold text-slate-900">Gerenciamento</h2>
               </header>
-              <div className="p-4 md:p-6 flex-1 flex flex-col">
+              <div className="border-b-2 border-slate-200 mb-6"></div>
+              <div className="p-4 md:p-6">
                 <div className="space-y-4">
-                  
-                  {/* Status */}
-                  <div className="p-3 bg-gray-50 rounded-lg border">
-                    <div className="flex items-center justify-between mb-2">
-                      <span className="text-sm font-medium text-gray-700">Status</span>
-                      <Badge className={confirmada ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}>
-                        {confirmada ? (
-                          <>
-                            <CheckCircle className="w-3 h-3 mr-1" />
-                            Confirmada
-                          </>
-                        ) : (
-                          <>
-                            <Clock className="w-3 h-3 mr-1" />
-                            Pendente
-                          </>
-                        )}
-                      </Badge>
-                    </div>
-                  </div>
-
-                  {/* Informações Preenchidas */}
-                  {dataPublicacao && (
-                    <div className="p-3 bg-blue-50 rounded-lg border border-blue-200">
-                      <div className="flex items-center gap-2 mb-1">
-                        <Calendar className="w-4 h-4 text-blue-600" />
-                        <span className="text-sm font-medium text-blue-900">Data da Publicação</span>
+                  {/* Anexos - padrão da Assinatura */}
+                  <div className="space-y-3 w-full">
+                    {/* Header + Filtro */}
+                    <div className="w-full flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2 mb-3">
+                      <div className="flex items-center gap-2">
+                        <h3 className="text-sm font-semibold text-slate-800">Anexos</h3>
+                        <span className="text-xs text-slate-600 bg-slate-200 px-2 py-0.5 rounded-md font-medium">{dfdData.annexes.length}</span>
                       </div>
-                      <p className="text-sm text-blue-700">{formatDateBR(dataPublicacao)}</p>
-                    </div>
-                  )}
-
-                  {meioPublicacao && (
-                    <div className="p-3 bg-indigo-50 rounded-lg border border-indigo-200">
-                      <div className="flex items-center gap-2 mb-1">
-                        {getMeioPublicacaoIcon(meioPublicacao)}
-                        <span className="text-sm font-medium text-indigo-900">Meio de Publicação</span>
-                      </div>
-                      <p className="text-sm text-indigo-700">{getMeioPublicacaoLabel(meioPublicacao)}</p>
-                    </div>
-                  )}
-
-                  {linkOuNumero && (
-                    <div className="p-3 bg-green-50 rounded-lg border border-green-200">
-                      <div className="flex items-center gap-2 mb-1">
-                        <ExternalLink className="w-4 h-4 text-green-600" />
-                        <span className="text-sm font-medium text-green-900">Link/Número</span>
-                      </div>
-                      <p className="text-sm text-green-700 break-all">{linkOuNumero}</p>
-                    </div>
-                  )}
-
-                  {comprovanteArquivo && (
-                    <div className="p-3 bg-orange-50 rounded-lg border border-orange-200">
-                      <div className="flex items-center gap-2 mb-1">
-                        <FileText className="w-4 h-4 text-orange-600" />
-                        <span className="text-sm font-medium text-orange-900">Comprovante</span>
-                      </div>
-                      <p className="text-sm text-orange-700">{comprovanteArquivo.name}</p>
-                      <p className="text-xs text-orange-600">{comprovanteArquivo.size}</p>
-                    </div>
-                  )}
-
-                  {/* Permissões */}
-                  <div className="p-3 bg-gray-50 rounded-lg border">
-                    <div className="flex items-center gap-2 mb-2">
-                      <User className="w-4 h-4 text-gray-600" />
-                      <span className="text-sm font-medium text-gray-700">Permissões</span>
-                    </div>
-                    <div className="text-xs text-gray-600 space-y-1">
-                      {canPublish() ? (
-                        <>
-                          <div className="flex items-center gap-1">
-                            <CheckCircle className="w-3 h-3 text-green-600" />
-                            <span>Pode preencher e confirmar</span>
+                      <div className="flex items-center gap-2 w-full sm:w-auto">
+                        <span className="text-xs text-slate-500 whitespace-nowrap">Ordenar:</span>
+                        <div className="relative flex-1 sm:flex-none">
+                          <select aria-label="Ordenar anexos" value={attachmentsSort} onChange={(e)=>setAttachmentsSort(e.target.value as 'desc'|'asc')} className="w-full h-7 rounded-md border border-slate-200 bg-white px-2 pr-6 text-xs text-slate-700 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 transition-colors appearance-none cursor-pointer hover:border-slate-300">
+                            <option value="desc">Mais recente</option>
+                            <option value="asc">Menos recente</option>
+                          </select>
+                          <div className="absolute inset-y-0 right-0 flex items-center pr-1.5 pointer-events-none">
+                            <svg className="w-3 h-3 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7"/></svg>
                           </div>
-                          {confirmada && (
-                            <div className="flex items-center gap-1">
-                              <Lock className="w-3 h-3 text-gray-500" />
-                              <span>Campos bloqueados (confirmada)</span>
+                    </div>
+                      </div>
+                    </div>
+                    {/* Upload */}
+                    {canEditFields() && !confirmada && (
+                      <div>
+                        <input ref={annexInputRef} type="file" accept=".pdf,.doc,.docx,.odt,.png,.jpg,.jpeg,.gif,.bmp,.tif,.tiff" className="hidden" onChange={handleUploadAnexo} />
+                        <Button onClick={()=>annexInputRef.current?.click()} variant="outline" className="w-full h-9 border-dashed border-2 border-gray-300 hover:border-green-400 hover:bg-green-50 transition-colors text-sm">
+                          <Upload className="w-4 h-4 mr-2"/>Adicionar Anexo
+                        </Button>
+                      </div>
+                    )}
+                    {/* Lista */}
+                    {dfdData.annexes.length === 0 ? (
+                      <div className="pt-4">
+                        <div className="p-4 bg-gray-100 rounded-full w-16 h-16 mx-auto mb-4 flex items-center justify-center">
+                          <Upload className="w-8 h-8 text-gray-400" />
+                    </div>
+                        <p className="text-center text-gray-500 font-medium">Nenhum anexo adicionado</p>
+                      </div>
+                    ) : (
+                      <div className={`${dfdData.annexes.length > 6 ? 'max-h-[280px] overflow-y-auto' : ''} space-y-0 w-full` }>
+                        {anexosOrdenados.map((annex, idx)=>(
+                          <React.Fragment key={annex.id}>
+                            <div className="flex items-center justify-between p-2.5 border border-gray-200 rounded-lg hover:bg-slate-50 transition-colors w-full">
+                              <div className="flex items-center gap-3 min-w-0 flex-1">
+                                <div className="p-2 bg-slate-100 rounded-lg">
+                                  <FileText className="w-4 h-4 text-blue-600" />
+                                </div>
+                                <div className="min-w-0 flex-1">
+                                  <p className="text-sm font-medium truncate">{annex.name}</p>
+                                  <p className="text-xs text-gray-500 hidden sm:block">{annex.uploadedBy} • {formatDateBR(annex.uploadedAt)}</p>
+                                  <p className="text-xs text-gray-500 sm:hidden">{annex.uploadedBy} • {formatDateBR(annex.uploadedAt)}</p>
+                                </div>
+                    </div>
+                              {/* Ações - desktop */}
+                              <div className="hidden sm:flex items-center gap-2 flex-shrink-0">
+                                <Button size="sm" variant="outline" aria-label="Visualizar" className="h-7 w-7 p-0 hover:bg-blue-50" onClick={()=>openInNewTab(annex.url)}>
+                                  <Eye className="w-3 h-3" />
+                                </Button>
+                                <Button size="sm" variant="outline" aria-label="Baixar" className="h-7 w-7 p-0 hover:bg-green-50">
+                                  <Download className="w-3 h-3" />
+                                </Button>
+                                {canEditFields() && !confirmada && (
+                                  <Button size="sm" variant="outline" aria-label="Remover" className="h-7 w-7 p-0 text-red-600 hover:text-red-700 hover:bg-red-50" onClick={()=>removeAnnex(annex.id)}>
+                                    <Trash2 className="w-3 h-3" />
+                                  </Button>
+                                )}
+                    </div>
+                              {/* Ações - mobile */}
+                              <div className="sm:hidden flex items-center flex-shrink-0">
+                                <Button size="sm" variant="outline" aria-label="Baixar" className="h-7 w-7 p-0 hover:bg-green-50">
+                                  <Download className="w-3 h-3" />
+                                </Button>
+                                {canEditFields() && !confirmada && (
+                                  <Button size="sm" variant="outline" aria-label="Remover" className="h-7 w-7 p-0 text-red-600 hover:text-red-700 hover:bg-red-50" onClick={()=>removeAnnex(annex.id)}>
+                                    <Trash2 className="w-3 h-3" />
+                                  </Button>
+                                )}
+                          </div>
                             </div>
-                          )}
-                        </>
-                      ) : (
-                        <div className="flex items-center gap-1">
-                          <Eye className="w-3 h-3 text-gray-500" />
-                          <span>Apenas visualização</span>
+                            {idx < anexosOrdenados.length-1 && (<div className="border-b border-slate-200" />)}
+                          </React.Fragment>
+                        ))}
                         </div>
                       )}
-                    </div>
                   </div>
-
                 </div>
               </div>
             </div>
-          </aside>
-
-          {/* FULL: Comentários */}
-          <section id="comentarios" className="col-span-12 w-full">
-            <CommentsSection
-              processoId={processoId}
-              etapaId={etapaId.toString()}
-              cardId="comentarios-publicacao"
-              title="Comentários"
-            />
           </section>
 
-          {/* FULL: Ações (rodapé não fixo) */}
-          {canPublish() && !confirmada && (
-            <section id="acoes" className="col-span-12 w-full mt-6 pb-6">
-              <Card className="w-full shadow-lg border-0 bg-white/80 backdrop-blur-sm">
-                <CardContent className="p-4">
-                  <div className="flex flex-col sm:flex-row gap-4 justify-between items-center w-full">
-                    
-                    {/* Lado esquerdo - Status e informações */}
-                    <div className="flex items-center gap-4">
-                      <div className="flex items-center gap-2">
-                        <Clock className="w-4 h-4 text-gray-500" />
-                        <span className="text-sm text-gray-600">
-                          {diasNoCard} dia no card
-                        </span>
+          
+
+          {/* Painel da Etapa */}
+          <section id="painel-etapa" className="col-span-12 w-full">
+            <div className="card-shell mb-8">
+              <header className="flex items-center gap-3 mb-4">
+                <ClipboardCheck className="w-6 h-6 text-green-600" />
+                <h2 className="text-lg font-bold text-slate-900">Painel da Etapa</h2>
+                <div className="ml-auto">
+                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                    Checklist
+                  </span>
+                </div>
+              </header>
+              <div className="border-b-2 border-green-200 mb-6"></div>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                {/* Status & Prazo */}
+                <div className="rounded-2xl border shadow-sm bg-white p-4 md:p-6">
+                  <header className="flex items-center justify-between mb-4">
+                    <div className="flex items-center gap-2">
+                      <Flag className="w-5 h-5 text-indigo-600" />
+                      <h3 className="text-sm font-semibold text-slate-800">Status & Prazo</h3>
+                    </div>
+                    <Badge className={confirmada ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}>
+                      {confirmada ? 'Concluída' : 'Pendente'}
+                    </Badge>
+                  </header>
+                  <div className="space-y-4">
+                    <div className="flex items-center gap-3 p-3 rounded-lg border border-slate-200">
+                      <div className="w-10 h-10 rounded-full flex items-center justify-center border border-slate-300">
+                        <Calendar className="w-5 h-5 text-slate-600" />
                       </div>
-                      <div className="flex items-center gap-2">
-                        <User className="w-4 h-4 text-gray-500" />
-                        <span className="text-sm text-gray-600">
-                          {responsavelAtual}
-                        </span>
+                      <div>
+                        <p className="text-sm font-semibold text-slate-500">Data de Criação</p>
+                        <p className="text-lg font-bold text-slate-900">{formatDateBR(new Date().toISOString())}</p>
                       </div>
                     </div>
-
-                    {/* Lado direito - Botões de ação */}
-                    <div className="flex items-center gap-2">
-                      <Button 
-                        onClick={handleConfirmarPublicacao}
-                        className="bg-green-600 hover:bg-green-700 text-white px-8 py-3 shadow-lg"
-                      >
-                        <Stamp className="w-4 h-4 mr-2" />
-                        Confirmar Publicação
-                      </Button>
+                    <div className="flex items-center justify-between p-3 rounded-lg border border-slate-200">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-full flex items-center justify-center border border-slate-300">
+                          <Clock className="w-5 h-5 text-slate-600" />
+                        </div>
+                        <div>
+                          <p className="text-sm font-semibold text-slate-500">Tempo no Card</p>
+                          <p className="text-lg font-bold text-slate-900">{diasNoCard} dia(s)</p>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3 p-3 rounded-lg border border-slate-200">
+                      <div className="w-10 h-10 rounded-full flex items-center justify-center border border-slate-300">
+                        <User className="w-5 h-5 text-slate-600" />
+                      </div>
+                      <div>
+                        <p className="text-sm font-semibold text-slate-500">Responsável Atual</p>
+                        <p className="text-lg font-bold text-slate-900">{responsavelAtual}</p>
+                      </div>
                     </div>
                   </div>
-                </CardContent>
-              </Card>
-            </section>
-          )}
+                </div>
 
-          {/* Rodapé para usuários sem permissão */}
-          {!canPublish() && (
-            <section id="info" className="col-span-12 w-full mt-6 pb-6">
-              <Card className="w-full shadow-lg border-0 bg-gray-50/80 backdrop-blur-sm">
-                <CardContent className="p-4">
-                  <div className="flex flex-col sm:flex-row gap-4 justify-between items-center w-full">
-                    
-                    {/* Lado esquerdo - Status e informações */}
-                    <div className="flex items-center gap-4">
-                      <div className="flex items-center gap-2">
-                        <Clock className="w-4 h-4 text-gray-500" />
-                        <span className="text-sm text-gray-600">
-                          {diasNoCard} dia no card
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <User className="w-4 h-4 text-gray-500" />
-                        <span className="text-sm text-gray-600">
-                          {responsavelAtual}
-                        </span>
-                      </div>
-                    </div>
+                {/* Checklist */}
+                <div className="rounded-2xl border shadow-sm bg-white p-4 md:p-6">
+                  <header className="flex items-center gap-2 mb-4">
+                    <ListChecks className="w-5 h-5 text-green-600" />
+                    <h3 className="text-sm font-semibold text-slate-800">Checklist</h3>
+                  </header>
+                  <ul className="space-y-2 text-sm text-slate-700">
+                    <li>Definir data e meio de publicação</li>
+                    <li>Inserir link/número da publicação</li>
+                    <li>Adicionar anexos pertinentes</li>
+                    <li>Confirmar publicação</li>
+                  </ul>
+                </div>
 
-                    {/* Lado direito - Informação */}
-                    <div className="flex items-center gap-2">
-                      <Badge variant="outline" className="text-gray-600">
-                        <Eye className="w-3 h-3 mr-1" />
-                        Apenas Visualização
-                      </Badge>
+                {/* Mini Timeline */}
+                <div className="rounded-2xl border shadow-sm bg-white p-4 md:p-6">
+                  <header className="flex items-center gap-2 mb-4">
+                    <Clock className="w-5 h-5 text-indigo-600" />
+                    <h3 className="text-sm font-semibold text-slate-800">Mini Timeline</h3>
+                  </header>
+                  <div className="flex-1 flex flex-col">
+                    {generateTimeline().length === 0 ? (
+                      <div className="flex-1 flex items-center justify-center"><p className="text-sm text-gray-500 italic text-center">Sem eventos registrados.</p></div>
+                    ) : (
+                      <>
+                        <div className="flex-1 relative pr-2">
+                          <div className="absolute left-2 top-0 bottom-0 w-0.5 bg-slate-200"></div>
+                          <div className="max-h-[280px] overflow-y-auto">
+                            <div className="flex flex-col gap-4 pl-6">
+                              {generateTimeline().map(item => (
+                                <div key={item.id} className="relative group">
+                                  <div className="absolute -left-6 top-0 w-4 h-4 bg-white rounded-full flex items-center justify-center">
+                                    {getTimelineIcon(item.tipo)}
+                                  </div>
+                                  <div className="hover:bg-slate-50 rounded-lg px-3 py-2 transition-colors">
+                                    <p className="text-sm font-semibold text-slate-700 mb-1">{item.titulo}</p>
+                                    <div className="flex items-center gap-2 text-xs text-slate-500">
+                                      <span>{formatDateTimeBR(item.dataHora)}</span>
+                                    </div>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        </div>
+                      </>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          {/* Comentários */}
+          <section id="comentarios" className="col-span-12 w-full">
+            <div className="card-shell mb-8">
+              <CommentsSection
+                processoId={processoId}
+                etapaId={etapaId.toString()}
+                cardId="comentarios-publicacao"
+                title="Comentários"
+              />
+            </div>
+          </section>
+
+          {/* Ações da Etapa */}
+          <section id="acoes-etapa" className="col-span-12 w-full">
+            <div className="card-shell mb-8">
+              <header className="flex items-center gap-3 mb-4">
+                <Flag className="w-6 h-6 text-orange-600" />
+                <h2 className="text-lg font-bold text-slate-900">Ações da Etapa</h2>
+                <div className="ml-auto"><span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-orange-100 text-orange-800">Ações</span></div>
+              </header>
+              <div className="border-b-2 border-orange-200 mb-6"></div>
+              <div className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="flex items-center gap-3 p-3 rounded-lg border border-slate-200">
+                    <div className="w-10 h-10 rounded-full flex items-center justify-center border border-slate-300"><Clock className="w-5 h-5 text-slate-600" /></div>
+                    <div>
+                      <p className="text-sm font-semibold text-slate-500">Tempo no Card</p>
+                      <p className="text-lg font-bold text-slate-900">{diasNoCard} dia(s)</p>
                     </div>
                   </div>
-                </CardContent>
-              </Card>
-            </section>
-          )}
+                  <div className="flex items-center gap-3 p-3 rounded-lg border border-slate-200">
+                    <div className="w-10 h-10 rounded-full flex items-center justify-center border border-slate-300"><User className="w-5 h-5 text-slate-600" /></div>
+                    <div>
+                      <p className="text-sm font-semibold text-slate-500">Responsável</p>
+                      <p className="text-lg font-bold text-slate-900">{responsavelAtual}</p>
+                    </div>
+                  </div>
+                </div>
+                <div className="border-t border-slate-200 pt-4">
+                  {confirmada ? (
+                    <div className="flex items-center justify-center p-4 bg-green-50 rounded-lg border border-green-200">
+                      <div className="flex items-center gap-3">
+                        <CheckCircle className="w-6 h-6 text-green-600" />
+                        <div className="text-center">
+                          <p className="text-sm font-semibold text-green-600">Publicação Concluída</p>
+                          {confirmacaoData?.dataConfirmacao && (
+                            <p className="text-sm text-green-700">{formatDateBR(confirmacaoData.dataConfirmacao)} por {confirmacaoData?.responsavel}</p>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="flex flex-wrap gap-2 justify-center">
+                      {canPublish() ? (
+                        <Button onClick={handleConfirmarPublicacao} variant="outline" size="sm" className="border-green-300 text-green-700 hover:bg-green-50"><Stamp className="w-4 h-4 mr-2" />Confirmar Publicação</Button>
+                      ) : (
+                        <div className="flex items-center gap-2 text-sm text-gray-500"><Info className="w-4 h-4" />Somente visualização</div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          </section>
         </div>
       </div>
 
