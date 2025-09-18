@@ -802,7 +802,7 @@ export default function DFDDespachoSection({
         {/* Formulário do Despacho */}
         <section id="formulario-despacho" className="w-full">
             {/* Card do Formulário */}
-            <div className="rounded-2xl border border-slate-300 shadow-md bg-white p-6">
+            <div className="card-shell">
               <header className="flex items-center gap-3 mb-4">
                   <FileCheck className="w-5 h-5 text-indigo-600" />
                 <h2 className="text-lg font-bold text-slate-900">Formulário do Despacho</h2>
@@ -908,7 +908,7 @@ export default function DFDDespachoSection({
 
         {/* Gerenciamento (card horizontal abaixo do formulário) */}
         <section id="gerenciamento" className="w-full">
-          <div className="rounded-2xl border border-slate-300 shadow-md bg-white p-6">
+          <div className="card-shell">
             <header className="flex items-center gap-3 mb-4">
               <Settings className="w-6 h-6 text-slate-600" />
               <h2 className="text-lg font-bold text-slate-900">Gerenciamento</h2>
@@ -1122,7 +1122,7 @@ export default function DFDDespachoSection({
 
 
         {/* Painel da Etapa (mesmo layout do card Assinatura) */}
-        <div className="rounded-2xl border border-slate-300 shadow-md bg-white p-6 min-h-[700px]">
+        <div className="card-shell min-h-[700px]">
           <header className="flex items-center gap-3 mb-4">
             <ClipboardCheck className="w-6 h-6 text-green-600" />
             <h2 className="text-lg font-bold text-slate-900">Painel da Etapa</h2>
@@ -1371,7 +1371,7 @@ export default function DFDDespachoSection({
 
         {/* FULL: Comentários */}
         <section id="comentarios" className="col-span-12 w-full">
-          <div className="rounded-2xl border border-slate-300 shadow-md bg-white p-6">
+          <div className="card-shell">
             <CommentsSection
               processoId={processoId}
               etapaId={etapaId.toString()}
@@ -1382,7 +1382,7 @@ export default function DFDDespachoSection({
         </section>
 
         {/* Ações da Etapa (igual ao card Assinatura) */}
-        <div className="rounded-2xl border border-slate-300 shadow-md bg-white p-6">
+        <div className="card-shell">
           <header className="flex items-center gap-3 mb-4">
             <Flag className="w-6 h-6 text-orange-600" />
             <h2 className="text-lg font-bold text-slate-900">Ações da Etapa</h2>

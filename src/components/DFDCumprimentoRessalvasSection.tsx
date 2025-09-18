@@ -729,19 +729,19 @@ export default function DFDCumprimentoRessalvasSection({
       <div className="w-full px-2">
         
         {/* Grid principal 12 colunas */}
-        <div className="grid grid-cols-12 gap-6">
+        <div className="cards-gap">
           
           {/* Cumprimento de Ressalvas (Parecer Técnico - texto) */}
-          <section id="cumprimento-ressalvas" className="col-span-12 w-full">
-            <div className="rounded-2xl border border-slate-300 shadow-md bg-white p-6">
-              <header className="flex items-center gap-3 mb-4">
+           <section id="cumprimento-ressalvas" className="col-span-12 w-full">
+             <div className="card-shell">
+              <header className="card-header-title">
                 <Search className="w-6 h-6 text-indigo-600" />
                 <h2 className="text-lg font-bold text-slate-900">Parecer Técnico</h2>
                 <div className="ml-auto">
                   <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800">Análise</span>
                   </div>
               </header>
-              <div className="border-b-2 border-indigo-200 mb-6"></div>
+              <div className="card-separator-indigo"></div>
                   <div>
                 <div className="space-y-6">
                   {/* Texto do parecer */}
@@ -761,16 +761,16 @@ export default function DFDCumprimentoRessalvasSection({
           </section>
 
           {/* GERENCIAMENTO: embaixo do balão principal (full-width) */}
-          <section id="gerenciamento" className="col-span-12 w-full">
-            <div className="rounded-2xl border border-slate-300 shadow-md bg-white p-6">
-              <header className="flex items-center gap-3 mb-4">
+           <section id="gerenciamento" className="col-span-12 w-full">
+             <div className="card-shell">
+              <header className="card-header-title">
                 <Settings className="w-6 h-6 text-slate-600" />
                 <h2 className="text-lg font-bold text-slate-900">Gerenciamento</h2>
                 <div className="ml-auto">
                   <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-slate-100 text-slate-800">Gerenciamento</span>
                 </div>
               </header>
-              <div className="border-b-2 border-slate-200 mb-6"></div>
+              <div className="card-separator-indigo"></div>
               <div className="flex-1 flex flex-col">
                                  <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
                    <TabsList className="grid w-full grid-cols-2">
@@ -987,15 +987,15 @@ export default function DFDCumprimentoRessalvasSection({
 
           {/* Painel da Etapa (layout padrão) */}
           <section className="col-span-12 w-full">
-            <div className="rounded-2xl border border-slate-300 shadow-md bg-white p-6">
-              <header className="flex items-center gap-3 mb-4">
+            <div className="card-shell">
+              <header className="card-header-title">
                 <ClipboardCheck className="w-6 h-6 text-green-600" />
                 <h2 className="text-lg font-bold text-slate-900">Painel da Etapa</h2>
                 <div className="ml-auto">
                   <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">Checklist</span>
                 </div>
               </header>
-              <div className="border-b-2 border-green-200 mb-6"></div>
+              <div className="card-separator-green"></div>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 {/* 1) Status & Prazo */}
                 <div className="rounded-2xl border shadow-sm bg-white p-4 md:p-6">
@@ -1064,7 +1064,7 @@ export default function DFDCumprimentoRessalvasSection({
 
                 {/* 3) Mini Timeline */}
                 <div className="rounded-2xl border shadow-sm bg-white p-4 md:p-6 flex flex-col min-h-[320px]">
-                  <header className="flex items-center gap-2 mb-4">
+                  <header className="card-header-title">
                     <Clock className="w-5 h-5 text-indigo-600" />
                     <h3 className="text-sm font-semibold text-slate-800">Mini Timeline</h3>
                   </header>
@@ -1101,7 +1101,7 @@ export default function DFDCumprimentoRessalvasSection({
 
           {/* FULL: Comentários */}
           <section id="comentarios" className="col-span-12 w-full">
-            <div className="rounded-2xl border border-slate-300 shadow-md bg-white p-6">
+            <div className="card-shell">
               <CommentsSection
                 processoId={processoId}
                 etapaId={etapaId.toString()}
@@ -1113,13 +1113,13 @@ export default function DFDCumprimentoRessalvasSection({
 
           {/* Ações da Etapa (layout padrão) */}
           <section className="col-span-12 w-full">
-            <div className="rounded-2xl border border-slate-300 shadow-md bg-white p-6">
-              <header className="flex items-center gap-3 mb-4">
+            <div className="card-shell">
+              <header className="card-header-title">
                 <Flag className="w-6 h-6 text-orange-600" />
                 <h2 className="text-lg font-bold text-slate-900">Ações da Etapa</h2>
                 <div className="ml-auto"><span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-orange-100 text-orange-800">Ações</span></div>
               </header>
-              <div className="border-b-2 border-orange-200 mb-6"></div>
+              <div className="card-separator-orange"></div>
               <div className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="flex items-center gap-3 p-3 rounded-lg border border-slate-200">

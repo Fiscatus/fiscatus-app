@@ -945,7 +945,7 @@ export default function ETPElaboracaoSection({
   return (
     <div className="w-full space-y-6">
       {/* 1️⃣ Formulário do ETP */}
-      <div className="rounded-2xl border border-slate-300 shadow-md bg-white p-6 mb-8 min-h-[700px]">
+      <div className="card-shell mb-8 min-h-[700px]">
         <header className="flex items-center gap-3 mb-4">
           <FileText className="w-6 h-6 text-purple-600" />
           <h2 className="text-lg font-bold text-slate-900">Formulário do ETP</h2>
@@ -992,7 +992,7 @@ export default function ETPElaboracaoSection({
             </div>
 
       {/* 2️⃣ Gerenciamento */}
-      <div className="rounded-2xl border border-slate-300 shadow-md bg-white p-6 mb-8 min-h-[700px]">
+      <div className="card-shell mb-8 min-h-[700px]">
         <header className="flex items-center gap-3 mb-4">
           <Settings className="w-6 h-6 text-slate-600" />
           <h2 className="text-lg font-bold text-slate-900">Gerenciamento</h2>
@@ -1169,7 +1169,7 @@ export default function ETPElaboracaoSection({
       </div>
 
       {/* 3️⃣ Painel da Etapa */}
-      <div className="rounded-2xl border border-slate-300 shadow-md bg-white p-6 mb-8 min-h-[700px]">
+      <div className="card-shell mb-8 min-h-[700px]">
         <header className="flex items-center gap-3 mb-4">
           <ClipboardCheck className="w-6 h-6 text-green-600" />
           <h2 className="text-lg font-bold text-slate-900">Painel da Etapa</h2>
@@ -1342,13 +1342,13 @@ export default function ETPElaboracaoSection({
 
       {/* 4️⃣ Comentários */}
       <div className="w-full">
-        <div className="rounded-2xl border border-slate-300 shadow-md bg-white p-6">
+        <div className="card-shell">
           <CommentsSection processoId={processoId} etapaId={String(etapaId)} cardId="etp-form" title="Comentários" />
                         </div>
       </div>
 
       {/* 5️⃣ Ações da Etapa */}
-      <div className="rounded-2xl border border-slate-300 shadow-md bg-white p-6 mb-8">
+      <div className="card-shell mb-8">
         <header className="flex items-center gap-3 mb-4">
           <Flag className="w-6 h-6 text-orange-600" />
           <h2 className="text-lg font-bold text-slate-900">Ações da Etapa</h2>

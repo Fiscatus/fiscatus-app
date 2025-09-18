@@ -119,6 +119,17 @@ All colors MUST be HSL.
 
 /* Custom scrollbar styles for comments section */
 @layer utilities {
+  /* Padrão global para balões/cards do sistema */
+  .card-shell {
+    @apply rounded-2xl border border-slate-300 shadow-md bg-white p-6;
+  }
+  .card-header-title {
+    @apply flex items-center gap-3 mb-4 text-lg font-bold text-slate-900;
+  }
+  .card-separator-indigo { @apply border-b-2 border-indigo-200 mb-6; }
+  .card-separator-green { @apply border-b-2 border-green-200 mb-6; }
+  .card-separator-orange { @apply border-b-2 border-orange-200 mb-6; }
+  .cards-gap { @apply grid grid-cols-12 gap-6; }
   .scrollbar-thin {
     scrollbar-width: thin;
     scrollbar-color: rgb(203 213 225) transparent;

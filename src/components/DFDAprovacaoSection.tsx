@@ -403,8 +403,8 @@ export default function DFDAprovacaoSection({
   return (
     <div className="w-full space-y-6">
       {/* 1️⃣ Parecer Técnico */}
-      <div className="rounded-2xl border border-slate-300 shadow-md bg-white p-6 mb-8">
-        <header className="flex items-center gap-3 mb-4">
+      <div className="card-shell mb-8">
+        <header className="card-header-title">
           <Search className="w-6 h-6 text-indigo-600" />
           <h2 className="text-lg font-bold text-slate-900">Parecer Técnico</h2>
           <div className="ml-auto">
@@ -413,7 +413,7 @@ export default function DFDAprovacaoSection({
             </span>
           </div>
         </header>
-        <div className="border-b-2 border-indigo-200 mb-6"></div>
+        <div className="card-separator-indigo"></div>
         <div className="space-y-6">
           <div className="flex-1">
             <Textarea
@@ -441,8 +441,8 @@ export default function DFDAprovacaoSection({
       </div>
 
       {/* 2️⃣ Gerenciamento */}
-      <div className="rounded-2xl border border-slate-300 shadow-md bg-white p-6 mb-8 min-h-[700px]">
-        <header className="flex items-center gap-3 mb-4">
+      <div className="card-shell mb-8 min-h-[700px]">
+        <header className="card-header-title">
           <Settings className="w-6 h-6 text-slate-600" />
           <h2 className="text-lg font-bold text-slate-900">Gerenciamento</h2>
           <div className="ml-auto">
@@ -451,7 +451,7 @@ export default function DFDAprovacaoSection({
             </span>
           </div>
         </header>
-        <div className="border-b-2 border-slate-200 mb-6"></div>
+        <div className="card-separator-indigo"></div>
         <div>
           {/* Grid responsiva para Versões e Anexos */}
           <div className="grid grid-cols-12 gap-4 items-start">
@@ -650,8 +650,8 @@ export default function DFDAprovacaoSection({
       </div>
 
       {/* 3️⃣ Painel da Etapa */}
-      <div className="rounded-2xl border border-slate-300 shadow-md bg-white p-6 mb-8">
-        <header className="flex items-center gap-3 mb-4">
+      <div className="card-shell mb-8">
+        <header className="card-header-title">
           <ClipboardCheck className="w-6 h-6 text-green-600" />
           <h2 className="text-lg font-bold text-slate-900">Painel da Etapa</h2>
           <div className="ml-auto">
@@ -660,7 +660,7 @@ export default function DFDAprovacaoSection({
             </span>
           </div>
         </header>
-        <div className="border-b-2 border-green-200 mb-6"></div>
+        <div className="card-separator-green"></div>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             
           {/* 1️⃣ Card Status & Prazo */}
@@ -846,7 +846,7 @@ export default function DFDAprovacaoSection({
 
       {/* 4️⃣ Comentários */}
       <div className="w-full">
-        <div className="rounded-2xl border border-slate-300 shadow-md bg-white p-6">
+        <div className="card-shell">
           <CommentsSection
             processoId={processoId}
             etapaId={etapaId.toString()}
@@ -858,8 +858,8 @@ export default function DFDAprovacaoSection({
 
 
       {/* 5️⃣ Ações da Etapa */}
-      <div className="rounded-2xl border border-slate-300 shadow-md bg-white p-6 mb-8">
-        <header className="flex items-center gap-3 mb-4">
+      <div className="card-shell mb-8">
+        <header className="card-header-title">
           <Flag className="w-6 h-6 text-orange-600" />
           <h2 className="text-lg font-bold text-slate-900">Ações da Etapa</h2>
           <div className="ml-auto">
@@ -868,7 +868,7 @@ export default function DFDAprovacaoSection({
             </span>
           </div>
         </header>
-        <div className="border-b-2 border-orange-200 mb-6"></div>
+        <div className="card-separator-orange"></div>
         
         <div className="space-y-4">
           {/* Informações de Status */}

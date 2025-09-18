@@ -980,7 +980,7 @@ export default function ETPDespachoSection({
 
         {/* FULL: Comentários */}
         <section id="comentarios" className="col-span-12 w-full mt-6">
-          <div className="rounded-2xl border border-slate-300 shadow-md bg-white p-6">
+          <div className="card-shell">
             <CommentsSection
               processoId={processoId}
               etapaId={etapaId.toString()}
