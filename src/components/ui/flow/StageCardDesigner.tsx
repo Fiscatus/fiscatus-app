@@ -150,36 +150,6 @@ export default function StageCardDesigner({
     document.documentElement.style.setProperty('--card-scale', layout.scale.toString());
   }, [layout.scale]);
 
-  const getStatusStyles = () => {
-    switch (stage.status) {
-      case 'done':
-        return {
-          border: 'border-emerald-500',
-          shadow: 'shadow-[0_0_0_2px_#A7F3D0]',
-          statusBg: 'bg-emerald-100',
-          statusText: 'text-emerald-600',
-          statusIcon: <Check className="w-4 h-4" />
-        };
-      case 'in_progress':
-        return {
-          border: 'border-indigo-500',
-          shadow: '',
-          statusBg: 'bg-indigo-100',
-          statusText: 'text-indigo-600',
-          statusIcon: null
-        };
-      case 'pending':
-        return {
-          border: 'border-slate-200',
-          shadow: '',
-          statusBg: 'bg-slate-100',
-          statusText: 'text-slate-600',
-          statusIcon: <Clock className="w-4 h-4" />
-        };
-    }
-  };
-
-  const styles = getStatusStyles();
 
   // Organizar ferramentas por coluna
   const getToolsByColumn = () => {
@@ -284,12 +254,10 @@ export default function StageCardDesigner({
         className={cn(
           "stage-card",
           "relative w-full h-auto",
-          "rounded-2xl border shadow-sm bg-white",
+          "rounded-2xl border border-slate-200 shadow-sm bg-white",
           "p-6 md:p-8",
           layout.showGuides && "[outline:1px_solid_theme(colors.slate.200)]",
-          "origin-top scale-[var(--card-scale)]",
-          styles.border,
-          styles.shadow
+          "origin-top scale-[var(--card-scale)]"
         )}
       >
             {/* Pinos decorativos */}
@@ -369,22 +337,6 @@ export default function StageCardDesigner({
               </DndContext>
             </div>
 
-            {/* Marcas de status no canto superior direito */}
-            {stage.status === 'done' && (
-              <div className="absolute -top-1 -right-1 w-6 h-6 rounded-full bg-white border-2 border-emerald-500 flex items-center justify-center">
-                <Check className="w-4 h-4 text-emerald-500" />
-              </div>
-            )}
-            
-            {stage.status === 'in_progress' && (
-              <div className="absolute -top-1 -right-1 w-3 h-3 rounded-full bg-indigo-500 animate-pulse" />
-            )}
-            
-            {stage.status === 'pending' && (
-              <div className="absolute -top-1 -right-1">
-                <Clock className="w-5 h-5 text-slate-400" />
-              </div>
-            )}
           </article>
     </div>
   );

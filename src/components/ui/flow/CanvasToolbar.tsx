@@ -11,19 +11,16 @@ interface CanvasToolbarProps {
   totalDias: number;
   onViewModeChange: (mode: 'grid' | 'list') => void;
   onZoomChange: (zoom: number) => void;
-  onFilterChange: (filter: string) => void;
 }
 
 export default function CanvasToolbar({ 
   totalEtapas, 
   totalDias, 
   onViewModeChange, 
-  onZoomChange, 
-  onFilterChange 
+  onZoomChange
 }: CanvasToolbarProps) {
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [zoom, setZoom] = useState([100]);
-  const [filter, setFilter] = useState('todos');
 
   const handleAdicionarCard = () => {
     // Toast: "Em breve"
@@ -55,10 +52,6 @@ export default function CanvasToolbar({
     onZoomChange(value[0]);
   };
 
-  const handleFilterChange = (value: string) => {
-    setFilter(value);
-    onFilterChange(value);
-  };
 
   return (
     <div className="fixed top-[var(--safe-top)] left-0 right-0 z-20 bg-white/95 backdrop-blur border-b shadow-[0_1px_0_0_rgba(15,23,42,.06)]">
@@ -142,23 +135,8 @@ export default function CanvasToolbar({
           </TooltipProvider>
         </div>
 
-        {/* Direita: Filtros + View mode + Zoom */}
+        {/* Direita: View mode + Zoom */}
         <div className="flex items-center gap-2">
-          {/* Quick-filters */}
-          <ToggleGroup type="single" value={filter} onValueChange={handleFilterChange}>
-            <ToggleGroupItem value="todos" className="rounded-full px-3 py-1 text-xs">
-              Todos <Badge variant="secondary" className="ml-1 text-xs">{totalEtapas}</Badge>
-            </ToggleGroupItem>
-            <ToggleGroupItem value="concluidos" className="rounded-full px-3 py-1 text-xs">
-              Concluídos <Badge variant="secondary" className="ml-1 text-xs">1</Badge>
-            </ToggleGroupItem>
-            <ToggleGroupItem value="andamento" className="rounded-full px-3 py-1 text-xs">
-              Em andamento <Badge variant="secondary" className="ml-1 text-xs">1</Badge>
-            </ToggleGroupItem>
-            <ToggleGroupItem value="pendentes" className="rounded-full px-3 py-1 text-xs">
-              Pendentes <Badge variant="secondary" className="ml-1 text-xs">{totalEtapas - 2}</Badge>
-            </ToggleGroupItem>
-          </ToggleGroup>
 
           {/* View mode toggle */}
           <ToggleGroup type="single" value={viewMode} onValueChange={handleViewModeChange}>

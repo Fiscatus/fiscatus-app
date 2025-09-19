@@ -1,10 +1,14 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { Button } from '@/components/ui/button';
+import { Settings } from 'lucide-react';
 import { ModelStage } from '@/types/flow';
 import { useFlowStore } from '@/stores/flowStore';
 import BalloonManager from './BalloonManager';
+import BalloonEditor from './BalloonEditor';
+import BalloonChip from './BalloonChip';
 
 interface MainFormBlockProps {
   stage: ModelStage;
@@ -22,6 +26,7 @@ const defaultFields = [
 
 export default function MainFormBlock({ stage, density }: MainFormBlockProps) {
   const { setFormValue } = useFlowStore();
+  const [isEditorOpen, setIsEditorOpen] = useState(false);
   
   const mainForm = stage.toolConfig.main_form;
   const values = mainForm?.values || {};
@@ -40,17 +45,31 @@ export default function MainFormBlock({ stage, density }: MainFormBlockProps) {
         Formulário principal da etapa
       </div>
       
-      {/* Gerenciador de campos obrigatórios */}
-      <BalloonManager
-        stageId={stage.id}
-        area="main_form.requiredFields"
-        items={requiredFieldsCatalog}
-        title="Campos obrigatórios"
-        placeholderAdd="Adicionar campo obrigatório..."
-        allowIcon={true}
-        allowColor={true}
-        allowReorder={true}
-      />
+      {/* Seção de campos obrigatórios */}
+      <div>
+        <div className="flex items-center justify-between mb-3">
+          <h4 className="text-sm font-medium text-slate-900">Campos obrigatórios</h4>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setIsEditorOpen(true)}
+            className="h-6 w-6 p-0"
+          >
+            <Settings className="w-4 h-4" />
+          </Button>
+        </div>
+        
+        {/* Exibição dos chips */}
+        <div className="flex flex-wrap gap-2">
+          {requiredFieldsCatalog.map((item) => (
+            <BalloonChip key={item.id} item={item} />
+          ))}
+        </div>
+        
+        {requiredFieldsCatalog.length === 0 && (
+          <p className="text-xs text-slate-500">Nenhum campo obrigatório definido</p>
+        )}
+      </div>
       
       <div className="space-y-3">
         {defaultFields.map((field) => {
@@ -103,6 +122,19 @@ export default function MainFormBlock({ stage, density }: MainFormBlockProps) {
           </span>
         </div>
       </div>
+      
+      {/* Editor de balões */}
+      <BalloonEditor
+        open={isEditorOpen}
+        onOpenChange={setIsEditorOpen}
+        stageId={stage.id}
+        area="main_form.requiredFields"
+        title="Campos obrigatórios"
+        description="Gerencie os campos obrigatórios do formulário"
+        items={requiredFieldsCatalog}
+        allowIcon={true}
+        allowColor={true}
+      />
     </div>
   );
 }

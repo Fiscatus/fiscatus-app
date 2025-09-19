@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -7,12 +7,15 @@ import {
   X, 
   GripVertical,
   Calendar,
-  CheckSquare
+  CheckSquare,
+  Settings
 } from 'lucide-react';
 import { ModelStage, ChecklistItem } from '@/types/flow';
 import { useFlowStore } from '@/stores/flowStore';
 import { cn } from '@/lib/utils';
 import BalloonManager from './BalloonManager';
+import BalloonEditor from './BalloonEditor';
+import BalloonChip from './BalloonChip';
 
 interface StagePanelBlockProps {
   stage: ModelStage;
@@ -27,6 +30,8 @@ export default function StagePanelBlock({ stage, density }: StagePanelBlockProps
     reorderChecklist,
     updateToolConfig 
   } = useFlowStore();
+  
+  const [isEditorOpen, setIsEditorOpen] = useState(false);
   
   const stagePanel = stage.toolConfig.stage_panel;
   const checklist = stagePanel?.checklist || [];
@@ -127,17 +132,31 @@ export default function StagePanelBlock({ stage, density }: StagePanelBlockProps
         </div>
       </div>
       
-      {/* Gerenciador de catálogo de checklist */}
-      <BalloonManager
-        stageId={stage.id}
-        area="stage_panel.checklist"
-        items={checklistCatalog}
-        title="Catálogo de tarefas"
-        placeholderAdd="Adicionar tarefa ao catálogo..."
-        allowIcon={true}
-        allowColor={true}
-        allowReorder={true}
-      />
+      {/* Seção de catálogo de checklist */}
+      <div>
+        <div className="flex items-center justify-between mb-3">
+          <h4 className="text-sm font-medium text-slate-900">Catálogo de tarefas</h4>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setIsEditorOpen(true)}
+            className="h-6 w-6 p-0"
+          >
+            <Settings className="w-4 h-4" />
+          </Button>
+        </div>
+        
+        {/* Exibição dos chips */}
+        <div className="flex flex-wrap gap-2">
+          {checklistCatalog.map((item) => (
+            <BalloonChip key={item.id} item={item} />
+          ))}
+        </div>
+        
+        {checklistCatalog.length === 0 && (
+          <p className="text-xs text-slate-500">Nenhuma tarefa no catálogo</p>
+        )}
+      </div>
       
       {/* Checklist */}
       <div>
@@ -208,6 +227,19 @@ export default function StagePanelBlock({ stage, density }: StagePanelBlockProps
           </span>
         </div>
       </div>
+      
+      {/* Editor de balões */}
+      <BalloonEditor
+        open={isEditorOpen}
+        onOpenChange={setIsEditorOpen}
+        stageId={stage.id}
+        area="stage_panel.checklist"
+        title="Catálogo de tarefas"
+        description="Gerencie as tarefas disponíveis no checklist"
+        items={checklistCatalog}
+        allowIcon={true}
+        allowColor={true}
+      />
     </div>
   );
 }

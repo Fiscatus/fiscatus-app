@@ -1,4 +1,3 @@
-export type StageStatus = "pending" | "in_progress" | "done";
 export type StageTool = "management" | "main_form" | "stage_panel" | "stage_actions" | "comments" | "signatures" | "doc_view";
 
 export type LayoutMode = "stack" | "50-50" | "60-40" | "40-60";
@@ -111,7 +110,6 @@ export interface ModelStage {
   title: string;
   department?: string;
   days?: number;
-  status: StageStatus;
   orderIndex: number;
   tools: StageTool[];
   toolsOrder: StageTool[]; // fallback simples

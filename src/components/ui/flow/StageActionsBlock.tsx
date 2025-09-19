@@ -1,15 +1,18 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { 
   Send, 
   CheckCircle, 
   FileText,
-  Play
+  Play,
+  Settings
 } from 'lucide-react';
 import { ModelStage } from '@/types/flow';
 import { useFlowStore } from '@/stores/flowStore';
 import BalloonManager from './BalloonManager';
+import BalloonEditor from './BalloonEditor';
+import BalloonChip from './BalloonChip';
 
 interface StageActionsBlockProps {
   stage: ModelStage;
@@ -24,6 +27,7 @@ const availableActions = [
 
 export default function StageActionsBlock({ stage, density }: StageActionsBlockProps) {
   const { updateToolConfig } = useFlowStore();
+  const [isEditorOpen, setIsEditorOpen] = useState(false);
   
   const stageActions = stage.toolConfig.stage_actions;
   const actions = stageActions?.actions || [];
@@ -49,17 +53,31 @@ export default function StageActionsBlock({ stage, density }: StageActionsBlockP
         Ações disponíveis para esta etapa
       </div>
       
-      {/* Gerenciador de catálogo de ações */}
-      <BalloonManager
-        stageId={stage.id}
-        area="stage_actions.catalog"
-        items={actionsCatalog}
-        title="Catálogo de ações"
-        placeholderAdd="Adicionar ação personalizada..."
-        allowIcon={true}
-        allowColor={true}
-        allowReorder={true}
-      />
+      {/* Seção de catálogo de ações */}
+      <div>
+        <div className="flex items-center justify-between mb-3">
+          <h4 className="text-sm font-medium text-slate-900">Catálogo de ações</h4>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setIsEditorOpen(true)}
+            className="h-6 w-6 p-0"
+          >
+            <Settings className="w-4 h-4" />
+          </Button>
+        </div>
+        
+        {/* Exibição dos chips */}
+        <div className="flex flex-wrap gap-2">
+          {actionsCatalog.map((item) => (
+            <BalloonChip key={item.id} item={item} />
+          ))}
+        </div>
+        
+        {actionsCatalog.length === 0 && (
+          <p className="text-xs text-slate-500">Nenhuma ação no catálogo</p>
+        )}
+      </div>
       
       {/* Seleção de ações */}
       <div className="space-y-3">
@@ -125,6 +143,19 @@ export default function StageActionsBlock({ stage, density }: StageActionsBlockP
           <span>{actions.length} / {availableActions.length}</span>
         </div>
       </div>
+      
+      {/* Editor de balões */}
+      <BalloonEditor
+        open={isEditorOpen}
+        onOpenChange={setIsEditorOpen}
+        stageId={stage.id}
+        area="stage_actions.catalog"
+        title="Catálogo de ações"
+        description="Gerencie as ações disponíveis para esta etapa"
+        items={actionsCatalog}
+        allowIcon={true}
+        allowColor={true}
+      />
     </div>
   );
 }

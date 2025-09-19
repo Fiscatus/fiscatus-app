@@ -36,7 +36,6 @@ export default function StagesTable({ etapas, onEdit, onDelete, onView }: Stages
               <th className="text-left p-3 font-medium text-slate-600">Etapa</th>
               <th className="text-left p-3 font-medium text-slate-600">Setor</th>
               <th className="w-24 text-center p-3 font-medium text-slate-600">Prazo</th>
-              <th className="w-32 text-center p-3 font-medium text-slate-600">Status</th>
               <th className="w-32 text-center p-3 font-medium text-slate-600">Ações</th>
             </tr>
           </thead>
@@ -61,19 +60,6 @@ export default function StagesTable({ etapas, onEdit, onDelete, onView }: Stages
                   <div className="flex items-center justify-center gap-1 text-sm text-slate-600">
                     <Clock className="w-4 h-4" />
                     {etapa.days || 0}d
-                  </div>
-                </td>
-                <td className="text-center p-3">
-                  <div className={`inline-flex items-center rounded-full text-xs font-medium px-3 py-1 ${
-                    etapa.status === 'done' 
-                      ? 'bg-emerald-100 text-emerald-600' 
-                      : etapa.status === 'in_progress'
-                      ? 'bg-indigo-100 text-indigo-600'
-                      : 'bg-slate-100 text-slate-600'
-                  }`}>
-                    {etapa.status === 'done' && 'Concluído'}
-                    {etapa.status === 'in_progress' && 'Em Andamento'}
-                    {etapa.status === 'pending' && 'Pendente'}
                   </div>
                 </td>
                 <td className="text-center p-3">

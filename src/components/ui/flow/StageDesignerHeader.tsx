@@ -72,7 +72,6 @@ export default function StageDesignerHeader({
         <h2 className="text-base font-semibold">
           Ver Detalhes · {stage.title}
         </h2>
-        {getStatusBadge(stage.status)}
       </div>
 
       {/* Centro: Controles do designer */}

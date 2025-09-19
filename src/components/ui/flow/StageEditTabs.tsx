@@ -523,46 +523,6 @@ export default function StageEditTabs({
                 </p>
               </div>
 
-              {/* Status da Etapa */}
-              <div className="space-y-2">
-                <Label htmlFor="status" className="text-sm font-medium">
-                  Status da Etapa
-                </Label>
-                <Select
-                  value={stage.status}
-                  onValueChange={(value: 'pending' | 'in_progress' | 'done') => 
-                    onPatch({ status: value })
-                  }
-                  disabled={readOnly}
-                >
-                  <SelectTrigger className="h-10">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="pending">
-                      <div className="flex items-center gap-2">
-                        <div className="w-2 h-2 rounded-full bg-slate-400"></div>
-                        <span>Pendente</span>
-                      </div>
-                    </SelectItem>
-                    <SelectItem value="in_progress">
-                      <div className="flex items-center gap-2">
-                        <div className="w-2 h-2 rounded-full bg-indigo-500"></div>
-                        <span>Em Andamento</span>
-                      </div>
-                    </SelectItem>
-                    <SelectItem value="done">
-                      <div className="flex items-center gap-2">
-                        <div className="w-2 h-2 rounded-full bg-emerald-500"></div>
-                        <span>Concluído</span>
-                      </div>
-                    </SelectItem>
-                  </SelectContent>
-                </Select>
-                <p className="text-xs text-slate-500">
-                  Status atual da etapa no fluxo
-                </p>
-              </div>
 
               {/* Resumo das Informações */}
               <div className="pt-4 border-t border-slate-200">
@@ -580,14 +540,6 @@ export default function StageEditTabs({
                     <div>
                       <span className="text-slate-500">Prazo:</span>
                       <p className="font-medium text-slate-900">{stage.days ? `${stage.days} dias úteis` : 'Não definido'}</p>
-                    </div>
-                    <div>
-                      <span className="text-slate-500">Status:</span>
-                      <p className="font-medium text-slate-900">
-                        {stage.status === 'pending' && 'Pendente'}
-                        {stage.status === 'in_progress' && 'Em Andamento'}
-                        {stage.status === 'done' && 'Concluído'}
-                      </p>
                     </div>
                   </div>
                 </div>

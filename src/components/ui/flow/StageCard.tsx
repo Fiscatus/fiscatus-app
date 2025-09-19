@@ -8,7 +8,6 @@ interface StageCardProps {
   title: string;
   department: string;
   days: number;
-  status: 'done' | 'in_progress' | 'pending';
   zoom?: number;
   editable?: boolean;
   onViewDetails?: () => void;
@@ -20,46 +19,15 @@ export default function StageCard({
   title, 
   department, 
   days, 
-  status, 
   zoom = 100,
   editable = false,
   onViewDetails,
   onEdit
 }: StageCardProps) {
-  const getStatusStyles = () => {
-    switch (status) {
-      case 'done':
-        return {
-          border: 'border-emerald-500',
-          shadow: 'shadow-[0_0_0_2px_#A7F3D0]',
-          statusBg: 'bg-emerald-100',
-          statusText: 'text-emerald-600',
-          statusIcon: <Check className="w-3 h-3" />
-        };
-      case 'in_progress':
-        return {
-          border: 'border-indigo-500',
-          shadow: '',
-          statusBg: 'bg-indigo-100',
-          statusText: 'text-indigo-600',
-          statusIcon: null
-        };
-      case 'pending':
-        return {
-          border: 'border-slate-200',
-          shadow: '',
-          statusBg: 'bg-slate-100',
-          statusText: 'text-slate-600',
-          statusIcon: <Clock className="w-3 h-3" />
-        };
-    }
-  };
-
-  const styles = getStatusStyles();
 
   return (
     <article 
-      className={`stage-card relative rounded-2xl border shadow-sm bg-white p-4 md:p-5 transition hover:shadow-md focus-visible:ring-2 focus-visible:ring-indigo-200 h-[220px] flex flex-col justify-between ${styles.border} ${styles.shadow}`}
+      className="stage-card relative rounded-2xl border border-slate-200 shadow-sm bg-white p-4 md:p-5 transition hover:shadow-md focus-visible:ring-2 focus-visible:ring-indigo-200 h-[220px] flex flex-col justify-between"
     >
       {/* Pinos decorativos */}
       <div className="absolute -top-2 left-3 w-3 h-3 rounded-full border bg-white opacity-80" aria-hidden="true" />
@@ -101,14 +69,6 @@ export default function StageCard({
           <Clock className="w-3 h-3" />
           <span>{days} dias úteis</span>
         </div>
-
-        {/* Chip de status */}
-        <div className={`inline-flex items-center rounded-full text-xs font-medium px-2 py-1 ${styles.statusBg} ${styles.statusText}`}>
-          {status === 'done' && 'Concluído'}
-          {status === 'in_progress' && 'Em Andamento'}
-          {status === 'pending' && 'Pendente'}
-          {styles.statusIcon && <span className="ml-1">{styles.statusIcon}</span>}
-        </div>
       </div>
 
 
@@ -136,22 +96,6 @@ export default function StageCard({
         </Button>
       </div>
 
-      {/* Marcas de status no canto superior direito */}
-      {status === 'done' && (
-        <div className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-white border-2 border-emerald-500 flex items-center justify-center">
-          <Check className="w-3 h-3 text-emerald-500" />
-        </div>
-      )}
-      
-      {status === 'in_progress' && (
-        <div className="absolute -top-1 -right-1 w-2 h-2 rounded-full bg-indigo-500 animate-pulse" />
-      )}
-      
-      {status === 'pending' && (
-        <div className="absolute -top-1 -right-1">
-          <Clock className="w-4 h-4 text-slate-400" />
-        </div>
-      )}
     </article>
   );
 }

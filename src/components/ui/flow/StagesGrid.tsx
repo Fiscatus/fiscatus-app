@@ -39,7 +39,6 @@ export default function StagesGrid({
               title={etapa.title}
               department={etapa.department || ''}
               days={etapa.days || 0}
-              status={etapa.status}
               zoom={zoom}
               editable={editable}
               onViewDetails={() => onView?.(etapa.id)}

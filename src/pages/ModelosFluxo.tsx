@@ -21,7 +21,6 @@ export default function ModelosFluxo() {
   const [descricaoModelo, setDescricaoModelo] = useState("Fluxo completo para contratações públicas com todas as etapas necessárias para licitação e contratação.");
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [zoom, setZoom] = useState(100);
-  const [filter, setFilter] = useState('todos');
   const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
     const saved = localStorage.getItem('sidebar-collapsed');
     return saved ? JSON.parse(saved) : false;
@@ -75,16 +74,6 @@ export default function ModelosFluxo() {
     setZoom(newZoom);
   };
 
-  const handleFilterChange = (newFilter: string) => {
-    setFilter(newFilter);
-    // Scroll para o conteúdo quando trocar filtros
-    setTimeout(() => {
-      const gridAnchor = document.getElementById('grid-anchor');
-      const listAnchor = document.getElementById('list-anchor');
-      const target = viewMode === 'grid' ? gridAnchor : listAnchor;
-      target?.scrollIntoView({ block: "start", behavior: "smooth" });
-    }, 100);
-  };
 
   const handleEditStage = (stageId: string) => {
     console.log('Editar etapa:', stageId);
@@ -118,19 +107,8 @@ export default function ModelosFluxo() {
     localStorage.setItem('sidebar-collapsed', JSON.stringify(newState));
   };
 
-  // Filtrar etapas baseado no filtro selecionado
-  const etapasFiltradas = etapas.filter(etapa => {
-    switch (filter) {
-      case 'concluidos':
-        return etapa.status === 'done';
-      case 'andamento':
-        return etapa.status === 'in_progress';
-      case 'pendentes':
-        return etapa.status === 'pending';
-        default:
-        return true;
-    }
-  });
+  // Usar todas as etapas (sem filtro de status)
+  const etapasFiltradas = etapas;
 
   return (
     <div
@@ -174,7 +152,6 @@ export default function ModelosFluxo() {
             totalDias={totalDias}
             onViewModeChange={handleViewModeChange}
             onZoomChange={handleZoomChange}
-            onFilterChange={handleFilterChange}
           />
 
           {/* Conteúdo baseado no modo de visualização */}
@@ -206,10 +183,7 @@ export default function ModelosFluxo() {
                 Nenhuma etapa encontrada
                               </h3>
               <p className="text-slate-600 mb-4">
-                {filter === 'todos' 
-                  ? 'Adicione a primeira etapa ao seu modelo'
-                  : `Nenhuma etapa com status "${filter}" encontrada`
-                }
+                Adicione a primeira etapa ao seu modelo
               </p>
               <button className="text-indigo-600 hover:text-indigo-700 font-medium">
                 Adicionar primeiro card

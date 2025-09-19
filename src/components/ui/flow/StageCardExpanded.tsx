@@ -102,36 +102,6 @@ export default function StageCardExpanded({
     })
   );
 
-  const getStatusStyles = () => {
-    switch (stage.status) {
-      case 'done':
-        return {
-          border: 'border-emerald-500',
-          shadow: 'shadow-[0_0_0_2px_#A7F3D0]',
-          statusBg: 'bg-emerald-100',
-          statusText: 'text-emerald-600',
-          statusIcon: <Check className="w-4 h-4" />
-        };
-      case 'in_progress':
-        return {
-          border: 'border-indigo-500',
-          shadow: '',
-          statusBg: 'bg-indigo-100',
-          statusText: 'text-indigo-600',
-          statusIcon: null
-        };
-      case 'pending':
-        return {
-          border: 'border-slate-200',
-          shadow: '',
-          statusBg: 'bg-slate-100',
-          statusText: 'text-slate-600',
-          statusIcon: <Clock className="w-4 h-4" />
-        };
-    }
-  };
-
-  const styles = getStatusStyles();
 
   const handleTitleSave = () => {
     if (tempTitle.trim() && tempTitle !== stage.title) {
@@ -177,11 +147,7 @@ export default function StageCardExpanded({
 
   return (
     <article 
-      className={`
-        relative rounded-2xl border shadow-sm bg-white p-6 transition-all
-        ${styles.border} ${styles.shadow} scale-[1.03]
-        min-h-[184px] flex flex-col
-      `}
+      className="relative rounded-2xl border border-slate-200 shadow-sm bg-white p-6 transition-all scale-[1.03] min-h-[184px] flex flex-col"
     >
       {/* Pinos decorativos */}
       <div className="absolute -top-2 left-4 w-3 h-3 rounded-full border bg-white opacity-80" aria-hidden="true" />
@@ -227,14 +193,6 @@ export default function StageCardExpanded({
             <Clock className="w-4 h-4" />
             <span>{stage.days} dias úteis</span>
           </div>
-
-          {/* Chip de status */}
-          <div className={`inline-flex items-center rounded-full text-sm font-medium px-3 py-1 ${styles.statusBg} ${styles.statusText}`}>
-            {stage.status === 'done' && 'Concluído'}
-            {stage.status === 'in_progress' && 'Em Andamento'}
-            {stage.status === 'pending' && 'Pendente'}
-            {styles.statusIcon && <span className="ml-2">{styles.statusIcon}</span>}
-          </div>
         </div>
 
         {/* Chips de ferramentas ordenáveis */}
@@ -265,22 +223,6 @@ export default function StageCardExpanded({
         )}
       </div>
 
-      {/* Marcas de status no canto superior direito */}
-      {stage.status === 'done' && (
-        <div className="absolute -top-1 -right-1 w-6 h-6 rounded-full bg-white border-2 border-emerald-500 flex items-center justify-center">
-          <Check className="w-4 h-4 text-emerald-500" />
-        </div>
-      )}
-      
-      {stage.status === 'in_progress' && (
-        <div className="absolute -top-1 -right-1 w-3 h-3 rounded-full bg-indigo-500 animate-pulse" />
-      )}
-      
-      {stage.status === 'pending' && (
-        <div className="absolute -top-1 -right-1">
-          <Clock className="w-5 h-5 text-slate-400" />
-        </div>
-      )}
     </article>
   );
 }
