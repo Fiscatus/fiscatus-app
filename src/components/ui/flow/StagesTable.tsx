@@ -1,33 +1,26 @@
 import React from 'react';
 import { Clock, Eye, Edit3, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-
-interface Etapa {
-  index: number;
-  title: string;
-  department: string;
-  days: number;
-  status: 'done' | 'in_progress' | 'pending';
-}
+import { ModelStage } from '@/types/flow';
 
 interface StagesTableProps {
-  etapas: Etapa[];
-  onEdit?: (index: number) => void;
-  onDelete?: (index: number) => void;
-  onView?: (index: number) => void;
+  etapas: ModelStage[];
+  onEdit?: (stageId: string) => void;
+  onDelete?: (stageId: string) => void;
+  onView?: (stageId: string) => void;
 }
 
 export default function StagesTable({ etapas, onEdit, onDelete, onView }: StagesTableProps) {
-  const handleEdit = (index: number) => {
-    onEdit?.(index);
+  const handleEdit = (stageId: string) => {
+    onEdit?.(stageId);
   };
 
-  const handleDelete = (index: number) => {
-    onDelete?.(index);
+  const handleDelete = (stageId: string) => {
+    onDelete?.(stageId);
   };
 
-  const handleView = (index: number) => {
-    onView?.(index);
+  const handleView = (stageId: string) => {
+    onView?.(stageId);
   };
 
   return (
@@ -50,24 +43,24 @@ export default function StagesTable({ etapas, onEdit, onDelete, onView }: Stages
           <tbody>
             {etapas.map((etapa) => (
               <tr 
-                key={etapa.index} 
+                key={etapa.id} 
                 className="hover:bg-slate-50/50 transition-colors border-b"
               >
                 <td className="text-center p-3">
                   <div className="w-8 h-8 rounded-full bg-indigo-500 text-white flex items-center justify-center text-sm font-semibold">
-                    {etapa.index}
+                    {etapa.orderIndex}
                   </div>
                 </td>
                 <td className="p-3">
                   <div className="font-medium text-slate-900">{etapa.title}</div>
                 </td>
                 <td className="p-3">
-                  <div className="text-sm text-slate-600">{etapa.department}</div>
+                  <div className="text-sm text-slate-600">{etapa.department || ''}</div>
                 </td>
                 <td className="text-center p-3">
                   <div className="flex items-center justify-center gap-1 text-sm text-slate-600">
                     <Clock className="w-4 h-4" />
-                    {etapa.days}d
+                    {etapa.days || 0}d
                   </div>
                 </td>
                 <td className="text-center p-3">
@@ -88,7 +81,7 @@ export default function StagesTable({ etapas, onEdit, onDelete, onView }: Stages
                     <Button
                       variant="ghost"
                       size="sm"
-                      onClick={() => handleView(etapa.index)}
+                      onClick={() => handleView(etapa.id)}
                       className="h-8 w-8 p-0"
                     >
                       <Eye className="w-4 h-4" />
@@ -96,7 +89,7 @@ export default function StagesTable({ etapas, onEdit, onDelete, onView }: Stages
                     <Button
                       variant="ghost"
                       size="sm"
-                      onClick={() => handleEdit(etapa.index)}
+                      onClick={() => handleEdit(etapa.id)}
                       className="h-8 w-8 p-0"
                     >
                       <Edit3 className="w-4 h-4" />
@@ -104,7 +97,7 @@ export default function StagesTable({ etapas, onEdit, onDelete, onView }: Stages
                     <Button
                       variant="ghost"
                       size="sm"
-                      onClick={() => handleDelete(etapa.index)}
+                      onClick={() => handleDelete(etapa.id)}
                       className="h-8 w-8 p-0 text-red-600 hover:text-red-700"
                     >
                       <Trash2 className="w-4 h-4" />

@@ -1,23 +1,24 @@
 import React from 'react';
 import StageCard from './StageCard';
-
-interface Etapa {
-  index: number;
-  title: string;
-  department: string;
-  days: number;
-  status: 'done' | 'in_progress' | 'pending';
-}
+import { ModelStage } from '@/types/flow';
 
 interface StagesGridProps {
-  etapas: Etapa[];
+  etapas: ModelStage[];
   zoom?: number;
-  onEdit?: (index: number) => void;
-  onDelete?: (index: number) => void;
-  onView?: (index: number) => void;
+  editable?: boolean;
+  onEdit?: (stageId: string) => void;
+  onDelete?: (stageId: string) => void;
+  onView?: (stageId: string) => void;
 }
 
-export default function StagesGrid({ etapas, zoom = 100, onEdit, onDelete, onView }: StagesGridProps) {
+export default function StagesGrid({ 
+  etapas, 
+  zoom = 100, 
+  editable = false,
+  onEdit, 
+  onDelete, 
+  onView
+}: StagesGridProps) {
   return (
     <div 
       id="grid-anchor" 
@@ -32,14 +33,17 @@ export default function StagesGrid({ etapas, zoom = 100, onEdit, onDelete, onVie
         }}
       >
         {etapas.map((etapa) => (
-          <div key={etapa.index} className="h-[220px]">
+          <div key={etapa.id} className="h-[220px]">
             <StageCard
-              index={etapa.index}
+              index={etapa.orderIndex}
               title={etapa.title}
-              department={etapa.department}
-              days={etapa.days}
+              department={etapa.department || ''}
+              days={etapa.days || 0}
               status={etapa.status}
               zoom={zoom}
+              editable={editable}
+              onViewDetails={() => onView?.(etapa.id)}
+              onEdit={() => onEdit?.(etapa.id)}
             />
           </div>
         ))}

@@ -5,34 +5,18 @@ import ModelInfoBar from "@/components/ui/flow/ModelInfoBar";
 import CanvasToolbar from "@/components/ui/flow/CanvasToolbar";
 import StagesGrid from "@/components/ui/flow/StagesGrid";
 import StagesTable from "@/components/ui/flow/StagesTable";
+import StageEditWorkspace from "@/components/ui/flow/StageEditWorkspace";
 import { Plus, PanelLeft } from "lucide-react";
-
-// Dados mockados para as etapas
-const etapasMock = [
-  { index: 1, title: "Elaboração do DFD", department: "GSP - Gerência de Soluções e Projetos", days: 5, status: "done" as const },
-  { index: 2, title: "Aprovação do DFD", department: "GSL - Gerência de Suprimentos e Logística", days: 3, status: "in_progress" as const },
-  { index: 3, title: "Assinatura do DFD", department: "GRH - Gerência de Recursos Humanos", days: 3, status: "pending" as const },
-  { index: 4, title: "Despacho do DFD", department: "GUE - Gerência de Urgência e Emergência", days: 2, status: "pending" as const },
-  { index: 5, title: "Elaboração do ETP", department: "GLC - Gerência de Licitações e Contratos", days: 10, status: "pending" as const },
-  { index: 6, title: "Assinatura do ETP", department: "GFC - Gerência Financeira e Contábil", days: 2, status: "pending" as const },
-  { index: 7, title: "Despacho do ETP", department: "GSP - Gerência de Soluções e Projetos", days: 5, status: "pending" as const },
-  { index: 8, title: "Elaboração da Matriz de Risco", department: "GSL - Gerência de Suprimentos e Logística", days: 7, status: "pending" as const },
-  { index: 9, title: "Aprovação da Matriz de Risco", department: "GRH - Gerência de Recursos Humanos", days: 2, status: "pending" as const },
-  { index: 10, title: "Assinatura da Matriz de Risco", department: "GUE - Gerência de Urgência e Emergência", days: 15, status: "pending" as const },
-  { index: 11, title: "Cotação", department: "GLC - Gerência de Licitações e Contratos", days: 2, status: "pending" as const },
-  { index: 12, title: "Elaboração do Termo de Referência (TR)", department: "GFC - Gerência Financeira e Contábil", days: 10, status: "pending" as const },
-  { index: 13, title: "Assinatura do TR", department: "GTEC - Gerência de Tecnologia da Informação", days: 5, status: "pending" as const },
-  { index: 14, title: "Elaboração do Edital", department: "GAP - Gerência de Administração e Patrimônio", days: 3, status: "pending" as const },
-  { index: 15, title: "Análise Jurídica Prévia", department: "NAJ - Assessoria Jurídica", days: 20, status: "pending" as const },
-  { index: 16, title: "Cumprimento de Ressalvas pós Análise Jurídica Prévia", department: "GESP - Gerência de Especialidades", days: 10, status: "pending" as const },
-  { index: 17, title: "Elaboração do Parecer Jurídico", department: "NAJ - Assessoria Jurídica", days: 1, status: "pending" as const },
-  { index: 18, title: "Cumprimento de Ressalvas pós Parecer Jurídico", department: "GSP - Gerência de Soluções e Projetos", days: 1, status: "pending" as const },
-  { index: 19, title: "Aprovação Jurídica", department: "NAJ - Assessoria Jurídica", days: 1, status: "pending" as const },
-  { index: 20, title: "Assinatura do Edital", department: "GSL - Gerência de Suprimentos e Logística", days: 1, status: "pending" as const },
-  { index: 21, title: "Publicação", department: "GRH - Gerência de Recursos Humanos", days: 1, status: "pending" as const }
-];
+import { useFlowStore } from "@/stores/flowStore";
+import { ModelStage } from "@/types/flow";
 
 export default function ModelosFluxo() {
+  // Store do fluxo
+  const { 
+    getStagesByModel, 
+    getStage,
+    activeModelId 
+  } = useFlowStore();
   const [nomeModelo, setNomeModelo] = useState("Modelo Fiscatus");
   const [descricaoModelo, setDescricaoModelo] = useState("Fluxo completo para contratações públicas com todas as etapas necessárias para licitação e contratação.");
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
@@ -42,6 +26,11 @@ export default function ModelosFluxo() {
     const saved = localStorage.getItem('sidebar-collapsed');
     return saved ? JSON.parse(saved) : false;
   });
+  
+  // Estado do workspace
+  const [selectedStageId, setSelectedStageId] = useState<string | null>(null);
+  const [isEditWorkspaceOpen, setIsEditWorkspaceOpen] = useState(false);
+  const [workspaceMode, setWorkspaceMode] = useState<'details' | 'edit'>('edit');
 
   // Configurar overscroll-behavior para evitar "puxão" de scroll
   useEffect(() => {
@@ -61,8 +50,10 @@ export default function ModelosFluxo() {
     return () => clearTimeout(timer);
   }, [sidebarCollapsed]);
 
-  const totalEtapas = etapasMock.length;
-  const totalDias = etapasMock.reduce((sum, etapa) => sum + etapa.days, 0);
+  // Obter etapas do store
+  const etapas = getStagesByModel(activeModelId || 'modelo-fiscatus');
+  const totalEtapas = etapas.length;
+  const totalDias = etapas.reduce((sum, etapa) => sum + (etapa.days || 0), 0);
   const linhasCriticas = 3; // Mock
   const assinaturasPendentes = 5; // Mock
 
@@ -95,17 +86,31 @@ export default function ModelosFluxo() {
     }, 100);
   };
 
-  const handleEdit = (index: number) => {
-    console.log('Editar etapa:', index);
+  const handleEditStage = (stageId: string) => {
+    console.log('Editar etapa:', stageId);
   };
 
-  const handleDelete = (index: number) => {
-    console.log('Excluir etapa:', index);
+  const handleDelete = (stageId: string) => {
+    console.log('Excluir etapa:', stageId);
   };
 
-  const handleView = (index: number) => {
-    console.log('Ver detalhes da etapa:', index);
+  const handleView = (stageId: string) => {
+    setSelectedStageId(stageId);
+    setWorkspaceMode('details');
+    setIsEditWorkspaceOpen(true);
   };
+
+  const handleEdit = (stageId: string) => {
+    setSelectedStageId(stageId);
+    setWorkspaceMode('edit');
+    setIsEditWorkspaceOpen(true);
+  };
+
+  const handleCloseEditWorkspace = () => {
+    setIsEditWorkspaceOpen(false);
+    setSelectedStageId(null);
+  };
+
 
   const handleToggleSidebar = () => {
     const newState = !sidebarCollapsed;
@@ -114,7 +119,7 @@ export default function ModelosFluxo() {
   };
 
   // Filtrar etapas baseado no filtro selecionado
-  const etapasFiltradas = etapasMock.filter(etapa => {
+  const etapasFiltradas = etapas.filter(etapa => {
     switch (filter) {
       case 'concluidos':
         return etapa.status === 'done';
@@ -177,6 +182,7 @@ export default function ModelosFluxo() {
             <StagesGrid
               etapas={etapasFiltradas}
               zoom={zoom}
+              editable={true}
               onEdit={handleEdit}
               onDelete={handleDelete}
               onView={handleView}
@@ -222,7 +228,15 @@ export default function ModelosFluxo() {
         >
           <PanelLeft className="w-5 h-5 text-slate-600" />
         </button>
-            )}
-          </div>
+      )}
+
+      {/* Workspace de edição da etapa */}
+      <StageEditWorkspace
+        stage={selectedStageId ? getStage(selectedStageId) : null}
+        isOpen={isEditWorkspaceOpen}
+        onClose={handleCloseEditWorkspace}
+        mode={workspaceMode}
+      />
+    </div>
   );
 }

@@ -1,5 +1,5 @@
 import React from 'react';
-import { Clock, Check, GripVertical, Eye } from 'lucide-react';
+import { Clock, Check, GripVertical, Eye, Edit3 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
@@ -10,9 +10,22 @@ interface StageCardProps {
   days: number;
   status: 'done' | 'in_progress' | 'pending';
   zoom?: number;
+  editable?: boolean;
+  onViewDetails?: () => void;
+  onEdit?: () => void;
 }
 
-export default function StageCard({ index, title, department, days, status, zoom = 100 }: StageCardProps) {
+export default function StageCard({ 
+  index, 
+  title, 
+  department, 
+  days, 
+  status, 
+  zoom = 100,
+  editable = false,
+  onViewDetails,
+  onEdit
+}: StageCardProps) {
   const getStatusStyles = () => {
     switch (status) {
       case 'done':
@@ -98,12 +111,25 @@ export default function StageCard({ index, title, department, days, status, zoom
         </div>
       </div>
 
+
       {/* Rodapé centralizado */}
-      <div className="flex justify-center">
+      <div className="flex justify-center gap-2">
+        {editable && onEdit && (
+          <Button 
+            variant="outline" 
+            size="sm"
+            className="justify-center rounded-xl border-slate-200 text-xs h-7 px-3"
+            onClick={onEdit}
+          >
+            <Edit3 className="w-3 h-3 mr-1" />
+            Editar
+          </Button>
+        )}
         <Button 
           variant="secondary" 
           size="sm"
           className="justify-center rounded-xl border-slate-200 text-xs h-7 px-3"
+          onClick={onViewDetails}
         >
           <Eye className="w-3 h-3 mr-1" />
           Ver Detalhes
