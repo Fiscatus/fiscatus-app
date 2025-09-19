@@ -26,6 +26,13 @@ import { ModelStage, StageTool, LayoutMode, DensityMode } from '@/types/flow';
 import { getToolMeta } from '@/lib/stageTools';
 import { cn } from '@/lib/utils';
 import ToolBlock from './ToolBlock';
+import ManagementBlock from './ManagementBlock';
+import MainFormBlock from './MainFormBlock';
+import StagePanelBlock from './StagePanelBlock';
+import StageActionsBlock from './StageActionsBlock';
+import CommentsBlock from './CommentsBlock';
+import SignaturesBlock from './SignaturesBlock';
+import DocViewBlock from './DocViewBlock';
 
 interface StageCardDesignerProps {
   stage: ModelStage;
@@ -47,6 +54,7 @@ interface StageCardDesignerProps {
 
 interface SortableToolBlockProps {
   tool: StageTool;
+  stage: ModelStage;
   density: DensityMode;
   onRemove: () => void;
   onConfigure: () => void;
@@ -55,6 +63,7 @@ interface SortableToolBlockProps {
 
 const SortableToolBlock: React.FC<SortableToolBlockProps> = ({ 
   tool, 
+  stage,
   density, 
   onRemove, 
   onConfigure, 
@@ -74,6 +83,27 @@ const SortableToolBlock: React.FC<SortableToolBlockProps> = ({
     transition,
   };
 
+  const renderToolContent = () => {
+    switch (tool) {
+      case 'management':
+        return <ManagementBlock stage={stage} density={density} />;
+      case 'main_form':
+        return <MainFormBlock stage={stage} density={density} />;
+      case 'stage_panel':
+        return <StagePanelBlock stage={stage} density={density} />;
+      case 'stage_actions':
+        return <StageActionsBlock stage={stage} density={density} />;
+      case 'comments':
+        return <CommentsBlock stage={stage} density={density} />;
+      case 'signatures':
+        return <SignaturesBlock stage={stage} density={density} />;
+      case 'doc_view':
+        return <DocViewBlock stage={stage} density={density} />;
+      default:
+        return null;
+    }
+  };
+
   return (
     <div
       ref={setNodeRef}
@@ -82,11 +112,14 @@ const SortableToolBlock: React.FC<SortableToolBlockProps> = ({
     >
       <ToolBlock
         tool={tool}
+        stage={stage}
         density={density}
         onRemove={onRemove}
         onConfigure={onConfigure}
         isDragging={isDragging || isSortableDragging}
-      />
+      >
+        {renderToolContent()}
+      </ToolBlock>
     </div>
   );
 };
@@ -233,6 +266,7 @@ export default function StageCardDesigner({
             <SortableToolBlock
               key={tool}
               tool={tool}
+              stage={stage}
               density={layout.density}
               onRemove={() => onToolRemove(tool)}
               onConfigure={() => onToolConfigure(tool)}

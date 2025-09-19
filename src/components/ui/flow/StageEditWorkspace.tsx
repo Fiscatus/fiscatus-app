@@ -22,7 +22,16 @@ export default function StageEditWorkspace({
   onClose, 
   mode = 'edit' 
 }: StageEditWorkspaceProps) {
-  const { updateStage, enableTool, disableTool, reorderTools, updateToolConfig } = useFlowStore();
+  const { 
+    updateStage, 
+    enableTool, 
+    disableTool, 
+    reorderTools, 
+    updateToolConfig,
+    setLayout,
+    moveToolInLayout,
+    enforceDeps
+  } = useFlowStore();
   const { toast } = useToast();
   
   // Estado local para mudanças não salvas
@@ -153,15 +162,18 @@ export default function StageEditWorkspace({
 
   const handleStageChange = useCallback((patch: Partial<ModelStage>) => {
     if (!localStage) return;
-    setLocalStage({ ...localStage, ...patch });
+    const updatedStage = { ...localStage, ...patch };
+    setLocalStage(updatedStage);
+    updateStage(localStage.id, patch); // Sincronizar com o store
     setHasChanges(true);
-  }, [localStage]);
+  }, [localStage, updateStage]);
 
   const handleToolEnable = useCallback((tool: StageTool) => {
     if (!localStage) return;
     enableTool(localStage.id, tool);
+    enforceDeps(localStage.id); // Aplicar regras de dependência
     setHasChanges(true);
-  }, [localStage, enableTool]);
+  }, [localStage, enableTool, enforceDeps]);
 
   const handleToolDisable = useCallback((tool: StageTool) => {
     if (!localStage) return;
@@ -201,15 +213,18 @@ export default function StageEditWorkspace({
   };
 
   const handleLayoutChange = useCallback((layoutPatch: Partial<StageLayout>) => {
+    if (!localStage) return;
+    setLayout(localStage.id, layoutPatch);
     setDesignerLayout(prev => ({ ...prev, ...layoutPatch }));
     setHasChanges(true);
-  }, []);
+  }, [localStage, setLayout]);
 
   const handleToolRemove = useCallback((tool: StageTool) => {
     if (!localStage) return;
     disableTool(localStage.id, tool);
+    enforceDeps(localStage.id); // Aplicar regras de dependência
     setHasChanges(true);
-  }, [localStage, disableTool]);
+  }, [localStage, disableTool, enforceDeps]);
 
   const handleToolConfigure = useCallback((tool: StageTool) => {
     // TODO: Implementar foco na aba de configurações

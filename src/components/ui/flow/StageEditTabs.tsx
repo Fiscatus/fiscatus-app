@@ -420,26 +420,37 @@ export default function StageEditTabs({
 
         <div className="flex-1 overflow-auto p-4">
           <TabsContent value="general" className="space-y-6 mt-0">
-            <div className="space-y-4">
-              <div>
-                <Label htmlFor="title">Título da Etapa</Label>
+            <div className="space-y-6">
+              {/* Título da Etapa */}
+              <div className="space-y-2">
+                <Label htmlFor="title" className="text-sm font-medium">
+                  Título da Etapa
+                </Label>
                 <Input
                   id="title"
                   value={stage.title}
                   onChange={(e) => onPatch({ title: e.target.value })}
                   disabled={readOnly}
+                  placeholder="Digite o título da etapa..."
+                  className="h-10"
                 />
+                <p className="text-xs text-slate-500">
+                  Nome que aparecerá no card da etapa
+                </p>
               </div>
 
-              <div>
-                <Label htmlFor="department">Setor</Label>
+              {/* Setor Responsável */}
+              <div className="space-y-2">
+                <Label htmlFor="department" className="text-sm font-medium">
+                  Setor Responsável
+                </Label>
                 <Select
                   value={stage.department || ''}
                   onValueChange={(value) => onPatch({ department: value })}
                   disabled={readOnly}
                 >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecione o setor" />
+                  <SelectTrigger className="h-10">
+                    <SelectValue placeholder="Selecione o setor responsável" />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="GSP - Gerência de Soluções e Projetos">
@@ -472,24 +483,51 @@ export default function StageEditTabs({
                     <SelectItem value="GESP - Gerência de Especialidades">
                       GESP - Gerência de Especialidades
                     </SelectItem>
+                    <SelectItem value="GCOM - Gerência de Comunicação">
+                      GCOM - Gerência de Comunicação
+                    </SelectItem>
+                    <SelectItem value="GQUAL - Gerência de Qualidade">
+                      GQUAL - Gerência de Qualidade
+                    </SelectItem>
+                    <SelectItem value="GSEG - Gerência de Segurança">
+                      GSEG - Gerência de Segurança
+                    </SelectItem>
                   </SelectContent>
                 </Select>
+                <p className="text-xs text-slate-500">
+                  Setor responsável pela execução desta etapa
+                </p>
               </div>
 
-              <div>
-                <Label htmlFor="days">Dias Úteis</Label>
-                <Input
-                  id="days"
-                  type="number"
-                  min="1"
-                  value={stage.days || ''}
-                  onChange={(e) => onPatch({ days: parseInt(e.target.value) || 0 })}
-                  disabled={readOnly}
-                />
+              {/* Prazo em Dias Úteis */}
+              <div className="space-y-2">
+                <Label htmlFor="days" className="text-sm font-medium">
+                  Prazo (Dias Úteis)
+                </Label>
+                <div className="flex items-center gap-2">
+                  <Input
+                    id="days"
+                    type="number"
+                    min="1"
+                    max="365"
+                    value={stage.days || ''}
+                    onChange={(e) => onPatch({ days: parseInt(e.target.value) || 0 })}
+                    disabled={readOnly}
+                    placeholder="Ex: 5"
+                    className="h-10 w-24"
+                  />
+                  <span className="text-sm text-slate-500">dias úteis</span>
+                </div>
+                <p className="text-xs text-slate-500">
+                  Tempo estimado para conclusão da etapa
+                </p>
               </div>
 
-              <div>
-                <Label htmlFor="status">Status</Label>
+              {/* Status da Etapa */}
+              <div className="space-y-2">
+                <Label htmlFor="status" className="text-sm font-medium">
+                  Status da Etapa
+                </Label>
                 <Select
                   value={stage.status}
                   onValueChange={(value: 'pending' | 'in_progress' | 'done') => 
@@ -497,15 +535,62 @@ export default function StageEditTabs({
                   }
                   disabled={readOnly}
                 >
-                  <SelectTrigger>
+                  <SelectTrigger className="h-10">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="pending">Pendente</SelectItem>
-                    <SelectItem value="in_progress">Em Andamento</SelectItem>
-                    <SelectItem value="done">Concluído</SelectItem>
+                    <SelectItem value="pending">
+                      <div className="flex items-center gap-2">
+                        <div className="w-2 h-2 rounded-full bg-slate-400"></div>
+                        <span>Pendente</span>
+                      </div>
+                    </SelectItem>
+                    <SelectItem value="in_progress">
+                      <div className="flex items-center gap-2">
+                        <div className="w-2 h-2 rounded-full bg-indigo-500"></div>
+                        <span>Em Andamento</span>
+                      </div>
+                    </SelectItem>
+                    <SelectItem value="done">
+                      <div className="flex items-center gap-2">
+                        <div className="w-2 h-2 rounded-full bg-emerald-500"></div>
+                        <span>Concluído</span>
+                      </div>
+                    </SelectItem>
                   </SelectContent>
                 </Select>
+                <p className="text-xs text-slate-500">
+                  Status atual da etapa no fluxo
+                </p>
+              </div>
+
+              {/* Resumo das Informações */}
+              <div className="pt-4 border-t border-slate-200">
+                <div className="bg-slate-50 rounded-lg p-4 space-y-2">
+                  <h4 className="text-sm font-medium text-slate-700">Resumo da Etapa</h4>
+                  <div className="grid grid-cols-2 gap-4 text-xs">
+                    <div>
+                      <span className="text-slate-500">Título:</span>
+                      <p className="font-medium text-slate-900">{stage.title || 'Não definido'}</p>
+                    </div>
+                    <div>
+                      <span className="text-slate-500">Setor:</span>
+                      <p className="font-medium text-slate-900">{stage.department || 'Não definido'}</p>
+                    </div>
+                    <div>
+                      <span className="text-slate-500">Prazo:</span>
+                      <p className="font-medium text-slate-900">{stage.days ? `${stage.days} dias úteis` : 'Não definido'}</p>
+                    </div>
+                    <div>
+                      <span className="text-slate-500">Status:</span>
+                      <p className="font-medium text-slate-900">
+                        {stage.status === 'pending' && 'Pendente'}
+                        {stage.status === 'in_progress' && 'Em Andamento'}
+                        {stage.status === 'done' && 'Concluído'}
+                      </p>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
           </TabsContent>
