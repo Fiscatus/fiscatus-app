@@ -22,3 +22,15 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Node/React/TS
+build/
+.cache/
+.tmp/
+coverage/
+*.tsbuildinfo
+
+# Env/segurança
+.env
+.env.*
+!.env.example
