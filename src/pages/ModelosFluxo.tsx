@@ -222,7 +222,7 @@ export default function ModelosFluxo() {
         >
           <PanelLeft className="w-5 h-5 text-slate-600" />
         </button>
-      )}
+            )}
           </div>
   );
 }
