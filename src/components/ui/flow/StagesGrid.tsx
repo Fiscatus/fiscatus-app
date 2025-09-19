@@ -21,7 +21,7 @@ export default function StagesGrid({ etapas, zoom = 100, onEdit, onDelete, onVie
   return (
     <div 
       id="grid-anchor" 
-      className="scroll-mt-[calc(var(--safe-top)+var(--toolbar-h)+36px)] pt-2"
+      className="scroll-mt-[calc(var(--safe-top)+var(--toolbar-h)+56px)] pt-2"
       style={{ '--card-scale': zoom / 100 } as React.CSSProperties}
     >
       <div 

@@ -51,6 +51,16 @@ export default function ModelosFluxo() {
     };
   }, []);
 
+  // Garantir que o scroll funcione após mudanças de layout
+  useEffect(() => {
+    // Força o recálculo do layout quando sidebar muda
+    const timer = setTimeout(() => {
+      document.body.style.overflow = 'auto';
+    }, 50);
+
+    return () => clearTimeout(timer);
+  }, [sidebarCollapsed]);
+
   const totalEtapas = etapasMock.length;
   const totalDias = etapasMock.reduce((sum, etapa) => sum + etapa.days, 0);
   const linhasCriticas = 3; // Mock
@@ -125,14 +135,14 @@ export default function ModelosFluxo() {
         ['--toolbar-h' as any]: '48px',     // toolbar do canvas
         ['--gutter' as any]: '20px'         // espaçamento lateral (gutter)
       }}
-      className="min-h-screen w-screen overflow-x-hidden bg-slate-50"
+      className="h-screen w-screen overflow-x-hidden overflow-y-auto bg-slate-50"
     >
       <Topbar />
       
-      <main className={`w-full grid grid-cols-12 gap-4 lg:gap-6 px-[var(--gutter)] pb-8 ${sidebarCollapsed ? 'pt-[calc(var(--safe-top)+80px)]' : 'pt-[calc(var(--safe-top)+20px)]'}`}>
+      <main className={`w-full grid grid-cols-12 gap-4 lg:gap-6 px-[var(--gutter)] pb-8 min-h-full ${sidebarCollapsed ? 'pt-[calc(var(--safe-top)+var(--toolbar-h)+80px)]' : 'pt-[calc(var(--safe-top)+var(--toolbar-h)+40px)]'}`}>
         {/* Sidebar */}
         <aside className={`col-span-12 ${sidebarCollapsed ? 'lg:hidden' : 'lg:col-span-2'} space-y-4`} id="sidebar">
-          <div className="sticky top-[calc(var(--safe-top)+32px)]">
+          <div className="sticky top-[calc(var(--safe-top)+var(--toolbar-h)+52px)]">
             <ModelsSidebar onToggleCollapse={handleToggleSidebar} />
               </div>
         </aside>
@@ -207,12 +217,12 @@ export default function ModelosFluxo() {
       {sidebarCollapsed && (
         <button
           onClick={handleToggleSidebar}
-          className="fixed left-4 top-[calc(var(--safe-top)+100px)] z-30 bg-white border border-slate-200 rounded-lg p-2 shadow-lg hover:shadow-xl transition-all hover:bg-slate-50"
+          className="fixed left-4 top-[calc(var(--safe-top)+var(--toolbar-h)+120px)] z-30 bg-white border border-slate-200 rounded-lg p-2 shadow-lg hover:shadow-xl transition-all hover:bg-slate-50"
           aria-label="Expandir sidebar"
         >
           <PanelLeft className="w-5 h-5 text-slate-600" />
         </button>
-            )}
+      )}
           </div>
   );
 }

@@ -33,11 +33,11 @@ export default function StagesTable({ etapas, onEdit, onDelete, onView }: Stages
   return (
     <div 
       id="list-anchor" 
-      className="scroll-mt-[calc(var(--safe-top)+var(--toolbar-h)+36px)] pt-2"
+      className="scroll-mt-[calc(var(--safe-top)+var(--toolbar-h)+56px)] pt-2"
     >
       <div className="rounded-2xl border bg-white shadow-sm overflow-auto">
         <table className="w-full text-sm">
-          <thead className="sticky top-[calc(var(--safe-top)+var(--toolbar-h)+20px)] z-10 bg-white border-b">
+          <thead className="sticky top-[calc(var(--safe-top)+var(--toolbar-h)+56px)] z-10 bg-white border-b">
             <tr>
               <th className="w-16 text-center p-3 font-medium text-slate-600">#</th>
               <th className="text-left p-3 font-medium text-slate-600">Etapa</th>

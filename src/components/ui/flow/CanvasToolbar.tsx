@@ -61,7 +61,7 @@ export default function CanvasToolbar({
   };
 
   return (
-    <div className="sticky top-[calc(var(--safe-top)+20px)] z-20 bg-white/95 backdrop-blur border-b shadow-[0_1px_0_0_rgba(15,23,42,.06)]">
+    <div className="fixed top-[var(--safe-top)] left-0 right-0 z-20 bg-white/95 backdrop-blur border-b shadow-[0_1px_0_0_rgba(15,23,42,.06)]">
       <div className="h-[var(--toolbar-h)] px-[var(--gutter)] flex items-center justify-between gap-2">
         {/* Botões à esquerda */}
         <div className="flex items-center gap-2">
