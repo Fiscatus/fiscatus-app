@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128" fill="none">
+  <defs>
+    <linearGradient id="shield" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#22c55e"/>
+      <stop offset="1" stop-color="#16a34a"/>
+    </linearGradient>
+    <linearGradient id="banner" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#fbbf24"/>
+      <stop offset="1" stop-color="#f59e0b"/>
+    </linearGradient>
+  </defs>
+  <!-- coroação -->
+  <g stroke="#9ca3af" stroke-width="2" fill="#e5e7eb">
+    <rect x="46" y="12" width="36" height="10" rx="2"/>
+    <rect x="42" y="18" width="44" height="8" rx="2"/>
+  </g>
+  <!-- escudo -->
+  <path d="M64 28c18 0 32 8 32 18v18c0 14-11 29-32 40-21-11-32-26-32-40V46c0-10 14-18 32-18z" fill="url(#shield)" stroke="#065f46" stroke-width="2"/>
+  <!-- símbolo interno -->
+  <g>
+    <path d="M62 52h4v24h-4z" fill="#065f46"/>
+    <circle cx="64" cy="60" r="8" fill="#ecfeff" stroke="#0ea5e9" stroke-width="2"/>
+    <path d="M52 76h24l-12 14z" fill="#78350f"/>
+  </g>
+  <!-- estandartes laterais -->
+  <g stroke="#9ca3af" stroke-width="2" fill="#f3f4f6">
+    <path d="M28 60c6-10 8-12 12-12v28c-4 0-6-2-12-10z"/>
+    <path d="M100 60c-6-10-8-12-12-12v28c4 0 6-2 12-10z"/>
+  </g>
+  <!-- faixa inferior -->
+  <g>
+    <path d="M38 98c10 4 22 6 26 6s16-2 26-6l6 6-2 6-7-5c-9 3-19 5-23 5s-14-2-23-5l-7 5-2-6 6-6z" fill="url(#banner)" stroke="#b45309" stroke-width="2"/>
+    <text x="64" y="108" text-anchor="middle" font-size="6" font-family="Arial, Helvetica, sans-serif" fill="#78350f">FRATERNIDADE • TRABALHO • PROSPERIDADE</text>
+  </g>
+</svg>
+
