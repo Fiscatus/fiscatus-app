@@ -26,6 +26,7 @@ import {
   ListChecks,
   AlertCircle
 } from 'lucide-react';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useUser } from '@/contexts/UserContext';
 import { useToast } from '@/hooks/use-toast';
 import CommentsSection from './CommentsSection';
@@ -166,18 +167,6 @@ export default function DFDAprovacaoSection({
     } else {
       return { status: 'nao_cumprido' as const, dias: prazoCumprido };
     }
-  };
-
-  // Contar dias úteis
-  const countBusinessDays = (start: Date, end: Date) => {
-    let count = 0;
-    const curDate = new Date(start.getTime());
-    while (curDate <= end) {
-      const dayOfWeek = curDate.getDay();
-      if (dayOfWeek !== 0 && dayOfWeek !== 6) count++;
-      curDate.setDate(curDate.getDate() + 1);
-    }
-    return count;
   };
 
   const validateForm = (): boolean => {
@@ -399,6 +388,79 @@ export default function DFDAprovacaoSection({
   const versaoParaExibir = !isGSPUser() && dfdData.status === 'aprovado' 
     ? dfdData.versions.find(v => v.status === 'aprovado' && v.isFinal)
     : versaoEnviada;
+
+  // Helpers de prazo/datas para o Painel da Etapa (espelhar Elaboração)
+  const countBusinessDays = (start: Date, end: Date) => {
+    let count = 0;
+    const curDate = new Date(start.getTime());
+    while (curDate <= end) {
+      const dayOfWeek = curDate.getDay();
+      if (dayOfWeek !== 0 && dayOfWeek !== 6) count++;
+      curDate.setDate(curDate.getDate() + 1);
+    }
+    return count;
+  };
+
+  const addBusinessDays = (startISO: string, businessDays: number): Date => {
+    const date = new Date(startISO);
+    let added = 0;
+    const result = new Date(date);
+    while (added < businessDays) {
+      result.setDate(result.getDate() + 1);
+      const day = result.getDay();
+      if (day >= 1 && day <= 5) added++;
+    }
+    return result;
+  };
+
+  const getPrazoFinalRevisao = () => {
+    const base = versaoParaExibir || dfdData.currentVersion || dfdData.versions[dfdData.versions.length - 1];
+    if (!base) return null;
+    const dias = base.prazoInicialDiasUteis ?? 0;
+    return addBusinessDays(base.createdAt, dias);
+  };
+
+  const getPrazoFinalEtapa = () => {
+    if (!dfdData.versions || dfdData.versions.length === 0) return null;
+    const ordered = [...dfdData.versions].sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+    const oldest = ordered[0];
+    const dias = oldest.prazoInicialDiasUteis ?? (versaoParaExibir?.prazoInicialDiasUteis ?? 7);
+    return addBusinessDays(oldest.createdAt, dias);
+  };
+
+  const getDiasRestantes = () => {
+    const base = versaoParaExibir || dfdData.currentVersion || dfdData.versions[dfdData.versions.length - 1];
+    if (!base || base.prazoInicialDiasUteis === undefined) return null;
+    const cumprido = base.prazoCumpridoDiasUteis ?? 0;
+    return (base.prazoInicialDiasUteis || 0) - cumprido;
+  };
+
+  const getPrazoColorClasses = (diasRestantes: number | null): { text: string; badge: string } => {
+    if (diasRestantes === null) return { text: 'text-gray-600', badge: 'bg-gray-100 text-gray-800' };
+    if (diasRestantes < 0) return { text: 'text-red-600', badge: 'bg-red-100 text-red-800' };
+    if (diasRestantes <= 2) return { text: 'text-orange-600', badge: 'bg-orange-100 text-orange-800' };
+    return { text: 'text-green-600', badge: 'bg-green-100 text-green-800' };
+  };
+
+  const getPrazoFinalPrevisto = () => {
+    const base = versaoParaExibir || dfdData.currentVersion || dfdData.versions[dfdData.versions.length - 1];
+    if (!base) return new Date();
+    const diasUteis = base.prazoInicialDiasUteis || 7;
+    return addBusinessDays(base.createdAt, diasUteis);
+  };
+
+  const getProgressoTemporal = () => {
+    const base = versaoParaExibir || dfdData.currentVersion || dfdData.versions[dfdData.versions.length - 1];
+    if (!base) return 0;
+    const prazoInicial = new Date(base.createdAt);
+    const prazoLimite = getPrazoFinalPrevisto();
+    const hoje = new Date();
+    const diasUteisTotal = Math.max(1, countBusinessDays(prazoInicial, prazoLimite));
+    const diasUteisPassados = countBusinessDays(prazoInicial, hoje);
+    if (hoje > prazoLimite) return 100;
+    const progresso = Math.round((diasUteisPassados / diasUteisTotal) * 100);
+    return Math.min(progresso, 100);
+  };
 
   return (
     <div className="w-full space-y-6">
@@ -650,7 +712,7 @@ export default function DFDAprovacaoSection({
       </div>
 
       {/* 3️⃣ Painel da Etapa */}
-      <div className="card-shell mb-8">
+      <div className="rounded-2xl border border-slate-300 shadow-md bg-white p-6 mb-8 min-h-[700px]">
         <header className="card-header-title">
           <ClipboardCheck className="w-6 h-6 text-green-600" />
           <h2 className="text-lg font-bold text-slate-900">Painel da Etapa</h2>
@@ -660,7 +722,7 @@ export default function DFDAprovacaoSection({
             </span>
           </div>
         </header>
-        <div className="card-separator-green"></div>
+        <div className="border-b-2 border-green-200 mb-6"></div>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             
           {/* 1️⃣ Card Status & Prazo */}
@@ -678,56 +740,120 @@ export default function DFDAprovacaoSection({
             </header>
             
             <div className="space-y-4">
-              {/* Data de Envio */}
-              <div className="flex items-center gap-3 p-3 rounded-lg border border-slate-200">
+            {/* Data de Criação */}
+            <div className="flex items-center gap-3 p-3 rounded-lg border border-slate-200">
+              <div className="w-10 h-10 rounded-full flex items-center justify-center border border-slate-300">
+                <Calendar className="w-5 h-5 text-slate-600" />
+              </div>
+              <div>
+                <p className="text-sm font-semibold text-slate-500">Data de Criação</p>
+                <p className="text-lg font-bold text-slate-900">
+                  {versaoParaExibir?.createdAt ? formatDate(versaoParaExibir.createdAt) : dfdData.currentVersion?.createdAt ? formatDate(dfdData.currentVersion.createdAt) : '—'}
+                </p>
+              </div>
+            </div>
+
+            {/* Prazo Inicial da Revisão da versão X */}
+            <div className="flex items-center justify-between p-3 rounded-lg border border-slate-200">
+              <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-full flex items-center justify-center border border-slate-300">
-                  <Calendar className="w-5 h-5 text-slate-600" />
+                  <Clock className="w-5 h-5 text-slate-600" />
                 </div>
                 <div>
-                  <p className="text-sm font-semibold text-slate-500">Data de Envio</p>
+                  <p className="text-sm font-semibold text-slate-500">
+                    Prazo Inicial da Revisão {versaoParaExibir ? `da versão V${versaoParaExibir.version}` : ''}
+                  </p>
                   <p className="text-lg font-bold text-slate-900">
-                    {dfdData.enviadoData ? formatDate(dfdData.enviadoData) : '—'}
+                    {versaoParaExibir?.createdAt ? formatDate(versaoParaExibir.createdAt) : dfdData.currentVersion?.createdAt ? formatDate(dfdData.currentVersion.createdAt) : '—'}
                   </p>
                 </div>
               </div>
-              
-              {/* Status da Análise */}
-              {dataAnalise && (
-                <div className="flex items-center gap-3 p-3 rounded-lg border border-slate-200">
-                  <div className="w-10 h-10 rounded-full flex items-center justify-center border border-green-300">
-                    <CheckCircle className="w-5 h-5 text-green-600" />
-                  </div>
-                  <div>
-                    <p className="text-sm font-semibold text-green-600">Análise Realizada</p>
-                    <p className="text-lg font-bold text-green-700">
-                      {formatDate(dataAnalise)}
-                    </p>
-                  </div>
+            </div>
+
+            {/* Prazo Final da Revisão */}
+            <div className="flex items-center justify-between p-3 rounded-lg border border-slate-200">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full flex items-center justify-center border border-slate-300">
+                  <Flag className="w-5 h-5 text-slate-600" />
                 </div>
-              )}
-              
-              {/* Destaque Central - Status */}
+                <div>
+                  <p className="text-sm font-semibold text-slate-500">Prazo Final da Revisão</p>
+                  <p className="text-lg font-bold text-slate-900">
+                    {(() => { const d = getPrazoFinalRevisao(); return d ? formatDate(d.toISOString()) : '—'; })()}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Prazo Final da Etapa */}
+            <div className="flex items-center justify-between p-3 rounded-lg border border-slate-200">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full flex items-center justify-center border border-slate-300">
+                  <Flag className="w-5 h-5 text-indigo-600" />
+                </div>
+                <div>
+                  <p className="text-sm font-semibold text-slate-500">Prazo Final da Etapa</p>
+                  <p className="text-lg font-bold text-slate-900">
+                    {(() => { const d = getPrazoFinalEtapa(); return d ? formatDate(d.toISOString()) : '—'; })()}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+              {/* Destaque Central - Dias Restantes/Atraso */}
               <div className="border-t border-slate-200 my-3 pt-4">
-                <div className="text-center py-4">
-                  <div className={`text-2xl font-bold mb-2 ${
-                    dfdData.status === 'aprovado' ? 'text-green-600' :
-                    dfdData.status === 'devolvido' ? 'text-red-600' :
-                    'text-yellow-600'
-                  }`}>
-                    {dfdData.status === 'enviado_analise' ? 'Aguardando' :
-                     dfdData.status === 'aprovado' ? 'Aprovado' :
-                     dfdData.status === 'devolvido' ? 'Devolvido' : 'Pendente'}
-                  </div>
-                  <div className={`text-sm font-medium ${
-                    dfdData.status === 'aprovado' ? 'text-green-600' :
-                    dfdData.status === 'devolvido' ? 'text-red-600' :
-                    'text-yellow-600'
-                  }`}>
-                    {dfdData.status === 'enviado_analise' ? 'análise técnica' :
-                     dfdData.status === 'aprovado' ? 'pela GSP' :
-                     dfdData.status === 'devolvido' ? 'para correção' : 'definição'}
-                  </div>
+                {(() => {
+                  const diasRest = getDiasRestantes();
+                  const prazo = getPrazoColorClasses(diasRest);
+                  const isAtraso = diasRest !== null && diasRest < 0;
+                  return (
+                    <div className="text-center py-4">
+                      <div className={`text-3xl font-bold ${prazo.text} mb-2`}>
+                        {diasRest === null ? '—' : Math.abs(diasRest)}
+                      </div>
+                      <div className={`text-sm font-medium ${prazo.text}`}>
+                        {diasRest === null ? 'Sem prazo definido' : 
+                         isAtraso ? 'dias em atraso' : 
+                         diasRest <= 2 ? 'dias restantes (urgente)' : 
+                         'dias restantes'}
+                      </div>
+                    </div>
+                  );
+                })()}
+              </div>
+
+              {/* Barra de Progresso com tooltip */}
+              <div className="space-y-2">
+                <div className="flex justify-between text-xs text-slate-500">
+                  <span>Progresso</span>
+                  <span>{getProgressoTemporal()}%</span>
                 </div>
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <div className="w-full bg-slate-200 rounded-full h-2 cursor-help">
+                        <div 
+                          className={`h-2 rounded-full transition-all ${getProgressoTemporal() <= 70 ? 'bg-green-500' : getProgressoTemporal() <= 100 ? 'bg-yellow-500' : 'bg-red-500'}`}
+                          style={{ width: `${Math.min(getProgressoTemporal(), 100)}%` }}
+                        />
+                      </div>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>
+                        {(() => {
+                          const base = versaoParaExibir || dfdData.currentVersion || dfdData.versions[dfdData.versions.length - 1];
+                          if (!base) return '—';
+                          const prazoInicial = new Date(base.createdAt);
+                          const prazoLimite = getPrazoFinalPrevisto();
+                          const hoje = new Date();
+                          const diasUteisTotal = Math.max(1, countBusinessDays(prazoInicial, prazoLimite));
+                          const diasUteisPassados = countBusinessDays(prazoInicial, hoje);
+                          return `${diasUteisPassados} dias úteis decorridos de ${diasUteisTotal} totais`;
+                        })()}
+                      </p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
               </div>
             </div>
           </div>

@@ -24,6 +24,7 @@ import {
   Download,
   Trash2,
   Save,
+  Ban,
   MessageCircle,
   User,
   Calendar,
@@ -220,8 +221,11 @@ export default function DFDAssinaturaSection({
 
   // Estado de anexos (aba Anexos)
   const [annexes, setAnnexes] = useState<Array<{id:string; name:string; uploadedAt:string; uploadedBy:string; url?:string}>>([]);
+  const [selectedAnnexId, setSelectedAnnexId] = useState<string | null>(null);
   const [attachmentsSort, setAttachmentsSort] = useState<'desc'|'asc'>('desc');
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [viewerLoading, setViewerLoading] = useState(false);
+  const viewerFileInputRef = useRef<HTMLInputElement>(null);
   const anexosOrdenados = useMemo(() => {
     const arr = [...annexes];
     arr.sort((a,b)=> new Date(b.uploadedAt).getTime() - new Date(a.uploadedAt).getTime());
@@ -233,6 +237,35 @@ export default function DFDAssinaturaSection({
     try { const win = window.open(url, '_blank'); if (!win) throw new Error('Popup bloqueado'); }
     catch { toast({ title: 'Não foi possível abrir o documento', description: 'Verifique popups ou gere novo link.', variant: 'destructive' }); }
   };
+
+  const selectedAnnex = useMemo(() => annexes.find(a => a.id === selectedAnnexId) || anexosOrdenados[0], [annexes, selectedAnnexId, anexosOrdenados]);
+
+  useEffect(() => {
+    if (!selectedAnnexId && anexosOrdenados.length > 0) {
+      setSelectedAnnexId(anexosOrdenados[0].id);
+    }
+  }, [selectedAnnexId, anexosOrdenados]);
+
+  useEffect(() => {
+    // ativar skeleton quando trocar de arquivo visualizado
+    if (selectedAnnex?.url) {
+      setViewerLoading(true);
+      // fallback de segurança caso onLoad não dispare
+      const t = setTimeout(()=>setViewerLoading(false), 2000);
+      return () => clearTimeout(t);
+    } else {
+      setViewerLoading(false);
+    }
+  }, [selectedAnnex?.url]);
+
+  // Helpers de visualização
+  const getFileExtension = (name?: string) => {
+    if (!name) return '';
+    const idx = name.lastIndexOf('.');
+    return idx >= 0 ? name.substring(idx + 1).toLowerCase() : '';
+  };
+  const isPdf = (name?: string) => ['pdf'].includes(getFileExtension(name));
+  const isImage = (name?: string) => ['png','jpg','jpeg','gif','bmp','tif','tiff','webp','svg'].includes(getFileExtension(name));
 
   // Verificar se é GSP ou SE (pode gerenciar assinaturas)
   const isGSPouSE = user?.gerencia?.includes('GSP') || user?.gerencia?.includes('SE') || false;
@@ -612,56 +645,143 @@ export default function DFDAssinaturaSection({
           <PenTool className="w-6 h-6 text-indigo-600" />
           <h2 className="text-lg font-bold text-slate-900">Visualização do DFD</h2>
           <div className="ml-auto">
-            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800">
-              Visualização
-            </span>
-                  </div>
+            <div className="flex items-center gap-2">
+              <input
+                ref={viewerFileInputRef}
+                type="file"
+                accept=".pdf,.doc,.docx,.odt,.png,.jpg,.jpeg,.gif,.bmp,.tif,.tiff"
+                className="hidden"
+                onChange={(e) => {
+                  const f = e.target.files?.[0];
+                  if (!f) return;
+                  const newId = `a-${Date.now()}`;
+                  const newAnnex = { id: newId, name: f.name, uploadedAt: new Date().toISOString(), uploadedBy: user?.nome || 'Usuário', url: URL.createObjectURL(f) };
+                  setAnnexes(prev => [newAnnex, ...prev]);
+                  setSelectedAnnexId(newId);
+                  if (e.target) e.target.value = '';
+                  toast({ title: 'Anexo adicionado', description: `${f.name} foi anexado.` });
+                }}
+              />
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => {
+                  if (selectedAnnex?.url) {
+                    openInNewTab(selectedAnnex.url);
+                  } else {
+                    toast({ title: 'Sem documento', description: 'Adicione um anexo para visualizar.', variant: 'destructive' });
+                  }
+                }}
+                className="h-8 px-2 text-xs"
+              >
+                <Eye className="w-3 h-3 mr-1" />
+                Visualizar
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => {
+                  if (selectedAnnex?.url) {
+                    const link = document.createElement('a');
+                    link.href = selectedAnnex.url;
+                    link.download = selectedAnnex.name || 'documento.pdf';
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                  } else {
+                    toast({ title: 'Sem documento', description: 'Adicione um anexo para baixar.', variant: 'destructive' });
+                  }
+                }}
+                className="h-8 px-2 text-xs"
+              >
+                <Download className="w-3 h-3 mr-1" />
+                Baixar
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => viewerFileInputRef.current?.click()}
+                className="h-8 px-2 text-xs"
+              >
+                <Upload className="w-3 h-3 mr-1" />
+                Incluir
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => {
+                  if (!selectedAnnex) {
+                    toast({ title: 'Nada para excluir', description: 'Não há documento selecionado.', variant: 'destructive' });
+                    return;
+                  }
+                  setAnnexes(prev => {
+                    const updated = prev.filter(a => a.id !== selectedAnnex.id);
+                    setSelectedAnnexId(updated[0]?.id ?? null);
+                    return updated;
+                  });
+                  toast({ title: 'Anexo removido', description: `${selectedAnnex.name} foi excluído.` });
+                }}
+                disabled={!selectedAnnex}
+                className="h-8 px-2 text-xs text-red-600 border-red-200 hover:bg-red-50"
+              >
+                <Trash2 className="w-3 h-3 mr-1" />
+                Excluir
+              </Button>
+            </div>
+          </div>
         </header>
         <div className="border-b-2 border-indigo-200 mb-6"></div>
         <div className="space-y-4">
-          {/* Botões de ação */}
-          <div className="flex justify-end gap-2">
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => {
-                        toast({
-                          title: "Visualização",
-                          description: "Abrindo DFD para visualização."
-                        });
-                      }}
-                      className="text-xs"
-                    >
-                      <Eye className="w-3 h-3 mr-1" />
-                      Visualizar
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => {
-                        toast({
-                          title: "Download Iniciado",
-                          description: "O arquivo DFD está sendo baixado."
-                        });
-                      }}
-                      className="text-xs"
-                    >
-                      <Download className="w-3 h-3 mr-1" />
-                      Baixar
-                    </Button>
+          {/* Visualização do PDF (preenche toda a área) */}
+          <div className="relative w-full min-h-[560px] h-[calc(100vh-320px)] rounded-xl border border-slate-200 bg-white overflow-hidden">
+            {selectedAnnex?.url ? (
+              isPdf(selectedAnnex.name) ? (
+                <>
+                  {viewerLoading && (
+                    <div className="absolute inset-0 flex items-center justify-center bg-white/70">
+                      <div className="w-10 h-10 rounded-full border-2 border-slate-300 border-t-indigo-500 animate-spin" />
+                    </div>
+                  )}
+                  <iframe src={selectedAnnex.url} className="absolute inset-0 w-full h-full" title="visualizacao-dfd" onLoad={()=>setViewerLoading(false)} />
+                </>
+              ) : isImage(selectedAnnex.name) ? (
+                <div className="absolute inset-0 flex items-center justify-center bg-white">
+                  {viewerLoading && (
+                    <div className="absolute inset-0 flex items-center justify-center bg-white/70">
+                      <div className="w-10 h-10 rounded-full border-2 border-slate-300 border-t-indigo-500 animate-spin" />
+                    </div>
+                  )}
+                  <img src={selectedAnnex.url} alt={selectedAnnex.name} className="max-w-full max-h-full object-contain" onLoad={()=>setViewerLoading(false)} />
+                </div>
+              ) : (
+                <div className="absolute inset-0 flex items-center justify-center p-6 text-center text-gray-600 bg-white">
+                  <div>
+                    <FileText className="w-16 h-16 mx-auto mb-3 text-gray-300" />
+                    <p className="text-lg font-medium">{selectedAnnex.name}</p>
+                    <p className="text-sm mb-3">Tipo não suportado para pré-visualização. Use Visualizar/Baixar.</p>
+                    <div className="flex justify-center gap-2">
+                      <Button size="sm" variant="outline" onClick={()=>openInNewTab(selectedAnnex.url)}>
+                        <Eye className="w-3 h-3 mr-1" /> Visualizar
+                      </Button>
+                      <Button size="sm" variant="outline" onClick={()=>{ const link=document.createElement('a'); link.href=selectedAnnex.url!; link.download=selectedAnnex.name||'documento'; document.body.appendChild(link); link.click(); document.body.removeChild(link); }}>
+                        <Download className="w-3 h-3 mr-1" /> Baixar
+                      </Button>
+                    </div>
                   </div>
-
-                {/* Visualização do PDF */}
-                <div className="w-full min-h-[520px] rounded-lg border border-gray-200 bg-gray-50 flex items-center justify-center">
-                                     <div className="text-center text-gray-500">
-                     <FileText className="w-16 h-16 mx-auto mb-4 text-gray-300" />
-                     <p className="text-lg font-medium">Visualização do DFD</p>
-                     <p className="text-sm">Documento final aprovado por Yasmin Pissolati Mattos Bretz</p>
-                     <p className="text-xs mt-2">(Bloqueado para edição)</p>
-                   </div>
+                </div>
+              )
+            ) : (
+              <div className="absolute inset-0 flex items-center justify-center p-6 text-center text-gray-500 bg-white">
+                <div>
+                  <FileText className="w-16 h-16 mx-auto mb-4 text-gray-300" />
+                  <p className="text-lg font-medium">Nenhum documento selecionado</p>
+                  <p className="text-sm">Use Incluir no topo ou adicione um anexo na aba Anexos</p>
                 </div>
               </div>
-            </div>
+            )}
+          </div>
+        </div>
+      </div>
 
       {/* 2️⃣ Gerenciamento */}
       <div className="rounded-2xl border border-slate-300 shadow-md bg-white p-6 mb-8 min-h-[700px]">
@@ -773,7 +893,7 @@ export default function DFDAssinaturaSection({
                                     onClick={() => handleRemoverAssinante(assinante.id)}
                                     className="h-6 w-6 p-0 text-red-600 hover:text-red-700"
                                   >
-                                    <UserMinus className="w-3 h-3" />
+                                    <Trash2 className="w-3 h-3" />
                                   </Button>
                                 )}
                                 
@@ -788,7 +908,7 @@ export default function DFDAssinaturaSection({
                                     }}
                                     className="h-6 w-6 p-0 text-orange-600 hover:text-orange-700"
                                   >
-                                    <XCircle className="w-3 h-3" />
+                                    <Ban className="w-3 h-3" />
                                   </Button>
                                 )}
                               </div>
@@ -843,7 +963,7 @@ export default function DFDAssinaturaSection({
                     {/* Upload */}
                     {isGSPouSE && (
                       <div>
-                        <input ref={fileInputRef} type="file" accept=".pdf,.doc,.docx,.odt,.png,.jpg,.jpeg,.gif,.bmp,.tif,.tiff" className="hidden" onChange={(e)=>{ const f=e.target.files?.[0]; if(!f) return; setAnnexes(prev=>[{id:`a-${Date.now()}`,name:f.name,uploadedAt:new Date().toISOString(),uploadedBy:user?.nome||'Usuário'},...prev]); if(e.target) e.target.value=''; toast({title:'Anexo adicionado', description:`${f.name} foi anexado.`}); }} />
+                        <input ref={fileInputRef} type="file" accept=".pdf,.doc,.docx,.odt,.png,.jpg,.jpeg,.gif,.bmp,.tif,.tiff" className="hidden" onChange={(e)=>{ const f=e.target.files?.[0]; if(!f) return; const newId = `a-${Date.now()}`; const newAnnex = {id:newId,name:f.name,uploadedAt:new Date().toISOString(),uploadedBy:user?.nome||'Usuário', url: URL.createObjectURL(f)}; setAnnexes(prev=>[newAnnex,...prev]); setSelectedAnnexId(newId); if(e.target) e.target.value=''; toast({title:'Anexo adicionado', description:`${f.name} foi anexado.`}); }} />
                         <Button onClick={()=>fileInputRef.current?.click()} variant="outline" className="w-full h-9 border-dashed border-2 border-gray-300 hover:border-green-400 hover:bg-green-50 transition-colors text-sm">
                           <Upload className="w-4 h-4 mr-2"/>Adicionar Anexo
                         </Button>
