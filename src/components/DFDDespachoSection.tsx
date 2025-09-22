@@ -1208,7 +1208,7 @@ export default function DFDDespachoSection({
                     let corTexto = 'text-green-600';
                     let legenda = 'dias restantes';
                     if (isAtraso) { corTexto = 'text-red-600'; legenda = 'dias em atraso'; }
-                    else if (isUrgente) { corTexto = 'text-amber-600'; legenda = 'dias restantes (≤2)'; }
+                    else if (isUrgente) { corTexto = 'text-amber-600'; legenda = 'dias restantes (urgente)'; }
                     return (
                       <div className="text-center py-4">
                         <div className={`text-4xl font-extrabold ${corTexto} mb-2`}>{Math.abs(diasRest)}</div>

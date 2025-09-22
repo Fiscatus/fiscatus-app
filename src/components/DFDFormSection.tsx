@@ -9,6 +9,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Alert, AlertDescription } from '@/components/ui/alert';
 // Removido: radio-group não é mais usado aqui
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import ProgressaoTemporal from '@/components/ProgressaoTemporal';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Checkbox } from '@/components/ui/checkbox';
 import {
@@ -64,7 +65,7 @@ import { useToast } from '@/hooks/use-toast';
 import { DatePicker } from '@/components/date';
 import CommentsSection from './CommentsSection';
 import ResponsavelSelector from './ResponsavelSelector';
-import { formatDateBR, formatDateTimeBR } from '@/lib/utils';
+import { formatDateBR, formatDateTimeBR, legendaDiasRestantes, classesPrazo } from '@/lib/utils';
 
 // Tipos TypeScript conforme especificação
 type DFDVersionStatus = 'rascunho' | 'finalizada' | 'enviada_para_analise' | 'aprovada' | 'reprovada';
@@ -1543,7 +1544,7 @@ export default function DFDFormSection({
                 <div className="border-t border-slate-200 my-3 pt-4">
                   {(() => {
                     const diasRest = getDiasRestantes(currentVersion);
-                    const prazo = getPrazoColorClasses(diasRest);
+                    const prazo = classesPrazo(diasRest);
                     const isAtraso = diasRest !== null && diasRest < 0;
                     
                     return (
@@ -1551,49 +1552,16 @@ export default function DFDFormSection({
                         <div className={`text-3xl font-bold ${prazo.text} mb-2`}>
                           {diasRest === null ? '—' : Math.abs(diasRest)}
                         </div>
-                        <div className={`text-sm font-medium ${prazo.text}`}>
-                          {diasRest === null ? 'Sem prazo definido' : 
-                           isAtraso ? 'dias em atraso' : 
-                           diasRest <= 2 ? 'dias restantes (urgente)' : 
-                           'dias restantes'}
-                        </div>
+                        <div className={`text-sm font-medium ${prazo.text}`}>{legendaDiasRestantes(diasRest)}</div>
                       </div>
                     );
                   })()}
                 </div>
                 
                 {/* 3. Linha de Progresso Temporal */}
-                <div className="space-y-2">
-                  <div className="flex justify-between text-xs text-slate-500">
-                    <span>Progresso</span>
-                    <span>{getProgressoTemporal()}%</span>
-                  </div>
-                  <TooltipProvider>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <div className="w-full bg-slate-200 rounded-full h-2 cursor-help">
-                          <div 
-                            className={`h-2 rounded-full transition-all ${getProgressColor(getProgressoTemporal())}`}
-                            style={{ width: `${Math.min(getProgressoTemporal(), 100)}%` }}
-                          />
-                        </div>
-                      </TooltipTrigger>
-                       <TooltipContent>
-                         <p>
-                           {(() => {
-                             const prazoInicial = new Date(currentVersion.criadoEm);
-                             const prazoLimite = getPrazoFinalPrevisto();
-                             const hoje = etapaConcluida ? new Date(etapaConcluida.dataConclusao) : new Date();
-                             const diasUteisTotal = Math.max(1, countBusinessDays(prazoInicial.toISOString(), prazoLimite.toISOString()));
-                             const diasUteisPassados = countBusinessDays(prazoInicial.toISOString(), hoje.toISOString());
-                             
-                             return `${diasUteisPassados} dias úteis decorridos de ${diasUteisTotal} totais`;
-                           })()}
-                         </p>
-                       </TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
-                </div>
+                {(() => { const inicio = currentVersion.criadoEm; const fim = getPrazoFinalPrevisto().toISOString(); return (
+                  <ProgressaoTemporal startISO={inicio} endISO={fim} className="space-y-2" />
+                ); })()}
                 
               </div>
             </div>

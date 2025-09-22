@@ -6,6 +6,8 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import ProgressaoTemporal from '@/components/ProgressaoTemporal';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
@@ -99,6 +101,8 @@ interface GerenciaParticipante {
   gerencia: string;
   concluiu: boolean;
   dataConclusao?: string;
+  dataInicioISO?: string;
+  prazoDiasUteis?: number;
   observacoes?: string;
 }
 
@@ -150,19 +154,25 @@ export default function DFDCumprimentoRessalvasSection({
       id: '1',
       nome: 'Yasmin Pissolati Mattos Bretz',
       gerencia: 'GSP - Gerência de Soluções e Projetos',
-      concluiu: false
+      concluiu: false,
+      dataInicioISO: new Date().toISOString(),
+      prazoDiasUteis: 3
     },
     {
       id: '2',
       nome: 'Leticia Bonfim Guilherme',
       gerencia: 'GLC - Gerência de Licitações e Contratos',
-      concluiu: false
+      concluiu: false,
+      dataInicioISO: new Date().toISOString(),
+      prazoDiasUteis: 3
     },
     {
       id: '3',
       nome: 'Guilherme de Carvalho Silva',
       gerencia: 'GSL - Gerência de Suprimentos e Logística',
-      concluiu: false
+      concluiu: false,
+      dataInicioISO: new Date().toISOString(),
+      prazoDiasUteis: 3
     }
   ]);
   // Formulário de nova gerência
@@ -648,6 +658,73 @@ export default function DFDCumprimentoRessalvasSection({
     return { bar: 'bg-slate-400', text: 'text-slate-600', chip: 'bg-slate-100 text-slate-700' };
   };
 
+  // Helpers de data
+  const addBusinessDays = (startISO: string, businessDays: number = 3): string => {
+    const date = new Date(startISO);
+    let added = 0;
+    while (added < businessDays) {
+      date.setDate(date.getDate() + 1);
+      const day = date.getDay();
+      if (day >= 1 && day <= 5) added++;
+    }
+    return date.toISOString();
+  };
+
+  // Progresso temporal padronizado (dias úteis) — igual aos outros cards
+  const getTemporalProgress = () => {
+    const inicioGlobalISO = (gerenciasParticipantes
+      .map(g => g.dataInicioISO || new Date().toISOString())
+      .sort((a,b) => new Date(a).getTime() - new Date(b).getTime())[0]) || new Date().toISOString();
+    const prazoDias = 3; // prazo global igual para todas as gerências
+    const finalISO = addBusinessDays(inicioGlobalISO, prazoDias);
+    const start = new Date(inicioGlobalISO);
+    const end = new Date(finalISO);
+    const hoje = new Date();
+    const total = Math.max(1, countBusinessDaysBetween(start.toISOString(), end.toISOString()));
+    const passados = countBusinessDaysBetween(start.toISOString(), hoje.toISOString());
+    const percent = Math.min(100, Math.round((Math.min(passados, total) / total) * 100));
+    return { percent, start, end, passados, total };
+  };
+
+  const getGerenciaPrazoInfo = (g: GerenciaParticipante) => {
+    const inicio = g.dataInicioISO || new Date().toISOString();
+    const prazo = g.prazoDiasUteis ?? 3;
+    const finalISO = addBusinessDays(inicio, prazo);
+    return { inicioISO: inicio, finalISO, prazoDiasUteis: prazo };
+  };
+
+  const countBusinessDaysBetween = (startISO: string, endISO: string): number => {
+    const start = new Date(startISO);
+    const end = new Date(endISO);
+    let count = 0;
+    const cur = new Date(start);
+    while (cur <= end) {
+      const dow = cur.getDay();
+      if (dow >= 1 && dow <= 5) count++;
+      cur.setDate(cur.getDate() + 1);
+    }
+    return count;
+  };
+
+  const getGerenciaPrazoStatus = (g: GerenciaParticipante) => {
+    const { inicioISO, finalISO, prazoDiasUteis } = getGerenciaPrazoInfo(g);
+    const fim = g.concluiu && g.dataConclusao ? g.dataConclusao : new Date().toISOString();
+    const decorridos = countBusinessDaysBetween(inicioISO, fim);
+    if (g.concluiu) {
+      const dentro = new Date(g.dataConclusao || '') <= new Date(finalISO);
+      return {
+        text: dentro ? 'Concluído no prazo' : 'Concluído atrasado',
+        chip: dentro ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800',
+        decorridos
+      };
+    }
+    return {
+      text: 'Em andamento',
+      chip: 'bg-slate-100 text-slate-700',
+      decorridos
+    };
+  };
+
   const opcoesGerencias = [
     'GSP - Gerência de Soluções e Projetos',
     'GLC - Gerência de Licitações e Contratos',
@@ -688,7 +765,9 @@ export default function DFDCumprimentoRessalvasSection({
       id: `${Date.now()}`,
       nome: nomeResp,
       gerencia: nomeGerencia,
-      concluiu: false
+      concluiu: false,
+      dataInicioISO: new Date().toISOString(),
+      prazoDiasUteis: 3
     };
     setGerenciasParticipantes(prev => [novo, ...prev]);
     setNovaGerencia('');
@@ -736,7 +815,7 @@ export default function DFDCumprimentoRessalvasSection({
              <div className="card-shell">
               <header className="card-header-title">
                 <Search className="w-6 h-6 text-indigo-600" />
-                <h2 className="text-lg font-bold text-slate-900">Parecer Técnico</h2>
+                <h2 className="text-lg font-bold text-slate-900">Pós Cumprimento de Ressalvas</h2>
                 <div className="ml-auto">
                   <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800">Análise</span>
                   </div>
@@ -884,14 +963,10 @@ export default function DFDCumprimentoRessalvasSection({
                           
                       {/* Barra de progresso com cores dinâmicas */}
                       <div className="mt-1">
-                        <div className="flex items-center justify-between mb-1">
-                          <span className="text-xs text-slate-600">Progresso</span>
-                          <span className={`text-xs font-medium ${getProgressClasses(progressoGerencias).text}`}>{Math.round(progressoGerencias)}%</span>
-                          </div>
-                        <div className="w-full bg-slate-200 rounded-full h-2">
-                          <div className={`h-2 rounded-full transition-all duration-300 ${getProgressClasses(progressoGerencias).bar}`} style={{ width: `${progressoGerencias}%` }}></div>
-                        </div>
-                  </div>
+                        {(() => { const t = getTemporalProgress(); return (
+                          <ProgressaoTemporal startISO={t.start.toISOString()} endISO={t.end.toISOString()} />
+                        ); })()}
+                      </div>
 
                       {validationErrors.includes('Todas as gerências participantes devem marcar como concluído') && (
                         <div className="mt-2 p-2 bg-red-50 border border-red-200 rounded-lg">
@@ -997,36 +1072,65 @@ export default function DFDCumprimentoRessalvasSection({
               </header>
               <div className="card-separator-green"></div>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                {/* 1) Status & Prazo */}
+                {/* 1) Status & Prazo - por Gerência */}
                 <div className="rounded-2xl border shadow-sm bg-white p-4 md:p-6">
                   <header className="flex items-center justify-between mb-4">
                     <div className="flex items-center gap-2">
                       <Flag className="w-5 h-5 text-indigo-600" />
-                      <h3 className="text-sm font-semibold text-slate-800">Status & Prazo</h3>
+                      <h3 className="text-sm font-semibold text-slate-800">Status & Prazo por Gerência</h3>
                     </div>
                     <Badge className="text-sm font-semibold px-3 py-2 bg-yellow-100 text-yellow-800">
                       {versaoFinalEnviada ? 'Finalizado' : 'Em correção'}
                               </Badge>
                   </header>
                   <div className="space-y-4">
-                    <div className="flex items-center gap-3 p-3 rounded-lg border border-slate-200">
-                      <div className="w-10 h-10 rounded-full flex items-center justify-center border border-slate-300">
-                        <Calendar className="w-5 h-5 text-slate-600" />
+                    {gerenciasParticipantes.map((g) => {
+                      const prazoInfo = getGerenciaPrazoInfo(g);
+                      return (
+                        <div key={g.id} className="p-4 rounded-xl border border-slate-200 bg-white">
+                          <div className="flex items-center justify-between mb-3">
+                            <div className="flex items-center gap-2">
+                              <Badge variant="outline" className="text-xs font-medium">{g.gerencia.split(' - ')[0]}</Badge>
                             </div>
-                      <div>
-                        <p className="text-sm font-semibold text-slate-500">Data de Início</p>
-                        <p className="text-lg font-bold text-slate-900">{formatDate(new Date().toISOString())}</p>
+                            {(() => { const st = getGerenciaPrazoStatus(g); return (
+                              <Badge className={`text-xs px-2 py-1 ${st.chip}`}>{st.text}</Badge>
+                            ); })()}
                           </div>
-                      </div>
-                    <div className="flex items-center gap-3 p-3 rounded-lg border border-slate-200">
-                      <div className="w-10 h-10 rounded-full flex items-center justify-center border border-slate-300">
-                        <Clock className="w-5 h-5 text-slate-600" />
-                    </div>
-                      <div>
-                        <p className="text-sm font-semibold text-slate-500">Prazo padrão</p>
-                        <p className="text-lg font-bold text-slate-900">3 dias úteis</p>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div className="flex items-center gap-3 p-3 rounded-lg border border-slate-200 bg-slate-50">
+                            <div className="w-9 h-9 rounded-full flex items-center justify-center border border-slate-300 bg-white">
+                              <Clock className="w-4 h-4 text-slate-600" />
+                            </div>
+                            <div>
+                              <p className="text-[12px] font-semibold text-slate-500">Prazo Inicial</p>
+                              <p className="text-sm font-bold text-slate-900">{formatDate(prazoInfo.inicioISO)}</p>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-3 p-3 rounded-lg border border-slate-200 bg-slate-50">
+                            <div className="w-9 h-9 rounded-full flex items-center justify-center border border-slate-300 bg-white">
+                              <Flag className="w-4 h-4 text-slate-600" />
+                            </div>
+                            <div>
+                              <p className="text-[12px] font-semibold text-slate-500">Prazo Final</p>
+                              <p className="text-sm font-bold text-slate-900">{formatDate(prazoInfo.finalISO)}</p>
+                            </div>
+                          </div>
+                        </div>
+                        <div className="mt-3 flex items-center justify-between">
+                          <div className="text-[12px] text-slate-500">
+                            {g.concluiu && g.dataConclusao ? (
+                              <span>Concluiu em {formatDateTime(g.dataConclusao)}</span>
+                            ) : (
+                              <span>Não concluído</span>
+                            )}
+                          </div>
+                          {(() => { const st = getGerenciaPrazoStatus(g); return (
+                            <span className="text-[12px] text-slate-500">{st.decorridos} dias úteis decorridos</span>
+                          ); })()}
                         </div>
                       </div>
+                      );
+                    })}
                   </div>
                   <div className="border-t border-slate-200 my-3 pt-4">
                     <div className="text-center py-2">

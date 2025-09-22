@@ -27,11 +27,12 @@ import {
   AlertCircle
 } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import ProgressaoTemporal from '@/components/ProgressaoTemporal';
 import { useUser } from '@/contexts/UserContext';
 import { useToast } from '@/hooks/use-toast';
 import CommentsSection from './CommentsSection';
 import { useDFD, DFDData, DFDVersionStatus, DFDAnnex } from '@/hooks/useDFD';
-import { formatDateBR, formatDateTimeBR } from '@/lib/utils';
+import { formatDateBR, formatDateTimeBR, legendaDiasRestantes } from '@/lib/utils';
 
 // Tipos para o novo sistema
 type AnaliseStatus = 'AGUARDANDO_ANALISE' | 'APROVADA' | 'REPROVADA_NOVA_VERSAO';
@@ -770,14 +771,16 @@ export default function DFDAprovacaoSection({
               </div>
             </div>
 
-            {/* Prazo Final da Revisão */}
+            {/* Prazo Final da Revisão da versão X */}
             <div className="flex items-center justify-between p-3 rounded-lg border border-slate-200">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-full flex items-center justify-center border border-slate-300">
                   <Flag className="w-5 h-5 text-slate-600" />
                 </div>
                 <div>
-                  <p className="text-sm font-semibold text-slate-500">Prazo Final da Revisão</p>
+                  <p className="text-sm font-semibold text-slate-500">
+                    Prazo Final da Revisão {versaoParaExibir ? `da versão V${versaoParaExibir.version}` : ''}
+                  </p>
                   <p className="text-lg font-bold text-slate-900">
                     {(() => { const d = getPrazoFinalRevisao(); return d ? formatDate(d.toISOString()) : '—'; })()}
                   </p>
@@ -811,50 +814,16 @@ export default function DFDAprovacaoSection({
                       <div className={`text-3xl font-bold ${prazo.text} mb-2`}>
                         {diasRest === null ? '—' : Math.abs(diasRest)}
                       </div>
-                      <div className={`text-sm font-medium ${prazo.text}`}>
-                        {diasRest === null ? 'Sem prazo definido' : 
-                         isAtraso ? 'dias em atraso' : 
-                         diasRest <= 2 ? 'dias restantes (urgente)' : 
-                         'dias restantes'}
-                      </div>
+                      <div className={`text-sm font-medium ${prazo.text}`}>{legendaDiasRestantes(diasRest)}</div>
                     </div>
                   );
                 })()}
               </div>
 
-              {/* Barra de Progresso com tooltip */}
-              <div className="space-y-2">
-                <div className="flex justify-between text-xs text-slate-500">
-                  <span>Progresso</span>
-                  <span>{getProgressoTemporal()}%</span>
-                </div>
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <div className="w-full bg-slate-200 rounded-full h-2 cursor-help">
-                        <div 
-                          className={`h-2 rounded-full transition-all ${getProgressoTemporal() <= 70 ? 'bg-green-500' : getProgressoTemporal() <= 100 ? 'bg-yellow-500' : 'bg-red-500'}`}
-                          style={{ width: `${Math.min(getProgressoTemporal(), 100)}%` }}
-                        />
-                      </div>
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <p>
-                        {(() => {
-                          const base = versaoParaExibir || dfdData.currentVersion || dfdData.versions[dfdData.versions.length - 1];
-                          if (!base) return '—';
-                          const prazoInicial = new Date(base.createdAt);
-                          const prazoLimite = getPrazoFinalPrevisto();
-                          const hoje = new Date();
-                          const diasUteisTotal = Math.max(1, countBusinessDays(prazoInicial, prazoLimite));
-                          const diasUteisPassados = countBusinessDays(prazoInicial, hoje);
-                          return `${diasUteisPassados} dias úteis decorridos de ${diasUteisTotal} totais`;
-                        })()}
-                      </p>
-                    </TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
-              </div>
+              {/* Barra de Progresso padronizada */}
+              {(() => { const base = versaoParaExibir || dfdData.currentVersion || dfdData.versions[dfdData.versions.length - 1]; if (!base) return null; const end = getPrazoFinalPrevisto(); return (
+                <ProgressaoTemporal startISO={base.createdAt} endISO={end.toISOString()} className="space-y-2" />
+              ); })()}
             </div>
           </div>
 

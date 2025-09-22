@@ -10,6 +10,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 // Removido: radio-group não é mais usado aqui
 import { Separator } from '@/components/ui/separator';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import ProgressaoTemporal from '@/components/ProgressaoTemporal';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Checkbox } from '@/components/ui/checkbox';
 import { 
@@ -53,7 +54,7 @@ import { useToast } from '@/hooks/use-toast';
 import { DatePicker } from '@/components/date';
 import CommentsSection from './CommentsSection';
 import ResponsavelSelector from './ResponsavelSelector';
-import { formatDateBR, formatDateTimeBR } from '@/lib/utils';
+import { formatDateBR, formatDateTimeBR, legendaDiasRestantes, classesPrazo } from '@/lib/utils';
 
 // Tipos TypeScript conforme especificação
 type ETPVersionStatus = 'rascunho' | 'finalizada' | 'enviada_para_assinatura';
@@ -958,11 +959,11 @@ export default function ETPElaboracaoSection({
                 <div className="w-full p-4 border-b border-slate-200 my-4">
                   <div className="grid grid-cols-12 gap-4">
                     <div className="col-span-12 md:col-span-6">
-                      <Label htmlFor="numeroETP" className="text-sm font-semibold text-gray-700 flex items-center gap-2 mb-2">
+                      <Label htmlFor="numeroProcesso" className="text-sm font-semibold text-gray-700 flex items-center gap-2 mb-2">
                         <Hash className="w-4 h-4" />
-                        Número do ETP
+                        Número do Processo Administrativo
                       </Label>
-                <Input id="numeroETP" value={formatNumeroETP(formData.numeroETP)} readOnly className="w-full bg-gray-50 border-gray-200 text-gray-600" />
+                <Input id="numeroProcesso" value={formatNumeroETP(formData.numeroETP)} readOnly className="w-full bg-gray-50 border-gray-200 text-gray-600" />
                     </div>
                     <div className="col-span-12 md:col-span-6">
                       <Label htmlFor="dataElaboracao" className="text-sm font-semibold text-gray-700 flex items-center gap-2 mb-2">
@@ -1008,7 +1009,7 @@ export default function ETPElaboracaoSection({
                 <div className="px-4 py-6 rounded-t-xl border-b">
                   <h3 className="text-sm font-semibold text-slate-900 flex items-center gap-2">
                     <History className="w-4 h-4 text-purple-600" />
-                    Revisões
+                    Versões
                   </h3>
                 </div>
                 <div className="p-4">
@@ -1016,7 +1017,7 @@ export default function ETPElaboracaoSection({
                     {permissoes.podeCriarNovaRevisao && (
                       <Button onClick={handleCreateNewVersion} variant="outline" className="w-full border-dashed border-2 border-gray-300 hover:border-purple-400 hover:bg-purple-50">
                           <Plus className="w-4 h-4 mr-2" />
-                          Criar Nova Revisão
+                          Criar Nova Versão
                         </Button>
                       )}
                       {versions.length === 0 ? (
@@ -1024,11 +1025,11 @@ export default function ETPElaboracaoSection({
                           <div className="p-4 bg-gray-100 rounded-full w-16 h-16 mx-auto mb-4 flex items-center justify-center">
                             <FileText className="w-8 h-8 text-gray-400" />
                           </div>
-                          <p className="text-gray-500 font-medium">Ainda não há revisões criadas</p>
+                          <p className="text-gray-500 font-medium">Ainda não há versões criadas</p>
                         </div>
                       ) : (
                       <div className="space-y-3 overflow-y-auto max-h-[450px]">
-                        {!showAllRevisions && <div className="text-sm font-semibold text-purple-700">Última revisão</div>}
+                        {!showAllRevisions && <div className="text-sm font-semibold text-purple-700">Última versão</div>}
                           {(showAllRevisions ? versions : [versions[0]]).map((version, idx, arr) => {
                             const statusConfig = getStatusConfig(version.status);
                             const slaBadge = getSLABadge(version.prazoInicialDiasUteis || 0, version.prazoCumpridoDiasUteis);
@@ -1039,7 +1040,7 @@ export default function ETPElaboracaoSection({
                               <div className="border border-gray-200 rounded-xl p-4 hover:bg-gray-50 transition-colors">
                                 <div className="flex items-center justify-between mb-3">
                                   <div className="flex items-center gap-2 flex-wrap">
-                                    <Badge variant="outline" className="text-xs font-medium">R{version.numeroRevisao}</Badge>
+                                    <Badge variant="outline" className="text-xs font-medium">V{version.numeroRevisao}</Badge>
                                     <Badge className={`text-xs font-medium ${statusConfig.color}`}>{statusConfig.icon}<span className="ml-1">{statusConfig.label}</span></Badge>
                                     <Badge className={`text-xs font-medium ${slaBadge.color}`}>{slaBadge.label}</Badge>
                                     <Badge className={`text-xs font-medium ${prazoClasses.badge}`}>{diasRestantes === null ? 'Sem prazo' : diasRestantes < 0 ? `${Math.abs(diasRestantes)}d atrasado` : `${diasRestantes}d restantes`}</Badge>
@@ -1083,8 +1084,8 @@ export default function ETPElaboracaoSection({
                           })}
                           {versions.length > 1 && (
                             <div className="pt-2">
-                            <Button variant="ghost" aria-label={showAllRevisions ? 'Recolher lista de revisões' : 'Ver todas as revisões'} className="text-sm text-purple-700 hover:text-purple-800 hover:bg-purple-50" onClick={() => setShowAllRevisions(v => !v)}>
-                                {showAllRevisions ? 'Ocultar revisões antigas' : 'Ver todas as revisões'}
+                            <Button variant="ghost" aria-label={showAllRevisions ? 'Recolher lista de versões' : 'Ver todas as versões'} className="text-sm text-purple-700 hover:text-purple-800 hover:bg-purple-50" onClick={() => setShowAllRevisions(v => !v)}>
+                                {showAllRevisions ? 'Ocultar versões antigas' : 'Ver todas as versões'}
                               </Button>
                        </div>
                           )}
@@ -1248,26 +1249,20 @@ export default function ETPElaboracaoSection({
               <div className="border-t border-slate-200 my-3 pt-4">
                       {(() => {
                         const diasRest = getDiasRestantes(currentVersion);
-                        const prazo = getPrazoColorClasses(diasRest);
+                      const prazo = classesPrazo(diasRest);
                   const isAtraso = diasRest !== null && diasRest < 0;
                         return (
                     <div className="text-center py-4">
                       <div className={`text-3xl font-bold ${prazo.text} mb-2`}>{diasRest === null ? '—' : Math.abs(diasRest)}</div>
-                      <div className={`text-sm font-medium ${prazo.text}`}>
-                        {diasRest === null ? 'Sem prazo definido' : isAtraso ? 'dias em atraso' : diasRest <= 2 ? 'dias restantes (urgente)' : 'dias restantes'}
-                      </div>
+                      <div className={`text-sm font-medium ${prazo.text}`}>{legendaDiasRestantes(diasRest)}</div>
                     </div>
                         );
                       })()}
                 </div>
               <div className="space-y-2">
-                <div className="flex justify-between text-xs text-slate-500">
-                  <span>Progresso</span>
-                  <span>{getProgressoTemporal()}%</span>
-                </div>
-                <div className="w-full bg-slate-200 rounded-full h-2">
-                  <div className={`h-2 rounded-full transition-all ${getProgressColor(getProgressoTemporal())}`} style={{ width: `${Math.min(getProgressoTemporal(), 100)}%` }} />
-                </div>
+                {(() => { const inicio = currentVersion.criadoEm; const fim = getPrazoFinalPrevisto().toISOString(); return (
+                  <ProgressaoTemporal startISO={inicio} endISO={fim} />
+                ); })()}
               </div>
                 </div>
               </div>

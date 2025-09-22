@@ -9,6 +9,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Separator } from '@/components/ui/separator';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import ProgressaoTemporal from '@/components/ProgressaoTemporal';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Progress } from '@/components/ui/progress';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -662,10 +663,10 @@ export default function DFDAssinaturaSection({
                   toast({ title: 'Anexo adicionado', description: `${f.name} foi anexado.` });
                 }}
               />
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={() => {
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => {
                   if (selectedAnnex?.url) {
                     openInNewTab(selectedAnnex.url);
                   } else {
@@ -673,14 +674,14 @@ export default function DFDAssinaturaSection({
                   }
                 }}
                 className="h-8 px-2 text-xs"
-              >
-                <Eye className="w-3 h-3 mr-1" />
-                Visualizar
-              </Button>
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={() => {
+                    >
+                      <Eye className="w-3 h-3 mr-1" />
+                      Visualizar
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => {
                   if (selectedAnnex?.url) {
                     const link = document.createElement('a');
                     link.href = selectedAnnex.url;
@@ -693,10 +694,10 @@ export default function DFDAssinaturaSection({
                   }
                 }}
                 className="h-8 px-2 text-xs"
-              >
-                <Download className="w-3 h-3 mr-1" />
-                Baixar
-              </Button>
+                    >
+                      <Download className="w-3 h-3 mr-1" />
+                      Baixar
+                    </Button>
               <Button
                 size="sm"
                 variant="outline"
@@ -727,7 +728,7 @@ export default function DFDAssinaturaSection({
                 <Trash2 className="w-3 h-3 mr-1" />
                 Excluir
               </Button>
-            </div>
+                  </div>
           </div>
         </header>
         <div className="border-b-2 border-indigo-200 mb-6"></div>
@@ -773,15 +774,15 @@ export default function DFDAssinaturaSection({
             ) : (
               <div className="absolute inset-0 flex items-center justify-center p-6 text-center text-gray-500 bg-white">
                 <div>
-                  <FileText className="w-16 h-16 mx-auto mb-4 text-gray-300" />
+                     <FileText className="w-16 h-16 mx-auto mb-4 text-gray-300" />
                   <p className="text-lg font-medium">Nenhum documento selecionado</p>
                   <p className="text-sm">Use Incluir no topo ou adicione um anexo na aba Anexos</p>
-                </div>
+                   </div>
               </div>
             )}
-          </div>
-        </div>
-      </div>
+                </div>
+              </div>
+            </div>
 
       {/* 2️⃣ Gerenciamento */}
       <div className="rounded-2xl border border-slate-300 shadow-md bg-white p-6 mb-8 min-h-[700px]">
@@ -1167,7 +1168,7 @@ export default function DFDAssinaturaSection({
                       legenda = 'dias em atraso';
                     } else if (isUrgente) {
                       corTexto = 'text-amber-600';
-                      legenda = 'dias restantes (≤2)';
+                      legenda = 'dias restantes (urgente)';
                     }
                     
                     return (
@@ -1183,74 +1184,13 @@ export default function DFDAssinaturaSection({
                   })()}
                 </div>
                 
-                {/* 3. Barra de SLA (progresso temporal) */}
-                <div className="space-y-2">
-                  <div className="flex justify-between items-center">
-                    <span className="text-xs text-slate-500">Progresso Temporal</span>
+                {/* 3. Barra de SLA (progresso temporal) - padronizada */}
                     {(() => {
-                      const diasRest = cardData.sla.prazoDiasUteis - cardData.sla.decorridosDiasUteis;
-                      const isAtraso = diasRest < 0;
-                      const isUrgente = diasRest <= 2 && diasRest >= 0;
-                      const isFinalizada = cardData.statusEtapa === 'CONCLUIDO';
-                      
-                      if (isFinalizada) {
-                        return <Badge className="bg-green-100 text-green-800 text-xs">Dentro do prazo</Badge>;
-                      } else if (isAtraso) {
-                        return <Badge className="bg-red-100 text-red-800 text-xs">Atrasado</Badge>;
-                      } else if (isUrgente) {
-                        return <Badge className="bg-amber-100 text-amber-800 text-xs">Próximo do prazo</Badge>;
-                      } else {
-                        return <Badge className="bg-green-100 text-green-800 text-xs">Dentro do prazo</Badge>;
-                      }
+                  const inicio = new Date().toISOString();
+                  const fim = new Date(Date.now() + cardData.sla.prazoDiasUteis * 24 * 60 * 60 * 1000).toISOString();
+                  return <ProgressaoTemporal startISO={inicio} endISO={fim} className="space-y-2" />;
                     })()}
                   </div>
-                  
-                  <TooltipProvider>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <div 
-                          className="w-full bg-slate-200 rounded-full h-3 cursor-help"
-                          aria-label={`Progresso temporal da etapa de assinatura, ${Math.round((cardData.sla.decorridosDiasUteis / cardData.sla.prazoDiasUteis) * 100)}% concluído, ${cardData.sla.decorridosDiasUteis} de ${cardData.sla.prazoDiasUteis} dias úteis decorridos`}
-                        >
-                          {(() => {
-                            const total = Math.max(1, cardData.sla.prazoDiasUteis);
-                            const passados = Math.max(0, Math.min(cardData.sla.decorridosDiasUteis, total));
-                            const perc = Math.round((passados / total) * 100);
-                            const isFinalizada = cardData.statusEtapa === 'CONCLUIDO';
-                            
-                            let corBarra = 'bg-emerald-500';
-                            if (isFinalizada) {
-                              corBarra = 'bg-green-500';
-                            } else if (perc >= 71 && perc <= 99) {
-                              corBarra = 'bg-amber-500';
-                            } else if (perc >= 100) {
-                              corBarra = 'bg-red-500';
-                            }
-                            
-                            return (
-                              <div 
-                                className={`h-3 rounded-full transition-all ${corBarra}`}
-                                style={{ width: `${Math.min(perc, 100)}%` }}
-                              />
-                            );
-                          })()}
-                        </div>
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        <p>
-                          {cardData.sla.decorridosDiasUteis} de {cardData.sla.prazoDiasUteis} dias úteis decorridos
-                        </p>
-                      </TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
-                  
-                  {/* Legenda da barra */}
-                  <div className="flex justify-between text-xs text-slate-500">
-                    <span>Decorridos: {cardData.sla.decorridosDiasUteis} / {cardData.sla.prazoDiasUteis} dias úteis</span>
-                    <span>Progresso: {Math.round((cardData.sla.decorridosDiasUteis / cardData.sla.prazoDiasUteis) * 100)}%</span>
-                  </div>
-                </div>
-              </div>
             </div>
 
             {/* 2️⃣ Card Checklist da Etapa (pendências primeiro) */}

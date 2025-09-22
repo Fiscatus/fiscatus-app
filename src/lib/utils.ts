@@ -150,3 +150,19 @@ export function getBordaEtapa(
   // Etapa Pendente e Dentro do Prazo - Borda padrão (cinza)
   return 'border-gray-300';
 }
+
+// Legenda padronizada para dias restantes/atraso
+export function legendaDiasRestantes(diasRestantes: number | null): string {
+  if (diasRestantes === null) return 'Sem prazo definido';
+  if (diasRestantes < 0) return 'dias em atraso';
+  if (diasRestantes <= 2) return 'dias restantes (urgente)';
+  return 'dias restantes';
+}
+
+// Classes de cor padronizadas para prazo
+export function classesPrazo(diasRestantes: number | null): { text: string; badge: string } {
+  if (diasRestantes === null) return { text: 'text-gray-600', badge: 'bg-gray-100 text-gray-800' };
+  if (diasRestantes < 0) return { text: 'text-red-600', badge: 'bg-red-100 text-red-800' };
+  if (diasRestantes <= 2) return { text: 'text-orange-600', badge: 'bg-orange-100 text-orange-800' };
+  return { text: 'text-green-600', badge: 'bg-green-100 text-green-800' };
+}

@@ -8,6 +8,8 @@ import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import ProgressaoTemporal from '@/components/ProgressaoTemporal';
 import {
   FileText,
   CheckCircle,
@@ -53,7 +55,7 @@ import { useToast } from '@/hooks/use-toast';
 import TextareaWithMentions from './TextareaWithMentions';
 import CommentsSection from './CommentsSection';
 import { useDFD, DFDData, DFDVersion, DFDVersionStatus, DFDAnnex } from '@/hooks/useDFD';
-import { formatDateBR, formatDateTimeBR } from '@/lib/utils';
+import { formatDateBR, formatDateTimeBR, legendaDiasRestantes, classesPrazo } from '@/lib/utils';
 
 // Tipos para o sistema de análise jurídica
 type AnaliseJuridicaStatus = 'AGUARDANDO_ANALISE' | 'APROVADA_COM_RESSALVAS' | 'DEVOLVIDA_CORRECAO' | 'ANALISE_FAVORAVEL';
@@ -552,11 +554,15 @@ export default function DFDAnaliseJuridicaSection({
     return 'bg-red-500';
   };
 
-  const getProgressoTemporal = () => {
-    // Base simples: diasNoCard sobre prazoInicialDiasUteis
-    const total = Math.max(1, prazoInicialDiasUteis);
-    const progresso = Math.round((Math.min(diasNoCard, total) / total) * 100);
-    return Math.min(Math.max(progresso, 0), 100);
+  // Progresso temporal padronizado (dias úteis)
+  const getTemporalProgress = () => {
+    const inicio = new Date(dataCriacaoISO);
+    const fim = new Date(addBusinessDays(dataCriacaoISO, prazoInicialDiasUteis));
+    const total = Math.max(1, countBusinessDays(inicio, fim));
+    const hoje = new Date();
+    const passados = Math.min(total, countBusinessDays(inicio, hoje));
+    const percent = Math.min(100, Math.round((passados / total) * 100));
+    return { percent, total, passados };
   };
 
   const getEtapaStatus = () => {
@@ -880,7 +886,7 @@ export default function DFDAnaliseJuridicaSection({
                         </div>
                         <div>
                           <p className="text-sm font-semibold text-slate-500">Prazo Inicial</p>
-                          <p className="text-lg font-bold text-slate-900">{prazoInicialDiasUteis} dias úteis</p>
+                          <p className="text-lg font-bold text-slate-900">{formatDate(dataCriacaoISO)}</p>
                         </div>
                       </div>
                       <div className="flex items-center gap-3 p-3 rounded-lg border border-slate-200">
@@ -897,23 +903,20 @@ export default function DFDAnaliseJuridicaSection({
                   <div className="border-t border-slate-200 my-3 pt-4">
                     {(() => {
                       const diasRest = getDiasRestantes();
-                      const prazo = getPrazoColorClasses(diasRest);
+                      const prazo = classesPrazo(diasRest);
                       const isAtraso = diasRest !== null && diasRest < 0;
                           return (
                         <div className="text-center py-4">
                           <div className={`text-3xl font-bold ${prazo.text} mb-2`}>{diasRest === null ? '—' : Math.abs(diasRest)}</div>
-                          <div className={`text-sm font-medium ${prazo.text}`}>
-                            {diasRest === null ? 'Sem prazo definido' : isAtraso ? 'dias em atraso' : diasRest <= 2 ? 'dias restantes (urgente)' : 'dias restantes'}
-                          </div>
+                          <div className={`text-sm font-medium ${prazo.text}`}>{legendaDiasRestantes(diasRest)}</div>
                         </div>
                       );
                     })()}
                   </div>
                   <div className="space-y-2">
-                    <div className="flex justify-between text-xs text-slate-500"><span>Progresso</span><span>{getProgressoTemporal()}%</span></div>
-                    <div className="w-full bg-slate-200 rounded-full h-2">
-                      <div className={`h-2 rounded-full transition-all ${getProgressColor(getProgressoTemporal())}`} style={{ width: `${Math.min(getProgressoTemporal(), 100)}%` }} />
-                    </div>
+                    {(() => { const t = getTemporalProgress(); return (
+                      <ProgressaoTemporal startISO={dataCriacaoISO} endISO={addBusinessDays(dataCriacaoISO, prazoInicialDiasUteis)} />
+                    ); })()}
                   </div>
                 </div>
 
