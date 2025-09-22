@@ -3,11 +3,9 @@ import {
   Settings, 
   Building2,
   Clock,
-  Shield,
   FileText,
   Bell,
   Link,
-  Lock,
   Upload,
   Download,
   Trash2,
@@ -26,13 +24,9 @@ import {
   Image,
   Eye,
   EyeOff,
-  Smartphone,
-  Monitor,
   Sun,
   Moon,
   Palette,
-  Accessibility,
-  Key,
   Smartphone as Phone,
   Mail,
   MapPin,
@@ -120,18 +114,11 @@ export default function ConfiguracoesSistema() {
     emailContato: "fiscatus@prefeitura.sp.gov.br",
     telefone: "(11) 1234-5678",
     endereco: "Av. Paulista, 1000 - Bela Vista, São Paulo - SP, 01310-100",
-    logotipo: null as File | null,
-    representanteLegal: "Maria Oliveira",
-    contatoRepresentante: "maria.oliveira@prefeitura.sp.gov.br"
+    logotipo: null as File | null
   });
 
   // Estados para Notificações
   const [notificacoes, setNotificacoes] = useState({
-    emailAtivo: true,
-    sistemaAtivo: true,
-    pushAtivo: false,
-    emailAlternativo: "",
-    frequenciaAlertas: "diario",
     tiposNotificacao: {
       novosProcessos: true,
       pendenciasAssinatura: true,
@@ -143,37 +130,10 @@ export default function ConfiguracoesSistema() {
 
   // Estados para Aparência
   const [aparencia, setAparencia] = useState({
-    modoExibicao: "claro", // claro, escuro, automatico
-    fontePreferida: "Inter",
-    tamanhoFonte: "medio", // pequeno, medio, grande
-    mostrarIcones: true,
-    moduloInicial: "dashboard"
+    modoExibicao: "claro" // claro, escuro, automatico
   });
 
-  // Estados para Acessibilidade
-  const [acessibilidade, setAcessibilidade] = useState({
-    altoContraste: false,
-    leituraSimplificada: false,
-    teclasAtalho: true,
-    zoomInterface: 100,
-    navegacaoTeclado: true
-  });
-
-  // Estados para Segurança
-  const [seguranca, setSeguranca] = useState({
-    autenticacao2FA: false,
-    numeroCelular: "",
-    tempoExpiracaoSessao: "480", // 30min
-    dispositivosConectados: [
-      { id: "1", nome: "Chrome - Windows", ip: "192.168.1.100", ultimoAcesso: "2024-01-15 14:30" },
-      { id: "2", nome: "Safari - iPhone", ip: "192.168.1.101", ultimoAcesso: "2024-01-15 12:15" }
-    ],
-    historicoLogin: [
-      { ip: "192.168.1.100", horario: "2024-01-15 14:30", navegador: "Chrome - Windows" },
-      { ip: "192.168.1.101", horario: "2024-01-15 12:15", navegador: "Safari - iPhone" },
-      { ip: "192.168.1.100", horario: "2024-01-14 09:45", navegador: "Chrome - Windows" }
-    ]
-  });
+  // (Seções Acessibilidade e Segurança removidas)
 
   // Estados para foto de perfil
   const [fotoPerfil, setFotoPerfil] = useState<File | null>(null);
@@ -277,40 +237,7 @@ export default function ConfiguracoesSistema() {
     });
   };
 
-  const handleRevogarDispositivo = async (dispositivoId: string) => {
-    setSalvando(prev => ({ ...prev, revogarDispositivo: true }));
-    
-    // Simular revogação
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    
-    setSalvando(prev => ({ ...prev, revogarDispositivo: false }));
-    
-    setSeguranca(prev => ({
-      ...prev,
-      dispositivosConectados: prev.dispositivosConectados.filter(d => d.id !== dispositivoId)
-    }));
-    
-    toast({
-      title: "Dispositivo revogado!",
-      description: "O acesso do dispositivo foi revogado com sucesso.",
-      variant: "default",
-    });
-  };
-
-  const handleRedefinirSenha = async () => {
-    setSalvando(prev => ({ ...prev, redefinirSenha: true }));
-    
-    // Simular redefinição
-    await new Promise(resolve => setTimeout(resolve, 2000));
-    
-    setSalvando(prev => ({ ...prev, redefinirSenha: false }));
-    
-    toast({
-      title: "Senha redefinida!",
-      description: "Uma nova senha foi enviada para seu e-mail.",
-      variant: "default",
-    });
-  };
+  // (Handlers de Segurança removidos)
 
   const renderizarConteudo = () => {
     switch (secaoAtiva) {
@@ -330,7 +257,9 @@ export default function ConfiguracoesSistema() {
                   <Input
                     id="nomeCompleto"
                     value={perfilUsuario.nomeCompleto}
-                    onChange={(e) => setPerfilUsuario(prev => ({ ...prev, nomeCompleto: e.target.value }))}
+                    onChange={() => {}}
+                    readOnly
+                    disabled
                     placeholder="Digite seu nome completo"
                   />
                 </div>
@@ -340,7 +269,9 @@ export default function ConfiguracoesSistema() {
                   <Input
                     id="cargo"
                     value={perfilUsuario.cargo}
-                    onChange={(e) => setPerfilUsuario(prev => ({ ...prev, cargo: e.target.value }))}
+                    onChange={() => {}}
+                    readOnly
+                    disabled
                     placeholder="Ex: Fiscal de Contratos"
                   />
                 </div>
@@ -573,7 +504,8 @@ export default function ConfiguracoesSistema() {
                   <Input
                     id="cnpj"
                     value={perfilAdministracao.cnpj}
-                    onChange={(e) => setPerfilAdministracao(prev => ({ ...prev, cnpj: e.target.value }))}
+                    onChange={() => {}}
+                    readOnly
                     placeholder="00.000.000/0000-00"
                   />
                 </div>
@@ -654,28 +586,7 @@ export default function ConfiguracoesSistema() {
                 <p className="text-sm text-gray-500">Formatos aceitos: PNG, JPG, SVG. Tamanho máximo: 2MB.</p>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-2">
-                  <Label htmlFor="representanteLegal">Nome do representante legal</Label>
-                  <Input
-                    id="representanteLegal"
-                    value={perfilAdministracao.representanteLegal}
-                    onChange={(e) => setPerfilAdministracao(prev => ({ ...prev, representanteLegal: e.target.value }))}
-                    placeholder="Nome completo do representante"
-                  />
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="contatoRepresentante">Contato do representante</Label>
-                  <Input
-                    id="contatoRepresentante"
-                    type="email"
-                    value={perfilAdministracao.contatoRepresentante}
-                    onChange={(e) => setPerfilAdministracao(prev => ({ ...prev, contatoRepresentante: e.target.value }))}
-                    placeholder="email@entidade.gov.br"
-                  />
-                </div>
-              </div>
+              {/* Campos de representante removidos */}
             </div>
 
             <div className="pt-4">
@@ -706,78 +617,6 @@ export default function ConfiguracoesSistema() {
             </div>
 
             <div className="space-y-6">
-              {/* Ativar notificações por */}
-              <div className="space-y-4">
-                <h3 className="text-lg font-medium text-gray-900">Ativar notificações por:</h3>
-                
-                <div className="space-y-3">
-                  <div className="flex items-center space-x-3">
-                    <Switch
-                      id="emailAtivo"
-                      checked={notificacoes.emailAtivo}
-                      onCheckedChange={(checked) => setNotificacoes(prev => ({ ...prev, emailAtivo: checked }))}
-                    />
-                    <Label htmlFor="emailAtivo" className="flex items-center gap-2">
-                      <Mail className="w-4 h-4" />
-                      E-mail
-                    </Label>
-                  </div>
-                  
-                  <div className="flex items-center space-x-3">
-                    <Switch
-                      id="sistemaAtivo"
-                      checked={notificacoes.sistemaAtivo}
-                      onCheckedChange={(checked) => setNotificacoes(prev => ({ ...prev, sistemaAtivo: checked }))}
-                    />
-                    <Label htmlFor="sistemaAtivo" className="flex items-center gap-2">
-                      <Monitor className="w-4 h-4" />
-                      Sistema (notificação interna)
-                    </Label>
-                  </div>
-                  
-                  <div className="flex items-center space-x-3">
-                    <Switch
-                      id="pushAtivo"
-                      checked={notificacoes.pushAtivo}
-                      onCheckedChange={(checked) => setNotificacoes(prev => ({ ...prev, pushAtivo: checked }))}
-                    />
-                    <Label htmlFor="pushAtivo" className="flex items-center gap-2">
-                      <Bell className="w-4 h-4" />
-                      Push (se aplicável)
-                    </Label>
-                  </div>
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="emailAlternativo">Endereço de e-mail alternativo para cópia de notificações</Label>
-                <Input
-                  id="emailAlternativo"
-                  type="email"
-                  value={notificacoes.emailAlternativo}
-                  onChange={(e) => setNotificacoes(prev => ({ ...prev, emailAlternativo: e.target.value }))}
-                  placeholder="email.alternativo@exemplo.com"
-                />
-                <p className="text-sm text-gray-500">Opcional. Receberá cópia de todas as notificações.</p>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="frequenciaAlertas">Frequência dos alertas automáticos</Label>
-                <Select 
-                  value={notificacoes.frequenciaAlertas} 
-                  onValueChange={(value) => setNotificacoes(prev => ({ ...prev, frequenciaAlertas: value }))}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="imediato">Imediato</SelectItem>
-                    <SelectItem value="diario">Diário</SelectItem>
-                    <SelectItem value="semanal">Semanal</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
               {/* Tipos de notificação */}
               <div className="space-y-4">
                 <h3 className="text-lg font-medium text-gray-900">Tipos de notificação a receber:</h3>
@@ -921,92 +760,7 @@ export default function ConfiguracoesSistema() {
                     </Label>
                   </div>
                   
-                  <div className="flex items-center space-x-3">
-                    <input
-                      type="radio"
-                      id="modoAutomatico"
-                      name="modoExibicao"
-                      value="automatico"
-                      checked={aparencia.modoExibicao === "automatico"}
-                      onChange={(e) => setAparencia(prev => ({ ...prev, modoExibicao: e.target.value }))}
-                      className="w-4 h-4 text-blue-600"
-                    />
-                    <Label htmlFor="modoAutomatico" className="flex items-center gap-2">
-                      <Monitor className="w-4 h-4" />
-                      Automático (com base no sistema operacional)
-                    </Label>
-                  </div>
                 </div>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-2">
-                  <Label htmlFor="fontePreferida">Fonte preferida</Label>
-                  <Select 
-                    value={aparencia.fontePreferida} 
-                    onValueChange={(value) => setAparencia(prev => ({ ...prev, fontePreferida: value }))}
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="Inter">Inter</SelectItem>
-                      <SelectItem value="Roboto">Roboto</SelectItem>
-                      <SelectItem value="Open Sans">Open Sans</SelectItem>
-                      <SelectItem value="Arial">Arial</SelectItem>
-                      <SelectItem value="Helvetica">Helvetica</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="tamanhoFonte">Tamanho da fonte</Label>
-                  <Select 
-                    value={aparencia.tamanhoFonte} 
-                    onValueChange={(value) => setAparencia(prev => ({ ...prev, tamanhoFonte: value }))}
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="pequeno">Pequeno</SelectItem>
-                      <SelectItem value="medio">Médio</SelectItem>
-                      <SelectItem value="grande">Grande</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <div className="flex items-center space-x-2">
-                  <Switch
-                    id="mostrarIcones"
-                    checked={aparencia.mostrarIcones}
-                    onCheckedChange={(checked) => setAparencia(prev => ({ ...prev, mostrarIcones: checked }))}
-                  />
-                  <Label htmlFor="mostrarIcones">Mostrar ícones ao lado dos textos</Label>
-                </div>
-                <p className="text-sm text-gray-500">Exibe ícones visuais junto com os textos da interface.</p>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="moduloInicial">Exibir módulo inicial padrão ao logar</Label>
-                <Select 
-                  value={aparencia.moduloInicial} 
-                  onValueChange={(value) => setAparencia(prev => ({ ...prev, moduloInicial: value }))}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="dashboard">Dashboard</SelectItem>
-                    <SelectItem value="processos">Meus Processos</SelectItem>
-                    <SelectItem value="assinaturas">Minhas Assinaturas</SelectItem>
-                    <SelectItem value="dfd">DFD</SelectItem>
-                    <SelectItem value="planejamento">Planejamento de Contratação</SelectItem>
-                  </SelectContent>
-                </Select>
-                <p className="text-sm text-gray-500">Módulo que será exibido automaticamente após o login.</p>
               </div>
             </div>
 
@@ -1096,271 +850,7 @@ export default function ConfiguracoesSistema() {
           </div>
         );
 
-      case "seguranca":
-        return (
-          <div className="space-y-8">
-            <div>
-              <h2 className="text-2xl font-semibold text-gray-900 mb-2">Segurança</h2>
-              <p className="text-gray-600">Configure suas configurações pessoais de segurança e acesso</p>
-            </div>
-
-            <div className="space-y-6">
-              <div className="space-y-4">
-                <div className="flex items-center space-x-3">
-                  <Switch
-                    id="autenticacao2FA"
-                    checked={seguranca.autenticacao2FA}
-                    onCheckedChange={(checked) => setSeguranca(prev => ({ ...prev, autenticacao2FA: checked }))}
-                  />
-                  <Label htmlFor="autenticacao2FA" className="flex items-center gap-2">
-                    <Shield className="w-4 h-4" />
-                    Autenticação em dois fatores (2FA)
-                  </Label>
-                </div>
-                <p className="text-sm text-gray-500">Adiciona uma camada extra de segurança à sua conta.</p>
-              </div>
-
-              {seguranca.autenticacao2FA && (
-                <div className="space-y-2">
-                  <Label htmlFor="numeroCelular">Número de celular ou aplicativo autenticador</Label>
-                  <Input
-                    id="numeroCelular"
-                    value={seguranca.numeroCelular}
-                    onChange={(e) => setSeguranca(prev => ({ ...prev, numeroCelular: e.target.value }))}
-                    placeholder="(11) 99999-9999 ou Google Authenticator / Authy"
-                  />
-                  <p className="text-sm text-gray-500">Para receber códigos SMS ou configurar aplicativo autenticador.</p>
-                </div>
-              )}
-
-              <div className="space-y-2">
-                <Label htmlFor="tempoExpiracaoSessao">Tempo de expiração da sessão</Label>
-                <Select 
-                  value={seguranca.tempoExpiracaoSessao} 
-                  onValueChange={(value) => setSeguranca(prev => ({ ...prev, tempoExpiracaoSessao: value }))}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="900">15 minutos</SelectItem>
-                    <SelectItem value="1800">30 minutos</SelectItem>
-                    <SelectItem value="3600">1 hora</SelectItem>
-                    <SelectItem value="7200">2 horas</SelectItem>
-                    <SelectItem value="0">Nunca</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              {/* Dispositivos conectados */}
-              <div className="space-y-4">
-                <h3 className="text-lg font-medium text-gray-900">Dispositivos conectados</h3>
-                <div className="space-y-3">
-                  {seguranca.dispositivosConectados.map((dispositivo) => (
-                    <div key={dispositivo.id} className="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
-                      <div className="flex items-center gap-3">
-                        <Smartphone className="w-5 h-5 text-gray-400" />
-                        <div>
-                          <p className="font-medium text-gray-900">{dispositivo.nome}</p>
-                          <p className="text-sm text-gray-500">IP: {dispositivo.ip} • Último acesso: {dispositivo.ultimoAcesso}</p>
-                        </div>
-                      </div>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleRevogarDispositivo(dispositivo.id)}
-                        disabled={salvando["revogarDispositivo"]}
-                        className="text-red-600 hover:text-red-700"
-                      >
-                        {salvando["revogarDispositivo"] ? (
-                          <>
-                            <div className="w-4 h-4 border-2 border-red-600 border-t-transparent rounded-full animate-spin" />
-                            Revogando...
-                          </>
-                        ) : (
-                          "Revogar acesso"
-                        )}
-                      </Button>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* Histórico de login */}
-              <div className="space-y-4">
-                <h3 className="text-lg font-medium text-gray-900">Histórico de login (últimos 5 acessos)</h3>
-                <div className="space-y-2">
-                  {seguranca.historicoLogin.map((login, index) => (
-                    <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                      <div className="flex items-center gap-3">
-                        <UserCheck className="w-4 h-4 text-gray-400" />
-                        <div>
-                          <p className="text-sm font-medium text-gray-900">{login.navegador}</p>
-                          <p className="text-xs text-gray-500">IP: {login.ip} • {login.horario}</p>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              <div className="pt-4 flex gap-4">
-                <Button
-                  onClick={() => handleSalvar("Segurança", seguranca)}
-                  disabled={salvando["seguranca"]}
-                  className="bg-blue-600 hover:bg-blue-700"
-                >
-                  {salvando["seguranca"] ? (
-                    <>
-                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                      Salvando...
-                    </>
-                  ) : (
-                    "Aplicar Segurança"
-                  )}
-                </Button>
-
-                <AlertDialog>
-                  <AlertDialogTrigger asChild>
-                    <Button variant="destructive" disabled={salvando["redefinirSenha"]}>
-                      {salvando["redefinirSenha"] ? (
-                        <>
-                          <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                          Redefinindo...
-                        </>
-                      ) : (
-                        "Redefinir minha senha agora"
-                      )}
-                    </Button>
-                  </AlertDialogTrigger>
-                  <AlertDialogContent>
-                    <AlertDialogHeader>
-                      <AlertDialogTitle>Confirmar redefinição de senha</AlertDialogTitle>
-                      <AlertDialogDescription>
-                        Uma nova senha será enviada para seu e-mail institucional. 
-                        Você será desconectado do sistema após a redefinição.
-                        Esta ação não pode ser desfeita.
-                      </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                      <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                      <AlertDialogAction onClick={handleRedefinirSenha}>
-                        Confirmar Redefinição
-                      </AlertDialogAction>
-                    </AlertDialogFooter>
-                  </AlertDialogContent>
-                </AlertDialog>
-              </div>
-            </div>
-          </div>
-        );
-
-      case "acessibilidade":
-        return (
-          <div className="space-y-8">
-            <div>
-              <h2 className="text-2xl font-semibold text-gray-900 mb-2">Acessibilidade</h2>
-              <p className="text-gray-600">Configure opções para melhorar a acessibilidade do sistema</p>
-            </div>
-
-            <div className="space-y-6">
-              <div className="space-y-4">
-                <div className="flex items-center space-x-3">
-                  <Switch
-                    id="altoContraste"
-                    checked={acessibilidade.altoContraste}
-                    onCheckedChange={(checked) => setAcessibilidade(prev => ({ ...prev, altoContraste: checked }))}
-                  />
-                  <Label htmlFor="altoContraste" className="flex items-center gap-2">
-                    <Palette className="w-4 h-4" />
-                    Modo alto contraste
-                  </Label>
-                </div>
-                <p className="text-sm text-gray-500">Aumenta o contraste entre cores para melhor visibilidade.</p>
-              </div>
-
-              <div className="space-y-4">
-                <div className="flex items-center space-x-3">
-                  <Switch
-                    id="leituraSimplificada"
-                    checked={acessibilidade.leituraSimplificada}
-                    onCheckedChange={(checked) => setAcessibilidade(prev => ({ ...prev, leituraSimplificada: checked }))}
-                  />
-                  <Label htmlFor="leituraSimplificada" className="flex items-center gap-2">
-                    <FileText className="w-4 h-4" />
-                    Modo leitura simplificada
-                  </Label>
-                </div>
-                <p className="text-sm text-gray-500">Remove cores e elementos decorativos para focar no conteúdo.</p>
-              </div>
-
-              <div className="space-y-4">
-                <div className="flex items-center space-x-3">
-                  <Switch
-                    id="teclasAtalho"
-                    checked={acessibilidade.teclasAtalho}
-                    onCheckedChange={(checked) => setAcessibilidade(prev => ({ ...prev, teclasAtalho: checked }))}
-                  />
-                  <Label htmlFor="teclasAtalho" className="flex items-center gap-2">
-                    <Key className="w-4 h-4" />
-                    Teclas de atalho ativadas
-                  </Label>
-                </div>
-                <p className="text-sm text-gray-500">Atalhos disponíveis: Ctrl+N (novo processo), Ctrl+S (salvar), Ctrl+F (buscar).</p>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="zoomInterface">Zoom de interface padrão</Label>
-                <div className="flex items-center gap-4">
-                  <input
-                    type="range"
-                    id="zoomInterface"
-                    min="90"
-                    max="150"
-                    step="10"
-                    value={acessibilidade.zoomInterface}
-                    onChange={(e) => setAcessibilidade(prev => ({ ...prev, zoomInterface: parseInt(e.target.value) }))}
-                    className="flex-1"
-                  />
-                  <span className="text-sm font-medium text-gray-700 w-12">{acessibilidade.zoomInterface}%</span>
-                </div>
-                <p className="text-sm text-gray-500">Ajuste o tamanho da interface (90% a 150%).</p>
-              </div>
-
-              <div className="space-y-4">
-                <div className="flex items-center space-x-3">
-                  <Switch
-                    id="navegacaoTeclado"
-                    checked={acessibilidade.navegacaoTeclado}
-                    onCheckedChange={(checked) => setAcessibilidade(prev => ({ ...prev, navegacaoTeclado: checked }))}
-                  />
-                  <Label htmlFor="navegacaoTeclado" className="flex items-center gap-2">
-                    <Accessibility className="w-4 h-4" />
-                    Navegação por teclado
-                  </Label>
-                </div>
-                <p className="text-sm text-gray-500">Permite navegar por toda a interface usando apenas o teclado.</p>
-              </div>
-            </div>
-
-            <div className="pt-4">
-              <Button
-                onClick={() => handleSalvar("Acessibilidade", acessibilidade)}
-                disabled={salvando["acessibilidade"]}
-                className="bg-blue-600 hover:bg-blue-700"
-              >
-                {salvando["acessibilidade"] ? (
-                  <>
-                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                    Salvando...
-                  </>
-                ) : (
-                  "Salvar Acessibilidade"
-                )}
-              </Button>
-            </div>
-          </div>
-        );
+      // Seções "seguranca" e "acessibilidade" removidas
 
       default:
         return null;
@@ -1511,37 +1001,7 @@ export default function ConfiguracoesSistema() {
                 <ChevronRight className="w-4 h-4" />
               </button>
 
-              <button
-                onClick={() => setSecaoAtiva("acessibilidade")}
-                className={`w-full flex items-center justify-between px-3 py-2 text-sm rounded-md transition-colors ${
-                  secaoAtiva === "acessibilidade"
-                    ? "bg-blue-50 text-blue-700 border-l-4 border-blue-600"
-                    : "text-gray-700 hover:bg-gray-50"
-                }`}
-              >
-                <div className="flex items-center gap-3">
-                  <Accessibility className="w-4 h-4" />
-                  <span>Acessibilidade</span>
-                </div>
-                <ChevronRight className="w-4 h-4" />
-              </button>
-
-              <div className="border-t border-gray-200 my-4"></div>
-
-              <button
-                onClick={() => setSecaoAtiva("seguranca")}
-                className={`w-full flex items-center justify-between px-3 py-2 text-sm rounded-md transition-colors ${
-                  secaoAtiva === "seguranca"
-                    ? "bg-blue-50 text-blue-700 border-l-4 border-blue-600"
-                    : "text-gray-700 hover:bg-gray-50"
-                }`}
-              >
-                <div className="flex items-center gap-3">
-                  <Lock className="w-4 h-4" />
-                  <span>Segurança</span>
-                </div>
-                <ChevronRight className="w-4 h-4" />
-              </button>
+              {/* Seções Acessibilidade e Segurança removidas do menu */}
             </div>
           </nav>
         </div>
