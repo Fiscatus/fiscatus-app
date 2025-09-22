@@ -742,33 +742,33 @@ export default function DFDAprovacaoSection({
             
             <div className="space-y-4">
             {/* Data de Criação */}
-            <div className="flex items-center gap-3 p-3 rounded-lg border border-slate-200">
-              <div className="w-10 h-10 rounded-full flex items-center justify-center border border-slate-300">
-                <Calendar className="w-5 h-5 text-slate-600" />
-              </div>
-              <div>
+              <div className="flex items-center gap-3 p-3 rounded-lg border border-slate-200">
+                <div className="w-10 h-10 rounded-full flex items-center justify-center border border-slate-300">
+                  <Calendar className="w-5 h-5 text-slate-600" />
+                </div>
+                <div>
                 <p className="text-sm font-semibold text-slate-500">Data de Criação</p>
-                <p className="text-lg font-bold text-slate-900">
+                  <p className="text-lg font-bold text-slate-900">
                   {versaoParaExibir?.createdAt ? formatDate(versaoParaExibir.createdAt) : dfdData.currentVersion?.createdAt ? formatDate(dfdData.currentVersion.createdAt) : '—'}
-                </p>
+                  </p>
+                </div>
               </div>
-            </div>
-
+              
             {/* Prazo Inicial da Revisão da versão X */}
             <div className="flex items-center justify-between p-3 rounded-lg border border-slate-200">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-full flex items-center justify-center border border-slate-300">
                   <Clock className="w-5 h-5 text-slate-600" />
-                </div>
-                <div>
+                  </div>
+                  <div>
                   <p className="text-sm font-semibold text-slate-500">
                     Prazo Inicial da Revisão {versaoParaExibir ? `da versão V${versaoParaExibir.version}` : ''}
                   </p>
                   <p className="text-lg font-bold text-slate-900">
                     {versaoParaExibir?.createdAt ? formatDate(versaoParaExibir.createdAt) : dfdData.currentVersion?.createdAt ? formatDate(dfdData.currentVersion.createdAt) : '—'}
-                  </p>
+                    </p>
+                  </div>
                 </div>
-              </div>
             </div>
 
             {/* Prazo Final da Revisão da versão X */}
@@ -810,15 +810,15 @@ export default function DFDAprovacaoSection({
                   const prazo = getPrazoColorClasses(diasRest);
                   const isAtraso = diasRest !== null && diasRest < 0;
                   return (
-                    <div className="text-center py-4">
+                <div className="text-center py-4">
                       <div className={`text-3xl font-bold ${prazo.text} mb-2`}>
                         {diasRest === null ? '—' : Math.abs(diasRest)}
-                      </div>
+                  </div>
                       <div className={`text-sm font-medium ${prazo.text}`}>{legendaDiasRestantes(diasRest)}</div>
-                    </div>
+                  </div>
                   );
                 })()}
-              </div>
+                </div>
 
               {/* Barra de Progresso padronizada */}
               {(() => { const base = versaoParaExibir || dfdData.currentVersion || dfdData.versions[dfdData.versions.length - 1]; if (!base) return null; const end = getPrazoFinalPrevisto(); return (

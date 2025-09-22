@@ -1330,8 +1330,11 @@ export default function FluxoProcessoCompleto({ etapas = etapasPadrao, onEtapaCl
       {/* Modal DFD com tamanho responsivo */}
       {showDFDModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          {/* Overlay escuro translúcido - fica sempre atrás */}
-          <div className={`absolute inset-0 transition-colors duration-200 ${isAnyCardFullscreen ? 'bg-black/60' : 'bg-black/50'}`}></div>
+          {/* Overlay escuro translúcido - fecha com duplo clique fora */}
+          <div
+            className={`absolute inset-0 transition-colors duration-200 ${isAnyCardFullscreen ? 'bg-black/60' : 'bg-black/50'}`}
+            onDoubleClick={() => { setShowDFDModal(false); setFullscreenCardId(null); unlockScroll(); }}
+          ></div>
           {/* Container do modal/card */}
           <div className={`relative transition-all duration-200 bg-white rounded-lg shadow-xl border overflow-hidden ${
               isAnyCardFullscreen
@@ -1343,7 +1346,14 @@ export default function FluxoProcessoCompleto({ etapas = etapasPadrao, onEtapaCl
                     : 'w-full max-w-[75vw] max-h-[85vh]'
             }`}>
             {/* Header com título, subtítulo e botão X */}
-            <div className="flex items-center justify-between p-4 border-b border-gray-200 bg-gray-50">
+            <div
+              className="flex items-center justify-between p-4 border-b border-gray-200 bg-gray-50"
+              onDoubleClick={() => {
+                if (currentEtapa && [1, 2, 3, 4, 15, 16, 21].includes(currentEtapa.id)) {
+                  setFullscreenCardId(fullscreenCardId === currentEtapa.id ? null : currentEtapa.id);
+                }
+              }}
+            >
               <div className="flex items-center gap-3">
                 {currentEtapa && getEtapaHeaderInfo(currentEtapa).icon}
                 <div>
@@ -1466,8 +1476,11 @@ export default function FluxoProcessoCompleto({ etapas = etapasPadrao, onEtapaCl
       {/* Modal ETP com tamanho responsivo */}
       {showETPModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          {/* Overlay escuro translúcido - fica sempre atrás */}
-          <div className={`absolute inset-0 transition-colors duration-200 ${isAnyCardFullscreen ? 'bg-black/60' : 'bg-black/50'}`}></div>
+          {/* Overlay escuro translúcido - fecha com duplo clique fora */}
+          <div
+            className={`absolute inset-0 transition-colors duration-200 ${isAnyCardFullscreen ? 'bg-black/60' : 'bg-black/50'}`}
+            onDoubleClick={() => { setShowETPModal(false); setFullscreenCardId(null); unlockScroll(); }}
+          ></div>
           {/* Container do modal/card */}
           <div className={`relative transition-all duration-200 bg-white rounded-lg shadow-xl border overflow-hidden ${
               isAnyCardFullscreen
@@ -1479,7 +1492,14 @@ export default function FluxoProcessoCompleto({ etapas = etapasPadrao, onEtapaCl
                     : 'w-full max-w-[75vw] max-h-[85vh]'
             }`}>
             {/* Header com título, subtítulo e botão X */}
-            <div className="flex items-center justify-between p-4 border-b border-gray-200 bg-gray-50">
+            <div
+              className="flex items-center justify-between p-4 border-b border-gray-200 bg-gray-50"
+              onDoubleClick={() => {
+                if (currentEtapa && [5, 6, 7, 8, 9, 10, 13, 20].includes(currentEtapa.id)) {
+                  setFullscreenCardId(fullscreenCardId === currentEtapa.id ? null : currentEtapa.id);
+                }
+              }}
+            >
               <div className="flex items-center gap-3">
                 {currentEtapa && getEtapaHeaderInfo(currentEtapa).icon}
                 <div>
@@ -1617,8 +1637,11 @@ export default function FluxoProcessoCompleto({ etapas = etapasPadrao, onEtapaCl
       {/* Modal Consolidação da Demanda com tamanho responsivo */}
       {showConsolidacaoModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          {/* Overlay escuro translúcido - fica sempre atrás */}
-          <div className={`absolute inset-0 transition-colors duration-200 ${isAnyCardFullscreen ? 'bg-black/60' : 'bg-black/50'}`}></div>
+          {/* Overlay escuro translúcido - fecha com duplo clique fora */}
+          <div
+            className={`absolute inset-0 transition-colors duration-200 ${isAnyCardFullscreen ? 'bg-black/60' : 'bg-black/50'}`}
+            onDoubleClick={() => { setShowConsolidacaoModal(false); setFullscreenCardId(null); unlockScroll(); }}
+          ></div>
           {/* Container do modal/card */}
           <div className={`relative transition-all duration-200 bg-white rounded-lg shadow-xl border overflow-hidden ${
               isAnyCardFullscreen
