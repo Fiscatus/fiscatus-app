@@ -38,6 +38,8 @@ import { useToast } from '@/hooks/use-toast';
 import CommentsSection from './CommentsSection';
 import { formatDateBR, formatDateTimeBR } from '@/lib/utils';
 import { useDFD, type DFDAnnex } from '@/hooks/useDFD';
+import Timeline from '@/components/timeline/Timeline';
+import { TimelineItemModel, TimelineStatus } from '@/types/timeline';
 
 interface PublicacaoData {
   dataPublicacao: string;
@@ -738,7 +740,7 @@ export default function DFDPublicacaoSection({
                 </div>
               </header>
               <div className="border-b-2 border-green-200 mb-6"></div>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {/* Status & Prazo */}
                 <div className="rounded-2xl border shadow-sm bg-white p-4 md:p-6">
                   <header className="flex items-center justify-between mb-4">
@@ -797,43 +799,19 @@ export default function DFDPublicacaoSection({
                   </ul>
                 </div>
 
-                {/* Mini Timeline */}
-                <div className="rounded-2xl border shadow-sm bg-white p-4 md:p-6">
-                  <header className="flex items-center gap-2 mb-4">
-                    <Clock className="w-5 h-5 text-indigo-600" />
-                    <h3 className="text-sm font-semibold text-slate-800">Mini Timeline</h3>
-                  </header>
-                  <div className="flex-1 flex flex-col">
-                    {generateTimeline().length === 0 ? (
-                      <div className="flex-1 flex items-center justify-center"><p className="text-sm text-gray-500 italic text-center">Sem eventos registrados.</p></div>
-                    ) : (
-                      <>
-                        <div className="flex-1 relative pr-2">
-                          <div className="absolute left-2 top-0 bottom-0 w-0.5 bg-slate-200"></div>
-                          <div className="max-h-[280px] overflow-y-auto">
-                            <div className="flex flex-col gap-4 pl-6">
-                              {generateTimeline().map(item => (
-                                <div key={item.id} className="relative group">
-                                  <div className="absolute -left-6 top-0 w-4 h-4 bg-white rounded-full flex items-center justify-center">
-                                    {getTimelineIcon(item.tipo)}
-                                  </div>
-                                  <div className="hover:bg-slate-50 rounded-lg px-3 py-2 transition-colors">
-                                    <p className="text-sm font-semibold text-slate-700 mb-1">{item.titulo}</p>
-                                    <div className="flex items-center gap-2 text-xs text-slate-500">
-                                      <span>{formatDateTimeBR(item.dataHora)}</span>
-                                    </div>
-                                  </div>
-                                </div>
-                              ))}
-                            </div>
-                          </div>
-                        </div>
-                      </>
-                    )}
-                  </div>
-                </div>
+                {/* Mini Timeline removida do painel para padronização */}
               </div>
             </div>
+            {/* Timeline (balão) */}
+            <Timeline data={(() => {
+              const items: TimelineItemModel[] = [];
+              if (confirmada && confirmacaoData?.dataConfirmacao) {
+                items.push({ id: `conf-${confirmacaoData.dataConfirmacao}`, status: 'aprovado', title: 'Publicação confirmada', author: { name: confirmacaoData.responsavel }, createdAt: confirmacaoData.dataConfirmacao });
+              }
+              const anexosRecentes = [...anexosOrdenados].slice(0, 2);
+              anexosRecentes.forEach(a => items.push({ id: a.id, status: 'anexo', title: `Anexo adicionado: ${a.name}`, author: { name: a.uploadedBy || 'Usuário' }, createdAt: a.uploadedAt }));
+              return items.sort((a,b)=> new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+            })()} />
           </section>
 
           {/* Comentários */}
