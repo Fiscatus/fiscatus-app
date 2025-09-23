@@ -270,6 +270,7 @@ export default function DFDFormSection({
   const [attachmentsSort, setAttachmentsSort] = useState<'desc' | 'asc'>('desc'); // desc = mais recente primeiro
   const [showAllVersions, setShowAllVersions] = useState(false);
   const [expandedVersions, setExpandedVersions] = useState<Record<string, boolean>>({});
+  const [showAllTimeline, setShowAllTimeline] = useState(false);
 
 
 
@@ -914,8 +915,7 @@ export default function DFDFormSection({
 
     // Ordenar por data (mais recente primeiro) e pegar apenas os 3 mais recentes
     return timeline
-      .sort((a, b) => new Date(b.dataHora).getTime() - new Date(a.dataHora).getTime())
-      .slice(0, 3);
+      .sort((a, b) => new Date(b.dataHora).getTime() - new Date(a.dataHora).getTime());
   };
 
   // Obter ícone da timeline baseado no tipo e status
@@ -938,6 +938,40 @@ export default function DFDFormSection({
       default:
         return <ClockIcon className="w-4 h-4 text-gray-600" />;
     }
+  };
+
+  // Helpers para agrupar timeline por dia
+  const createLocalDateKey = (date: Date) => {
+    const y = date.getFullYear();
+    const m = String(date.getMonth() + 1).padStart(2, '0');
+    const d = String(date.getDate()).padStart(2, '0');
+    return `${y}-${m}-${d}`;
+  };
+
+  const formatTimelineDayLabel = (date: Date) => {
+    const today = new Date();
+    const yesterday = new Date();
+    yesterday.setDate(today.getDate() - 1);
+    const key = createLocalDateKey(date);
+    const todayKey = createLocalDateKey(today);
+    const ydayKey = createLocalDateKey(yesterday);
+    if (key === todayKey) return 'Hoje';
+    if (key === ydayKey) return 'Ontem';
+    return formatDateBR(date.toISOString());
+  };
+
+  const groupTimelineByDay = (items: TimelineItem[]) => {
+    const groups: Record<string, { label: string; date: Date; items: TimelineItem[] }> = {};
+    items.forEach(item => {
+      const dt = new Date(item.dataHora);
+      const key = createLocalDateKey(dt);
+      if (!groups[key]) {
+        groups[key] = { label: formatTimelineDayLabel(dt), date: new Date(dt.getFullYear(), dt.getMonth(), dt.getDate()), items: [] };
+      }
+      groups[key].items.push(item);
+    });
+    Object.values(groups).forEach(g => g.items.sort((a, b) => new Date(b.dataHora).getTime() - new Date(a.dataHora).getTime()));
+    return Object.values(groups).sort((a, b) => b.date.getTime() - a.date.getTime());
   };
 
   // Obter status da etapa
@@ -1424,7 +1458,7 @@ export default function DFDFormSection({
           </div>
         </header>
         <div className="border-b-2 border-green-200 mb-6"></div>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             
             {/* 1️⃣ Card Status & Prazo (claro e visual) */}
             <div className="rounded-2xl border shadow-sm bg-white p-4 md:p-6">
@@ -1558,10 +1592,7 @@ export default function DFDFormSection({
                   })()}
                 </div>
                 
-                {/* 3. Linha de Progresso Temporal */}
-                {(() => { const inicio = currentVersion.criadoEm; const fim = getPrazoFinalPrevisto().toISOString(); return (
-                  <ProgressaoTemporal startISO={inicio} endISO={fim} className="space-y-2" />
-                ); })()}
+                {/* Linha de Progresso Temporal removida deste card conforme especificação */}
                 
               </div>
             </div>
@@ -1618,64 +1649,83 @@ export default function DFDFormSection({
               </div>
             </div>
 
-            {/* 3️⃣ Card Mini Timeline (painel vertical completo) */}
-            <div className="rounded-2xl border shadow-sm bg-white p-4 md:p-6 flex flex-col min-h-[320px]">
-              <header className="flex items-center gap-2 mb-4">
-                <ClockIcon className="w-5 h-5 text-indigo-600" />
-                <h3 className="text-sm font-semibold text-slate-800">Mini Timeline</h3>
-              </header>
+            {/* Mini Timeline removida do grid conforme especificação */}
+        </div>
+      </div>
 
-              <div className="flex-1 flex flex-col">
-                {generateTimeline().length === 0 ? (
-                  <div className="flex-1 flex items-center justify-center">
-                    <p className="text-sm text-gray-500 italic text-center">
-                      Ainda não há ações registradas.
-                    </p>
+      {/* 3️⃣ Timeline completa (card separado abaixo) */}
+      <div className="rounded-2xl border border-slate-300 shadow-md bg-white p-6 mb-8">
+        <header className="flex items-center gap-3 mb-4">
+          <ClockIcon className="w-6 h-6 text-indigo-600" />
+          <h2 className="text-lg font-bold text-slate-900">Timeline</h2>
+          <div className="ml-auto">
+            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800">
+              Histórico
+            </span>
+          </div>
+        </header>
+        <div className="border-b-2 border-indigo-200 mb-6"></div>
+
+        {/* Legenda dos tipos */}
+        <div className="flex flex-wrap items-center gap-2 text-xs text-slate-600 mb-4">
+          <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-blue-50 text-blue-700 border border-blue-200"><Send className="w-3 h-3" /> Versão</span>
+          <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-green-50 text-green-700 border border-green-200"><CheckCircleIcon className="w-3 h-3" /> Aprovado</span>
+          <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-red-50 text-red-700 border border-red-200"><XCircleIcon className="w-3 h-3" /> Devolvido</span>
+          <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-slate-50 text-slate-700 border border-slate-200"><Paperclip className="w-3 h-3" /> Anexo</span>
+        </div>
+
+        {/* Lista completa de eventos */}
+        <div className="relative">
+          <div className="absolute left-3 top-0 bottom-0 w-0.5 bg-slate-200"></div>
+          {generateTimeline().length === 0 ? (
+            <p className="text-sm text-gray-500 italic text-center py-6">Ainda não há ações registradas.</p>
+          ) : (
+            <div className="flex flex-col">
+              {groupTimelineByDay((showAllTimeline ? generateTimeline() : generateTimeline().slice(0, 10))).map((group) => (
+                <div key={group.label} className="mb-4">
+                  {/* Cabeçalho do dia */}
+                  <div className="flex items-center gap-2 mb-2">
+                    <div className="h-px flex-1 bg-slate-200" />
+                    <span className="text-xs font-semibold text-slate-600 whitespace-nowrap px-2 py-0.5 rounded-full bg-slate-50 border border-slate-200">
+                      {group.label}
+                    </span>
+                    <div className="h-px flex-1 bg-slate-200" />
                   </div>
-                ) : (
-                  <>
-                    {/* Timeline com scroll */}
-                    <div className="flex-1 relative pr-2">
-                      <div className="absolute left-2 top-0 bottom-0 w-0.5 bg-slate-200"></div>
-                      <div className="max-h-[280px] overflow-y-auto scrollbar-thin scrollbar-thumb-slate-300 scrollbar-track-transparent hover:scrollbar-thumb-slate-400">
-                        <div className="flex flex-col gap-4 pl-6">
-                          {generateTimeline().map((item, index) => (
-                            <div key={item.id} className="relative group">
-                              {/* Ícone sobreposto à linha */}
-                              <div className="absolute -left-6 top-0 w-4 h-4 bg-white rounded-full flex items-center justify-center">
-                                {getTimelineIcon(item)}
-                              </div>
-                              
-                              {/* Conteúdo do item */}
-                              <div className="hover:bg-slate-50 rounded-lg px-3 py-2 transition-colors cursor-pointer">
-                                <p className="text-sm font-semibold text-slate-700 mb-1">
-                                  {item.descricao}
-                                </p>
-                                <div className="flex items-center gap-2 text-xs text-slate-500">
-                                  <span>{item.autor}</span>
-                                  <span>•</span>
-                                  <span>{formatDateTime(new Date(item.dataHora))}</span>
-                                </div>
-                              </div>
-                            </div>
-                          ))}
+
+                  {/* Itens do dia */}
+                  {group.items.map((item, idx, arr) => (
+                    <div key={item.id} className="relative pl-10 py-3">
+                      <div className="absolute left-1.5 top-3 w-5 h-5 bg-white rounded-full border border-slate-300 flex items-center justify-center shadow-sm">
+                        {getTimelineIcon(item)}
+                      </div>
+                      <div className="rounded-xl border border-slate-200 bg-white px-4 py-3 hover:bg-slate-50 transition-colors">
+                        <div className="flex items-center justify-between gap-3">
+                          <p className="text-sm font-semibold text-slate-800">{item.descricao}</p>
+                          <span className="text-[11px] font-medium text-slate-500 whitespace-nowrap">{formatDateTime(new Date(item.dataHora))}</span>
+                        </div>
+                        <div className="mt-1 text-xs text-slate-600 flex items-center gap-1">
+                          <UserIcon className="w-3.5 h-3.5" />
+                          <span>{item.autor}</span>
                         </div>
                       </div>
+                      {idx < arr.length - 1 && <div className="mt-3 ml-10 border-b border-slate-100"></div>}
                     </div>
-
-                    {/* Rodapé fixo */}
-                    <div className="border-t border-slate-200 pt-3 mt-4">
-                      <button
-                        className="w-full text-center text-sm text-indigo-600 hover:text-indigo-700 hover:underline transition-colors"
-                        aria-label="Ver histórico completo de ações"
-                      >
-                        Ver todas as ações
-                      </button>
-                    </div>
-                  </>
-                )}
-              </div>
+                  ))}
+                </div>
+              ))}
+              {/* Botão ver mais/menos */}
+              {generateTimeline().length > 10 && (
+                <div className="pt-2">
+                  <button
+                    className="w-full text-center text-sm text-indigo-600 hover:text-indigo-700 hover:underline transition-colors"
+                    onClick={() => setShowAllTimeline(v => !v)}
+                  >
+                    {showAllTimeline ? 'Ver menos' : 'Ver mais'}
+                  </button>
+                </div>
+              )}
             </div>
+          )}
         </div>
       </div>
 
