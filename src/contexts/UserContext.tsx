@@ -131,7 +131,7 @@ const mockUsers: User[] = [
     isPlatformAdmin: false,
     nome: 'Lara Rubia Vaz Diniz Fraguas',
     cargo: 'Supervisão contratual',
-    gerencia: 'Comissão de Implantação'
+    gerencia: 'GSP - Gerência de Soluções e Projetos'
   },
   {
     _id: '2',
@@ -147,7 +147,7 @@ const mockUsers: User[] = [
     isPlatformAdmin: false,
     nome: 'Diran Rodrigues de Souza Filho',
     cargo: 'Secretário Executivo',
-    gerencia: 'SE - Secretaria Executiva'
+    gerencia: 'GRH - Gerência de Recursos Humanos'
   },
   {
     _id: '3',
@@ -163,7 +163,7 @@ const mockUsers: User[] = [
     isPlatformAdmin: false,
     nome: 'Georgia Guimaraes Pereira',
     cargo: 'Controladora Interna',
-    gerencia: 'OUV - Ouvidoria'
+    gerencia: 'GUE - Gerência de Urgência e Emergência'
   },
   {
     _id: '4',
@@ -195,8 +195,8 @@ const mockUsers: User[] = [
     isActive: true,
     isPlatformAdmin: false,
     nome: 'Guilherme de Carvalho Silva',
-    cargo: 'Gerente Suprimentos e Logistica',
-    gerencia: 'GSL - Gerência de Suprimentos e Logística'
+    cargo: 'Gerente de Licitações',
+    gerencia: 'GLC - Gerência de Licitações'
   },
   {
     _id: '6',
@@ -211,7 +211,7 @@ const mockUsers: User[] = [
     isActive: true,
     isPlatformAdmin: false,
     nome: 'Lucas Moreira Brito',
-    cargo: 'GERENTE DE RH',
+    cargo: 'Gerente de Recursos Humanos',
     gerencia: 'GRH - Gerência de Recursos Humanos'
   },
   {
@@ -243,8 +243,8 @@ const mockUsers: User[] = [
     isActive: true,
     isPlatformAdmin: false,
     nome: 'Leticia Bonfim Guilherme',
-    cargo: 'Gerente de Licitações e Contratos',
-    gerencia: 'GLC - Gerência de Licitações e Contratos'
+    cargo: 'Gerente de Licitações',
+    gerencia: 'GLC - Gerência de Licitações'
   },
   {
     _id: '9',
@@ -260,7 +260,7 @@ const mockUsers: User[] = [
     isPlatformAdmin: false,
     nome: 'Dallas Kelson Francisco de Souza',
     cargo: 'Gerente Financeiro',
-    gerencia: 'GFC - Gerência Financeira e Contábil'
+    gerencia: 'GFC - Gerência Financeira'
   },
   {
     _id: '10',
@@ -275,8 +275,8 @@ const mockUsers: User[] = [
     isActive: true,
     isPlatformAdmin: false,
     nome: 'Gabriel Radamesis Gomes Nascimento',
-    cargo: 'Assessor Jurídico',
-    gerencia: 'NAJ - Assessoria Jurídica'
+    cargo: 'Assessor',
+    gerencia: 'GSP - Gerência de Soluções e Projetos'
   },
   // Usuários sem organização para teste
   {
@@ -288,7 +288,7 @@ const mockUsers: User[] = [
     isPlatformAdmin: false,
     nome: 'Usuário Sem Organização',
     cargo: 'Analista',
-    gerencia: undefined
+    gerencia: 'GLC - Gerência de Licitações'
   },
   {
     _id: '12',
@@ -299,7 +299,7 @@ const mockUsers: User[] = [
     isPlatformAdmin: false,
     nome: 'Novo Usuário',
     cargo: 'Consultor',
-    gerencia: undefined
+    gerencia: 'GFC - Gerência Financeira'
   }
 ];
 

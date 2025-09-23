@@ -1,7 +1,7 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Upload, Download, Plus } from 'lucide-react';
+import { Plus } from 'lucide-react';
 import { useAdminStore } from '@/stores/adminStore';
 import GerenciasTree from '@/components/gerencias/GerenciasTree';
 import GerenciaDetail from '@/components/gerencias/GerenciaDetail';
@@ -24,12 +24,6 @@ export default function GerenciasPage() {
           <p className="text-muted-foreground">Gerencie usuários, roles e convites da organização</p>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline">
-            <Upload className="h-4 w-4 mr-2" /> Importar CSV
-          </Button>
-          <Button variant="outline">
-            <Download className="h-4 w-4 mr-2" /> Exportar
-          </Button>
           <Button onClick={() => { setEditingId(null); setDefaultParentId(null); setDrawerOpen(true); }}>
             <Plus className="h-4 w-4 mr-2" /> Nova Gerência
           </Button>

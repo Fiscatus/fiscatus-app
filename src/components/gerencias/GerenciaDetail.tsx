@@ -66,8 +66,6 @@ export default function GerenciaDetail({ gerenciaId, onEdit, onAddMember }: Gere
           <InfoRow label="Responsável" value={responsavel ? `${responsavel.nome} (${responsavel.email})` : '—'} />
           <InfoRow label="E-mail" value={g.email || '—'} />
           <InfoRow label="Telefone" value={g.telefone || '—'} />
-          <InfoRow label="Localização" value={g.localizacao || '—'} />
-          <InfoRow label="SLA padrão (dias)" value={g.slaPadraoDias?.toString() || '—'} />
           <div>
             <div className="text-sm font-medium text-muted-foreground">Competências</div>
             <div className="mt-1 flex flex-wrap gap-2">
@@ -134,32 +132,7 @@ export default function GerenciaDetail({ gerenciaId, onEdit, onAddMember }: Gere
         </CardContent>
       </Card>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Subunidades</CardTitle>
-          <CardDescription>Gerências filhas</CardDescription>
-        </CardHeader>
-        <CardContent>
-          {children.length === 0 ? (
-            <div className="text-sm text-muted-foreground">Nenhuma subunidade.</div>
-          ) : (
-            <div className="flex flex-col gap-2">
-              {children.map((c) => (
-                <div key={c.id} className="flex items-center justify-between border rounded-md px-3 py-2">
-                  <div className="flex items-center gap-2 min-w-0">
-                    <span className="truncate font-medium">{c.nome}</span>
-                    {c.sigla && <Badge variant="secondary" className="text-[10px]">{c.sigla}</Badge>}
-                    <Badge variant={c.status === 'ativa' ? 'outline' : 'secondary'} className={`text-[10px] ${c.status === 'inativa' ? 'opacity-60' : ''}`}>
-                      {c.status === 'ativa' ? 'Ativa' : 'Inativa'}
-                    </Badge>
-                  </div>
-                  <div className="text-xs text-muted-foreground">{c.membros.length} membros</div>
-                </div>
-              ))}
-            </div>
-          )}
-        </CardContent>
-      </Card>
+      {/* Subunidades removido conforme solicitado */}
     </div>
   );
 }

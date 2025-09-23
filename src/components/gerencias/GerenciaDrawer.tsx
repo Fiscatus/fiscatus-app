@@ -31,7 +31,7 @@ export default function GerenciaDrawer({ open, onOpenChange, gerenciaId, default
     nome: current?.nome || '',
     sigla: current?.sigla || '',
     status: current?.status || 'ativa',
-    unidadePaiId: current?.unidadePaiId ?? defaultParentId ?? null,
+    unidadePaiId: null,
     responsavelUserId: current?.responsavelUserId ?? null,
     email: current?.email || '',
     telefone: current?.telefone || '',
@@ -47,7 +47,7 @@ export default function GerenciaDrawer({ open, onOpenChange, gerenciaId, default
         nome: current.nome,
         sigla: current.sigla,
         status: current.status,
-        unidadePaiId: current.unidadePaiId ?? null,
+        unidadePaiId: null,
         responsavelUserId: current.responsavelUserId ?? null,
         email: current.email,
         telefone: current.telefone,
@@ -57,12 +57,12 @@ export default function GerenciaDrawer({ open, onOpenChange, gerenciaId, default
         descricao: current.descricao,
       });
     } else if (!isEditing) {
-      setForm(f => ({ ...f, unidadePaiId: defaultParentId ?? null }));
+      setForm(f => ({ ...f, unidadePaiId: null }));
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [gerenciaId, isEditing, open]);
 
-  const parentOptions = useMemo(() => gerencias.map(g => ({ id: g.id, nome: g.nome })), [gerencias]);
+  const parentOptions = useMemo(() => [], []);
 
   const onSave = () => {
     try {
@@ -85,7 +85,7 @@ export default function GerenciaDrawer({ open, onOpenChange, gerenciaId, default
           nome: form.nome!,
           sigla: form.sigla,
           status: (form.status as GerenciaStatus) || 'ativa',
-          unidadePaiId: form.unidadePaiId ?? null,
+          unidadePaiId: null,
           responsavelUserId: form.responsavelUserId ?? null,
           email: form.email,
           telefone: form.telefone,
@@ -148,20 +148,6 @@ export default function GerenciaDrawer({ open, onOpenChange, gerenciaId, default
           </div>
 
           <div className="grid grid-cols-2 gap-4">
-            <div>
-              <Label>Unidade Pai</Label>
-              <Select value={form.unidadePaiId ?? 'null'} onValueChange={(v) => setForm({ ...form, unidadePaiId: v === 'null' ? null : v })}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Raiz" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="null">Raiz</SelectItem>
-                  {parentOptions.map(p => (
-                    <SelectItem key={p.id} value={p.id}>{p.nome}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
             <div>
               <Label>Responsável</Label>
               <Select value={form.responsavelUserId ?? ''} onValueChange={(v) => setForm({ ...form, responsavelUserId: v || null })}>

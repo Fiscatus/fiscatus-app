@@ -51,6 +51,9 @@ export default function Administracao() {
   const [roles, setRoles] = useState<Role[]>(mockRoles);
   const [invites, setInvites] = useState<Invite[]>(mockInvites);
   const [activeTab, setActiveTab] = useState('users');
+  const [userQuery, setUserQuery] = useState('');
+  const [userStatusFilter, setUserStatusFilter] = useState<'todos' | 'ativos' | 'inativos'>('todos');
+  const [userGerenciaFilter, setUserGerenciaFilter] = useState<string>('todas');
 
   // Estados para modais
   const [isCreateRoleOpen, setIsCreateRoleOpen] = useState(false);
@@ -429,57 +432,112 @@ export default function Administracao() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Nome</TableHead>
-                    <TableHead>Email</TableHead>
-                    <TableHead>Gerência</TableHead>
-                    <TableHead>Role</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Ações</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {users.map((user) => (
-                    <TableRow key={user._id}>
-                      <TableCell className="font-medium">
-                        {user.nome || 'Nome não informado'}
-                      </TableCell>
-                      <TableCell>{user.email}</TableCell>
-                      <TableCell>{user.gerencia || 'N/A'}</TableCell>
-                      <TableCell>
-                        <Badge variant="outline">
-                          {getRoleName(user.orgs[0]?.role)}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant={user.isActive ? "default" : "destructive"}>
-                          {user.isActive ? "Ativo" : "Inativo"}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-2">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleEditUser(user)}
-                          >
-                            <Edit className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleToggleUserStatus(user._id)}
-                          >
-                            {user.isActive ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                          </Button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+              {/* Filtros de busca */}
+              <div className="mb-4 grid grid-cols-1 md:grid-cols-3 gap-3">
+                <Input
+                  placeholder="Buscar por nome, email ou gerência"
+                  value={userQuery}
+                  onChange={(e) => setUserQuery(e.target.value)}
+                />
+                <Select value={userStatusFilter} onValueChange={(v: 'todos' | 'ativos' | 'inativos') => setUserStatusFilter(v)}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="todos">Todos</SelectItem>
+                    <SelectItem value="ativos">Ativos</SelectItem>
+                    <SelectItem value="inativos">Inativos</SelectItem>
+                  </SelectContent>
+                </Select>
+                <Select value={userGerenciaFilter} onValueChange={setUserGerenciaFilter}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Gerência" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="todas">Todas as Gerências</SelectItem>
+                    {Array.from(new Set(users.map(u => u.gerencia).filter(Boolean)))
+                      .map((g) => (
+                        <SelectItem key={g as string} value={g as string}>{g as string}</SelectItem>
+                      ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {(() => {
+                const q = userQuery.trim().toLowerCase();
+                const matchQuery = (u: User) => !q || (
+                  (u.nome || '').toLowerCase().includes(q) ||
+                  u.email.toLowerCase().includes(q) ||
+                  (u.gerencia || '').toLowerCase().includes(q)
+                );
+                const matchStatus = (u: User) => (
+                  userStatusFilter === 'todos' ||
+                  (userStatusFilter === 'ativos' && u.isActive) ||
+                  (userStatusFilter === 'inativos' && !u.isActive)
+                );
+                const matchGerencia = (u: User) => (
+                  userGerenciaFilter === 'todas' || (u.gerencia || '') === userGerenciaFilter
+                );
+                const filtered = users.filter(u => matchQuery(u) && matchStatus(u) && matchGerencia(u));
+                return (
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Nome</TableHead>
+                        <TableHead>Email</TableHead>
+                        <TableHead>Gerência</TableHead>
+                        <TableHead>Role</TableHead>
+                        <TableHead>Status</TableHead>
+                        <TableHead>Ações</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {filtered.map((user) => (
+                        <TableRow key={user._id}>
+                          <TableCell className="font-medium">
+                            {user.nome || 'Nome não informado'}
+                          </TableCell>
+                          <TableCell>{user.email}</TableCell>
+                          <TableCell>{user.gerencia || 'N/A'}</TableCell>
+                          <TableCell>
+                            <Badge variant="outline">
+                              {getRoleName(user.orgs[0]?.role)}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>
+                            <Badge variant={user.isActive ? "default" : "destructive"}>
+                              {user.isActive ? "Ativo" : "Inativo"}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex items-center gap-2">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleEditUser(user)}
+                              >
+                                <Edit className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleToggleUserStatus(user._id)}
+                              >
+                                {user.isActive ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                              </Button>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                      {filtered.length === 0 && (
+                        <TableRow>
+                          <TableCell colSpan={6} className="text-center text-sm text-muted-foreground">Nenhum usuário encontrado.</TableCell>
+                        </TableRow>
+                      )}
+                    </TableBody>
+                  </Table>
+                );
+              })()}
             </CardContent>
           </Card>
         </TabsContent>
