@@ -2,7 +2,8 @@ import React from "react";
 import { motion } from "framer-motion";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Star, ArrowRight, ExternalLink, FolderOpen, Users, ClipboardList, Gavel, BarChart3, Settings } from "lucide-react";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { Star, ArrowRight, ExternalLink, FolderOpen, Users, ClipboardList, Gavel, BarChart3, Settings, Info } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Module } from "@/hooks/useHomeData";
 
@@ -70,8 +71,10 @@ export default function ModuleCard({ module, index, onToggleFavorite }: ModuleCa
   const navigate = useNavigate();
   const colors = colorClasses[module.color as keyof typeof colorClasses] || colorClasses.blue;
   const IconComponent = iconMap[module.iconName as keyof typeof iconMap] || FolderOpen;
+  const isEnabled = module.id === "planejamento";
 
   const handleModuleClick = () => {
+    if (!isEnabled) return;
     navigate(module.href);
   };
 
@@ -126,14 +129,38 @@ export default function ModuleCard({ module, index, onToggleFavorite }: ModuleCa
           
           {/* Rodapé com ações */}
           <div className="mt-6 space-y-3">
-            <Button
-              variant="outline"
-              size="sm"
-              className={`w-full ${colors.button} transition-all duration-300`}
-            >
-              Abrir
-              <ArrowRight className="w-4 h-4 ml-2" />
-            </Button>
+            {isEnabled ? (
+              <Button
+                variant="outline"
+                size="sm"
+                className={`w-full ${colors.button} transition-all duration-300`}
+              >
+                Abrir
+                <ArrowRight className="w-4 h-4 ml-2" />
+              </Button>
+            ) : (
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <span className="w-full inline-flex">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        disabled
+                        aria-disabled
+                        className={`w-full ${colors.button} transition-all duration-300 opacity-60 cursor-not-allowed`}
+                      >
+                        Em breve
+                        <Info className="w-4 h-4 ml-2" />
+                      </Button>
+                    </span>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Este módulo estará disponível em breve.</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            )}
             
             <Button
               variant="ghost"

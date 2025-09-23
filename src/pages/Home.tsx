@@ -24,7 +24,8 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Topbar */}
-      <header className="fixed top-0 left-0 w-full h-16 bg-white/95 backdrop-blur-sm border-b border-gray-100 shadow-sm z-50 px-4 md:px-6 flex items-center justify-between">
+      <header className="fixed top-0 left-0 w-full h-14 sm:h-16 bg-white/95 backdrop-blur-sm border-b border-gray-100 shadow-sm z-50">
+        <div className="w-full px-4 sm:px-6 lg:px-8 h-full flex items-center justify-between">
         <div className="flex items-center gap-3">
           <button
             className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
@@ -39,13 +40,14 @@ export default function Home() {
         <div className="text-sm text-gray-600">
           {user?.nome ? `Olá, ${user.nome.split(" ")[0]}` : "Bem-vindo"}
         </div>
+        </div>
       </header>
 
       {/* Sidebar */}
       <Sidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
 
       {/* Conteúdo principal */}
-      <main className="pt-16 md:pt-20">
+      <main className="pt-14 sm:pt-16 md:pt-20">
         <div className="max-w-[1200px] mx-auto px-6 md:px-8">
           {/* A) Hero editorial */}
           <Hero userName={user.name} stats={stats} />

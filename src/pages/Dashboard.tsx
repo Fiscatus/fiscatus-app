@@ -26,6 +26,8 @@ import {
   Mail,
   Clock
 } from "lucide-react";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { Info } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { useUser } from "@/contexts/UserContext";
@@ -254,13 +256,41 @@ export default function Dashboard() {
                       <p className="text-sm text-gray-600 line-clamp-2">{modulo.descricao}</p>
                     </div>
                     <div className="mt-4 flex items-center justify-start">
-                      <button
-                onClick={() => handleModuloClick(modulo.path)}
-                        className="inline-flex items-center gap-2 px-3 py-1.5 rounded-md bg-blue-600 text-white text-sm hover:bg-blue-700 shadow-sm"
-                      >
-                        Abrir
-                        <ChevronRight className="w-4 h-4" />
-                      </button>
+                      {(() => {
+                        const isEnabled = modulo.path === "/planejamento-da-contratacao";
+                        if (isEnabled) {
+                          return (
+                            <button
+                              onClick={() => handleModuloClick(modulo.path)}
+                              className="inline-flex items-center gap-2 px-3 py-1.5 rounded-md bg-blue-600 text-white text-sm hover:bg-blue-700 shadow-sm"
+                            >
+                              Abrir
+                              <ChevronRight className="w-4 h-4" />
+                            </button>
+                          );
+                        }
+                        return (
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <span className="inline-flex">
+                                  <button
+                                    disabled
+                                    aria-disabled
+                                    className="inline-flex items-center gap-2 px-3 py-1.5 rounded-md bg-gray-100 text-gray-500 text-sm cursor-not-allowed shadow-sm"
+                                  >
+                                    Em breve
+                                    <Info className="w-4 h-4" />
+                                  </button>
+                                </span>
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <p>Este módulo estará disponível em breve.</p>
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                        );
+                      })()}
                     </div>
                   </div>
                 </div>

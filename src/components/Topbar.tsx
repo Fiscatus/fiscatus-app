@@ -21,6 +21,10 @@ export default function Topbar() {
   const { user, setUser } = useUser();
   const { toast } = useToast();
   const location = useLocation();
+  // Placeholder genérico para Dashboard
+  const searchPlaceholder = location.pathname === "/" 
+    ? "Buscar no sistema..." 
+    : "Buscar processos, documentos, usuários...";
 
   // Função para abrir drawer de suporte
   const openSupportDrawer = () => {
@@ -32,7 +36,6 @@ export default function Topbar() {
   // Verifica se está em qualquer página do módulo Planejamento da Contratação
   const isPlanejamentoContratacao = 
     location.pathname === "/planejamento-da-contratacao" || 
-    location.pathname === "/" ||
     location.pathname === "/processos" ||
     location.pathname === "/processos-gerencia" ||
     location.pathname === "/assinaturas" ||
@@ -59,9 +62,9 @@ export default function Topbar() {
   return (
     <>
       <header className="fixed top-0 left-0 w-full z-50 bg-white/90 backdrop-blur supports-[backdrop-filter]:bg-white/60 border-b border-gray-100">
-        <div className="mx-auto max-w-[1280px] h-16 grid grid-cols-[auto,1fr] items-center px-3 sm:px-4 md:px-5">
+        <div className="w-full h-14 sm:h-16 grid grid-cols-[auto,1fr] items-center px-4 sm:px-6 lg:px-8">
           {/* Coluna esquerda: menu + logo + seletor de módulo */}
-          <div className="flex items-center gap-2 sm:gap-3">
+          <div className="flex items-center gap-2.5 sm:gap-3 md:gap-4">
             {/* Menu hambúrguer */}
             <button
               className="h-9 w-9 grid place-items-center rounded-lg hover:bg-gray-100 focus-visible:outline-2 focus-visible:outline-indigo-500"
@@ -77,8 +80,8 @@ export default function Topbar() {
               <span className="text-base md:text-lg font-bold text-gray-800 truncate">Fiscatus</span>
             </div>
 
-            {/* Seletor de módulo (apenas para Planejamento da Contratação) */}
-            {isPlanejamentoContratacao && (
+            {/* Seletor de módulo removido do Dashboard (home) */}
+            {isPlanejamentoContratacao && location.pathname !== "/" && (
               <>
                 <div className="hidden sm:block">
                   <ModuleMenubar />
@@ -91,7 +94,7 @@ export default function Topbar() {
           </div>
 
           {/* Coluna direita: BUSCA + AÇÕES no MESMO FLEX */}
-          <div className="flex items-center gap-2 sm:gap-2.5 md:gap-3 ml-2 sm:ml-3">
+          <div className="flex items-center gap-2 sm:gap-2.5 md:gap-3.5 ml-2 sm:ml-3">
             {/* Busca elástica */}
             <div className="flex-1 relative">
               {isPlanejamentoContratacao ? (
@@ -100,7 +103,7 @@ export default function Topbar() {
                     <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" />
                     <Input
                       type="text"
-                      placeholder="Buscar processos, documentos, usuários..."
+                      placeholder={searchPlaceholder}
                       className="h-10 rounded-full w-full min-w-[140px] sm:min-w-[200px] md:min-w-[280px] lg:min-w-[360px] xl:min-w-[420px] max-w-[720px] border-gray-200 focus-visible:ring-0 focus-visible:outline-2 focus-visible:outline-indigo-500 pl-10"
                     />
                   </div>
@@ -110,15 +113,15 @@ export default function Topbar() {
                   <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" />
                   <Input
                     type="text"
-                    placeholder="Buscar processos, documentos, usuários..."
+                    placeholder={searchPlaceholder}
                     className="h-10 rounded-full w-full min-w-[140px] sm:min-w-[200px] md:min-w-[280px] lg:min-w-[360px] xl:min-w-[420px] max-w-[720px] border-gray-200 focus-visible:ring-0 focus-visible:outline-2 focus-visible:outline-indigo-500 pl-10"
                   />
                 </div>
               )}
             </div>
 
-            {/* Mobile: botão de busca para Planejamento da Contratação */}
-            {isPlanejamentoContratacao && (
+            {/* Mobile: botão de busca para Planejamento da Contratação (não exibe no Dashboard) */}
+            {isPlanejamentoContratacao && location.pathname !== "/" && (
               <Button variant="ghost" size="icon" className="h-9 w-9 shrink-0 sm:hidden" aria-label="Buscar" onClick={() => navigate("/buscar")}>
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-5 w-5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
               </Button>
