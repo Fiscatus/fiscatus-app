@@ -54,6 +54,8 @@ import { useToast } from '@/hooks/use-toast';
 import { DatePicker } from '@/components/date';
 import CommentsSection from './CommentsSection';
 import ResponsavelSelector from './ResponsavelSelector';
+import Timeline from '@/components/timeline/Timeline';
+import { TimelineItemModel, TimelineStatus } from '@/types/timeline';
 import { formatDateBR, formatDateTimeBR, legendaDiasRestantes, classesPrazo } from '@/lib/utils';
 
 // Tipos TypeScript conforme especificação
@@ -1179,7 +1181,7 @@ export default function ETPElaboracaoSection({
           </div>
         </header>
         <div className="border-b-2 border-green-200 mb-6"></div>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="rounded-2xl border shadow-sm bg-white p-4 md:p-6">
             <header className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-2">
@@ -1299,41 +1301,27 @@ export default function ETPElaboracaoSection({
             </div>
           </div>
 
-          <div className="rounded-2xl border shadow-sm bg-white p-4 md:p-6 flex flex-col min-h-[320px]">
-            <header className="flex items-center gap-2 mb-4">
-              <Clock className="w-5 h-5 text-indigo-600" />
-              <h3 className="text-sm font-semibold text-slate-800">Mini Timeline</h3>
-            </header>
-            <div className="flex-1 flex flex-col">
-              {generateTimeline().length === 0 ? (
-                <div className="flex-1 flex items-center justify-center"><p className="text-sm text-gray-500 italic text-center">Ainda não há ações registradas.</p></div>
-              ) : (
-                <>
-                  <div className="flex-1 relative pr-2">
-                    <div className="absolute left-2 top-0 bottom-0 w-0.5 bg-slate-200"></div>
-                    <div className="max-h-[280px] overflow-y-auto">
-                      <div className="flex flex-col gap-4 pl-6">
-                        {generateTimeline().map(item => (
-                          <div key={item.id} className="relative group">
-                            <div className="absolute -left-6 top-0 w-4 h-4 bg-white rounded-full flex items-center justify-center">{getTimelineIcon(item)}</div>
-                            <div className="hover:bg-slate-50 rounded-lg px-3 py-2 transition-colors cursor-pointer">
-                              <p className="text-sm font-semibold text-slate-700 mb-1">{item.descricao}</p>
-                              <div className="flex items-center gap-2 text-xs text-slate-500"><span>{item.autor}</span><span>•</span><span>{formatDateTimeBR(new Date(item.dataHora))}</span></div>
-                        </div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                  <div className="border-t border-slate-200 pt-3 mt-4">
-                    <button className="w-full text-center text-sm text-indigo-600 hover:text-indigo-700 hover:underline transition-colors" aria-label="Ver histórico completo de ações">Ver todas as ações</button>
-                  </div>
-                </>
-              )}
-            </div>
-          </div>
+          {/* Mini Timeline removida do painel para padronização com os demais cards */}
         </div>
       </div>
+
+      {/* 4️⃣ Timeline (balão) */}
+      <Timeline data={(() => {
+        const items: TimelineItemModel[] = [];
+        // revisões relevantes
+        versions.forEach(v => {
+          if (v.status === 'finalizada' && v.atualizadoEm) {
+            items.push({ id: `rev-final-${v.id}`, status: 'versao', title: `Revisão ${v.numeroRevisao} finalizada`, author: { name: v.autorNome }, createdAt: v.atualizadoEm });
+          }
+          if (v.status === 'enviada_para_assinatura' && v.enviadoParaAssinaturaEm) {
+            items.push({ id: `rev-env-${v.id}`, status: 'versao', title: `Revisão ${v.numeroRevisao} enviada para assinatura`, author: { name: v.autorNome }, createdAt: v.enviadoParaAssinaturaEm });
+          }
+        });
+        // anexos recentes (até 2)
+        const anexosRecentes = [...anexos].sort((a,b)=> new Date(b.criadoEm).getTime() - new Date(a.criadoEm).getTime()).slice(0,2);
+        anexosRecentes.forEach(a => items.push({ id: `anexo-${a.id}`, status: 'anexo' as TimelineStatus, title: `Anexo adicionado: ${a.nome}`, author: { name: a.autorNome }, createdAt: a.criadoEm }));
+        return items.sort((a,b)=> new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+      })()} />
 
       {/* 4️⃣ Comentários */}
       <div className="w-full">
