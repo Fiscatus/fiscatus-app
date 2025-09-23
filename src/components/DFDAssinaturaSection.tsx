@@ -10,6 +10,8 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Separator } from '@/components/ui/separator';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import ProgressaoTemporal from '@/components/ProgressaoTemporal';
+import Timeline from '@/components/timeline/Timeline';
+import { TimelineItemModel, TimelineStatus } from '@/types/timeline';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Progress } from '@/components/ui/progress';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -305,6 +307,41 @@ export default function DFDAssinaturaSection({
   const assinaturasConcluidas = cardData.assinantes.filter(a => a.status === 'ASSINADO').length;
   const totalAssinaturas = cardData.assinantes.length;
   const progresso = totalAssinaturas > 0 ? (assinaturasConcluidas / totalAssinaturas) * 100 : 0;
+  
+  // Timeline (balão) — seguir layout do Card Elaboração
+  const mapToNewTimelineItems = (): TimelineItemModel[] => {
+    const items: TimelineItemModel[] = [];
+
+    // Assinaturas realizadas
+    cardData.assinantes.forEach((a) => {
+      if (a.assinadoEm) {
+        items.push({
+          id: `assinatura-${a.id}`,
+          status: 'aprovado',
+          title: 'Assinatura registrada',
+          author: { name: a.nome },
+          createdAt: a.assinadoEm
+        });
+      }
+    });
+
+    // Anexos recentes (até 2)
+    const anexosRecentes = [...annexes]
+      .sort((x, y) => new Date(y.uploadedAt).getTime() - new Date(x.uploadedAt).getTime())
+      .slice(0, 2);
+    anexosRecentes.forEach((ax) => {
+      items.push({
+        id: `anexo-${ax.id}`,
+        status: 'anexo' as TimelineStatus,
+        title: `Anexo adicionado: ${ax.name}`,
+        author: { name: ax.uploadedBy || 'Usuário' },
+        createdAt: ax.uploadedAt
+      });
+    });
+
+    // Ordenar por data desc
+    return items.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  };
 
   // Função para obter configuração do status da assinatura
   const getAssinaturaStatusConfig = (status: AssinaturaStatus) => {
@@ -1047,7 +1084,7 @@ export default function DFDAssinaturaSection({
               </div>
         </header>
         <div className="border-b-2 border-green-200 mb-6"></div>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             
             {/* 1️⃣ Card Status & Prazo (controle temporal completo) */}
             <div className="rounded-2xl border shadow-sm bg-white p-4 md:p-6">
@@ -1285,84 +1322,15 @@ export default function DFDAssinaturaSection({
               </div>
             </div>
 
-            {/* 3️⃣ Card Mini Timeline (painel vertical completo) */}
-            <div className="rounded-2xl border shadow-sm bg-white p-4 md:p-6 flex flex-col min-h-[320px]">
-              <header className="flex items-center gap-2 mb-4">
-                <Clock className="w-5 h-5 text-indigo-600" />
-                <h3 className="text-sm font-semibold text-slate-800">Mini Timeline</h3>
-              </header>
-
-              <div className="flex-1 flex flex-col">
-                {(() => {
-                  const timeline = [] as Array<{id:string; autor:string; descricao:string; dataHora:string; tipo:'assinatura'|'anexo'}>;
-                  // Assinaturas recentes
-                  cardData.assinantes.forEach(a => {
-                    if (a.assinadoEm) {
-                      timeline.push({ id: `ass-${a.id}`, autor: a.nome, descricao: 'Assinatura registrada', dataHora: a.assinadoEm, tipo: 'assinatura' });
-                    }
-                  });
-                  // Anexos recentes
-                  anexosOrdenados.slice(0, 2).forEach(ax => {
-                    timeline.push({ id: `ax-${ax.id}`, autor: ax.uploadedBy, descricao: 'Anexo adicionado', dataHora: ax.uploadedAt, tipo: 'anexo' });
-                  });
-                  const ordered = timeline.sort((a,b)=> new Date(b.dataHora).getTime() - new Date(a.dataHora).getTime()).slice(0,3);
-                  
-                  return ordered.length === 0 ? (
-                    <div className="flex-1 flex items-center justify-center">
-                      <p className="text-sm text-gray-500 italic text-center">
-                        Ainda não há ações registradas.
-                      </p>
-                    </div>
-                  ) : (
-                    <>
-                      {/* Timeline com scroll */}
-                      <div className="flex-1 relative pr-2">
-                        <div className="absolute left-2 top-0 bottom-0 w-0.5 bg-slate-200"></div>
-                        <div className="max-h-[280px] overflow-y-auto scrollbar-thin scrollbar-thumb-slate-300 scrollbar-track-transparent hover:scrollbar-thumb-slate-400">
-                          <div className="flex flex-col gap-4 pl-6">
-                            {ordered.map((item, index) => (
-                              <div key={item.id} className="relative group">
-                                {/* Ícone sobreposto à linha */}
-                                <div className="absolute -left-6 top-0 w-4 h-4 bg-white rounded-full flex items-center justify-center">
-                                  {item.tipo === 'assinatura' ? <CheckCircle className="w-4 h-4 text-green-600" /> : <Paperclip className="w-4 h-4 text-gray-600" />}
-                                </div>
-                                
-                                {/* Conteúdo do item */}
-                                <div className="hover:bg-slate-50 rounded-lg px-3 py-2 transition-colors cursor-pointer">
-                                  <p className="text-sm font-semibold text-slate-700 mb-1">
-                                    {item.descricao}
-                                  </p>
-                                  <div className="flex items-center gap-2 text-xs text-slate-500">
-                                    <span>{item.autor}</span>
-                                    <span>•</span>
-                                    <span>{formatDateTimeBR(new Date(item.dataHora))}</span>
-                                  </div>
-                                </div>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Rodapé fixo */}
-                      <div className="border-t border-slate-200 pt-3 mt-4">
-                        <button
-                          className="w-full text-center text-sm text-indigo-600 hover:text-indigo-700 hover:underline transition-colors"
-                          aria-label="Ver histórico completo de ações"
-                        >
-                          Ver todas as ações
-                        </button>
-                      </div>
-                    </>
-                  );
-                })()}
-              </div>
-            </div>
+            {/* Mini Timeline removida do painel para padronização com Elaboração */}
         </div>
       </div>
 
 
-      {/* 4️⃣ Comentários */}
+      {/* 4️⃣ Timeline (balão) */}
+      <Timeline data={mapToNewTimelineItems()} />
+
+      {/* 5️⃣ Comentários */}
       <div className="w-full">
 <div className="card-shell">
           <CommentsSection
