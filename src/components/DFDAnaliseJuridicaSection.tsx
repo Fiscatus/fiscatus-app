@@ -747,7 +747,7 @@ export default function DFDAnaliseJuridicaSection({
 
           {/* GERENCIAMENTO: embaixo do balão de Análise Jurídica (full-width) */}
           <section id="gerenciamento" className="col-span-12 w-full">
-            <div className="card-shell">
+            <div className="card-shell mb-8">
               <header className="flex items-center gap-3 mb-4">
                 <Settings className="w-6 h-6 text-slate-600" />
                 <h2 className="text-lg font-bold text-slate-900">Gerenciamento</h2>
@@ -756,7 +756,8 @@ export default function DFDAnaliseJuridicaSection({
                 </div>
               </header>
               <div className="border-b-2 border-slate-200 mb-6"></div>
-              <div className="grid grid-cols-12 gap-4 items-start">
+              <div>
+                <div className="grid grid-cols-12 gap-4 items-start">
                 {/* Coluna Revisões (igual ao ETP, substitui Interações) */}
                 <div className="col-span-12 lg:col-span-6">
                   <div className="rounded-xl border shadow-sm bg-white h-full min-h-[420px]">
@@ -878,6 +879,7 @@ export default function DFDAnaliseJuridicaSection({
                     )}
                         </div>
                       </div>
+                </div>
                 </div>
               </div>
             </div>

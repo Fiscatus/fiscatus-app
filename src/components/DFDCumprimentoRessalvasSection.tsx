@@ -823,7 +823,7 @@ export default function DFDCumprimentoRessalvasSection({
                   </div>
               </header>
               <div className="card-separator-indigo"></div>
-                  <div>
+              <div className="p-4 md:p-6">
                 <div className="space-y-6">
                   {/* Texto do parecer */}
                             <div className="flex-1">
@@ -836,7 +836,7 @@ export default function DFDCumprimentoRessalvasSection({
                       className="min-h-[350px] resize-none border-gray-200 focus:border-indigo-300 focus:ring-indigo-300"
                             />
                   </div>
-                        </div>
+                </div>
               </div>
             </div>
           </section>
@@ -852,14 +852,14 @@ export default function DFDCumprimentoRessalvasSection({
                 </div>
               </header>
               <div className="card-separator-indigo"></div>
-              <div className="flex-1 flex flex-col">
+              <div className="p-4 md:p-6 flex-1 flex flex-col">
                                  <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
                    <TabsList className="grid w-full grid-cols-2">
                      <TabsTrigger value="gerencias">Gerências</TabsTrigger>
                      <TabsTrigger value="anexos">Anexos</TabsTrigger>
                    </TabsList>
                   
-                  <TabsContent value="gerencias" className="mt-0 p-4">
+                  <TabsContent value="gerencias" className="mt-0 p-0">
                     <div className="space-y-4">
                       {/* Título padrão (igual outros cards) */}
                       <div className="px-1">
@@ -978,7 +978,7 @@ export default function DFDCumprimentoRessalvasSection({
                   </div>
                   </TabsContent>
                   
-                  <TabsContent value="anexos" className="mt-0 p-4">
+                  <TabsContent value="anexos" className="mt-0 p-0">
                     <div className="rounded-xl border shadow-sm bg-white h-full">
                       <div className="px-4 py-3 rounded-t-xl border-b">
                         <div className="flex items-center justify-between">
@@ -1187,12 +1187,14 @@ export default function DFDCumprimentoRessalvasSection({
           {/* FULL: Comentários */}
           <section id="comentarios" className="col-span-12 w-full">
             <div className="card-shell">
-              <CommentsSection
-                processoId={processoId}
-                etapaId={etapaId.toString()}
-                cardId="comentarios-cumprimento-ressalvas"
-                title="Comentários"
-              />
+              <div className="p-4 md:p-6">
+                <CommentsSection
+                  processoId={processoId}
+                  etapaId={etapaId.toString()}
+                  cardId="comentarios-cumprimento-ressalvas"
+                  title="Comentários"
+                />
+              </div>
             </div>
           </section>
 

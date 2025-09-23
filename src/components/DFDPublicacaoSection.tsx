@@ -740,7 +740,7 @@ export default function DFDPublicacaoSection({
                 </div>
               </header>
               <div className="border-b-2 border-green-200 mb-6"></div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="p-4 md:p-6 grid grid-cols-1 md:grid-cols-2 gap-4">
                 {/* Status & Prazo */}
                 <div className="rounded-2xl border shadow-sm bg-white p-4 md:p-6">
                   <header className="flex items-center justify-between mb-4">
@@ -817,12 +817,14 @@ export default function DFDPublicacaoSection({
           {/* Comentários */}
           <section id="comentarios" className="col-span-12 w-full">
             <div className="card-shell mb-8">
-              <CommentsSection
-                processoId={processoId}
-                etapaId={etapaId.toString()}
-                cardId="comentarios-publicacao"
-                title="Comentários"
-              />
+              <div className="p-4 md:p-6">
+                <CommentsSection
+                  processoId={processoId}
+                  etapaId={etapaId.toString()}
+                  cardId="comentarios-publicacao"
+                  title="Comentários"
+                />
+              </div>
             </div>
           </section>
 
