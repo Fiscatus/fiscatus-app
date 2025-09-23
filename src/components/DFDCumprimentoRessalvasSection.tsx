@@ -1172,6 +1172,7 @@ export default function DFDCumprimentoRessalvasSection({
               </div>
             </div>
             {/* Timeline (balão) */}
+            <div className="mt-6">
             <Timeline data={(() => {
               const items: TimelineItemModel[] = [];
               interacoes.forEach((it) => {
@@ -1182,19 +1183,18 @@ export default function DFDCumprimentoRessalvasSection({
               anexosRecentes.forEach(ax => items.push({ id: `anexo-${ax.id}`, status: 'anexo', title: `Anexo adicionado: ${ax.name}`, author: { name: ax.uploadedBy || 'Usuário' }, createdAt: ax.uploadedAt }));
               return items.sort((a,b)=> new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
             })()} />
+            </div>
           </section>
 
           {/* FULL: Comentários */}
           <section id="comentarios" className="col-span-12 w-full">
             <div className="card-shell">
-              <div className="p-4 md:p-6">
-                <CommentsSection
-                  processoId={processoId}
-                  etapaId={etapaId.toString()}
-                  cardId="comentarios-cumprimento-ressalvas"
-                  title="Comentários"
-                />
-              </div>
+              <CommentsSection
+                processoId={processoId}
+                etapaId={etapaId.toString()}
+                cardId="comentarios-cumprimento-ressalvas"
+                title="Comentários"
+              />
             </div>
           </section>
 
