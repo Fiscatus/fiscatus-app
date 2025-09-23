@@ -4,7 +4,7 @@
 
 **Data**: 15/01/2025  
 **Solicitação**: "Coloque o Controle de Conclusão por Gerências Participantes * dentro da ferramenta 'Gerências'"  
-**Card**: Card 16 - Cumprimento de Ressalvas pós Análise Jurídica Prévia
+**Card**: Card 16 - Cumprimento de Ressalvas
 
 ## ✅ Modificações Implementadas
 

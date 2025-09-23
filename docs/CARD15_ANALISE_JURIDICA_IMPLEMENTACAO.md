@@ -77,7 +77,7 @@
 
 #### 5.2 Devolver para Correção ✅
 - ✅ **Justificativa obrigatória**: Campo obrigatório no modal de confirmação
-- ✅ **Criação automática**: Card "Cumprimento de Ressalvas pós Análise Jurídica Prévia"
+- ✅ **Criação automática**: Card "Cumprimento de Ressalvas"
 - ✅ **Registro completo**: Parecer + justificativa + data/hora + responsável
 - ✅ **Fluxo**: Encaminha para correção
 

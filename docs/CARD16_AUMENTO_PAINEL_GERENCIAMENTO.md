@@ -4,7 +4,7 @@
 
 **Data**: 15/01/2025  
 **Solicitação**: "Aumente o tamanho horizontal dos Controle de Conclusão por Gerências Participantes *, para ficar melhor organizado o nome das gerências e o nome da pessoa. Ta muito curto o espaço dentro do balão gerênciamento"  
-**Card**: Card 16 - Cumprimento de Ressalvas pós Análise Jurídica Prévia
+**Card**: Card 16 - Cumprimento de Ressalvas
 
 ## ✅ Alterações Implementadas
 

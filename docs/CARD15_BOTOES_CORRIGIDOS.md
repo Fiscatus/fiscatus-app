@@ -53,7 +53,7 @@ const isNAJUser = () => {
 - **Ícone**: XCircle
 - **Ação**: Abre dialog de confirmação
 - **Justificativa**: Obrigatória
-- **Fluxo**: Cria card "Cumprimento de Ressalvas pós Análise Jurídica Prévia"
+- **Fluxo**: Cria card "Cumprimento de Ressalvas"
 
 ### **2. "Aprovar com Ressalvas"**
 - **Cor**: Amarelo (border-yellow-200, text-yellow-700)

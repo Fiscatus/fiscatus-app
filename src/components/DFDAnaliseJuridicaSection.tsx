@@ -279,7 +279,7 @@ export default function DFDAnaliseJuridicaSection({
     
     toast({
       title: "Encaminhamento Realizado",
-      description: "O edital foi encaminhado para cumprimento de ressalvas e o card 'Cumprimento de Ressalvas pós Análise Jurídica Prévia' foi criado."
+      description: "O edital foi encaminhado para cumprimento de ressalvas e o card 'Cumprimento de Ressalvas' foi criado."
     });
     
     setShowDevolverDialog(false);
@@ -1056,7 +1056,7 @@ export default function DFDAnaliseJuridicaSection({
               Tem certeza que deseja encaminhar para cumprimento de ressalvas? Esta ação irá:
               <ul className="list-disc list-inside mt-2 space-y-1">
                 <li>Registrar a análise jurídica com justificativa</li>
-                <li>Criar automaticamente o card "Cumprimento de Ressalvas pós Análise Jurídica Prévia"</li>
+                <li>Criar automaticamente o card "Cumprimento de Ressalvas"</li>
                 <li>Encaminhar o fluxo para cumprimento de ressalvas</li>
               </ul>
             </DialogDescription>

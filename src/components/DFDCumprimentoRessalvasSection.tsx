@@ -817,7 +817,7 @@ export default function DFDCumprimentoRessalvasSection({
              <div className="card-shell">
               <header className="card-header-title">
                 <Search className="w-6 h-6 text-indigo-600" />
-                <h2 className="text-lg font-bold text-slate-900">Pós Cumprimento de Ressalvas</h2>
+                <h2 className="text-lg font-bold text-slate-900">Cumprimento de Ressalvas</h2>
                 <div className="ml-auto">
                   <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800">Análise</span>
                   </div>

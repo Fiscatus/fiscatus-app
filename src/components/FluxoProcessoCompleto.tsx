@@ -121,7 +121,7 @@ const etapasPadrao: Etapa[] = [
   { id: 13, nome: "Assinatura do TR", nomeCompleto: "Assinatura do TR", status: "pendente", prazoPrevisao: "5 dias úteis", responsavel: "Leticia Bonfim Guilherme", cargo: "Gerente de Licitações e Contratos", gerencia: "GLC - Gerência de Licitações e Contratos" },
   { id: 14, nome: "Elaboração do Edital", nomeCompleto: "Elaboração do Edital", status: "pendente", prazoPrevisao: "3 dias úteis", responsavel: "Dallas Kelson Francisco de Souza", cargo: "Gerente Financeiro", gerencia: "GFC - Gerência Financeira e Contábil" },
   { id: 15, nome: "Análise Jurídica Prévia", nomeCompleto: "Análise Jurídica Prévia", status: "pendente", prazoPrevisao: "5 dias úteis", responsavel: "Gabriel Radamesis Gomes Nascimento", cargo: "Assessor Jurídico", gerencia: "NAJ - Assessoria Jurídica" },
-  { id: 16, nome: "Cumprimento de Ressalvas pós Análise Jurídica Prévia", nomeCompleto: "Cumprimento de Ressalvas pós Análise Jurídica Prévia", status: "pendente", prazoPrevisao: "3 dias úteis", responsavel: "Gabriel Radamesis Gomes Nascimento", cargo: "Assessor Jurídico", gerencia: "NAJ - Assessoria Jurídica" },
+  { id: 16, nome: "Cumprimento de Ressalvas", nomeCompleto: "Cumprimento de Ressalvas", status: "pendente", prazoPrevisao: "3 dias úteis", responsavel: "Gabriel Radamesis Gomes Nascimento", cargo: "Assessor Jurídico", gerencia: "NAJ - Assessoria Jurídica" },
   { id: 17, nome: "Elaboração do Parecer Jurídico", nomeCompleto: "Elaboração do Parecer Jurídico", status: "pendente", prazoPrevisao: "1 dia útil", responsavel: "Yasmin Pissolati Mattos Bretz", cargo: "Gerente de Soluções e Projetos", gerencia: "GSP - Gerência de Soluções e Projetos" },
   { id: 18, nome: "Cumprimento de Ressalvas pós Parecer Jurídico", nomeCompleto: "Cumprimento de Ressalvas pós Parecer Jurídico", status: "pendente", prazoPrevisao: "1 dia útil", responsavel: "Yasmin Pissolati Mattos Bretz", cargo: "Gerente de Soluções e Projetos", gerencia: "GSP - Gerência de Soluções e Projetos" },
   { id: 19, nome: "Aprovação Jurídica", nomeCompleto: "Aprovação Jurídica", status: "pendente", prazoPrevisao: "1 dia útil", responsavel: "Yasmin Pissolati Mattos Bretz", cargo: "Gerente de Soluções e Projetos", gerencia: "GSP - Gerência de Soluções e Projetos" },
@@ -347,7 +347,7 @@ export default function FluxoProcessoCompleto({ etapas = etapasPadrao, onEtapaCl
             </Badge>
           ]
         };
-      case 16: // Cumprimento de Ressalvas pós Análise Jurídica Prévia
+      case 16: // Cumprimento de Ressalvas
         return {
           title: "Cumprimento de Ressalvas",
           subtitle: "Correções pós Análise Jurídica Prévia",
@@ -624,7 +624,7 @@ export default function FluxoProcessoCompleto({ etapas = etapasPadrao, onEtapaCl
       setCurrentEtapa(etapa);
       setShowDFDModal(true);
     } else if (etapa.id === 16) {
-      // Card "Cumprimento de Ressalvas pós Análise Jurídica Prévia"
+      // Card "Cumprimento de Ressalvas"
       setCurrentEtapa(etapa);
       setShowDFDModal(true);
     } else if (etapa.id === 21) {

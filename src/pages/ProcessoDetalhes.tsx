@@ -115,7 +115,7 @@ const gerarEtapasCompletas = (isNovoProcesso: boolean) => {
     { id: 13, nome: "Assinatura do TR", nomeCompleto: "Assinatura do TR", status: "pendente" as const, prazoPrevisao: "5 dias úteis", responsavel: "", cargo: "", gerencia: "" },
     { id: 14, nome: "Elaboração do Edital", nomeCompleto: "Elaboração do Edital", status: "pendente" as const, prazoPrevisao: "3 dias úteis", responsavel: "", cargo: "", gerencia: "" },
     { id: 15, nome: "Análise Jurídica Prévia", nomeCompleto: "Análise Jurídica Prévia", status: "pendente" as const, prazoPrevisao: "20 dias úteis", responsavel: "", cargo: "", gerencia: "" },
-    { id: 16, nome: "Cumprimento de Ressalvas pós Análise Jurídica Prévia", nomeCompleto: "Cumprimento de Ressalvas pós Análise Jurídica Prévia", status: "pendente" as const, prazoPrevisao: "10 dias úteis", responsavel: "", cargo: "", gerencia: "" },
+    { id: 16, nome: "Cumprimento de Ressalvas", nomeCompleto: "Cumprimento de Ressalvas", status: "pendente" as const, prazoPrevisao: "10 dias úteis", responsavel: "", cargo: "", gerencia: "" },
     { id: 17, nome: "Elaboração do Parecer Jurídico", nomeCompleto: "Elaboração do Parecer Jurídico", status: "pendente" as const, prazoPrevisao: "1 dia útil", responsavel: "", cargo: "", gerencia: "" },
     { id: 18, nome: "Cumprimento de Ressalvas pós Parecer Jurídico", nomeCompleto: "Cumprimento de Ressalvas pós Parecer Jurídico", status: "pendente" as const, prazoPrevisao: "1 dia útil", responsavel: "", cargo: "", gerencia: "" },
     { id: 19, nome: "Aprovação Jurídica", nomeCompleto: "Aprovação Jurídica", status: "pendente" as const, prazoPrevisao: "1 dia útil", responsavel: "", cargo: "", gerencia: "" },

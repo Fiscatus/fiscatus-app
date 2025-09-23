@@ -4,7 +4,7 @@
 
 **Data**: 15/01/2025  
 **Problema**: "Não foi alterado no Card"  
-**Card**: Card 16 - Cumprimento de Ressalvas pós Análise Jurídica Prévia
+**Card**: Card 16 - Cumprimento de Ressalvas
 
 ## ✅ Verificações Realizadas
 
@@ -22,7 +22,7 @@
 
 ### 3. **Configuração do Card** ✅
 - **ID**: 16
-- **Nome**: "Cumprimento de Ressalvas pós Análise Jurídica Prévia"
+- **Nome**: "Cumprimento de Ressalvas"
 - **Responsável**: Gabriel Radamesis Gomes Nascimento
 - **Gerência**: NAJ - Assessoria Jurídica
 - **Prazo**: 3 dias úteis (corrigido)

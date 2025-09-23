@@ -1,9 +1,9 @@
-# ✅ IMPLEMENTAÇÃO COMPLETA - Card 16: Cumprimento de Ressalvas pós Análise Jurídica Prévia
+# ✅ IMPLEMENTAÇÃO COMPLETA - Card 16: Cumprimento de Ressalvas
 
 ## 📋 Resumo da Implementação
 
 **Data**: 15/01/2025  
-**Card**: Card 16 – Cumprimento de Ressalvas pós Análise Jurídica Prévia  
+**Card**: Card 16 – Cumprimento de Ressalvas  
 **Objetivo**: Implementar card completo para correção de ressalvas emitidas pela NAJ, seguindo o padrão visual e funcional dos demais cards do sistema.
 
 ## 🎯 Checklist de Aceite - IMPLEMENTADO
@@ -32,7 +32,7 @@
 
 ### Header Moderno
 - ✅ **Ícone laranja**: `RotateCcw` com `bg-orange-50` e `text-orange-600`
-- ✅ **Título**: "Cumprimento de Ressalvas pós Análise Jurídica Prévia"
+- ✅ **Título**: "Cumprimento de Ressalvas"
 - ✅ **Botões de ação**: Enviar Editável e Enviar Final no header
 
 ## ✅ Componentes Funcionais
@@ -205,7 +205,7 @@ const ressalvas = [
 
 ### ✅ Configurações do Card
 - **ID**: 16
-- **Nome**: "Cumprimento de Ressalvas pós Análise Jurídica Prévia"
+- **Nome**: "Cumprimento de Ressalvas"
 - **Responsável**: Gabriel Radamesis Gomes Nascimento (NAJ)
 - **Prazo**: 3 dias úteis
 - **Gerência**: NAJ - Assessoria Jurídica
