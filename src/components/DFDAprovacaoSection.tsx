@@ -28,6 +28,8 @@ import {
 } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import ProgressaoTemporal from '@/components/ProgressaoTemporal';
+import Timeline from '@/components/timeline/Timeline';
+import { TimelineItemModel, TimelineStatus } from '@/types/timeline';
 import { useUser } from '@/contexts/UserContext';
 import { useToast } from '@/hooks/use-toast';
 import CommentsSection from './CommentsSection';
@@ -463,6 +465,68 @@ export default function DFDAprovacaoSection({
     return Math.min(progresso, 100);
   };
 
+  // Timeline (balão) — mesmo layout do Card Elaboração
+  const mapToNewTimelineItems = (): TimelineItemModel[] => {
+    const items: TimelineItemModel[] = [];
+
+    if (dfdData.enviadoData) {
+      items.push({
+        id: 'dfd-enviado',
+        status: 'versao',
+        title: 'DFD enviado para análise',
+        author: { name: dfdData.enviadoPor || 'Usuário' },
+        createdAt: dfdData.enviadoData
+      });
+    }
+
+    if (parecerTecnico.trim()) {
+      items.push({
+        id: 'parecer-elaborado',
+        status: 'comentario',
+        title: 'Parecer técnico elaborado',
+        author: { name: user?.nome || 'Usuário' },
+        createdAt: dataAnalise || new Date().toISOString()
+      });
+    }
+
+    if (dfdData.aprovadoData) {
+      items.push({
+        id: 'dfd-aprovado',
+        status: 'aprovado',
+        title: 'DFD aprovado',
+        author: { name: dfdData.aprovadoPor || 'Usuário' },
+        createdAt: dfdData.aprovadoData
+      });
+    }
+
+    if (dfdData.devolucaoData) {
+      items.push({
+        id: 'dfd-devolvido',
+        status: 'devolvido',
+        title: 'DFD devolvido para correção',
+        author: { name: dfdData.devolucaoPor || 'Usuário' },
+        createdAt: dfdData.devolucaoData
+      });
+    }
+
+    // anexos mais recentes (até 2)
+    const anexos = [...(dfdData.annexes || [])]
+      .sort((a, b) => new Date(b.uploadedAt).getTime() - new Date(a.uploadedAt).getTime())
+      .slice(0, 2);
+    anexos.forEach(a => {
+      items.push({
+        id: `anexo-${a.id}`,
+        status: 'anexo' as TimelineStatus,
+        title: `Anexo adicionado: ${a.name}`,
+        author: { name: a.uploadedBy || 'Usuário' },
+        createdAt: a.uploadedAt
+      });
+    });
+
+    // ordenar por data (mais recente primeiro)
+    return items.sort((x, y) => new Date(y.createdAt).getTime() - new Date(x.createdAt).getTime());
+  };
+
   return (
     <div className="w-full space-y-6">
       {/* 1️⃣ Parecer Técnico */}
@@ -724,7 +788,7 @@ export default function DFDAprovacaoSection({
           </div>
         </header>
         <div className="border-b-2 border-green-200 mb-6"></div>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             
           {/* 1️⃣ Card Status & Prazo */}
           <div className="rounded-2xl border shadow-sm bg-white p-4 md:p-6">
@@ -870,76 +934,14 @@ export default function DFDAprovacaoSection({
             </div>
           </div>
 
-          {/* 3️⃣ Card Mini Timeline */}
-          <div className="rounded-2xl border shadow-sm bg-white p-4 md:p-6 flex flex-col min-h-[320px]">
-            <header className="flex items-center gap-2 mb-4">
-              <Clock className="w-5 h-5 text-indigo-600" />
-              <h3 className="text-sm font-semibold text-slate-800">Mini Timeline</h3>
-            </header>
-
-            <div className="flex-1 flex flex-col">
-              <div className="flex-1 relative pr-2">
-                <div className="absolute left-2 top-0 bottom-0 w-0.5 bg-slate-200"></div>
-                <div className="max-h-[280px] overflow-y-auto scrollbar-thin scrollbar-thumb-slate-300 scrollbar-track-transparent hover:scrollbar-thumb-slate-400">
-                  <div className="flex flex-col gap-4 pl-6">
-                    
-                    {/* Timeline Item - DFD Enviado */}
-                    {dfdData.enviadoData && (
-                      <div className="relative group">
-                        <div className="absolute -left-6 top-0 w-4 h-4 bg-white rounded-full flex items-center justify-center">
-                          <Upload className="w-3 h-3 text-blue-600" />
-                        </div>
-                        <div className="hover:bg-slate-50 rounded-lg px-3 py-2 transition-colors">
-                          <p className="text-sm font-semibold text-slate-700 mb-1">
-                            DFD enviado para análise
-                          </p>
-                          <div className="flex items-center gap-2 text-xs text-slate-500">
-                            <span>{dfdData.enviadoPor}</span>
-                            <span>•</span>
-                            <span>{formatDateTime(dfdData.enviadoData)}</span>
-                          </div>
-                        </div>
-                      </div>
-                    )}
-                    
-                    {/* Timeline Item - Parecer Elaborado */}
-                    {parecerTecnico.trim() && (
-                      <div className="relative group">
-                        <div className="absolute -left-6 top-0 w-4 h-4 bg-white rounded-full flex items-center justify-center">
-                          <Edit3 className="w-3 h-3 text-indigo-600" />
-                        </div>
-                        <div className="hover:bg-slate-50 rounded-lg px-3 py-2 transition-colors">
-                          <p className="text-sm font-semibold text-slate-700 mb-1">
-                            Parecer técnico elaborado
-                          </p>
-                          <div className="flex items-center gap-2 text-xs text-slate-500">
-                            <span>{user?.nome || 'Usuário'}</span>
-                            <span>•</span>
-                            <span>{dataAnalise ? formatDateTime(dataAnalise) : 'Hoje'}</span>
-                          </div>
-                        </div>
-                      </div>
-                    )}
-                    
-                  </div>
-                </div>
-              </div>
-
-              {/* Rodapé fixo */}
-              <div className="border-t border-slate-200 pt-3 mt-4">
-                <button
-                  className="w-full text-center text-sm text-indigo-600 hover:text-indigo-700 hover:underline transition-colors"
-                  aria-label="Ver histórico completo de ações"
-                >
-                  Ver todas as ações
-                </button>
-              </div>
-            </div>
-          </div>
+          {/* Mini Timeline removida do painel para padronização com Elaboração */}
         </div>
       </div>
 
-      {/* 4️⃣ Comentários */}
+      {/* 4️⃣ Timeline (balão) */}
+      <Timeline data={mapToNewTimelineItems()} />
+
+      {/* 5️⃣ Comentários */}
       <div className="w-full">
         <div className="card-shell">
           <CommentsSection
