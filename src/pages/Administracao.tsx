@@ -13,7 +13,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Checkbox } from '@/components/ui/checkbox';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Users, Shield, UserPlus, Settings, Eye, EyeOff, Edit, Trash2, Copy, CheckCircle, XCircle, ArrowLeft } from 'lucide-react';
+import { Users, Shield, UserPlus, Settings, Eye, EyeOff, Edit, Trash2, Copy, CheckCircle, XCircle, ArrowLeft, GitBranch } from 'lucide-react';
+import GerenciasPage from './GerenciasPage';
 import { toast } from '@/hooks/use-toast';
 
 // Mock de convites
@@ -404,13 +405,17 @@ export default function Administracao() {
             <Users className="h-4 w-4" />
             Usuários
           </TabsTrigger>
-          <TabsTrigger value="roles" className="flex items-center gap-2">
-            <Shield className="h-4 w-4" />
-            Roles
+          <TabsTrigger value="gerencias" className="flex items-center gap-2">
+            <GitBranch className="h-4 w-4" />
+            Gerências
           </TabsTrigger>
           <TabsTrigger value="invites" className="flex items-center gap-2">
             <UserPlus className="h-4 w-4" />
             Convites
+          </TabsTrigger>
+          <TabsTrigger value="roles" className="flex items-center gap-2">
+            <Shield className="h-4 w-4" />
+            Roles
           </TabsTrigger>
         </TabsList>
 
@@ -770,6 +775,11 @@ export default function Administracao() {
               </Table>
             </CardContent>
           </Card>
+        </TabsContent>
+
+        {/* Aba de Gerências */}
+        <TabsContent value="gerencias" className="space-y-4">
+          <GerenciasPage />
         </TabsContent>
       </Tabs>
 
