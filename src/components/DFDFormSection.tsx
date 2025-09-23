@@ -66,6 +66,8 @@ import { DatePicker } from '@/components/date';
 import CommentsSection from './CommentsSection';
 import ResponsavelSelector from './ResponsavelSelector';
 import { formatDateBR, formatDateTimeBR, legendaDiasRestantes, classesPrazo } from '@/lib/utils';
+import Timeline from '@/components/timeline/Timeline';
+import { TimelineItemModel, TimelineStatus } from '@/types/timeline';
 
 // Tipos TypeScript conforme especificação
 type DFDVersionStatus = 'rascunho' | 'finalizada' | 'enviada_para_analise' | 'aprovada' | 'reprovada';
@@ -867,7 +869,7 @@ export default function DFDFormSection({
     });
   };
 
-  // Gerar timeline com últimas ações
+  // Gerar timeline com últimas ações (modelo antigo para UI local)
   const generateTimeline = (): TimelineItem[] => {
     const timeline: TimelineItem[] = [];
 
@@ -916,6 +918,28 @@ export default function DFDFormSection({
     // Ordenar por data (mais recente primeiro) e pegar apenas os 3 mais recentes
     return timeline
       .sort((a, b) => new Date(b.dataHora).getTime() - new Date(a.dataHora).getTime());
+  };
+
+  // Mapear para o novo modelo do componente Timeline
+  const mapToNewTimelineItems = (): TimelineItemModel[] => {
+    const items = generateTimeline();
+    const toStatus = (t: TimelineItem['tipo'], descricao: string): TimelineStatus => {
+      if (t === 'anexo') return 'anexo';
+      if (t === 'versao') {
+        const d = (descricao || '').toLowerCase();
+        if (d.includes('aprovada')) return 'aprovado';
+        if (d.includes('devolvida')) return 'devolvido';
+        return 'versao';
+      }
+      return 'comentario';
+    };
+    return items.map(it => ({
+      id: it.id,
+      status: toStatus(it.tipo, it.descricao),
+      title: it.descricao,
+      author: { name: it.autor },
+      createdAt: it.dataHora
+    }));
   };
 
   // Obter ícone da timeline baseado no tipo e status
@@ -1653,81 +1677,8 @@ export default function DFDFormSection({
         </div>
       </div>
 
-      {/* 3️⃣ Timeline completa (card separado abaixo) */}
-      <div className="rounded-2xl border border-slate-300 shadow-md bg-white p-6 mb-8">
-        <header className="flex items-center gap-3 mb-4">
-          <ClockIcon className="w-6 h-6 text-indigo-600" />
-          <h2 className="text-lg font-bold text-slate-900">Timeline</h2>
-          <div className="ml-auto">
-            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800">
-              Histórico
-            </span>
-          </div>
-        </header>
-        <div className="border-b-2 border-indigo-200 mb-6"></div>
-
-        {/* Legenda dos tipos */}
-        <div className="flex flex-wrap items-center gap-2 text-xs text-slate-600 mb-4">
-          <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-blue-50 text-blue-700 border border-blue-200"><Send className="w-3 h-3" /> Versão</span>
-          <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-green-50 text-green-700 border border-green-200"><CheckCircleIcon className="w-3 h-3" /> Aprovado</span>
-          <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-red-50 text-red-700 border border-red-200"><XCircleIcon className="w-3 h-3" /> Devolvido</span>
-          <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-slate-50 text-slate-700 border border-slate-200"><Paperclip className="w-3 h-3" /> Anexo</span>
-        </div>
-
-        {/* Lista completa de eventos */}
-        <div className="relative">
-          <div className="absolute left-3 top-0 bottom-0 w-0.5 bg-slate-200"></div>
-          {generateTimeline().length === 0 ? (
-            <p className="text-sm text-gray-500 italic text-center py-6">Ainda não há ações registradas.</p>
-          ) : (
-            <div className="flex flex-col">
-              {groupTimelineByDay((showAllTimeline ? generateTimeline() : generateTimeline().slice(0, 10))).map((group) => (
-                <div key={group.label} className="mb-4">
-                  {/* Cabeçalho do dia */}
-                  <div className="flex items-center gap-2 mb-2">
-                    <div className="h-px flex-1 bg-slate-200" />
-                    <span className="text-xs font-semibold text-slate-600 whitespace-nowrap px-2 py-0.5 rounded-full bg-slate-50 border border-slate-200">
-                      {group.label}
-                    </span>
-                    <div className="h-px flex-1 bg-slate-200" />
-                  </div>
-
-                  {/* Itens do dia */}
-                  {group.items.map((item, idx, arr) => (
-                    <div key={item.id} className="relative pl-10 py-3">
-                      <div className="absolute left-1.5 top-3 w-5 h-5 bg-white rounded-full border border-slate-300 flex items-center justify-center shadow-sm">
-                        {getTimelineIcon(item)}
-                      </div>
-                      <div className="rounded-xl border border-slate-200 bg-white px-4 py-3 hover:bg-slate-50 transition-colors">
-                        <div className="flex items-center justify-between gap-3">
-                          <p className="text-sm font-semibold text-slate-800">{item.descricao}</p>
-                          <span className="text-[11px] font-medium text-slate-500 whitespace-nowrap">{formatDateTime(new Date(item.dataHora))}</span>
-                        </div>
-                        <div className="mt-1 text-xs text-slate-600 flex items-center gap-1">
-                          <UserIcon className="w-3.5 h-3.5" />
-                          <span>{item.autor}</span>
-                        </div>
-                      </div>
-                      {idx < arr.length - 1 && <div className="mt-3 ml-10 border-b border-slate-100"></div>}
-                    </div>
-                  ))}
-                </div>
-              ))}
-              {/* Botão ver mais/menos */}
-              {generateTimeline().length > 10 && (
-                <div className="pt-2">
-                  <button
-                    className="w-full text-center text-sm text-indigo-600 hover:text-indigo-700 hover:underline transition-colors"
-                    onClick={() => setShowAllTimeline(v => !v)}
-                  >
-                    {showAllTimeline ? 'Ver menos' : 'Ver mais'}
-                  </button>
-                </div>
-              )}
-            </div>
-          )}
-        </div>
-      </div>
+      {/* 3️⃣ Timeline (componente refatorado) */}
+      <Timeline data={mapToNewTimelineItems()} />
 
       {/* 4️⃣ Comentários */}
       <div className="w-full">

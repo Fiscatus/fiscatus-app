@@ -13,6 +13,7 @@ import {
   Loader2
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import { DateSeparator } from '@/components/timeline/DateSeparator';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 interface Mention {
@@ -344,12 +345,8 @@ export default function CommentsSection({
             <div className="space-y-4">
               {groupedComments.map((group, groupIndex) => (
                 <div key={group.date}>
-                  {/* Separador por data */}
-                  <div className="text-center my-3">
-                    <span className="text-xs text-slate-500 bg-white px-3">
-                      — {group.date} —
-                    </span>
-                  </div>
+                  {/* Separador por data (padrão da Timeline) */}
+                  <DateSeparator label={group.date} />
 
                   {/* Comentários do dia */}
                   <div className="space-y-4">
@@ -381,7 +378,7 @@ export default function CommentsSection({
                             </div>
                             <div className="flex items-center gap-1 text-xs text-slate-400 flex-shrink-0">
                               <Clock className="w-3 h-3 flex-shrink-0" />
-                              <span>{formatTime(comment.datetime)}</span>
+                              <span>{new Date(comment.datetime).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}</span>
                             </div>
                           </div>
 
