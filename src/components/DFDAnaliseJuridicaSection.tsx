@@ -885,7 +885,7 @@ export default function DFDAnaliseJuridicaSection({
 
           {/* Painel da Etapa (igual estrutura do ETP) */}
           <section className="col-span-12 w-full">
-            <div className="rounded-2xl border border-slate-300 shadow-md bg-white p-6 min-h-[700px]">
+            <div className="rounded-2xl border border-slate-300 shadow-md bg-white p-6 min-h-[700px] mb-6">
               <header className="card-header-title">
                 <ClipboardCheck className="w-6 h-6 text-green-600" />
                 <h2 className="text-lg font-bold text-slate-900">Painel da Etapa</h2>
@@ -984,7 +984,9 @@ export default function DFDAnaliseJuridicaSection({
               </div>
             </div>
             {/* Timeline (balão) */}
-            <Timeline data={mapToNewTimelineItems()} />
+            <div className="mt-6">
+              <Timeline data={mapToNewTimelineItems()} />
+            </div>
           </section>
 
           {/* FULL: Comentários */}
@@ -1000,9 +1002,8 @@ export default function DFDAnaliseJuridicaSection({
           </section>
 
           {/*  Ações da Etapa (layout do ETP) */}
-          {isNAJUser() && (
-            <section className="col-span-12 w-full">
-              <div className="rounded-2xl border border-slate-300 shadow-md bg-white p-6">
+          <section className="col-span-12 w-full">
+            <div className="rounded-2xl border border-slate-300 shadow-md bg-white p-6">
               <header className="card-header-title">
                   <Flag className="w-6 h-6 text-orange-600" />
                   <h2 className="text-lg font-bold text-slate-900">Ações da Etapa</h2>
@@ -1030,14 +1031,13 @@ export default function DFDAnaliseJuridicaSection({
                   </div>
                   <div className="border-t border-slate-200 pt-4">
                     <div className="flex flex-wrap gap-2 justify-center">
-                      <Button onClick={handleDevolverCorrecao} variant="outline" className="border-red-200 text-red-700 hover:bg-red-50"><XCircle className="w-4 h-4 mr-2" />Encaminhar para Cumprimento de Ressalvas</Button>
-                      <Button onClick={handleAnaliseFavoravel} className="bg-green-600 hover:bg-green-700 text-white"><CheckCircle className="w-4 h-4 mr-2" />Aprovação</Button>
+                      <Button onClick={handleDevolverCorrecao} variant="outline" disabled={!isNAJUser()} className="border-red-200 text-red-700 hover:bg-red-50 disabled:opacity-50 disabled:cursor-not-allowed"><XCircle className="w-4 h-4 mr-2" />Encaminhar para Cumprimento de Ressalvas</Button>
+                      <Button onClick={handleAnaliseFavoravel} disabled={!isNAJUser()} className="bg-green-600 hover:bg-green-700 text-white disabled:opacity-50 disabled:cursor-not-allowed"><CheckCircle className="w-4 h-4 mr-2" />Aprovação</Button>
                     </div>
                   </div>
                 </div>
               </div>
-            </section>
-          )}
+          </section>
         </div>
       </div>
 

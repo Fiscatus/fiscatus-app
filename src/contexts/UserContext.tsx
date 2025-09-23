@@ -275,8 +275,8 @@ const mockUsers: User[] = [
     isActive: true,
     isPlatformAdmin: false,
     nome: 'Gabriel Radamesis Gomes Nascimento',
-    cargo: 'Assessor',
-    gerencia: 'GSP - Gerência de Soluções e Projetos'
+    cargo: 'Assessor Jurídico',
+    gerencia: 'NAJ - Assessoria Jurídica'
   },
   // Usuários sem organização para teste
   {
