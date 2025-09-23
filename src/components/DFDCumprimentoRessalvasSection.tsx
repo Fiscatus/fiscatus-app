@@ -57,6 +57,8 @@ import TextareaWithMentions from './TextareaWithMentions';
 import CommentsSection from './CommentsSection';
 import { useDFD, DFDData, DFDVersion, DFDVersionStatus, DFDAnnex } from '@/hooks/useDFD';
 import { formatDateBR, formatDateTimeBR } from '@/lib/utils';
+import Timeline from '@/components/timeline/Timeline';
+import { TimelineItemModel, TimelineStatus } from '@/types/timeline';
 
 // Tipos para o sistema de cumprimento de ressalvas
 type StatusRessalva = 'PENDENTE' | 'EM_CORRECAO' | 'CORRIGIDA' | 'FINALIZADA';
@@ -1071,7 +1073,7 @@ export default function DFDCumprimentoRessalvasSection({
                 </div>
               </header>
               <div className="card-separator-green"></div>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {/* 1) Status & Prazo - por Gerência */}
                 <div className="rounded-2xl border shadow-sm bg-white p-4 md:p-6">
                   <header className="flex items-center justify-between mb-4">
@@ -1166,41 +1168,20 @@ export default function DFDCumprimentoRessalvasSection({
                   </div>
                 </div>
 
-                {/* 3) Mini Timeline */}
-                <div className="rounded-2xl border shadow-sm bg-white p-4 md:p-6 flex flex-col min-h-[320px]">
-                  <header className="card-header-title">
-                    <Clock className="w-5 h-5 text-indigo-600" />
-                    <h3 className="text-sm font-semibold text-slate-800">Mini Timeline</h3>
-                  </header>
-                  <div className="flex-1 flex flex-col">
-                    {interacoes.length === 0 ? (
-                      <div className="flex-1 flex items-center justify-center"><p className="text-sm text-gray-500 italic text-center">Ainda não há ações registradas.</p></div>
-                    ) : (
-                      <div className="flex-1 relative pr-2">
-                        <div className="absolute left-2 top-0 bottom-0 w-0.5 bg-slate-200"></div>
-                        <div className="max-h-[280px] overflow-y-auto">
-                          <div className="flex flex-col gap-4 pl-6">
-                            {interacoes.map(item => (
-                              <div key={item.id} className="relative group">
-                                <div className="absolute -left-6 top-0 w-4 h-4 bg-white rounded-full flex items-center justify-center">
-                                  {item.acao === 'salvou' ? <Save className="w-3 h-3 text-blue-600" /> : item.acao === 'enviou_versao' ? <Upload className="w-3 h-3 text-green-600" /> : <CheckCircle className="w-3 h-3 text-green-600" />}
-                                </div>
-                                <div className="hover:bg-slate-50 rounded-lg px-3 py-2 transition-colors">
-                                  <p className="text-sm font-semibold text-slate-700 mb-1">
-                                    {item.acao === 'salvou' ? 'Alterações salvas' : item.acao === 'enviou_versao' ? 'Versão enviada' : 'Correções finalizadas'}
-                                  </p>
-                                  <div className="flex items-center gap-2 text-xs text-slate-500"><span>{item.responsavel}</span><span>•</span><span>{formatDateTime(item.dataHora)}</span></div>
-                            </div>
-                          </div>
-                        ))}
-                          </div>
-                        </div>
-                      </div>
-                    )}
+                {/* Mini Timeline removida do painel para padronização */}
               </div>
             </div>
-              </div>
-            </div>
+            {/* Timeline (balão) */}
+            <Timeline data={(() => {
+              const items: TimelineItemModel[] = [];
+              interacoes.forEach((it) => {
+                const status: TimelineStatus = it.acao === 'finalizou' ? 'aprovado' : it.acao === 'enviou_versao' ? 'versao' : 'comentario';
+                items.push({ id: `int-${it.id}`, status, title: it.acao === 'finalizou' ? 'Correções finalizadas' : it.acao === 'enviou_versao' ? 'Versão enviada' : 'Alterações salvas', author: { name: it.responsavel }, createdAt: it.dataHora });
+              });
+              const anexosRecentes = [...dfdData.annexes].sort((a,b)=> new Date(b.uploadedAt).getTime() - new Date(a.uploadedAt).getTime()).slice(0,2);
+              anexosRecentes.forEach(ax => items.push({ id: `anexo-${ax.id}`, status: 'anexo', title: `Anexo adicionado: ${ax.name}`, author: { name: ax.uploadedBy || 'Usuário' }, createdAt: ax.uploadedAt }));
+              return items.sort((a,b)=> new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+            })()} />
           </section>
 
           {/* FULL: Comentários */}
