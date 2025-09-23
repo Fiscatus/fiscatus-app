@@ -56,6 +56,8 @@ import TextareaWithMentions from './TextareaWithMentions';
 import CommentsSection from './CommentsSection';
 import { useDFD, DFDData, DFDVersion, DFDVersionStatus, DFDAnnex } from '@/hooks/useDFD';
 import { formatDateBR, formatDateTimeBR, legendaDiasRestantes, classesPrazo } from '@/lib/utils';
+import Timeline from '@/components/timeline/Timeline';
+import { TimelineItemModel, TimelineStatus } from '@/types/timeline';
 
 // Tipos para o sistema de análise jurídica
 type AnaliseJuridicaStatus = 'AGUARDANDO_ANALISE' | 'APROVADA_COM_RESSALVAS' | 'DEVOLVIDA_CORRECAO' | 'ANALISE_FAVORAVEL';
@@ -554,6 +556,39 @@ export default function DFDAnaliseJuridicaSection({
     return 'bg-red-500';
   };
 
+  // Timeline (balão) — padronizada
+  const mapToNewTimelineItems = (): TimelineItemModel[] => {
+    const items: TimelineItemModel[] = [];
+
+    // Interações como revisões/decisões
+    interacoes.forEach((it) => {
+      const status: TimelineStatus = it.resultado === 'ANALISE_FAVORAVEL' ? 'aprovado' : it.resultado === 'DEVOLVIDA_CORRECAO' ? 'devolvido' : 'versao';
+      items.push({
+        id: `int-${it.id}`,
+        status,
+        title: `${getStatusConfig(it.resultado).label}`,
+        author: { name: it.responsavel },
+        createdAt: it.dataHora
+      });
+    });
+
+    // Anexos recentes (até 2)
+    const anexosRecentes = [...dfdData.annexes]
+      .sort((a, b) => new Date(b.uploadedAt).getTime() - new Date(a.uploadedAt).getTime())
+      .slice(0, 2);
+    anexosRecentes.forEach((ax) => {
+      items.push({
+        id: `anexo-${ax.id}`,
+        status: 'anexo',
+        title: `Anexo adicionado: ${ax.name}`,
+        author: { name: ax.uploadedBy || 'Usuário' },
+        createdAt: ax.uploadedAt
+      });
+    });
+
+    return items.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  };
+
   // Progresso temporal padronizado (dias úteis)
   const getTemporalProgress = () => {
     const inicio = new Date(dataCriacaoISO);
@@ -859,7 +894,7 @@ export default function DFDAnaliseJuridicaSection({
                 </div>
               </header>
               <div className="card-separator-green"></div>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="rounded-2xl border shadow-sm bg-white p-4 md:p-6">
                   <header className="flex items-center justify-between mb-4">
                     <div className="flex items中心 gap-2">
@@ -945,41 +980,11 @@ export default function DFDAnaliseJuridicaSection({
                               </div>
                             </div>
 
-                <div className="rounded-2xl border shadow-sm bg-white p-4 md:p-6 flex flex-col min-h-[320px]">
-                  <header className="card-header-title">
-                    <Clock className="w-5 h-5 text-indigo-600" />
-                    <h3 className="text-sm font-semibold text-slate-800">Mini Timeline</h3>
-                  </header>
-                  <div className="flex-1 flex flex-col">
-                    {generateTimeline().length === 0 ? (
-                      <div className="flex-1 flex items-center justify-center"><p className="text-sm text-gray-500 italic text-center">Ainda não há ações registradas.</p></div>
-                    ) : (
-                      <>
-                        <div className="flex-1 relative pr-2">
-                          <div className="absolute left-2 top-0 bottom-0 w-0.5 bg-slate-200"></div>
-                          <div className="max-h-[280px] overflow-y-auto">
-                            <div className="flex flex-col gap-4 pl-6">
-                              {generateTimeline().map(item => (
-                                <div key={item.id} className="relative group">
-                                  <div className="absolute -left-6 top-0 w-4 h-4 bg-white rounded-full flex items-center justify-center">{getTimelineIcon(item)}</div>
-                                  <div className="hover:bg-slate-50 rounded-lg px-3 py-2 transition-colors">
-                                    <p className="text-sm font-semibold text-slate-700 mb-1">{item.descricao}</p>
-                                    <div className="flex items-center gap-2 text-xs text-slate-500"><span>{item.autor}</span><span>•</span><span>{formatDateTime(new Date(item.dataHora))}</span></div>
-                      </div>
-                                </div>
-                              ))}
-                            </div>
-                          </div>
-                        </div>
-                        <div className="border-t border-slate-200 pt-3 mt-4">
-                          <button className="w-full text-center text-sm text-indigo-600 hover:text-indigo-700 hover:underline transition-colors">Ver todas as ações</button>
-                        </div>
-                      </>
-                    )}
+                {/* Mini Timeline removida do painel para padronização com os demais cards */}
               </div>
             </div>
-              </div>
-            </div>
+            {/* Timeline (balão) */}
+            <Timeline data={mapToNewTimelineItems()} />
           </section>
 
           {/* FULL: Comentários */}
