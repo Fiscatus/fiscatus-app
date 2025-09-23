@@ -62,6 +62,8 @@ import TextareaWithMentions from './TextareaWithMentions';
 import CommentsSection from './CommentsSection';
 import { formatDateBR, formatDateTimeBR } from '@/lib/utils';
 import ResponsavelSelector from './ResponsavelSelector';
+import Timeline from '@/components/timeline/Timeline';
+import { TimelineItemModel, TimelineStatus } from '@/types/timeline';
 
 // Tipos TypeScript conforme especificação
 type DespachoStatus = 'PENDENTE' | 'GERADO' | 'ASSINADO' | 'CANCELADO';
@@ -295,6 +297,62 @@ export default function DFDDespachoSection({
   const totalAssinaturas = assinantes.length;
   const assinaturasConcluidas = assinantes.filter(a => a.status === 'ASSINADO').length;
   const progresso = totalAssinaturas > 0 ? (assinaturasConcluidas / totalAssinaturas) * 100 : 0;
+
+  // Timeline (balão) — padronizada com Elaboração
+  const mapToNewTimelineItems = (): TimelineItemModel[] => {
+    const items: TimelineItemModel[] = [];
+
+    // Evento: despacho gerado
+    if (despachoData.status === 'GERADO' && despachoData.atualizadoEm) {
+      items.push({
+        id: 'despacho-gerado',
+        status: 'versao',
+        title: 'Despacho gerado',
+        author: { name: user?.nome || 'Usuário' },
+        createdAt: despachoData.atualizadoEm
+      });
+    }
+
+    // Evento: despacho assinado
+    if (despachoData.status === 'ASSINADO' && despachoData.assinadoPor?.dataAssinatura) {
+      items.push({
+        id: 'despacho-assinado',
+        status: 'aprovado',
+        title: 'Despacho assinado',
+        author: { name: despachoData.assinadoPor?.nome || 'Usuário' },
+        createdAt: despachoData.assinadoPor.dataAssinatura
+      });
+    }
+
+    // Assinaturas de responsáveis
+    assinantes.forEach(a => {
+      if (a.assinadoEm) {
+        items.push({
+          id: `assinatura-${a.id}`,
+          status: 'aprovado',
+          title: 'Assinatura registrada',
+          author: { name: a.nome },
+          createdAt: a.assinadoEm
+        });
+      }
+    });
+
+    // Anexos recentes (até 2)
+    const anexosRecentes = [...annexes]
+      .sort((x, y) => new Date(y.uploadedAt).getTime() - new Date(x.uploadedAt).getTime())
+      .slice(0, 2);
+    anexosRecentes.forEach((ax) => {
+      items.push({
+        id: `anexo-${ax.id}`,
+        status: 'anexo' as TimelineStatus,
+        title: `Anexo adicionado: ${ax.name}`,
+        author: { name: ax.uploadedBy || 'Usuário' },
+        createdAt: ax.uploadedAt
+      });
+    });
+
+    return items.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  };
 
   // Verificar permissões
   const podeEditar = (user?.gerencia && (
@@ -1133,7 +1191,7 @@ export default function DFDDespachoSection({
         </div>
           </header>
           <div className="border-b-2 border-green-200 mb-6"></div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {/* Status & Prazo */}
             <div className="rounded-2xl border shadow-sm bg-white p-4 md:p-6">
               <header className="flex items-center justify-between mb-4">
@@ -1316,58 +1374,12 @@ export default function DFDDespachoSection({
               </div>
             </div>
 
-            {/* Mini Timeline */}
-            <div className="rounded-2xl border shadow-sm bg-white p-4 md:p-6 flex flex-col min-h-[320px]">
-              <header className="flex items-center gap-2 mb-4">
-                <Clock className="w-5 h-5 text-indigo-600" />
-                <h3 className="text-sm font-semibold text-slate-800">Mini Timeline</h3>
-              </header>
-              <div className="flex-1 flex flex-col">
-                {(() => {
-                  const timeline: Array<{id:string; autor:string; descricao:string; dataHora:string; tipo:'assinatura'|'anexo'}> = [];
-                  // Assinaturas
-                  assinantes.forEach(a => { if (a.assinadoEm) timeline.push({ id: `ass-${a.id}`, autor: a.nome, descricao: 'Assinatura registrada', dataHora: a.assinadoEm, tipo: 'assinatura' }); });
-                  // Anexos
-                  anexosOrdenados.slice(0, 2).forEach(ax => { timeline.push({ id: `ax-${ax.id}`, autor: ax.uploadedBy, descricao: 'Anexo adicionado', dataHora: ax.uploadedAt, tipo: 'anexo' }); });
-                  const ordered = timeline.sort((a,b)=> new Date(b.dataHora).getTime() - new Date(a.dataHora).getTime()).slice(0,3);
-                  return ordered.length === 0 ? (
-                    <div className="flex-1 flex items-center justify-center">
-                      <p className="text-sm text-gray-500 italic text-center">Ainda não há ações registradas.</p>
-                    </div>
-                  ) : (
-                    <>
-                      <div className="flex-1 relative pr-2">
-                        <div className="absolute left-2 top-0 bottom-0 w-0.5 bg-slate-200"></div>
-                        <div className="max-h-[280px] overflow-y-auto">
-                          <div className="flex flex-col gap-4 pl-6">
-                            {ordered.map((item) => (
-                              <div key={item.id} className="relative group">
-                                <div className="absolute -left-6 top-0 w-4 h-4 bg-white rounded-full flex items-center justify-center">
-                                  {item.tipo === 'assinatura' ? <CheckCircle className="w-4 h-4 text-green-600" /> : <Paperclip className="w-4 h-4 text-gray-600" />}
-                                </div>
-                                <div className="hover:bg-slate-50 rounded-lg px-3 py-2 transition-colors cursor-pointer">
-                                  <p className="text-sm font-semibold text-slate-700 mb-1">{item.descricao}</p>
-                                  <div className="flex items-center gap-2 text-xs text-slate-500">
-                                    <span>{item.autor}</span>
-                                    <span>•</span>
-                                    <span>{formatDateTimeBR(new Date(item.dataHora))}</span>
-                                  </div>
-                                </div>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      </div>
-                      <div className="border-t border-slate-200 pt-3 mt-4">
-                        <button className="w-full text-center text-sm text-indigo-600 hover:text-indigo-700 hover:underline transition-colors">Ver todas as ações</button>
-                      </div>
-                    </>
-                  );
-                })()}
-              </div>
-            </div>
+            {/* Mini Timeline removida do painel para padronização com Elaboração */}
           </div>
         </div>
+
+        {/* Timeline (balão) */}
+        <Timeline data={mapToNewTimelineItems()} />
 
         {/* FULL: Comentários */}
         <section id="comentarios" className="col-span-12 w-full">
