@@ -1425,16 +1425,7 @@ export default function ProcessosGerencia() {
       
       {/* Container principal sem botão de retorno */}
       <div className="pt-16 md:pt-20 px-6 pb-6">
-        {/* Header */}
-        <div className="mb-6">
-          {/* Cabeçalho Principal */}
-          <div className="flex items-start justify-between mb-6">
-            <div>
-              <h1 className="text-2xl font-semibold text-gray-900 mb-1">Processos da Gerência</h1>
-              <p className="text-gray-600 text-sm">Organize, monitore e gerencie todos os processos da sua gerência</p>
-            </div>
-          </div>
-        </div>
+        {/* Header removido para ganhar espaço */}
 
         {/* Seção Destacada - Criar Novo Processo */}
         <div className="mb-6">

@@ -147,14 +147,10 @@ export default function MinhasAssinaturas() {
       
       <div className="flex-1 px-4 pt-16 md:pt-20 pb-4 overflow-hidden">
         <div className="h-full w-full flex flex-col">
-          {/* Cabeçalho Principal */}
-          <div className="mb-6">
-            <h1 className="text-2xl font-semibold text-gray-900 mb-1">Minhas Assinaturas</h1>
-            <p className="text-gray-600 text-sm">Visualize e assine os documentos atribuídos a você</p>
-          </div>
+          {/* Cabeçalho removido para liberar espaço */}
 
                             {/* Estatísticas rápidas */}
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 w-full mt-3 mb-2 flex-shrink-0">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 w-full mb-2 flex-shrink-0">
                     <Card>
                       <CardContent className="p-4">
                         <div className="flex items-center gap-3">

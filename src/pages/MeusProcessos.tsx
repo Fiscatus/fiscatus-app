@@ -554,9 +554,6 @@ export default function MeusProcessos() {
       
             {/* Container principal sem botão de retorno */}
       <div className="pt-16 md:pt-20 px-6 pb-6">
-        {/* Header com Indicadores */}
-        <ProcessListHeader estatisticas={estatisticas} navigate={navigate} />
-
         {/* Filtros */}
         <ProcessFilterBar
           searchTerm={searchTerm}
