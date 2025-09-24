@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
@@ -24,12 +25,14 @@ import {
   Flag,
   Calendar,
   ListChecks,
-  AlertCircle
+  AlertCircle,
+  AlertTriangle
 } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import ProgressaoTemporal from '@/components/ProgressaoTemporal';
 import Timeline from '@/components/timeline/Timeline';
 import { TimelineItemModel, TimelineStatus } from '@/types/timeline';
+import { Progress } from '@/components/ui/progress';
 import { useUser } from '@/contexts/UserContext';
 import { useToast } from '@/hooks/use-toast';
 import CommentsSection from './CommentsSection';
@@ -898,40 +901,99 @@ export default function DFDAprovacaoSection({
                 <ListChecks className="w-5 h-5 text-indigo-600" />
                 <h3 className="text-sm font-semibold text-slate-800">Checklist da Etapa</h3>
               </div>
-              <div className="flex items-center gap-2">
-                <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-slate-100 text-slate-600">
-                  3 itens
-                </span>
+              <div className="inline-flex items-center gap-2 px-2.5 py-1.5 rounded-full text-xs font-medium bg-slate-100 text-slate-700">
+                <ListChecks className="w-4 h-4" />
+                <span>{(() => {
+                  // calcular stats simples
+                  const items = (() => {
+                    const arr: { id: string; label: string; status: 'completed' | 'pending' | 'warning'; description?: string }[] = [];
+                    arr.push({ id: 'dfd-recebido', label: 'DFD recebido para análise', status: 'completed' });
+                    arr.push({ id: 'parecer', label: 'Parecer técnico elaborado', status: (parecerTecnico.trim() ? 'completed' : 'warning') });
+                    arr.push({ id: 'decisao', label: 'Decisão de aprovação/devolução', status: (dfdData.status === 'aprovado' || dfdData.status === 'devolvido') ? 'completed' : 'pending' });
+                    return arr;
+                  })();
+                  const completed = items.filter(i => i.status === 'completed').length;
+                  return `${completed}/${items.length}`;
+                })()}</span>
               </div>
             </header>
-            
-            <div className="space-y-1">
-              {/* Item 1 - DFD Recebido */}
-              <div className="flex items-center gap-3 py-2 px-2 hover:bg-slate-50 rounded transition-colors">
-                <CheckCircle className="w-4 h-4 text-green-600" />
-                <span className="text-sm text-slate-700 flex-1">DFD recebido para análise</span>
-              </div>
-              
-              {/* Item 2 - Parecer Técnico */}
-              <div className="flex items-center gap-3 py-2 px-2 hover:bg-slate-50 rounded transition-colors">
-                {parecerTecnico.trim() ? (
-                  <CheckCircle className="w-4 h-4 text-green-600" />
-                ) : (
-                  <AlertCircle className="w-4 h-4 text-yellow-600" />
-                )}
-                <span className="text-sm text-slate-700 flex-1">Parecer técnico elaborado</span>
-              </div>
-              
-              {/* Item 3 - Decisão Tomada */}
-              <div className="flex items-center gap-3 py-2 px-2 hover:bg-slate-50 rounded transition-colors">
-                {dfdData.status === 'aprovado' || dfdData.status === 'devolvido' ? (
-                  <CheckCircle className="w-4 h-4 text-green-600" />
-                ) : (
-                  <Clock className="w-4 h-4 text-slate-400" />
-                )}
-                <span className="text-sm text-slate-700 flex-1">Decisão de aprovação/devolução</span>
-              </div>
-            </div>
+
+            {(() => {
+              // gerar itens na nova padronização
+              const allItems = (() => {
+                const arr: { id: string; label: string; status: 'completed' | 'pending' | 'warning'; description?: string }[] = [];
+                arr.push({ id: 'dfd-recebido', label: 'DFD recebido para análise', status: 'completed', description: 'Versão recebida para avaliação' });
+                arr.push({ id: 'parecer', label: 'Parecer técnico elaborado', status: (parecerTecnico.trim() ? 'completed' : 'warning'), description: parecerTecnico.trim() ? 'Parecer preenchido' : 'Preencha o parecer técnico' });
+                arr.push({ id: 'decisao', label: 'Decisão de aprovação/devolução', status: (dfdData.status === 'aprovado' || dfdData.status === 'devolvido') ? 'completed' : 'pending', description: 'Finalize aprovando ou devolvendo' });
+                // ordenar: alerta -> pendente -> concluído
+                const order = { warning: 0, pending: 1, completed: 2 } as const;
+                return arr.sort((a, b) => order[a.status] - order[b.status]);
+              })();
+
+              const [filter, setFilter] = React.useState<'all' | 'open' | 'completed'>('all');
+              const [query, setQuery] = React.useState('');
+
+              const stats = {
+                total: allItems.length,
+                completed: allItems.filter(i => i.status === 'completed').length,
+                open: allItems.filter(i => i.status !== 'completed').length,
+              };
+              const percent = stats.total === 0 ? 0 : Math.round((stats.completed / stats.total) * 100);
+
+              const filtered = allItems.filter(i => {
+                if (filter === 'open' && i.status === 'completed') return false;
+                if (filter === 'completed' && i.status !== 'completed') return false;
+                if (!query.trim()) return true;
+                const q = query.toLowerCase();
+                return i.label.toLowerCase().includes(q) || (i.description || '').toLowerCase().includes(q);
+              });
+
+              const renderIcon = (status: 'completed' | 'pending' | 'warning') => {
+                if (status === 'completed') return <CheckCircle className="w-4 h-4 text-green-600" />;
+                // para pendente e alerta, usar triângulo
+                return <AlertTriangle className="w-4 h-4 text-amber-600" />;
+              };
+
+              return (
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-xs text-slate-500">Progresso</p>
+                      <p className="text-sm font-semibold text-slate-800">{percent}% concluído</p>
+                    </div>
+                    <span className="text-xs px-2 py-0.5 rounded-full bg-slate-100 text-slate-600">{stats.total} itens</span>
+                  </div>
+                  <Progress value={percent} />
+
+                  <div className="flex items-center gap-1">
+                    <button type="button" onClick={() => setFilter('all')} className={`px-2 py-1 rounded text-xs ${filter === 'all' ? 'bg-slate-200 text-slate-800' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'}`}>Todos</button>
+                    <button type="button" onClick={() => setFilter('open')} className={`px-2 py-1 rounded text-xs ${filter === 'open' ? 'bg-amber-100 text-amber-900' : 'bg-amber-50 text-amber-800 hover:bg-amber-100'}`}>Pendentes ({stats.open})</button>
+                    <button type="button" onClick={() => setFilter('completed')} className={`px-2 py-1 rounded text-xs ${filter === 'completed' ? 'bg-green-100 text-green-800' : 'bg-green-50 text-green-700 hover:bg-green-100'}`}>Concluídos ({stats.completed})</button>
+                  </div>
+
+                  <div className="relative">
+                    <Input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Buscar item..." className="pl-3 pr-8 h-8 text-sm" />
+                    <Search className="absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                  </div>
+
+                  <div className="max-h-72 overflow-auto space-y-1">
+                    {filtered.length === 0 ? (
+                      <div className="text-xs text-slate-500 text-center py-6">Nenhum item encontrado.</div>
+                    ) : (
+                      filtered.map(item => (
+                        <div key={item.id} className="flex items-start gap-3 py-2 px-2 rounded hover:bg-slate-50">
+                          <div className="mt-0.5">{renderIcon(item.status)}</div>
+                          <div className="min-w-0">
+                            <div className="text-sm font-medium text-slate-800 truncate">{item.label}</div>
+                            {item.description && <div className="text-xs text-slate-500">{item.description}</div>}
+                          </div>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </div>
+              );
+            })()}
           </div>
 
           {/* Mini Timeline removida do painel para padronização com Elaboração */}
