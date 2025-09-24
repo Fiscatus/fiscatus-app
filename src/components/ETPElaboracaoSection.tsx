@@ -46,7 +46,8 @@ import {
   Settings,
   ClipboardCheck,
   ListChecks,
-  Paperclip
+  Paperclip,
+  Search
 } from 'lucide-react';
 import { useUser } from '@/contexts/UserContext';
 import { usePermissoes } from '@/hooks/usePermissoes';
@@ -57,6 +58,7 @@ import ResponsavelSelector from './ResponsavelSelector';
 import Timeline from '@/components/timeline/Timeline';
 import { TimelineItemModel, TimelineStatus } from '@/types/timeline';
 import { formatDateBR, formatDateTimeBR, legendaDiasRestantes, classesPrazo } from '@/lib/utils';
+import { Progress } from '@/components/ui/progress';
 
 // Tipos TypeScript conforme especificação
 type ETPVersionStatus = 'rascunho' | 'finalizada' | 'enviada_para_assinatura';
@@ -1277,28 +1279,66 @@ export default function ETPElaboracaoSection({
               </div>
               {(() => {
                 const checklist = generateChecklist();
-                const pendentes = checklist.filter(i => i.status === 'pending').length;
-                const total = checklist.length;
+                const completed = checklist.filter(i => i.status === 'completed').length;
                 return (
-                  <div className="flex items-center gap-2">
-                    {pendentes > 0 && <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-700">{pendentes} pendente{pendentes !== 1 ? 's' : ''}</span>}
-                    <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-slate-100 text-slate-600">{total} item{total !== 1 ? 's' : ''}</span>
+                  <div className="inline-flex items-center gap-2 px-2.5 py-1.5 rounded-full text-xs font-medium bg-slate-100 text-slate-700">
+                    <ListChecks className="w-4 h-4" />
+                    <span>{completed}/{checklist.length}</span>
                   </div>
                 );
               })()}
             </header>
-            <div className="space-y-1">
-              {generateChecklist().length === 0 ? (
-                <p className="text-sm text-gray-500 italic text-center py-6">Nenhum requisito definido para esta etapa.</p>
-              ) : (
-                generateChecklist().map(item => (
-                  <div key={item.id} className="flex items-center gap-3 py-2 px-2 hover:bg-slate-50 rounded transition-colors cursor-pointer">
-                    {getChecklistIcon(item.status)}
-                    <span className="text-sm text-slate-700 flex-1">{item.label}</span>
+            {(() => {
+              const allItems = generateChecklist().sort((a,b)=> ({ warning:0, pending:1, completed:2 } as const)[a.status] - ({ warning:0, pending:1, completed:2 } as const)[b.status]);
+              const [filter, setFilter] = React.useState<'all' | 'open' | 'completed'>('all');
+              const [query, setQuery] = React.useState('');
+              const stats = { total: allItems.length, completed: allItems.filter(i=>i.status==='completed').length, open: allItems.filter(i=>i.status!=='completed').length };
+              const percent = stats.total === 0 ? 0 : Math.round((stats.completed / stats.total) * 100);
+              const filtered = allItems.filter(i=>{
+                if (filter==='open' && i.status==='completed') return false;
+                if (filter==='completed' && i.status!=='completed') return false;
+                if (!query.trim()) return true;
+                const q=query.toLowerCase();
+                return i.label.toLowerCase().includes(q) || (i.description||'').toLowerCase().includes(q);
+              });
+              const renderIcon = (status:'completed'|'pending'|'warning') => status==='completed' ? <CheckCircle2 className="w-4 h-4 text-green-600" /> : <AlertTriangle className="w-4 h-4 text-amber-600" />;
+              return (
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-xs text-slate-500">Progresso</p>
+                      <p className="text-sm font-semibold text-slate-800">{percent}% concluído</p>
+                    </div>
+                    <span className="text-xs px-2 py-0.5 rounded-full bg-slate-100 text-slate-600">{stats.total} itens</span>
                   </div>
-                ))
-              )}
-            </div>
+                  <Progress value={percent} />
+                  <div className="flex items-center gap-1">
+                    <button type="button" onClick={()=>setFilter('all')} className={`px-2 py-1 rounded text-xs ${filter==='all'?'bg-slate-200 text-slate-800':'bg-slate-100 text-slate-700 hover:bg-slate-200'}`}>Todos</button>
+                    <button type="button" onClick={()=>setFilter('open')} className={`px-2 py-1 rounded text-xs ${filter==='open'?'bg-amber-100 text-amber-900':'bg-amber-50 text-amber-800 hover:bg-amber-100'}`}>Pendentes ({stats.open})</button>
+                    <button type="button" onClick={()=>setFilter('completed')} className={`px-2 py-1 rounded text-xs ${filter==='completed'?'bg-green-100 text-green-800':'bg-green-50 text-green-700 hover:bg-green-100'}`}>Concluídos ({stats.completed})</button>
+                  </div>
+                  <div className="relative">
+                    <Input value={query} onChange={(e)=>setQuery(e.target.value)} placeholder="Buscar item..." className="pl-3 pr-8 h-8 text-sm" />
+                    <Search className="absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                  </div>
+                  <div className="max-h-72 overflow-auto space-y-1">
+                    {filtered.length===0 ? (
+                      <div className="text-xs text-slate-500 text-center py-6">Nenhum item encontrado.</div>
+                    ) : (
+                      filtered.map(item => (
+                        <div key={item.id} className="flex items-start gap-3 py-2 px-2 rounded hover:bg-slate-50">
+                          <div className="mt-0.5">{renderIcon(item.status)}</div>
+                          <div className="min-w-0">
+                            <div className="text-sm font-medium text-slate-800 truncate">{item.label}</div>
+                            {item.description && <div className="text-xs text-slate-500">{item.description}</div>}
+                          </div>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </div>
+              );
+            })()}
           </div>
 
           {/* Mini Timeline removida do painel para padronização com os demais cards */}
