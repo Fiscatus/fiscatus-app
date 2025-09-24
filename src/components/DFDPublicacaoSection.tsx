@@ -30,7 +30,8 @@ import {
   ClipboardCheck,
   ListChecks,
   Flag,
-  Paperclip
+  Paperclip,
+  Search
 } from 'lucide-react';
 import { useUser } from '@/contexts/UserContext';
 import { usePermissoes } from '@/hooks/usePermissoes';
@@ -787,16 +788,89 @@ export default function DFDPublicacaoSection({
 
                 {/* Checklist */}
                 <div className="rounded-2xl border shadow-sm bg-white p-4 md:p-6">
-                  <header className="flex items-center gap-2 mb-4">
-                    <ListChecks className="w-5 h-5 text-green-600" />
-                    <h3 className="text-sm font-semibold text-slate-800">Checklist</h3>
+                  <header className="flex items-center justify-between mb-4">
+                    <div className="flex items-center gap-2">
+                      <ListChecks className="w-5 h-5 text-green-600" />
+                      <h3 className="text-sm font-semibold text-slate-800">Checklist</h3>
+                    </div>
+                    {(() => {
+                      const items = [
+                        { id: 'data', label: dataPublicacao ? 'Data definida' : 'Definir data de publicação', status: dataPublicacao ? 'completed' as const : 'pending' as const, description: dataPublicacao || 'Selecione a data' },
+                        { id: 'meios', label: meiosSelecionados.length > 0 ? 'Meios selecionados' : 'Selecionar meios de publicação', status: meiosSelecionados.length > 0 ? 'completed' as const : 'pending' as const, description: meiosSelecionados.length > 0 ? `${meiosSelecionados.length} meio(s)` : 'Selecione ao menos um' },
+                        { id: 'links', label: Object.keys(linksPorMeio).length === meiosSelecionados.length && meiosSelecionados.length > 0 ? 'Links cadastrados' : 'Inserir links/números', status: (meiosSelecionados.length > 0 && Object.keys(linksPorMeio).length === meiosSelecionados.length && Object.values(linksPorMeio).every(v => (v || '').trim())) ? 'completed' as const : (Object.keys(linksPorMeio).length > 0 ? 'warning' as const : 'pending' as const), description: `${Object.values(linksPorMeio).filter(v => (v || '').trim()).length} de ${meiosSelecionados.length} preenchidos` },
+                        { id: 'confirm', label: confirmada ? 'Publicação confirmada' : 'Confirmar publicação', status: confirmada ? 'completed' as const : 'pending' as const, description: confirmada ? 'Registro oficial realizado' : 'Confirme para concluir' }
+                      ];
+                      const completed = items.filter(i => i.status === 'completed').length;
+                      return (
+                        <div className="inline-flex items-center gap-2 px-2.5 py-1.5 rounded-full text-xs font-medium bg-slate-100 text-slate-700">
+                          <ListChecks className="w-4 h-4" />
+                          <span>{completed}/{items.length}</span>
+                        </div>
+                      );
+                    })()}
                   </header>
-                  <ul className="space-y-2 text-sm text-slate-700">
-                    <li>Definir data e meio de publicação</li>
-                    <li>Inserir link/número da publicação</li>
-                    <li>Adicionar anexos pertinentes</li>
-                    <li>Confirmar publicação</li>
-                  </ul>
+                  {(() => {
+                    const baseItems = [
+                      { id: 'data', label: dataPublicacao ? 'Data definida' : 'Definir data de publicação', status: dataPublicacao ? 'completed' as const : 'pending' as const, description: dataPublicacao || 'Selecione a data' },
+                      { id: 'meios', label: meiosSelecionados.length > 0 ? 'Meios selecionados' : 'Selecionar meios de publicação', status: meiosSelecionados.length > 0 ? 'completed' as const : 'pending' as const, description: meiosSelecionados.length > 0 ? `${meiosSelecionados.length} meio(s)` : 'Selecione ao menos um' },
+                      { id: 'links', label: Object.keys(linksPorMeio).length === meiosSelecionados.length && meiosSelecionados.length > 0 ? 'Links cadastrados' : 'Inserir links/números', status: (meiosSelecionados.length > 0 && Object.keys(linksPorMeio).length === meiosSelecionados.length && Object.values(linksPorMeio).every(v => (v || '').trim())) ? 'completed' as const : (Object.keys(linksPorMeio).length > 0 ? 'warning' as const : 'pending' as const), description: `${Object.values(linksPorMeio).filter(v => (v || '').trim()).length} de ${meiosSelecionados.length} preenchidos` },
+                      { id: 'confirm', label: confirmada ? 'Publicação confirmada' : 'Confirmar publicação', status: confirmada ? 'completed' as const : 'pending' as const, description: confirmada ? 'Registro oficial realizado' : 'Confirme para concluir' }
+                    ];
+                    const order = { warning: 0, pending: 1, completed: 2 } as const;
+                    const allItems = baseItems.sort((a:any,b:any)=> order[(a.status as any)] - order[(b.status as any)]);
+                    const [filter, setFilter] = React.useState<'all' | 'open' | 'completed'>('all');
+                    const [query, setQuery] = React.useState('');
+                    const stats = { total: allItems.length, completed: allItems.filter(i=>i.status==='completed').length, open: allItems.filter(i=>i.status!=='completed').length };
+                    const percent = stats.total === 0 ? 0 : Math.round((stats.completed / stats.total) * 100);
+                    const filtered = allItems.filter(i=>{
+                      if (filter==='open' && i.status==='completed') return false;
+                      if (filter==='completed' && i.status!=='completed') return false;
+                      if (!query.trim()) return true;
+                      const q=query.toLowerCase();
+                      return i.label.toLowerCase().includes(q) || (i.description||'').toLowerCase().includes(q);
+                    });
+                    const renderIcon = (status:'completed'|'pending'|'warning') => status==='completed' ? <CheckCircle className="w-4 h-4 text-green-600" /> : <AlertTriangle className="w-4 h-4 text-amber-600" />;
+                    return (
+                      <div className="space-y-3">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <p className="text-xs text-slate-500">Progresso</p>
+                            <p className="text-sm font-semibold text-slate-800">{percent}% concluído</p>
+                          </div>
+                          <span className="text-xs px-2 py-0.5 rounded-full bg-slate-100 text-slate-600">{stats.total} itens</span>
+                        </div>
+                        <div className="w-full">
+                          <div className="h-2 bg-slate-200 rounded-full overflow-hidden">
+                            <div className="h-2 bg-emerald-500" style={{ width: `${percent}%` }} />
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <button type="button" onClick={()=>setFilter('all')} className={`px-2 py-1 rounded text-xs ${filter==='all'?'bg-slate-200 text-slate-800':'bg-slate-100 text-slate-700 hover:bg-slate-200'}`}>Todos</button>
+                          <button type="button" onClick={()=>setFilter('open')} className={`px-2 py-1 rounded text-xs ${filter==='open'?'bg-amber-100 text-amber-900':'bg-amber-50 text-amber-800 hover:bg-amber-100'}`}>Pendentes ({stats.open})</button>
+                          <button type="button" onClick={()=>setFilter('completed')} className={`px-2 py-1 rounded text-xs ${filter==='completed'?'bg-green-100 text-green-800':'bg-green-50 text-green-700 hover:bg-green-100'}`}>Concluídos ({stats.completed})</button>
+                        </div>
+                        <div className="relative">
+                          <Input value={query} onChange={(e)=>setQuery(e.target.value)} placeholder="Buscar item..." className="pl-3 pr-8 h-8 text-sm" />
+                          <Search className="absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                        </div>
+                        <div className="max-h-72 overflow-auto space-y-1">
+                          {filtered.length===0 ? (
+                            <div className="text-xs text-slate-500 text-center py-6">Nenhum item encontrado.</div>
+                          ) : (
+                            filtered.map(item => (
+                              <div key={item.id} className="flex items-start gap-3 py-2 px-2 rounded hover:bg-slate-50">
+                                <div className="mt-0.5">{renderIcon(item.status as any)}</div>
+                                <div className="min-w-0">
+                                  <div className="text-sm font-medium text-slate-800 truncate">{item.label}</div>
+                                  {item.description && <div className="text-xs text-slate-500">{item.description}</div>}
+                                </div>
+                              </div>
+                            ))
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })()}
                 </div>
 
                 {/* Mini Timeline removida do painel para padronização */}
