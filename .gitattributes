@@ -1,3 +1,13 @@
-* text=auto
-*.{ts,tsx,js,jsx,css,scss,html,json,md,yml,yaml} text eol=crlf
-*.{png,jpg,jpeg,gif,svg,ico} -text
+# Padroniza finais de linha para LF em todos os textos
+* text=auto eol=lf
+
+# Arquivos binários (sem normalização de EOL)
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.lockb binary
+
+# Evita normalização em builds gerados
+/dist/** binary
