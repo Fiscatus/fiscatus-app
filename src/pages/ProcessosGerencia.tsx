@@ -46,6 +46,7 @@ import {
   User,
   PenLine,
   FileSignature
+  , SortAsc, SortDesc
 } from "lucide-react";
 import Topbar from "@/components/Topbar";
 import GerenciarPastasModal from "@/components/GerenciarPastasModal";
@@ -57,7 +58,7 @@ import { formatDateBR } from '@/lib/utils';
 
 // Tipos
 type ProcessStatus = "em_andamento" | "pendente" | "atrasado" | "concluido" | "cancelado";
-type ProcessType = "DFD" | "ETP" | "Matriz de Risco" | "TR" | "Edital";
+type ProcessType = "Pregão" | "Dispensa" | "Inexigibilidade" | "Concorrência" | "Credenciamento";
 type ProcessPhase = "Elaboração da FD" | "Assinatura ETP" | "Matriz de Risco" | "TR" | "Edital" | "Publicação" | "Análise" | "Aprovação";
 type RegimeTramitacao = "Urgente" | "Normal" | "Prioritário";
 type ParticipationType = "criador" | "responsavel" | "participante";
@@ -65,7 +66,7 @@ type ParticipationType = "criador" | "responsavel" | "participante";
 interface ProcessoGerencia {
   id: string;
   numeroProcesso: string;
-  tipoProcesso: string;
+  tipoProcesso: ProcessType | string;
   objeto: string;
   etapaAtual: string;
   proximaEtapa?: string;
@@ -98,7 +99,7 @@ const processosMock: ProcessoGerencia[] = [
   {
     id: "1",
     numeroProcesso: "Processo administrativo 001/2024",
-    tipoProcesso: "DFD",
+    tipoProcesso: "Pregão",
     objeto: "Aquisição de Equipamentos Médicos para UTI",
     etapaAtual: "Elaboração da FD",
     proximaEtapa: "Assinatura da FD",
@@ -117,7 +118,7 @@ const processosMock: ProcessoGerencia[] = [
   {
     id: "2",
     numeroProcesso: "Processo administrativo 045/2024",
-    tipoProcesso: "ETP",
+    tipoProcesso: "Dispensa",
     objeto: "Contratação de Serviços de Limpeza Hospitalar",
     etapaAtual: "Assinatura ETP",
     proximaEtapa: "Despacho do ETP",
@@ -136,7 +137,7 @@ const processosMock: ProcessoGerencia[] = [
   {
     id: "3",
     numeroProcesso: "Processo administrativo 001/2024",
-    tipoProcesso: "TR",
+    tipoProcesso: "Concorrência",
     objeto: "Consultoria Especializada em Gestão",
     etapaAtual: "Aprovação",
     proximaEtapa: "Publicação",
@@ -155,7 +156,7 @@ const processosMock: ProcessoGerencia[] = [
   {
     id: "4",
     numeroProcesso: "Processo administrativo 002/2024",
-    tipoProcesso: "DFD",
+    tipoProcesso: "Inexigibilidade",
     objeto: "Aquisição de Mobiliário para Consultórios",
     etapaAtual: "Matriz de Risco",
     proximaEtapa: "Assinatura da FD",
@@ -174,7 +175,7 @@ const processosMock: ProcessoGerencia[] = [
   {
     id: "5",
     numeroProcesso: "Processo administrativo 002/2023",
-    tipoProcesso: "ETP",
+    tipoProcesso: "Credenciamento",
     objeto: "Contratação de Segurança Patrimonial",
     etapaAtual: "Publicação",
     proximaEtapa: "Arquivamento",
@@ -193,7 +194,7 @@ const processosMock: ProcessoGerencia[] = [
   {
     id: "6",
     numeroProcesso: "Processo administrativo 003/2023",
-    tipoProcesso: "TR",
+    tipoProcesso: "Dispensa",
     objeto: "Sistema de Gestão Integrada",
     etapaAtual: "Análise",
     proximaEtapa: "Cancelamento",
@@ -212,7 +213,7 @@ const processosMock: ProcessoGerencia[] = [
   {
     id: "7",
     numeroProcesso: "Processo administrativo 001/2022",
-    tipoProcesso: "DFD",
+    tipoProcesso: "Pregão",
     objeto: "Aquisição de Equipamentos de Informática",
     etapaAtual: "Concluído",
     proximaEtapa: "-",
@@ -231,7 +232,7 @@ const processosMock: ProcessoGerencia[] = [
   {
     id: "8",
     numeroProcesso: "Processo administrativo 002/2022",
-    tipoProcesso: "TR",
+    tipoProcesso: "Concorrência",
     objeto: "Consultoria em Gestão de Qualidade",
     etapaAtual: "Concluído",
     proximaEtapa: "-",
@@ -250,7 +251,7 @@ const processosMock: ProcessoGerencia[] = [
   {
     id: "9",
     numeroProcesso: "Processo administrativo 003/2024",
-    tipoProcesso: "ETP",
+    tipoProcesso: "Pregão",
     objeto: "Contratação de Serviços de Manutenção",
     etapaAtual: "Elaboração ETP",
     proximaEtapa: "Assinatura ETP",
@@ -482,6 +483,15 @@ function AnexosIcon({ temAnexos }: { temAnexos: boolean }) {
       </Tooltip>
     </TooltipProvider>
   );
+}
+
+// Utilitário para inferir pendência a partir da etapa
+function inferPendenciaFromEtapa(etapaAtual: string): "Assinar" | "Corrigir" | "Analisar" | "Nenhuma" {
+  const etapa = etapaAtual.toLowerCase();
+  if (etapa.includes("assinatura") || etapa.includes("assinar")) return "Assinar";
+  if (etapa.includes("corrig")) return "Corrigir";
+  if (etapa.includes("anális") || etapa.includes("analise") || etapa.includes("analisar")) return "Analisar";
+  return "Nenhuma";
 }
 
 // Componente para Card de Pasta Organizacional
@@ -738,6 +748,185 @@ function ProcessTableComplete({ processos }: { processos: ProcessoGerencia[] }) 
 }
 
 
+
+// Componente: Tabela de Participações Atuais (mesmo layout de MeusProcessos)
+function ParticipacoesAtuaisTable({ processos }: { processos: ProcessoGerencia[] }) {
+  const navigate = useNavigate();
+  const [sortKey, setSortKey] = useState<"numero" | "fase" | "prazo" | "status" | "pendencia">("numero");
+  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
+
+  const getPendenciaUsuario = (etapaAtual: string): "Assinar" | "Corrigir" | "Analisar" | "Nenhuma" => {
+    const etapa = etapaAtual.toLowerCase();
+    if (etapa.includes("assinatura") || etapa.includes("assinar")) return "Assinar";
+    if (etapa.includes("corrig")) return "Corrigir";
+    if (etapa.includes("anális") || etapa.includes("analise") || etapa.includes("analisar")) return "Analisar";
+    return "Nenhuma";
+  };
+
+  const renderPendencia = (pendencia: "Assinar" | "Corrigir" | "Analisar" | "Nenhuma", processoId: string) => {
+    if (pendencia === "Nenhuma") {
+      return (
+        <Badge className="bg-green-100 text-green-800 border-green-200 text-xs font-medium">
+          Sem pendência
+        </Badge>
+      );
+    }
+
+    const config: Record<string, { className: string }> = {
+      Assinar: { className: "bg-blue-600 hover:bg-blue-700 text-white" },
+      Corrigir: { className: "bg-red-600 hover:bg-red-700 text-white" },
+      Analisar: { className: "bg-purple-600 hover:bg-purple-700 text-white" },
+    };
+
+    const style = config[pendencia];
+    return (
+      <Button
+        size="sm"
+        onClick={() => navigate(`/processos/${processoId}`)}
+        className={`${style.className} text-xs h-8 px-3 font-medium`}
+      >
+        {pendencia}
+      </Button>
+    );
+  };
+
+  const getStatusLabel = (s: ProcessStatus) => {
+    const map: Record<ProcessStatus, string> = {
+      em_andamento: "Em andamento",
+      pendente: "Pendente",
+      atrasado: "Atrasado",
+      concluido: "Concluído",
+      cancelado: "Cancelado",
+    };
+    return map[s];
+  };
+
+  const compareStrings = (a: string, b: string) => a.localeCompare(b, "pt-BR", { sensitivity: "base" });
+  const compareNumeros = (a: string, b: string) => {
+    const rx = /(\d+)/;
+    const na = parseInt(a.match(rx)?.[1] || "0", 10);
+    const nb = parseInt(b.match(rx)?.[1] || "0", 10);
+    if (!isNaN(na) && !isNaN(nb) && na !== nb) return na - nb;
+    return compareStrings(a, b);
+  };
+
+  const sorted = useMemo(() => {
+    const list = [...processos];
+    list.sort((p1, p2) => {
+      let res = 0;
+      if (sortKey === "numero") res = compareNumeros(p1.numeroProcesso, p2.numeroProcesso);
+      if (sortKey === "fase") res = compareStrings(p1.etapaAtual || "", p2.etapaAtual || "");
+      if (sortKey === "prazo") {
+        const a = (p1.prazoFinal || p1.prazoEtapaAtual || "");
+        const b = (p2.prazoFinal || p2.prazoEtapaAtual || "");
+        res = compareStrings(a, b);
+      }
+      if (sortKey === "status") res = compareStrings(getStatusLabel(p1.situacao), getStatusLabel(p2.situacao));
+      if (sortKey === "pendencia") {
+        const pa = inferPendenciaFromEtapa(p1.etapaAtual);
+        const pb = inferPendenciaFromEtapa(p2.etapaAtual);
+        res = compareStrings(pa, pb);
+      }
+      return sortOrder === "asc" ? res : -res;
+    });
+    return list;
+  }, [processos, sortKey, sortOrder]);
+
+  const SortButton = ({ activeKey }: { activeKey: typeof sortKey }) => (
+    <Button
+      variant="ghost"
+      size="icon"
+      className={`h-7 w-7 ml-1 ${sortKey === activeKey ? "text-blue-600" : "text-gray-400"}`}
+      onClick={() => {
+        if (sortKey === activeKey) {
+          setSortOrder(prev => (prev === "asc" ? "desc" : "asc"));
+        } else {
+          setSortKey(activeKey);
+          setSortOrder("asc");
+        }
+      }}
+      title={sortKey === activeKey ? (sortOrder === "asc" ? "Ordenar desc" : "Ordenar asc") : "Ordenar"}
+      aria-label="Ordenar coluna"
+    >
+      {sortKey === activeKey && sortOrder === "desc" ? <SortDesc className="w-4 h-4" /> : <SortAsc className="w-4 h-4" />}
+    </Button>
+  );
+
+  return (
+    <Card className="bg-white shadow-md rounded-xl border-0">
+      <CardContent className="p-0">
+        <div className="p-6 border-b border-gray-100">
+          <h3 className="text-lg font-semibold text-gray-900">Participações atuais ({processos.length})</h3>
+        </div>
+        <Table>
+          <TableHeader>
+            <TableRow className="border-b border-gray-100">
+              <TableHead className="text-xs font-bold text-gray-800 uppercase px-6 py-4 w-2/5">
+                <div className="flex items-center">Nº do Processo <SortButton activeKey="numero" /></div>
+              </TableHead>
+              <TableHead className="text-xs font-bold text-gray-800 uppercase px-6 py-4 text-center">
+                <div className="flex items-center justify-center">Fase Atual <SortButton activeKey="fase" /></div>
+              </TableHead>
+              <TableHead className="text-xs font-bold text-gray-800 uppercase px-6 py-4 text-center">
+                <div className="flex items-center justify-center">Prazo Final <SortButton activeKey="prazo" /></div>
+              </TableHead>
+              <TableHead className="text-xs font-bold text-gray-800 uppercase px-6 py-4 text-center">
+                <div className="flex items-center justify-center">Status <SortButton activeKey="status" /></div>
+              </TableHead>
+              <TableHead className="text-xs font-bold text-gray-800 uppercase px-6 py-4 text-center">
+                <div className="flex items-center justify-center">Pendência <SortButton activeKey="pendencia" /></div>
+              </TableHead>
+              <TableHead className="text-xs font-bold text-gray-800 uppercase px-6 py-4 text-center">Ação</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {sorted.map((p) => {
+              const pendencia = getPendenciaUsuario(p.etapaAtual);
+              return (
+                <TableRow key={p.id} className="hover:bg-gray-50 border-b border-gray-100">
+                  <TableCell className="px-6 py-4 w-2/5 min-w-0">
+                    <div className="font-semibold text-blue-900 text-sm">{p.numeroProcesso}</div>
+                    <div className="text-sm text-muted-foreground mt-1 break-words">{p.objeto}</div>
+                  </TableCell>
+                  <TableCell className="px-6 py-4 text-center">
+                    <div className="text-sm font-medium text-gray-800">{p.etapaAtual}</div>
+                  </TableCell>
+                  <TableCell className="px-6 py-4 text-center">
+                    <div className="flex justify-center">
+                      <PrazoDisplay prazo={p.prazoFinal || p.prazoEtapaAtual} />
+                    </div>
+                  </TableCell>
+                  <TableCell className="px-6 py-4 text-center">
+                    <div className="flex justify-center">
+                      <StatusBadge status={p.situacao} />
+                    </div>
+                  </TableCell>
+                  <TableCell className="px-6 py-4 text-center">
+                    <div className="flex justify-center">
+                      {renderPendencia(pendencia, p.id)}
+                    </div>
+                  </TableCell>
+                  <TableCell className="px-6 py-4 text-center">
+                    <div className="flex justify-center">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => navigate(`/processos/${p.id}`)}
+                        className="text-xs h-8 px-3 font-medium"
+                      >
+                        Ver Detalhes
+                      </Button>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              );
+            })}
+          </TableBody>
+        </Table>
+      </CardContent>
+    </Card>
+  );
+}
 
 // Componente para Filtros Avançados
 function AdvancedFiltersSection({ filters, onFilterChange }: any) {
@@ -1138,6 +1327,10 @@ function CreateProcessModal() {
 
 export default function ProcessosGerencia() {
   const [searchTerm, setSearchTerm] = useState("");
+  // Filtros da seção Participações Atuais (modelo de MeusProcessos)
+  const [tipoFilter, setTipoFilter] = useState<string>("todos");
+  const [statusFilter, setStatusFilter] = useState<string>("todos");
+  const [pendenciaFilter, setPendenciaFilter] = useState<string>("todos");
   const [filters, setFilters] = useState({
     searchTerm: "",
     yearFilter: "todos",
@@ -1160,16 +1353,26 @@ export default function ProcessosGerencia() {
 
   // Filtrar processos por participação atual (responsável pela etapa) - apenas processos em andamento
   const participacoesAtuais = useMemo(() => {
-    return processosMock.filter(p => 
-      p.tipoParticipacao === "responsavel" && 
-      p.situacao !== "concluido" && 
-      p.situacao !== "cancelado"
-    )
-    .filter(processo => 
-      processo.numeroProcesso.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      processo.objeto.toLowerCase().includes(searchTerm.toLowerCase())
-    );
-  }, [searchTerm]);
+    return processosMock
+      .filter(p => p.tipoParticipacao === "responsavel" && p.situacao !== "concluido" && p.situacao !== "cancelado")
+      .filter(processo => {
+        const matchesSearch =
+          processo.numeroProcesso.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          processo.objeto.toLowerCase().includes(searchTerm.toLowerCase());
+
+        const matchesTipo = tipoFilter === "todos" || processo.tipoProcesso === tipoFilter;
+
+        const matchesStatus = statusFilter === "todos" || processo.situacao === statusFilter;
+
+        const pendencia = inferPendenciaFromEtapa(processo.etapaAtual);
+        const matchesPendencia =
+          pendenciaFilter === "todos" ||
+          (pendenciaFilter === "com_pendencia" && pendencia !== "Nenhuma") ||
+          (pendenciaFilter === "sem_pendencia" && pendencia === "Nenhuma");
+
+        return matchesSearch && matchesTipo && matchesStatus && matchesPendencia;
+      });
+  }, [searchTerm, tipoFilter, statusFilter, pendenciaFilter]);
 
   // Filtrar todos os processos para a tabela completa
   const filteredProcessos = useMemo(() => {
@@ -1324,7 +1527,7 @@ export default function ProcessosGerencia() {
                                 </div>
                                 <div>
                                   <h2 className="text-2xl font-semibold text-primary mb-1">Participações Atuais</h2>
-                                  <p className="text-gray-600">Processos em que você está participando ativamente</p>
+                                  <p className="text-gray-600">Processos em que a sua gerência está participando ativamente</p>
                                 </div>
                               </div>
                               <Badge variant="outline" className="text-sm font-medium bg-white">
@@ -1332,22 +1535,66 @@ export default function ProcessosGerencia() {
                               </Badge>
                             </div>
 
-                            {/* Barra de busca para participações */}
+                            {/* Barra de filtros no padrão de MeusProcessos */}
                             <div className="mb-6">
-                              <div className="relative max-w-md">
-                                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-                                <Input
-                                  placeholder="Buscar nas participações atuais..."
-                                  value={searchTerm}
-                                  onChange={(e) => setSearchTerm(e.target.value)}
-                                  className="pl-10 border-gray-200/60 bg-white"
-                                />
+                              <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
+                                {/* Busca */}
+                                <div className="relative">
+                                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                                  <Input
+                                    placeholder="Buscar por nº do processo ou objeto"
+                                    value={searchTerm}
+                                    onChange={(e) => setSearchTerm(e.target.value)}
+                                    className="pl-10 border-gray-200/60 bg-white"
+                                  />
+                                </div>
+
+                                {/* Tipo do processo */}
+                                <Select value={tipoFilter} onValueChange={setTipoFilter}>
+                                  <SelectTrigger className="border-gray-200 focus:border-blue-300 focus:ring-blue-200 rounded-lg">
+                                    <SelectValue placeholder="Tipo do processo" />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="todos">Tipo do processo</SelectItem>
+                                    <SelectItem value="Pregão">Pregão</SelectItem>
+                                    <SelectItem value="Dispensa">Dispensa</SelectItem>
+                                    <SelectItem value="Inexigibilidade">Inexigibilidade</SelectItem>
+                                    <SelectItem value="Concorrência">Concorrência</SelectItem>
+                                    <SelectItem value="Credenciamento">Credenciamento</SelectItem>
+                                  </SelectContent>
+                                </Select>
+
+                                {/* Status do processo */}
+                                <Select value={statusFilter} onValueChange={setStatusFilter}>
+                                  <SelectTrigger className="border-gray-200 focus:border-blue-300 focus:ring-blue-200 rounded-lg">
+                                    <SelectValue placeholder="Status do processo" />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="todos">Status do processo</SelectItem>
+                                    <SelectItem value="em_andamento">Em andamento</SelectItem>
+                                    <SelectItem value="pendente">Pendente</SelectItem>
+                                    <SelectItem value="concluido">Concluído</SelectItem>
+                                    <SelectItem value="atrasado">Atrasado</SelectItem>
+                                  </SelectContent>
+                                </Select>
+
+                                {/* Pendência */}
+                                <Select value={pendenciaFilter} onValueChange={setPendenciaFilter}>
+                                  <SelectTrigger className="border-gray-200 focus:border-blue-300 focus:ring-blue-200 rounded-lg">
+                                    <SelectValue placeholder="Pendência" />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="todos">Pendência</SelectItem>
+                                    <SelectItem value="com_pendencia">Com pendência</SelectItem>
+                                    <SelectItem value="sem_pendencia">Sem pendência</SelectItem>
+                                  </SelectContent>
+                                </Select>
                               </div>
                             </div>
 
-                            {/* Tabela Completa de Participações Atuais */}
+                            {/* Tabela de Participações Atuais com layout de MeusProcessos */}
                             {participacoesAtuais.length > 0 ? (
-                              <ProcessTableComplete processos={participacoesAtuais} />
+                              <ParticipacoesAtuaisTable processos={participacoesAtuais} />
                             ) : (
                               <Card className="p-8 text-center border-dashed border-2 border-gray-300 bg-white">
                                 <div className="w-16 h-16 mx-auto mb-4 bg-gray-100 rounded-full flex items-center justify-center">
