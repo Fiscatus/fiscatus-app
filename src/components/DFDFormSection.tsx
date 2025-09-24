@@ -57,7 +57,8 @@ import {
     Calendar as CalendarIcon,
     User as UserIcon,
     Clock as ClockIcon,
-    Loader2
+    Loader2,
+    Search as SearchIcon
   } from 'lucide-react';
 import { useUser } from '@/contexts/UserContext';
 import { usePermissoes } from '@/hooks/usePermissoes';
@@ -68,6 +69,7 @@ import ResponsavelSelector from './ResponsavelSelector';
 import { formatDateBR, formatDateTimeBR, legendaDiasRestantes, classesPrazo } from '@/lib/utils';
 import Timeline from '@/components/timeline/Timeline';
 import { TimelineItemModel, TimelineStatus } from '@/types/timeline';
+import { Progress } from '@/components/ui/progress';
 
 // Tipos TypeScript conforme especificação
 type DFDVersionStatus = 'rascunho' | 'finalizada' | 'enviada_para_analise' | 'aprovada' | 'reprovada';
@@ -862,9 +864,9 @@ export default function DFDFormSection({
       });
     }
 
-    // Ordenar: pendentes primeiro, depois em atenção, por último concluídos
+    // Ordenar: ALERTA primeiro, depois PENDENTE, por último CONCLUÍDO
     return checklist.sort((a, b) => {
-      const statusOrder = { pending: 0, warning: 1, completed: 2 };
+      const statusOrder = { warning: 0, pending: 1, completed: 2 } as const;
       return statusOrder[a.status] - statusOrder[b.status];
     });
   };
@@ -1028,11 +1030,37 @@ export default function DFDFormSection({
       case 'completed':
         return <CheckIcon className="w-4 h-4 text-green-600" />;
       case 'warning':
-        return <AlertTriangle className="w-4 h-4 text-yellow-600" />;
+        return <AlertTriangle className="w-4 h-4 text-amber-600" />;
       default:
-        return <XIcon className="w-4 h-4 text-red-600" />;
+        // Mostrar ícone de alerta também para pendentes
+        return <AlertTriangle className="w-4 h-4 text-amber-600" />;
     }
   };
+
+  // Balão (Popover) de Checklist profissional
+  const [isChecklistOpen, setIsChecklistOpen] = useState(false);
+  const [checklistQuery, setChecklistQuery] = useState('');
+  const [checklistFilter, setChecklistFilter] = useState<'all' | 'open' | 'completed'>('all');
+
+  const checklistAll = useMemo(() => generateChecklist(), [versions, etapaConcluida]);
+  const checklistStats = useMemo(() => {
+    const total = checklistAll.length;
+    const completed = checklistAll.filter(i => i.status === 'completed').length;
+    const warning = checklistAll.filter(i => i.status === 'warning').length;
+    const pending = checklistAll.filter(i => i.status === 'pending').length;
+    const open = warning + pending;
+    const percent = total === 0 ? 0 : Math.round((completed / total) * 100);
+    return { total, completed, warning, pending, open, percent };
+  }, [checklistAll]);
+
+  const checklistFiltered = useMemo(() => {
+    let base = checklistAll;
+    if (checklistFilter === 'open') base = checklistAll.filter(i => i.status !== 'completed');
+    if (checklistFilter === 'completed') base = checklistAll.filter(i => i.status === 'completed');
+    if (!checklistQuery.trim()) return base;
+    const q = checklistQuery.toLowerCase();
+    return base.filter(i => i.label.toLowerCase().includes(q) || i.description.toLowerCase().includes(q));
+  }, [checklistAll, checklistFilter, checklistQuery]);
 
   // Calcular prazo final previsto
   const getPrazoFinalPrevisto = () => {
@@ -1628,48 +1656,50 @@ export default function DFDFormSection({
                   <ListChecks className="w-5 h-5 text-indigo-600" />
                   <h3 className="text-sm font-semibold text-slate-800">Checklist da Etapa</h3>
                 </div>
-                {(() => {
-                  const checklist = generateChecklist();
-                  const pendentes = checklist.filter(item => item.status === 'pending').length;
-                  const total = checklist.length;
-                  
-                  return (
-                    <div className="flex items-center gap-2">
-                      {pendentes > 0 && (
-                        <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-700">
-                          {pendentes} pendente{pendentes !== 1 ? 's' : ''}
-                        </span>
-                      )}
-                      <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-slate-100 text-slate-600">
-                        {total} item{total !== 1 ? 's' : ''}
-                      </span>
-                    </div>
-                  );
-                })()}
+                <div className="inline-flex items-center gap-2 px-2.5 py-1.5 rounded-full text-xs font-medium bg-slate-100 text-slate-700">
+                  <ListChecks className="w-4 h-4" />
+                  <span>{checklistStats.completed}/{checklistStats.total}</span>
+                </div>
               </header>
               
-              <div className="space-y-1">
-                {generateChecklist().length === 0 ? (
-                  <p className="text-sm text-gray-500 italic text-center py-6">
-                    Nenhum requisito definido para esta etapa.
-                  </p>
-                ) : (
-                  generateChecklist().map((item) => (
-                    <TooltipProvider key={item.id}>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <div className="flex items-center gap-3 py-2 px-2 hover:bg-slate-50 rounded transition-colors cursor-pointer">
-                            {getChecklistIcon(item.status)}
-                            <span className="text-sm text-slate-700 flex-1">{item.label}</span>
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-xs text-slate-500">Progresso</p>
+                    <p className="text-sm font-semibold text-slate-800">{checklistStats.percent}% concluído</p>
+                  </div>
+                  <span className="text-xs px-2 py-0.5 rounded-full bg-slate-100 text-slate-600">
+                    {checklistStats.total} item{checklistStats.total !== 1 ? 's' : ''}
+                      </span>
+                    </div>
+                <Progress value={checklistStats.percent} />
+
+                <div className="flex items-center gap-1">
+                  <button type="button" onClick={() => setChecklistFilter('all')} className={`px-2 py-1 rounded text-xs ${checklistFilter === 'all' ? 'bg-slate-200 text-slate-800' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'}`}>Todos</button>
+                  <button type="button" onClick={() => setChecklistFilter('open')} className={`px-2 py-1 rounded text-xs ${checklistFilter === 'open' ? 'bg-amber-100 text-amber-900' : 'bg-amber-50 text-amber-800 hover:bg-amber-100'}`}>Pendentes ({checklistStats.open})</button>
+                  <button type="button" onClick={() => setChecklistFilter('completed')} className={`px-2 py-1 rounded text-xs ${checklistFilter === 'completed' ? 'bg-green-100 text-green-800' : 'bg-green-50 text-green-700 hover:bg-green-100'}`}>Concluídos ({checklistStats.completed})</button>
+                </div>
+
+                <div className="relative">
+                  <Input value={checklistQuery} onChange={(e) => setChecklistQuery(e.target.value)} placeholder="Buscar item..." className="pl-3 pr-8 h-8 text-sm" />
+                  <SearchIcon className="absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                </div>
+
+                <div className="max-h-72 overflow-auto space-y-1">
+                  {checklistFiltered.length === 0 ? (
+                    <div className="text-xs text-slate-500 text-center py-6">Nenhum item encontrado.</div>
+                  ) : (
+                    checklistFiltered.map(item => (
+                      <div key={item.id} className="flex items-start gap-3 py-2 px-2 rounded hover:bg-slate-50">
+                        <div className="mt-0.5">{getChecklistIcon(item.status)}</div>
+                        <div className="min-w-0">
+                          <div className="text-sm font-medium text-slate-800 truncate">{item.label}</div>
+                          <div className="text-xs text-slate-500">{item.description}</div>
                           </div>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <p>{item.description}</p>
-                        </TooltipContent>
-                      </Tooltip>
-                    </TooltipProvider>
-                  ))
-                )}
+                      </div>
+                    ))
+                  )}
+                </div>
               </div>
             </div>
 
