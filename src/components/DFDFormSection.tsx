@@ -68,6 +68,7 @@ import CommentsSection from './CommentsSection';
 import ResponsavelSelector from './ResponsavelSelector';
 import { formatDateBR, formatDateTimeBR, legendaDiasRestantes, classesPrazo } from '@/lib/utils';
 import Timeline from '@/components/timeline/Timeline';
+import { DeadlinePanel } from '@/components/DeadlinePanel';
 import { TimelineItemModel, TimelineStatus } from '@/types/timeline';
 import { Progress } from '@/components/ui/progress';
 
@@ -191,7 +192,7 @@ const countBusinessDays = (startISO: string, endISO: string, holidays: string[] 
   return count;
 };
 
-// Mock de dados iniciais
+// Mock de dados iniciais com datas realistas
 const mockVersions: DFDVersion[] = [
   {
     id: 'v1',
@@ -202,9 +203,9 @@ const mockVersions: DFDVersion[] = [
     autorCargo: 'Analista de Projetos',
     autorGerencia: 'GSP - Gerência de Soluções e Projetos',
     autorEmail: 'lucas.brito@hospital.gov.br',
-    criadoEm: '2025-01-15T14:30:00Z',
-    atualizadoEm: '2025-01-18T16:45:00Z',
-    enviadoParaAnaliseEm: '2025-01-18T16:45:00Z',
+    criadoEm: '2025-01-20T09:00:00Z',
+    atualizadoEm: '2025-01-22T14:30:00Z',
+    enviadoParaAnaliseEm: '2025-01-22T14:30:00Z',
     prazoDiasUteis: 7,
     prazoInicialDiasUteis: 7,
     prazoCumpridoDiasUteis: 3,
@@ -221,7 +222,7 @@ const mockVersions: DFDVersion[] = [
           gerencia: 'GSP - Gerência de Soluções e Projetos'
         }
       ],
-      dataElaboracao: '2025-01-15',
+      dataElaboracao: '2025-01-20',
       numeroDFD: 'DFD-2025-001',
       prioridade: 'MEDIO'
     }
@@ -234,7 +235,7 @@ const mockAnexos: Anexo[] = [
     nome: 'Documento_Referencia.pdf',
     tamanhoBytes: 1024000,
     mimeType: 'application/pdf',
-    criadoEm: '2025-01-15T10:30:00Z',
+    criadoEm: '2025-01-20T10:30:00Z',
     autorId: 'user1',
     autorNome: 'Lucas Moreira Brito',
     versaoId: 'v1',
@@ -255,6 +256,7 @@ export default function DFDFormSection({
 }: DFDFormSectionProps) {
   const { user } = useUser();
   const { toast } = useToast();
+  const [deadlineMode, setDeadlineMode] = useState<"business" | "calendar">("business");
   
   // Whitelist temporária de usuários com permissão explícita
   const isUserWhitelisted = useMemo(() => {
@@ -1009,6 +1011,15 @@ export default function DFDFormSection({
     return 'Em elaboração';
   };
 
+  // Mapear status para o painel de prazos
+  const getDeadlinePanelStatus = (): 'pendente' | 'em_andamento' | 'em_analise' | 'concluido' | 'atrasado' | 'suspenso' => {
+    if (etapaConcluida) return 'concluido';
+    const diasRest = getDiasRestantes(currentVersion);
+    if (diasRest !== null && diasRest < 0) return 'atrasado';
+    if (versions.some(v => v.status === 'enviada_para_analise')) return 'em_analise';
+    return 'em_andamento';
+  };
+
   // Obter classes de cor para o status
   const getStatusClasses = (status: string) => {
     switch (status) {
@@ -1083,9 +1094,9 @@ export default function DFDFormSection({
     return dataFinal;
   };
 
-  // Prazo final da versão (fixo solicitado)
+  // Prazo final da versão (fixo solicitado) - data realista
   // Usar meio-dia UTC para evitar regressão por fuso horário na renderização local
-  const prazoFinalVersaoFixo = new Date('2025-01-16T12:00:00Z');
+  const prazoFinalVersaoFixo = new Date('2025-01-29T12:00:00Z');
 
   // Calcular prazo final previsto da ETAPA (com base nas versões)
   const getPrazoFinalPrevistoDaEtapa = () => {
@@ -1510,144 +1521,21 @@ export default function DFDFormSection({
           </div>
         </header>
         <div className="border-b-2 border-green-200 mb-6"></div>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 md:[grid-template-columns:7fr_3fr] gap-4">
             
-            {/* 1️⃣ Card Status & Prazo (claro e visual) */}
-            <div className="rounded-2xl border shadow-sm bg-white p-4 md:p-6">
-              {/* Header com Status */}
-              <header className="flex items-center justify-between mb-4">
-                <div className="flex items-center gap-2">
-                  <Flag className="w-5 h-5 text-indigo-600" />
-                  <h3 className="text-sm font-semibold text-slate-800">Status & Prazo</h3>
-                </div>
-                <Badge className={`text-sm font-semibold px-3 py-2 ${getStatusClasses(getEtapaStatus())}`}>
-                  {getEtapaStatus()}
-                </Badge>
-              </header>
-              
-              <div className="space-y-4">
-                {/* 1. Faixa de Prazos */}
-                <div className="space-y-4">
-                  {/* Data de Criação */}
-                  <div className="flex items-center gap-3 p-3 rounded-lg border border-slate-200">
-                    <div className="w-10 h-10 rounded-full flex items-center justify-center border border-slate-300">
-                      <CalendarIcon className="w-5 h-5 text-slate-600" />
-                    </div>
-                    <div>
-                      <p className="text-sm font-semibold text-slate-500">Data de Criação</p>
-                      <p className="text-lg font-bold text-slate-900">
-                        {formatDateBR(currentVersion.criadoEm)}
-                      </p>
-                    </div>
-                  </div>
-                  
-                  {/* Prazo Inicial da Versão */}
-                  <div className="flex items-center justify-between p-3 rounded-lg border border-slate-200">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-full flex items-center justify-center border border-slate-300">
-                        <ClockIcon className="w-5 h-5 text-slate-600" />
-                      </div>
-                      <div>
-                        <p className="text-sm font-semibold text-slate-500">Prazo Inicial da Versão</p>
-                        <p className="text-lg font-bold text-slate-900">
-                          {formatDateBR(currentVersion.criadoEm)}
-                        </p>
-                      </div>
-                    </div>
-                    <div className="text-right">
-                      <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold border border-slate-300 text-slate-700">
-                        {currentVersion.prazoInicialDiasUteis || 7} dias úteis
-                      </span>
-                    </div>
-                  </div>
-                  
-                  {/* Prazo Final da Versão */}
-                  <div className="flex items-center justify-between p-3 rounded-lg border border-slate-200">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-full flex items-center justify-center border border-slate-300">
-                        <Flag className="w-5 h-5 text-slate-600" />
-                      </div>
-                      <div>
-                        <p className="text-sm font-semibold text-slate-500">Prazo Final da Versão</p>
-                        <p className="text-lg font-bold text-slate-900">
-                          {formatDateBR(prazoFinalVersaoFixo.toISOString())}
-                        </p>
-                      </div>
-                    </div>
-                    <div className="text-right">
-                      <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold border border-slate-300 text-slate-700">
-                        prazo limite
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* Prazo Final da Etapa */}
-                  <div className="flex items-center justify-between p-3 rounded-lg border border-slate-200">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-full flex items-center justify-center border border-slate-300">
-                        <Flag className="w-5 h-5 text-indigo-600" />
-                      </div>
-                      <div>
-                        <p className="text-sm font-semibold text-slate-500">Prazo Final da Etapa</p>
-                        <p className="text-lg font-bold text-slate-900">
-                          {formatDateBR(getPrazoFinalPrevistoDaEtapa().toISOString())}
-                        </p>
-                      </div>
-                    </div>
-                    <div className="text-right">
-                      <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold border border-slate-300 text-slate-700">
-                        etapa
-                      </span>
-                    </div>
-                  </div>
-                  
-                  {/* Prazo Cumprido (quando aplicável) */}
-                  {etapaConcluida && (
-                    <div className="mt-4 pt-4 border-t border-slate-200">
-                      <div className="flex items-center justify-between p-3 rounded-lg border border-slate-200">
-                        <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 rounded-full flex items-center justify-center border border-green-300">
-                            <CheckCircleIcon className="w-5 h-5 text-green-600" />
-                          </div>
-                          <div>
-                            <p className="text-sm font-semibold text-green-600">Prazo Cumprido</p>
-                            <p className="text-lg font-bold text-green-700">
-                              {formatDateBR(etapaConcluida.dataConclusao)}
-                            </p>
-                          </div>
-                        </div>
-                        <div className="text-right">
-                          <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold border border-green-300 text-green-700">
-                            {getTempoDecorrido().diasUteis} dias úteis
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-                </div>
-                
-                {/* 2. Destaque Central - Dias Restantes ou Atraso */}
-                <div className="border-t border-slate-200 my-3 pt-4">
-                  {(() => {
-                    const diasRest = getDiasRestantes(currentVersion);
-                    const prazo = classesPrazo(diasRest);
-                    const isAtraso = diasRest !== null && diasRest < 0;
-                    
-                    return (
-                      <div className="text-center py-4">
-                        <div className={`text-3xl font-bold ${prazo.text} mb-2`}>
-                          {diasRest === null ? '—' : Math.abs(diasRest)}
-                        </div>
-                        <div className={`text-sm font-medium ${prazo.text}`}>{legendaDiasRestantes(diasRest)}</div>
-                      </div>
-                    );
-                  })()}
-                </div>
-                
-                {/* Linha de Progresso Temporal removida deste card conforme especificação */}
-                
-              </div>
-            </div>
+            {/* 1️⃣ Card Status & Prazos (refatorado) */}
+            <DeadlinePanel
+              data={{
+                status: getDeadlinePanelStatus(),
+                startedAt: currentVersion?.criadoEm,
+                reviewStartAt: currentVersion?.enviadoParaAnaliseEm,
+                reviewDueAt: prazoFinalVersaoFixo.toISOString(),
+                dueAt: getPrazoFinalPrevistoDaEtapa().toISOString(),
+                closedAt: etapaConcluida?.dataConclusao,
+                workdayMode: deadlineMode,
+              }}
+              onChangeMode={(m) => setDeadlineMode(m)}
+            />
 
             {/* 2️⃣ Card Checklist da Etapa (pendências primeiro) */}
             <div className="rounded-2xl border shadow-sm bg-white p-4 md:p-6">
