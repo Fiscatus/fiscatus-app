@@ -192,7 +192,7 @@ const countBusinessDays = (startISO: string, endISO: string, holidays: string[] 
   return count;
 };
 
-// Mock de dados iniciais com datas realistas
+// Mock de dados iniciais com datas realistas e consistentes
 const mockVersions: DFDVersion[] = [
   {
     id: 'v1',
@@ -203,9 +203,9 @@ const mockVersions: DFDVersion[] = [
     autorCargo: 'Analista de Projetos',
     autorGerencia: 'GSP - Gerência de Soluções e Projetos',
     autorEmail: 'lucas.brito@hospital.gov.br',
-    criadoEm: '2025-01-20T09:00:00Z',
-    atualizadoEm: '2025-01-22T14:30:00Z',
-    enviadoParaAnaliseEm: '2025-01-22T14:30:00Z',
+    criadoEm: '2025-01-20T06:00:00-03:00',
+    atualizadoEm: '2025-01-22T11:30:00-03:00',
+    enviadoParaAnaliseEm: '2025-01-22T11:30:00-03:00',
     prazoDiasUteis: 7,
     prazoInicialDiasUteis: 7,
     prazoCumpridoDiasUteis: 3,
@@ -235,7 +235,7 @@ const mockAnexos: Anexo[] = [
     nome: 'Documento_Referencia.pdf',
     tamanhoBytes: 1024000,
     mimeType: 'application/pdf',
-    criadoEm: '2025-01-20T10:30:00Z',
+    criadoEm: '2025-01-20T10:30:00-03:00',
     autorId: 'user1',
     autorNome: 'Lucas Moreira Brito',
     versaoId: 'v1',
@@ -1096,7 +1096,7 @@ export default function DFDFormSection({
 
   // Prazo final da versão (fixo solicitado) - data realista
   // Usar meio-dia UTC para evitar regressão por fuso horário na renderização local
-  const prazoFinalVersaoFixo = new Date('2025-01-29T12:00:00Z');
+  const prazoFinalVersaoFixo = new Date('2025-01-29T06:00:00-03:00');
 
   // Calcular prazo final previsto da ETAPA (com base nas versões)
   const getPrazoFinalPrevistoDaEtapa = () => {
@@ -1529,7 +1529,7 @@ export default function DFDFormSection({
                 status: getDeadlinePanelStatus(),
                 startedAt: currentVersion?.criadoEm,
                 reviewStartAt: currentVersion?.enviadoParaAnaliseEm,
-                reviewDueAt: prazoFinalVersaoFixo.toISOString(),
+                reviewDueAt: new Date('2025-01-28T09:00:00-03:00').toISOString(),
                 dueAt: getPrazoFinalPrevistoDaEtapa().toISOString(),
                 closedAt: etapaConcluida?.dataConclusao,
                 workdayMode: deadlineMode,
