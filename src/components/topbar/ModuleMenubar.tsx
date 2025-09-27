@@ -10,13 +10,25 @@ export function ModuleMenubar() {
   const location = useLocation()
   const pathname = location.pathname
 
+  // Função para obter o título dinâmico baseado na página atual
+  const getDynamicTitle = (mod: typeof modulesConfig[0]) => {
+    // Encontra a página ativa no módulo
+    const activePage = mod.pages.find(page => 
+      pathname === page.href || pathname.startsWith(`${page.href}/`)
+    )
+    
+    // Se encontrou uma página ativa, retorna o nome da página
+    // Caso contrário, retorna o nome do módulo
+    return activePage ? activePage.label : mod.label
+  }
+
   return (
     <div className="hidden md:block">
       <Menubar className="h-10 rounded-full border border-gray-200 bg-white/80 backdrop-blur px-1 py-0.5 shadow-xs hover:shadow-sm transition-shadow duration-200">
         {modulesConfig.map((mod) => (
           <MenubarMenu key={mod.id}>
             <MenubarTrigger className="rounded-full px-2.5 py-1 text-[13px] font-medium text-gray-700 hover:bg-gray-50 hover:text-gray-900 data-[state=open]:bg-gray-100 data-[state=open]:text-gray-900 transition-all duration-200 ease-in-out gap-1 group">
-              <span className={mod.color}>{mod.label}</span>
+              <span className={mod.color}>{getDynamicTitle(mod)}</span>
               <ChevronDown className="ml-1 h-4 w-4 text-gray-400 group-data-[state=open]:rotate-180 transition-transform duration-200 ease-in-out" />
             </MenubarTrigger>
 

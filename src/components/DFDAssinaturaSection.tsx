@@ -15,6 +15,16 @@ import { TimelineItemModel, TimelineStatus } from '@/types/timeline';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Progress } from '@/components/ui/progress';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { generateRealisticDates, validateAndFixTimeline } from '@/lib/realisticDates';
+
+// Gerar timeline realista para o DFD Assinatura
+const realisticAssinaturaTimeline = validateAndFixTimeline(generateRealisticDates({
+  now: new Date(),
+  isCompleted: false,
+  maxDaysBack: 10,
+  maxDaysForward: 5
+}));
+
 import {
   FileText,
   CheckCircle,
@@ -136,7 +146,7 @@ const mockCardAssinatura: CardAssinaturaDFD = {
       email: "diran.rodrigues@hospital.gov.br",
       status: "PENDENTE",
       selecionadoPorId: "gsp-1",
-      selecionadoEm: "2025-01-15T10:00:00Z"
+      selecionadoEm: realisticAssinaturaTimeline.startedAt
     },
     {
       id: "2",
@@ -145,7 +155,7 @@ const mockCardAssinatura: CardAssinaturaDFD = {
       email: "gabriel.radamesis@hospital.gov.br",
       status: "PENDENTE",
       selecionadoPorId: "gsp-1",
-      selecionadoEm: "2025-01-15T10:00:00Z"
+      selecionadoEm: realisticAssinaturaTimeline.startedAt
     }
   ],
   sla: {

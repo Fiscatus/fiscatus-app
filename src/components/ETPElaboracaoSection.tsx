@@ -59,6 +59,7 @@ import Timeline from '@/components/timeline/Timeline';
 import { TimelineItemModel, TimelineStatus } from '@/types/timeline';
 import { formatDateBR, formatDateTimeBR, legendaDiasRestantes, classesPrazo } from '@/lib/utils';
 import { Progress } from '@/components/ui/progress';
+import { generateRealisticDates, validateAndFixTimeline } from '@/lib/realisticDates';
 
 // Tipos TypeScript conforme especificação
 type ETPVersionStatus = 'rascunho' | 'finalizada' | 'enviada_para_assinatura';
@@ -171,30 +172,38 @@ const countBusinessDays = (startISO: string, endISO: string, holidays: string[] 
   return count;
 };
 
-// Mock de dados iniciais
+// Gerar timeline realista para o ETP
+const realisticETPTimeline = validateAndFixTimeline(generateRealisticDates({
+  now: new Date(),
+  isCompleted: false,
+  maxDaysBack: 15,
+  maxDaysForward: 10
+}));
+
+// Mock de dados iniciais com datas realistas
 const mockVersions: ETPVersion[] = [
   {
     id: 'v1',
     numeroRevisao: 1,
-  status: 'rascunho',
+    status: 'rascunho',
     autorId: 'user1',
     autorNome: 'Lucas Moreira Brito',
     autorCargo: 'Analista de Projetos',
     autorGerencia: 'GSP - Gerência de Soluções e Projetos',
     autorEmail: 'lucas.brito@hospital.gov.br',
-    criadoEm: '2024-01-15T14:30:00Z',
-    atualizadoEm: '2024-01-18T16:45:00Z',
+    criadoEm: realisticETPTimeline.startedAt,
+    atualizadoEm: realisticETPTimeline.reviewStartAt || realisticETPTimeline.startedAt,
     prazoDiasUteis: 5,
     prazoInicialDiasUteis: 5,
     prazoCumpridoDiasUteis: 0,
     payload: {
-    justificativaContratacao: '',
+      justificativaContratacao: '',
       estudosPreliminares: '',
       descricaoObjeto: '',
       estimativaPrecos: '',
       impactoOrcamentario: '',
       beneficiosEsperados: '',
-    riscosIdentificados: '',
+      riscosIdentificados: '',
       observacoesComplementares: '',
       responsaveis: [
         {
@@ -204,7 +213,7 @@ const mockVersions: ETPVersion[] = [
           gerencia: 'GSP - Gerência de Soluções e Projetos'
         }
       ],
-      dataElaboracao: '2024-01-15',
+      dataElaboracao: new Date(realisticETPTimeline.startedAt).toISOString().split('T')[0],
       numeroETP: 'ETP-2024-001',
       prioridade: 'MEDIO'
     }
@@ -217,7 +226,7 @@ const mockAnexos: Anexo[] = [
     nome: 'Documento_Referencia.pdf',
     tamanhoBytes: 1024000,
     mimeType: 'application/pdf',
-    criadoEm: '2024-01-15T10:30:00Z',
+    criadoEm: realisticETPTimeline.startedAt,
     autorId: 'user1',
     autorNome: 'Lucas Moreira Brito',
     versaoId: 'v1',

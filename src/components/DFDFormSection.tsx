@@ -71,6 +71,7 @@ import Timeline from '@/components/timeline/Timeline';
 import { DeadlinePanel } from '@/components/DeadlinePanel';
 import { TimelineItemModel, TimelineStatus } from '@/types/timeline';
 import { Progress } from '@/components/ui/progress';
+import { generateRealisticDates, validateAndFixTimeline } from '@/lib/realisticDates';
 
 // Tipos TypeScript conforme especificação
 type DFDVersionStatus = 'rascunho' | 'finalizada' | 'enviada_para_analise' | 'aprovada' | 'reprovada';
@@ -192,6 +193,14 @@ const countBusinessDays = (startISO: string, endISO: string, holidays: string[] 
   return count;
 };
 
+// Gerar timeline realista para o exemplo
+const realisticTimeline = validateAndFixTimeline(generateRealisticDates({
+  now: new Date(),
+  isCompleted: false,
+  maxDaysBack: 15,
+  maxDaysForward: 10
+}));
+
 // Mock de dados iniciais com datas realistas e consistentes
 const mockVersions: DFDVersion[] = [
   {
@@ -203,9 +212,9 @@ const mockVersions: DFDVersion[] = [
     autorCargo: 'Analista de Projetos',
     autorGerencia: 'GSP - Gerência de Soluções e Projetos',
     autorEmail: 'lucas.brito@hospital.gov.br',
-    criadoEm: '2025-01-20T06:00:00-03:00',
-    atualizadoEm: '2025-01-22T11:30:00-03:00',
-    enviadoParaAnaliseEm: '2025-01-22T11:30:00-03:00',
+    criadoEm: realisticTimeline.startedAt,
+    atualizadoEm: realisticTimeline.reviewStartAt || realisticTimeline.startedAt,
+    enviadoParaAnaliseEm: realisticTimeline.reviewStartAt || realisticTimeline.startedAt,
     prazoDiasUteis: 7,
     prazoInicialDiasUteis: 7,
     prazoCumpridoDiasUteis: 3,
@@ -222,7 +231,7 @@ const mockVersions: DFDVersion[] = [
           gerencia: 'GSP - Gerência de Soluções e Projetos'
         }
       ],
-      dataElaboracao: '2025-01-20',
+      dataElaboracao: new Date(realisticTimeline.startedAt).toISOString().split('T')[0],
       numeroDFD: 'DFD-2025-001',
       prioridade: 'MEDIO'
     }
@@ -235,7 +244,7 @@ const mockAnexos: Anexo[] = [
     nome: 'Documento_Referencia.pdf',
     tamanhoBytes: 1024000,
     mimeType: 'application/pdf',
-    criadoEm: '2025-01-20T10:30:00-03:00',
+    criadoEm: realisticTimeline.startedAt,
     autorId: 'user1',
     autorNome: 'Lucas Moreira Brito',
     versaoId: 'v1',
@@ -1094,9 +1103,8 @@ export default function DFDFormSection({
     return dataFinal;
   };
 
-  // Prazo final da versão (fixo solicitado) - data realista
-  // Usar meio-dia UTC para evitar regressão por fuso horário na renderização local
-  const prazoFinalVersaoFixo = new Date('2025-01-29T06:00:00-03:00');
+  // Prazo final da versão baseado na timeline realista
+  const prazoFinalVersaoFixo = new Date(realisticTimeline.reviewDueAt || realisticTimeline.dueAt);
 
   // Calcular prazo final previsto da ETAPA (com base nas versões)
   const getPrazoFinalPrevistoDaEtapa = () => {
@@ -1527,12 +1535,13 @@ export default function DFDFormSection({
             <DeadlinePanel
               data={{
                 status: getDeadlinePanelStatus(),
-                startedAt: currentVersion?.criadoEm,
-                reviewStartAt: currentVersion?.enviadoParaAnaliseEm,
-                reviewDueAt: new Date('2025-01-28T09:00:00-03:00').toISOString(),
-                dueAt: getPrazoFinalPrevistoDaEtapa().toISOString(),
-                closedAt: etapaConcluida?.dataConclusao,
+                startedAt: realisticTimeline.startedAt,
+                reviewStartAt: realisticTimeline.reviewStartAt,
+                reviewDueAt: realisticTimeline.reviewDueAt,
+                dueAt: realisticTimeline.dueAt,
+                closedAt: realisticTimeline.closedAt,
                 workdayMode: deadlineMode,
+                holidays: [], // Adicionar feriados reais se disponíveis
               }}
               onChangeMode={(m) => setDeadlineMode(m)}
             />

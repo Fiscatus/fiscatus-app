@@ -23,6 +23,17 @@ function normalizeDate(date: Date): Date {
   return normalized;
 }
 
+// Validar se as datas estão dentro dos limites realistas
+function validateDateLimits(start?: Date, end?: Date, maxDaysBack = 30, maxDaysForward = 30): boolean {
+  if (!start || !end) return true;
+  
+  const now = new Date();
+  const daysBack = Math.abs(businessDaysDiff(start, now));
+  const daysForward = Math.abs(businessDaysDiff(now, end));
+  
+  return daysBack <= maxDaysBack && daysForward <= maxDaysForward;
+}
+
 // Calcular dias corridos entre datas (exclusive/inclusive)
 function calendarDaysDiff(start: Date, end: Date): number {
   const a = normalizeDate(start);
